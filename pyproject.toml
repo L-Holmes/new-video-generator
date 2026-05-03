@@ -1,0 +1,18 @@
+[project]
+name = "my-video-generator"
+version = "0.1.0"
+description = "Script-to-video generator"
+readme = "README.md"
+requires-python = ">=3.13"
+
+dependencies = [
+    "Pillow>=10.0.0",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "pytest",
+    "rake-nltk",
+    "ollama",
+    "spacy",
+    "opencv-python",
+    "pygame",
+]

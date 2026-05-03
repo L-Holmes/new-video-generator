@@ -1,0 +1,12 @@
+venv/
+CACHE/
+OUTPUT/
+.venv/
+.env
+.pytest_cache/
+.git/
+__pycache__/
+*.wav
+*.mp4
+tmp_stitch/
+uv.lock
