@@ -96,6 +96,7 @@ REVIEW_STOCK_FOOTAGE_OUTPUT_FILE       = f"{_CACHE_DIR}/stock_footage/review_acc
 FINAL_SCRIPT_AND_CLIPS = f"{_CACHE_DIR}/final_script_to_clips.json"
 
 LINE_INDEX_TO_SEARCH_TERM_FILE = f"{_NAME}_script_to_search_term.json" if _NAME else "script_to_search_term.json"
+TIMESTAMPS_ABSOLUTE_FILE = f"{_CACHE_DIR}/{_NAME}_timestamps_absolute.json" if _NAME else f"{_CACHE_DIR}/timestamps_absolute.json"
 # ===========================================================================
 # Create all required dirs and files on startup
 # ===========================================================================
@@ -390,19 +391,22 @@ def _download_clip(url: str) -> str | None:
 
 def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_seconds: float) -> list[dict]:
     """
-    Fetch just enough clips to cover max_runtime_per_clip_seconds. Downloads only what's needed.
+    Fetch enough clips to fill the WHOLE scene runtime (num_clips * max_runtime_per_clip_seconds),
+    with each individual clip capped at max_runtime_per_clip_seconds.
 
-    Returns list of {url: trim_seconds} dicts, e.g.:
-        [{"https://...mp4": 4.0}, {"https://...mp4": 3.5}]
-
-    Strategy:
-        1. Get metadata (fast — no downloading)
-        2. Pick fewest clips that cover max_runtime_per_clip_seconds
-        3. Download only those clips
-        4. Distribute trims evenly across them
+    e.g. an 11.02s scene split into 2 clips of max 5.51s each
+         → fetch enough clips so the sum-of-trims = 11.02s
+         → each clip contributes at most 5.51s
     """
-    # ── 1. Collect metadata until we have enough duration ──────────────────
-    collected: list[tuple[str, float]] = []   # (url, duration)
+    total_needed = num_clips * max_runtime_per_clip_seconds   # the actual full scene duration
+
+    # ── 1. Collect metadata until we cover the full scene ─────────────────
+    # Each candidate's contribution is capped at max_runtime_per_clip_seconds,
+    # so a single 60-second Pexels clip only counts for max_runtime_per_clip_seconds towards coverage.
+    def _coverage(items: list[tuple[str, float]]) -> float:
+        return sum(min(d, max_runtime_per_clip_seconds) for _, d in items)
+
+    collected: list[tuple[str, float]] = []
     seen: set[str] = set()
 
     for page in range(1, 4):  # max 3 pages
@@ -410,21 +414,22 @@ def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_
             if url not in seen and dur > 0:
                 collected.append((url, dur))
                 seen.add(url)
-            if sum(d for _, d in collected) >= max_runtime_per_clip_seconds:
+            if _coverage(collected) >= total_needed:
                 break
-        if sum(d for _, d in collected) >= max_runtime_per_clip_seconds or not collected:
+        if _coverage(collected) >= total_needed or not collected:
             break
 
-    # ── 2. Pick only the clips we actually need ────────────────────────────
-    chosen, total = [], 0.0
+    # ── 2. Pick the minimum subset that covers total_needed ───────────────
+    chosen: list[tuple[str, float]] = []
+    covered = 0.0
     for url, dur in collected:
         chosen.append((url, dur))
-        total += dur
-        if total >= max_runtime_per_clip_seconds:
+        covered += min(dur, max_runtime_per_clip_seconds)
+        if covered >= total_needed:
             break
 
     if not chosen:
-        # ── Image fallback ─────────────────────────────────────────────────
+        # ── Image fallback (unchanged behaviour) ──────────────────────────
         print(f"  [image fallback] no videos for '{search_term}'")
         resp = requests.get(
             "https://api.pexels.com/v1/search",
@@ -434,7 +439,6 @@ def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_
         )
         if resp.status_code != 200 or not resp.json().get("photos"):
             return []
-
         photos = resp.json()["photos"]
         history = _load_history()
         results = []
@@ -446,15 +450,15 @@ def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_
                 dest = STOCK_FOOTAGE_CACHE_DIR / (name if name.endswith(".jpg") else name + ".jpg")
                 dest.write_bytes(img_data)
                 history[url] = str(dest)
-            results.append({url: max_runtime_per_clip_seconds / len(photos)})
+            results.append({url: total_needed / len(photos)})
         _save_history(history)
         return results
 
-    # ── 3. Download only the chosen clips ─────────────────────────────────
-    valid = []
-    for url, dur in chosen: # Removed enumerate(chosen)
+    # ── 3. Download chosen clips ──────────────────────────────────────────
+    valid: list[tuple[str, float]] = []
+    for url, dur in chosen:
         print("     ... downloading clip:", url)
-        local = _download_clip(url) # Removed video_id argument
+        local = _download_clip(url)
         print("     ...[done]")
         if local:
             valid.append((url, dur))
@@ -462,23 +466,44 @@ def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_
     if not valid:
         return []
 
-    # ── 4. Distribute trims ────────────────────────────────────────────────
-    # Equal share per clip, capped by clip's actual duration
-    # e.g. target=8, clips=[2s, 11s] → trims=[2.0, 6.0]
-    # e.g. target=8, clips=[6s,  6s] → trims=[4.0, 4.0]
-    per_clip = max_runtime_per_clip_seconds / len(valid)
-    trims = [min(dur, per_clip) for _, dur in valid]
+    # ── 4. Distribute trims so they sum to total_needed ───────────────────
+    # Each clip capped at min(its_real_duration, max_runtime_per_clip_seconds).
+    # Greedy fill, then redistribute leftover to clips that still have headroom.
+    cap = lambda dur: min(dur, max_runtime_per_clip_seconds)
+    trims: list[float] = [0.0] * len(valid)
+    remaining = total_needed
 
-    # redistribute any leftover from short clips
-    leftover = max_runtime_per_clip_seconds - sum(trims)
-    if leftover > 0.01:
+    for i, (_, dur) in enumerate(valid):
+        share = remaining / (len(valid) - i)
+        trims[i] = min(cap(dur), share)
+        remaining -= trims[i]
+
+    # If short clips couldn't take their full share, redistribute to longer ones
+    if remaining > 0.01:
         for i, (_, dur) in enumerate(valid):
-            if trims[i] < dur:
-                extra = min(leftover, dur - trims[i])
+            headroom = cap(dur) - trims[i]
+            if headroom > 0:
+                extra = min(remaining, headroom)
                 trims[i] += extra
-                leftover -= extra
+                remaining -= extra
+                if remaining <= 0.01:
+                    break
 
-    print(f"  [footage] {len(valid)} clip(s), trims: {[round(t,2) for t in trims]}")
+    # If we STILL have leftover (rare — every clip was already at its cap), stretch the last clip past the cap.
+    # This keeps the scene runtime correct, which is more important than respecting the per-clip cap.
+    if remaining > 0.01:
+        # find the longest source available and lean on it
+        i_best = max(range(len(valid)), key=lambda i: valid[i][1] - trims[i])
+        extra = min(remaining, valid[i_best][1] - trims[i_best])
+        trims[i_best] += extra
+        remaining -= extra
+        if remaining > 0.01:
+            print(f"  ⚠️  could only cover {total_needed - remaining:.2f}s of {total_needed:.2f}s "
+                  f"for '{search_term}' — sources too short.")
+
+    total_trim = sum(trims)
+    print(f"  [footage] {len(valid)} clip(s), trims: {[round(t,2) for t in trims]}, "
+          f"total {total_trim:.2f}s (needed {total_needed:.2f}s)")
     return [{url: trim} for (url, _), trim in zip(valid, trims)]
 
 # ---------------------------------------------------------------------------
@@ -614,7 +639,7 @@ def main() -> None:
 
     #1.5)
     # Generate the timestamps to match up the recorded audio to the script
-    run_audio_script_synchronizer (SCRIPT_AUDIO_FILE, LINE_INDEX_TO_SEARCH_TERM_FILE, SYNCHRONIZED_SCRIPT_OUTPUT_FILE, AUDIO_START_DELAY_SECONDS)
+    run_audio_script_synchronizer (SCRIPT_AUDIO_FILE, LINE_INDEX_TO_SEARCH_TERM_FILE, SYNCHRONIZED_SCRIPT_OUTPUT_FILE, TIMESTAMPS_ABSOLUTE_FILE, AUDIO_START_DELAY_SECONDS)
     # ---------------------
 
     # 2) fetch images

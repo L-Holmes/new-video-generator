@@ -1,46 +1,64 @@
 """
---- WHAT THIS CODE DOES ---
+AUDIO_SCRIPT_SYNCHRONIZER.py
+============================
+Forced-alignment script timer.  Drop-in replacement for the click-along
+version — same filename, same `run()` signature, same output files.
 
-The user is shown the script lines one at a time.  Audio is loaded once and
-played CONTINUOUSLY through the entire script — it is NOT stopped/restarted
-between lines (per-line restarts are what caused drift on long videos).
+How it works
+------------
+We don't use Whisper's transcription as truth — your script is truth.
+Whisper just tells us WHEN each word it heard occurs in the audio.  We
+then sequence-match its words against the known script to find the audio
+position of each line.
 
-When the user presses <Enter>, the *absolute* audio position (seconds in the
-WAV) is recorded as the END of the current line.  The next line is shown
-immediately, but the audio just keeps playing.
+Mistranscriptions (e.g. a Northern British "th") cannot cause drift:
+each line is anchored to its own first matched word, so an error on
+line 12 has zero effect on line 13.
 
-These absolute end-positions are saved to a cache file
-(script_timestamps_seconds.json).
+Robustness layers
+-----------------
+  1. Lowercase + punctuation strip + em/en-dash → space
+  2. Number expansion (digits ↔ spoken words via num2words)
+       so "1946" matches "nineteen forty six" and vice versa
+       so "1700s" matches "seventeen hundreds"
+  3. Apostrophes preserved inside words ("don't" stays one token)
+  4. SequenceMatcher with autojunk=False
+       — common words ("the", "of") act as alignment anchors,
+         not as filler that gets ignored
+  5. Per-line first-token anchor
+       — line N's start = audio time of the FIRST script token in line N
+         that matched a Whisper word
+  6. Linear interpolation fallback
+       — if a line had zero matches (rare), its start is interpolated
+         from neighbours so we never crash and never produce garbage
+  7. Monotonicity enforcement
+       — timestamps must be non-decreasing; out-of-order entries are
+         clamped forward
+  8. Validation pass with warnings printed at the end
 
-The actual per-line durations the rest of the pipeline cares about are
-*derived* from those cached timestamps:
+Output (drop-in compatible — STITCH_TOGETHER.py keeps working unchanged):
+  - timestamps_cache_file → per-line absolute START times (seconds, 2dp)
+  - output_file           → per-line DURATIONS (seconds, 2dp)
 
-    duration_N  =  timestamp_N  -  timestamp_(N-1)        ( timestamp_(-1) := 0.0 )
+Setup
+-----
+    pip install faster-whisper num2words
 
-…and written to OUTPUT_FILE.
+faster-whisper is fully offline once the model is downloaded (~250 MB
+for small.en).  No API, no internet.  MIT licensed.  num2words is a
+pure-Python number-to-words library.
 
-Why this kills the drift:
-  Every recorded position is referenced to a single, never-restarted play()
-  call, so they all share the same (small, constant) pygame startup latency.
-  When you subtract two timestamps to get a duration, that latency cancels.
-  In the old design each line had its own play(start=X) with its own
-  latency, so the errors accumulated line-by-line.
+Model choice
+------------
+Default is "small.en" — robust on Northern British / regional English
+and fast enough on CPU.  If you ever see a low match rate in the
+warnings, bump to "medium.en".
 
-Backspace rewinds the audio so the previous line can be re-timed.  This does
-start a fresh play() session, but only at the rewind point — drift can't
-propagate forward from there.
-
-# USAGE (e.g. in main.py):
-
-    from AUDIO_SCRIPT_SYNCHRONIZER import run
-
-    run(
-        script_audio_file="path/to/script.wav",
-        script_lines_file="path/to/scene_map_cache.json",
-        output_file="path/to/script_timings_seconds.json",
-        timestamps_cache_file="path/to/script_timestamps_seconds.json",
-        audio_start_delay=0.5,
-    )
+Cache format note
+-----------------
+The timestamps cache now stores per-line START times (you wanted this:
+the cinnamon line at 1:57 → cache says 117.xx).  The OLD cache stored
+end times — delete any old cache file before running.
 """
 
 # =====================================================================================================================================
@@ -50,409 +68,351 @@ propagate forward from there.
 SCRIPT_AUDIO_FILE     = "script.wav"
 SCRIPT_LINES_FILE     = "CACHE/scene_map_cache.json"
 OUTPUT_FILE           = "CACHE/script_timings_seconds.json"
-TIMESTAMPS_CACHE_FILE = "CACHE/script_timestamps_seconds.json"
-AUDIO_START_DELAY     = 0.5   # seconds before audio begins (initial start / after rewind only)
+TIMESTAMPS_CACHE_FILE = "CACHE/timestamps_absolute.json"
+WHISPER_MODEL         = "small.en"   # tiny.en / base.en / small.en / medium.en
 
 # =====================================================================================================================================
 
 import json
 import os
-import time
-import threading
-import tkinter as tk
-from tkinter import font as tkfont
-import pygame
+import re
+import subprocess
+from difflib import SequenceMatcher
+from pathlib import Path
 
 
-# ─── File helpers ────────────────────────────────────────────────────────────
+# ─── File helpers ─────────────────────────────────────────────────────────────
 
-def load_lines(path: str) -> list[str]:
+def _load_lines(path: str) -> list[str]:
     with open(path, "r", encoding="utf-8") as f:
         return list(json.load(f).keys())
 
 
-def load_json(path: str) -> dict:
+def _load_json(path: str) -> dict:
     if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
     return {}
 
 
-def save_json_ordered(path: str, data: dict, ordered_keys: list[str]) -> None:
-    """Write only the keys in ordered_keys that exist in data, preserving order."""
-    ordered = {k: data[k] for k in ordered_keys if k in data}
+def _save_json_ordered(path: str, data: dict, ordered_keys: list[str]) -> None:
     parent = os.path.dirname(path)
     if parent:
         os.makedirs(parent, exist_ok=True)
+    ordered = {k: data[k] for k in ordered_keys if k in data}
     with open(path, "w", encoding="utf-8") as f:
         json.dump(ordered, f, indent=2, ensure_ascii=False)
 
 
-def derive_durations(timestamps: dict, ordered_lines: list[str]) -> dict:
-    """Convert absolute end-timestamps into per-line durations (string, 2dp)."""
-    durations: dict = {}
-    prev = 0.0
+def _audio_duration(path: str) -> float:
+    r = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=noprint_wrappers=1:nokey=1", path],
+        capture_output=True, text=True, check=True,
+    )
+    return float(r.stdout.strip())
+
+
+# ─── Tokenization & normalization ─────────────────────────────────────────────
+
+def _expand_number(tok: str) -> list[str]:
+    """Turn '1946' / '1700s' / '410' into spoken-word tokens."""
+    from num2words import num2words
+
+    # Decade / century, e.g. "1700s"
+    m = re.match(r"^(\d+)s$", tok)
+    if m:
+        n = int(m.group(1))
+        try:
+            if 1000 <= n <= 2999:
+                w = num2words(n, lang="en", to="year")
+                # "seventeen hundred" → "seventeen hundreds"
+                w = re.sub(r"\bhundred\b", "hundreds", w)
+                return re.sub(r"[-,]", " ", w).lower().split()
+            return num2words(n, lang="en").replace("-", " ").lower().split() + ["s"]
+        except Exception:
+            return [tok]
+
+    # Pure digits
+    if tok.isdigit():
+        n = int(tok)
+        try:
+            w = (num2words(n, lang="en", to="year")
+                 if 1500 <= n <= 2099 else
+                 num2words(n, lang="en"))
+            return re.sub(r"[-,]", " ", w).lower().split()
+        except Exception:
+            return [tok]
+
+    return [tok]
+
+
+def _tokenize(text: str) -> list[str]:
+    """Lowercase, punctuation-strip, dash-aware, number-expanded token list."""
+    text = re.sub(r"[\u2014\u2013\u2015]", " ", text)   # em/en/horizontal dashes
+    text = text.replace("&", " and ")
+    raw = re.findall(r"[A-Za-z0-9']+", text.lower())
+    out: list[str] = []
+    for tok in raw:
+        tok = tok.strip("'")
+        if not tok:
+            continue
+        if any(c.isdigit() for c in tok):
+            out.extend(_expand_number(tok))
+        else:
+            out.append(tok)
+    return out
+
+
+# ─── Transcription ────────────────────────────────────────────────────────────
+
+def _transcribe(audio_path: str, model_size: str) -> list[dict]:
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        raise ImportError(
+            "faster-whisper not installed.\n"
+            "Install with:  pip install faster-whisper num2words"
+        )
+
+    print(f"  → loading Whisper model: {model_size}  (downloads on first use, then cached)")
+    model = WhisperModel(model_size, device="cpu", compute_type="int8")
+
+    print(f"  → transcribing {audio_path}")
+    segments, _ = model.transcribe(audio_path, word_timestamps=True, vad_filter=False)
+
+    words: list[dict] = []
+    for seg in segments:
+        if seg.words is None:
+            continue
+        for w in seg.words:
+            words.append({
+                "word":  w.word.strip(),
+                "start": float(w.start),
+                "end":   float(w.end),
+            })
+    print(f"  → {len(words)} words returned")
+    return words
+
+
+# ─── Alignment ────────────────────────────────────────────────────────────────
+
+def _align(script_lines: list[str], whisper_words: list[dict]) -> tuple[dict, set]:
+    # Flatten Whisper words into normalized tokens, remembering origin.
+    w_tokens: list[str] = []
+    w_origin: list[int] = []
+    for i, ww in enumerate(whisper_words):
+        for t in _tokenize(ww["word"]):
+            w_tokens.append(t)
+            w_origin.append(i)
+
+    # Flatten script lines into tokens with line boundaries.
+    s_tokens: list[str] = []
+    line_first: list[int] = []
+    for line in script_lines:
+        line_first.append(len(s_tokens))
+        s_tokens.extend(_tokenize(line))
+    line_first.append(len(s_tokens))   # sentinel
+
+    if not w_tokens or not s_tokens:
+        return {}, set()
+
+    # Sequence matching — autojunk=False so common words act as anchors.
+    sm = SequenceMatcher(a=s_tokens, b=w_tokens, autojunk=False)
+    s2w: dict[int, int] = {}
+    for block in sm.get_matching_blocks():
+        for k in range(block.size):
+            s2w[block.a + k] = block.b + k
+
+    timestamps: dict[str, float] = {}
+    matched: set[str] = set()
+
+    for li, line in enumerate(script_lines):
+        first = line_first[li]
+        last  = line_first[li + 1] - 1
+        if first > last:
+            continue
+
+        # First matched script token within this line gives us the line's start.
+        wt_idx: int | None = None
+        for s_idx in range(first, last + 1):
+            if s_idx in s2w:
+                wt_idx = s2w[s_idx]
+                break
+        if wt_idx is None:
+            continue
+
+        ww_idx = w_origin[wt_idx]
+        timestamps[line] = whisper_words[ww_idx]["start"]
+        matched.add(line)
+
+    return timestamps, matched
+
+
+# ─── Post-processing ──────────────────────────────────────────────────────────
+
+def _interpolate_missing(timestamps: dict, ordered_lines: list[str], audio_duration: float) -> dict:
+    """Fill in unmatched lines by linear interpolation between matched neighbours."""
+    starts: list[float | None] = [timestamps.get(ln) for ln in ordered_lines]
+    n = len(starts)
+    if n == 0:
+        return timestamps
+
+    # Anchor first / last so interpolation is well-defined even at the edges.
+    if starts[0]  is None: starts[0]  = 0.0
+    if starts[-1] is None: starts[-1] = audio_duration
+
+    i = 0
+    while i < n:
+        if starts[i] is None:
+            j = i
+            while j < n and starts[j] is None:
+                j += 1
+            left  = starts[i - 1]
+            right = starts[j] if j < n else audio_duration
+            span  = j - (i - 1)
+            for k in range(i, j):
+                t = (k - (i - 1)) / span
+                starts[k] = left + (right - left) * t
+            i = j
+        else:
+            i += 1
+
+    out = dict(timestamps)
+    for k, ln in enumerate(ordered_lines):
+        if ln not in out:
+            out[ln] = starts[k]
+    return out
+
+
+def _enforce_monotonic(timestamps: dict, ordered_lines: list[str]) -> dict:
+    out = dict(timestamps)
+    prev = -1.0
     for ln in ordered_lines:
+        if ln in out and out[ln] < prev:
+            out[ln] = prev + 0.01
+        prev = out.get(ln, prev)
+    return out
+
+
+def _derive_durations(timestamps: dict, ordered_lines: list[str], audio_duration: float) -> dict:
+    """duration[i] = start[i+1] - start[i],   duration[last] = audio_duration - start[last]"""
+    durations: dict[str, float] = {}
+    for i, ln in enumerate(ordered_lines):
         if ln not in timestamps:
-            break  # stop at the first hole — durations are only valid up to here
-        ts = float(timestamps[ln])
-        durations[ln] = f"{round(ts - prev, 2):.2f}"
-        prev = ts
+            continue
+        start = timestamps[ln]
+        next_start = None
+        for j in range(i + 1, len(ordered_lines)):
+            if ordered_lines[j] in timestamps:
+                next_start = timestamps[ordered_lines[j]]
+                break
+        end = next_start if next_start is not None else audio_duration
+        durations[ln] = max(0.0, end - start)
     return durations
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-class ScriptTimerApp:
-
-    def __init__(self, root: tk.Tk, script_audio_file: str, script_lines_file: str,
-                 output_file: str, timestamps_cache_file: str, audio_start_delay: float):
-        self.root                  = root
-        self.script_audio_file     = script_audio_file
-        self.script_lines_file     = script_lines_file
-        self.output_file           = output_file
-        self.timestamps_cache_file = timestamps_cache_file
-        self.audio_start_delay     = audio_start_delay
-
-        self.root.title("Script Timer")
-        self.root.configure(bg="#1a1a2e")
-        self.root.resizable(True, True)
-        self.root.geometry("960x500")
-
-        # ── Data ──────────────────────────────────────────────────────────────
-        self.lines      = load_lines(self.script_lines_file)
-        self.n          = len(self.lines)
-        self.timestamps = load_json(self.timestamps_cache_file)   # {line: "1.68"}
-
-        # Resume position: continue at the first un-timestamped line
-        # (walk consecutively from the start so a gap in the cache doesn't skip lines)
-        self.index = 0
-        while self.index < self.n and self.lines[self.index] in self.timestamps:
-            self.index += 1
-        if self.index >= self.n:
-            self.index = 0   # everything done — shouldn't reach here (run() exits early)
-
-        # ── Audio state ──────────────────────────────────────────────────────
-        # We use ONE continuous play() call for the whole pass through the script
-        # (re-started only at the very beginning and after Backspace rewinds).
-        pygame.mixer.music.load(self.script_audio_file)
-        self._audio_playing       = False
-        self._play_session_offset = 0.0    # WAV pos where the current play() began
-        self._play_token          = 0      # invalidates pending delayed-start threads
-        self._splash_active       = False
-
-        # ── Build UI then show splash ────────────────────────────────────────
-        self._build_ui()
-        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
-        self._show_splash()
-
-    # ─── Splash screen ───────────────────────────────────────────────────────
-
-    def _show_splash(self):
-        self._splash_active = True
-
-        for w in (self.lbl_progress, self.lbl_line, self.lbl_status,
-                  self.lbl_timing, self.lbl_hint):
-            w.pack_forget()
-
-        resuming    = self.index > 0
-        resume_note = (
-            f"\n  ▸  Resuming from line {self.index + 1} / {self.n}  "
-            f"({self.index} line{'s' if self.index != 1 else ''} already saved)"
-            if resuming else ""
-        )
-
-        instructions = (
-            "  HOW THIS WORKS\n\n"
-            "  ▸  Each script line is shown one at a time.\n"
-            "  ▸  Audio plays CONTINUOUSLY through the whole script.\n"
-            "  ▸  When you hear a line finish — press  Enter.\n"
-            "  ▸  We record the absolute audio timestamp; the next line shows\n"
-            "       instantly while the audio keeps playing without interruption.\n"
-            "  ▸  Per-line durations are derived from those timestamps, so drift\n"
-            "       can't accumulate across long scripts.\n"
-            "  ▸  Backspace  rewinds the audio so you can redo the previous line.\n"
-            "  ▸  Saved to:\n"
-            f"       {self.output_file}\n"
-            f"       {self.timestamps_cache_file}   (raw timestamps cache)"
-            f"{resume_note}"
-        )
-
-        self.lbl_splash = tk.Label(
-            self.root, text=instructions,
-            bg="#1a1a2e", fg="#c0c0e0",
-            font=tkfont.Font(family="Courier", size=13),
-            justify="left", anchor="w"
-        )
-        self.lbl_splash.pack(expand=True, padx=50, pady=30, anchor="w")
-
-        self.lbl_splash_hint = tk.Label(
-            self.root,
-            text="Press  Enter  to begin",
-            bg="#1a1a2e", fg="#4a90d9",
-            font=tkfont.Font(family="Helvetica", size=15, weight="bold")
-        )
-        self.lbl_splash_hint.pack(pady=(0, 30))
-
-        self.root.bind("<Return>",    self._dismiss_splash)
-        self.root.bind("<BackSpace>", lambda e: None)
-
-    def _dismiss_splash(self, _event=None):
-        self._splash_active = False
-        self.lbl_splash.destroy()
-        self.lbl_splash_hint.destroy()
-
-        self.lbl_progress.pack(padx=30, pady=(20, 4))
-        self.lbl_line.pack(expand=True, padx=30, pady=16)
-        self.lbl_status.pack(padx=30, pady=4)
-        self.lbl_timing.pack(padx=30, pady=8)
-        self.lbl_hint.pack(pady=(0, 20))
-
-        self.root.bind("<Return>",    self._on_enter)
-        self.root.bind("<BackSpace>", self._on_back)
-
-        # Kick off the single continuous playback for this session.
-        self._show_current_line(restart_audio=True)
-
-    # ─── GUI construction ────────────────────────────────────────────────────
-
-    def _build_ui(self):
-        """Create widgets but do NOT pack them — splash screen is shown first."""
-        self.lbl_progress = tk.Label(
-            self.root, text="", bg="#1a1a2e", fg="#7f8c8d",
-            font=tkfont.Font(family="Helvetica", size=13)
-        )
-        self.lbl_line = tk.Label(
-            self.root, text="", bg="#1a1a2e", fg="#e0e0ff",
-            font=tkfont.Font(family="Helvetica", size=28, weight="bold"),
-            wraplength=900, justify="center"
-        )
-        self.lbl_status = tk.Label(
-            self.root, text="", bg="#1a1a2e", fg="#95a5a6",
-            font=tkfont.Font(family="Helvetica", size=13)
-        )
-        self.lbl_timing = tk.Label(
-            self.root, text="", bg="#1a1a2e", fg="#27ae60",
-            font=tkfont.Font(family="Courier", size=11)
-        )
-        self.lbl_hint = tk.Label(
-            self.root,
-            text="[ Enter ] → mark end of line        [ Backspace ] → redo previous line",
-            bg="#1a1a2e", fg="#4a4a6a",
-            font=tkfont.Font(family="Helvetica", size=11)
-        )
-
-    # ─── Audio control ───────────────────────────────────────────────────────
-
-    def _current_audio_pos(self) -> float:
-        """Absolute position in the WAV right now, in seconds."""
-        if self._audio_playing:
-            return self._play_session_offset + pygame.mixer.music.get_pos() / 1000.0
-        return self._play_session_offset
-
-    def _stop_audio(self):
-        pygame.mixer.music.stop()
-        self._audio_playing = False
-        self._play_token   += 1   # cancels any pending delayed-start
-
-    def _start_play_at(self, position: float, delay: float):
-        """(Re)start playback at the given absolute WAV position, after `delay` s."""
-        self._play_token += 1
-        my_token = self._play_token
-
-        def _run():
-            time.sleep(delay)
-            if my_token != self._play_token:
-                return                                # superseded
-            self._play_session_offset = position
-            try:
-                pygame.mixer.music.play(start=position)
-            except pygame.error:
-                # Fallback if start= unsupported for this build / format
-                pygame.mixer.music.play()
-                try:
-                    pygame.mixer.music.set_pos(position)
-                except pygame.error:
-                    pass
-            self._audio_playing = True
-            self._set_status("🔊  Listening…  press  Enter  when the line ends")
-
-        threading.Thread(target=_run, daemon=True).start()
-
-    def _line_start_pos(self, idx: int) -> float:
-        """Absolute WAV position where line `idx` begins (= end of previous line)."""
-        if idx <= 0:
-            return 0.0
-        prev = self.lines[idx - 1]
-        return float(self.timestamps.get(prev, 0.0))
-
-    # ─── Persistence ─────────────────────────────────────────────────────────
-
-    def _save_all(self):
-        """Save raw timestamps cache AND derived durations."""
-        save_json_ordered(self.timestamps_cache_file, self.timestamps, self.lines)
-        durations = derive_durations(self.timestamps, self.lines)
-        save_json_ordered(self.output_file, durations, self.lines)
-
-    # ─── Navigation ──────────────────────────────────────────────────────────
-
-    def _show_current_line(self, restart_audio: bool = False):
-        if self.index >= self.n:
-            self._finish()
-            return
-
-        line = self.lines[self.index]
-        self.lbl_line.config(text=f'"{line}"', fg="#e0e0ff")
-        self.lbl_progress.config(text=f"Line  {self.index + 1}  /  {self.n}")
-        self._update_timing_preview()
-
-        if restart_audio or not self._audio_playing:
-            # First start, or after a rewind — kick off a fresh play() session.
-            start_pos = self._line_start_pos(self.index)
-            self._stop_audio()
-            self._set_status("⏳  Audio starting…")
-            self._start_play_at(start_pos, self.audio_start_delay)
-        else:
-            # Audio is already playing continuously — just update the display.
-            self._set_status("🔊  Listening…  press  Enter  when the line ends")
-
-    def _on_enter(self, _event=None):
-        if self.index >= self.n:
-            return
-
-        if not self._audio_playing:
-            # User pressed Enter during the initial start delay — just ignore.
-            self._set_status("⚠️  Wait for the audio to start…")
-            return
-
-        timestamp = self._current_audio_pos()
-        line      = self.lines[self.index]
-        start_ts  = self._line_start_pos(self.index)
-        duration  = round(timestamp - start_ts, 2)
-
-        if duration < 0.05:
-            self._set_status("⚠️  Too fast — wait for the audio, then press Enter")
-            return
-
-        # Store the *absolute* end-timestamp; the duration written to OUTPUT_FILE
-        # is derived from this and the previous line's timestamp by _save_all().
-        self.timestamps[line] = f"{timestamp:.2f}"
-        self._save_all()
-
-        self.index += 1
-
-        self._set_status(f"✅  Logged  {duration:.2f}s   (audio @ {timestamp:.2f}s)")
-        self._update_timing_preview()
-
-        # Critical: do NOT restart the audio here — it just keeps playing.
-        self._show_current_line(restart_audio=False)
-
-    def _on_back(self, _event=None):
-        """Rewind to redo the previous line (or current line if at the start)."""
-        self._stop_audio()
-
-        if self.index > 0:
-            going_back_to = self.lines[self.index - 1]
-            self.timestamps.pop(going_back_to, None)
-            self.index -= 1
-        else:
-            # already at line 0 — clear its timestamp if we have one
-            self.timestamps.pop(self.lines[0], None)
-
-        self._save_all()
-        self._set_status("⏪  Rewinding…")
-        self._show_current_line(restart_audio=True)
-
-    # ─── UI helpers ──────────────────────────────────────────────────────────
-
-    def _set_status(self, msg: str):
-        self.lbl_status.config(text=msg)
-        self.root.update_idletasks()
-
-    def _update_timing_preview(self):
-        durations = derive_durations(self.timestamps, self.lines)
-        if not durations:
-            self.lbl_timing.config(text="")
-            return
-        recent = list(durations.items())[-4:]
-        rows   = [f"{v}s  ←  {k[:60]}{'…' if len(k) > 60 else ''}" for k, v in recent]
-        self.lbl_timing.config(text="\n".join(rows))
-
-    # ─── Finish / close ──────────────────────────────────────────────────────
-
-    def _finish(self):
-        """All lines done — stop audio, save, close window."""
-        self._stop_audio()
-        self._save_all()
-        try:
-            pygame.mixer.quit()
-        except pygame.error:
-            pass
-        self.root.after(300, self.root.destroy)
-
-    def _on_close(self):
-        self._stop_audio()
-        self._save_all()
-        try:
-            pygame.mixer.quit()
-        except pygame.error:
-            pass
-        self.root.destroy()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Public entry point
-# ─────────────────────────────────────────────────────────────────────────────
+# ─── Public entry point ───────────────────────────────────────────────────────
 
 def run(
     script_audio_file:     str   = SCRIPT_AUDIO_FILE,
     script_lines_file:     str   = SCRIPT_LINES_FILE,
     output_file:           str   = OUTPUT_FILE,
     timestamps_cache_file: str   = TIMESTAMPS_CACHE_FILE,
-    audio_start_delay:     float = AUDIO_START_DELAY,
+    audio_start_delay:     float = 0.5,        # accepted for API compat — unused
+    whisper_model:         str   = WHISPER_MODEL,
+    force:                 bool  = False,
 ) -> None:
-    """
-    Launch the Script Timer GUI and block until the window is closed.
+    if not os.path.exists(script_audio_file):
+        raise FileNotFoundError(f"Audio not found: {script_audio_file}")
+    if not os.path.exists(script_lines_file):
+        raise FileNotFoundError(f"Script lines not found: {script_lines_file}")
 
-    Parameters
-    ----------
-    script_audio_file     : path to the WAV file containing the full script read-out.
-    script_lines_file     : path to the ordered JSON whose keys are the script lines.
-    output_file           : path where per-line DURATIONS (seconds) will be written.
-    timestamps_cache_file : path where absolute end-TIMESTAMPS (seconds) are cached.
-    audio_start_delay     : seconds to wait before audio begins (initial start / after rewind).
-    """
+    lines = _load_lines(script_lines_file)
 
-    # --- already done? ---
-    if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
-        print(f"Found existing data in '{output_file}'. Task complete. Returning.")
-        return
-
-    # --- timestamps already fully captured but durations not yet derived? ---
-    # (e.g. user closed the window after the last Enter without us getting to save —
-    #  shouldn't normally happen since we save on every Enter, but be safe)
-    if os.path.exists(timestamps_cache_file):
-        ts    = load_json(timestamps_cache_file)
-        lines = load_lines(script_lines_file)
-        if lines and all(ln in ts for ln in lines):
-            durations = derive_durations(ts, lines)
-            save_json_ordered(output_file, durations, lines)
-            print(f"All timestamps cached. Derived durations written to '{output_file}'.")
+    if not force and os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+        existing = _load_json(output_file)
+        if all(ln in existing for ln in lines):
+            print(f"[synchronizer] '{output_file}' already complete. Returning. "
+                  f"(pass force=True to re-run)")
             return
 
-    pygame.mixer.init()
-    root = tk.Tk()
-    ScriptTimerApp(
-        root,
-        script_audio_file=script_audio_file,
-        script_lines_file=script_lines_file,
-        output_file=output_file,
-        timestamps_cache_file=timestamps_cache_file,
-        audio_start_delay=audio_start_delay,
-    )
-    root.mainloop()
+    print("─" * 70)
+    print("AUDIO SCRIPT SYNCHRONIZER  ·  Whisper forced-alignment")
+    print("─" * 70)
+    print(f"  audio:  {script_audio_file}")
+    print(f"  script: {script_lines_file}  ({len(lines)} lines)")
+    print(f"  model:  {whisper_model}")
 
+    # 1. Transcribe
+    print("\n[1/4] transcribing audio…")
+    words = _transcribe(script_audio_file, whisper_model)
+    if not words:
+        raise RuntimeError("Whisper returned no words — empty/corrupt audio?")
 
-# ─────────────────────────────────────────────────────────────────────────────
+    # 2. Align
+    print("\n[2/4] aligning script to transcription…")
+    raw_timestamps, matched = _align(lines, words)
+    n_matched = len(matched)
+    print(f"      matched {n_matched}/{len(lines)} lines directly")
+
+    # 3. Fill any gaps
+    audio_duration = _audio_duration(script_audio_file)
+    if n_matched < len(lines):
+        unmatched = [ln for ln in lines if ln not in matched]
+        print(f"\n[3/4] interpolating {len(unmatched)} unmatched line(s) from neighbours:")
+        for ex in unmatched[:5]:
+            preview = ex[:70] + ("…" if len(ex) > 70 else "")
+            print(f"        - {preview!r}")
+        if len(unmatched) > 5:
+            print(f"        … and {len(unmatched) - 5} more")
+    else:
+        print("\n[3/4] all lines matched directly — no interpolation needed.")
+
+    timestamps = _interpolate_missing(raw_timestamps, lines, audio_duration)
+    timestamps = _enforce_monotonic(timestamps, lines)
+
+    # 4. Output
+    print("\n[4/4] writing outputs…")
+    durations = _derive_durations(timestamps, lines, audio_duration)
+    starts_str    = {k: f"{v:.2f}" for k, v in timestamps.items()}
+    durations_str = {k: f"{v:.2f}" for k, v in durations.items()}
+    _save_json_ordered(timestamps_cache_file, starts_str,    lines)
+    _save_json_ordered(output_file,           durations_str, lines)
+    print(f"      ✓ {timestamps_cache_file}")
+    print(f"      ✓ {output_file}")
+
+    # Validation
+    warnings: list[str] = []
+    prev = -1.0
+    for i, ln in enumerate(lines):
+        if ln not in timestamps:
+            warnings.append(f"line {i+1}: no timestamp")
+            continue
+        if timestamps[ln] < prev:
+            warnings.append(f"line {i+1}: non-monotonic at {timestamps[ln]:.2f}s")
+        prev = timestamps[ln]
+
+    print()
+    if warnings:
+        print(f"⚠️  {len(warnings)} warnings:")
+        for w in warnings[:10]:
+            print(f"   - {w}")
+        if n_matched < len(lines) * 0.8:
+            print("\n   Match rate is low. Try a larger model:  whisper_model='medium.en'")
+    else:
+        print("✓ alignment looks clean")
+
+    total = sum(durations.values())
+    print(f"\n  audio length:   {audio_duration:.2f}s")
+    print(f"  durations sum:  {total:.2f}s")
+    print(f"  difference:     {audio_duration - total:+.3f}s   (should be ~0)")
+    print("─" * 70)
+
 
 if __name__ == "__main__":
     run()
+

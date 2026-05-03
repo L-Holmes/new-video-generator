@@ -1,5 +1,11 @@
 
 
+# prereqs
+uv pip install faster-whisper num2words
+
+
+# recording
+
 arecord -f cd -t wav output.wav
 
 # Usage:  
