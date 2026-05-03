@@ -690,7 +690,8 @@ def main() -> None:
     # Stitch together into initial video
     # - maybe option to add the voice track? no probs not. 
     print("====================================================================")
-    stitch_together_video(FINAL_SCRIPT_AND_CLIPS, HISTORY_FILE, SCRIPT_AUDIO_FILE, OUTPUT_FILE)
+    # stitch_together_video(FINAL_SCRIPT_AND_CLIPS, HISTORY_FILE, SCRIPT_AUDIO_FILE, OUTPUT_FILE)
+    stitch_together_video(FINAL_SCRIPT_AND_CLIPS,TIMESTAMPS_ABSOLUTE_FILE, HISTORY_FILE, SCRIPT_AUDIO_FILE, OUTPUT_FILE)
 
     # et.log(DEBUG, f"Pipeline complete.  Final video: '{final_video}'")
 

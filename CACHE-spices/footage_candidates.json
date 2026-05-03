@@ -1,0 +1,1276 @@
+[
+    {
+        "script_text": "If you open your kitchen cupboard right now, you probably have a jar of nutmeg.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/36983577/15667855_3840_2160_25fps.mp4": 5.28
+                },
+                {
+                    "https://videos.pexels.com/video-files/8580859/8580859-hd_1920_1080_30fps.mp4": 5.28
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/4778354/pexels-photo-4778354.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.28
+                },
+                {
+                    "https://images.pexels.com/photos/7236723/pexels-photo-7236723.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.28
+                },
+                {
+                    "https://images.pexels.com/photos/36058915/pexels-photo-36058915.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.28
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.28
+    },
+    {
+        "script_text": "It costs about two dollars.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/6700655/6700655-uhd_3840_2160_25fps.mp4": 1.26
+                },
+                {
+                    "https://videos.pexels.com/video-files/4393482/4393482-hd_1920_1080_30fps.mp4": 1.26
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/6694574/pexels-photo-6694574.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
+                },
+                {
+                    "https://images.pexels.com/photos/6694576/pexels-photo-6694576.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
+                },
+                {
+                    "https://images.pexels.com/photos/35471718/pexels-photo-35471718.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.26
+    },
+    {
+        "script_text": "But in the 1600s, this little wrinkled seed was the single most contested resource on the planet.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/28283516/12351476_3840_2160_30fps.mp4": 5.86
+                },
+                {
+                    "https://videos.pexels.com/video-files/28283517/12351606_3840_2160_30fps.mp4": 5.86
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/35339664/pexels-photo-35339664.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.86
+                },
+                {
+                    "https://images.pexels.com/photos/13093699/pexels-photo-13093699.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.86
+                },
+                {
+                    "https://images.pexels.com/photos/32281630/pexels-photo-32281630.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.86
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.86
+    },
+    {
+        "script_text": "It was worth more than its weight in gold.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/8369980/8369980-hd_1920_1080_30fps.mp4": 2.28
+                },
+                {
+                    "https://videos.pexels.com/video-files/33903113/14387913_1920_1080_24fps.mp4": 2.28
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/8442318/pexels-photo-8442318.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.28
+                },
+                {
+                    "https://images.pexels.com/photos/47047/gold-ingots-golden-treasure-47047.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.28
+                },
+                {
+                    "https://images.pexels.com/photos/8442332/pexels-photo-8442332.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.28
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.28
+    },
+    {
+        "script_text": "Nutmeg only grew in one place on Earth:",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/7431747/7431747-uhd_4096_2160_30fps.mp4": 2.22
+                },
+                {
+                    "https://videos.pexels.com/video-files/7606613/7606613-hd_1920_1080_25fps.mp4": 2.22
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/9494906/pexels-photo-9494906.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.22
+                },
+                {
+                    "https://images.pexels.com/photos/30550489/pexels-photo-30550489.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.22
+                },
+                {
+                    "https://images.pexels.com/photos/20409628/pexels-photo-20409628.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.22
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.22
+    },
+    {
+        "script_text": "The Banda Islands. A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/35753264/15156880_3840_2160_60fps.mp4": 5.38
+                },
+                {
+                    "https://videos.pexels.com/video-files/5046216/5046216-hd_1920_1080_24fps.mp4": 5.38
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/4870657/pexels-photo-4870657.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.38
+                },
+                {
+                    "https://images.pexels.com/photos/33310385/pexels-photo-33310385.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.38
+                },
+                {
+                    "https://images.pexels.com/photos/4096290/pexels-photo-4096290.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.38
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.38
+    },
+    {
+        "script_text": "If you were a European merchant, getting it meant",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/33752857/14329542_1920_1080_25fps.mp4": 2.94
+                },
+                {
+                    "https://videos.pexels.com/video-files/31099425/13288222_3840_2160_60fps.mp4": 2.94
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/35531243/pexels-photo-35531243.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.94
+                },
+                {
+                    "https://images.pexels.com/photos/18597927/pexels-photo-18597927.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.94
+                },
+                {
+                    "https://images.pexels.com/photos/9328777/pexels-photo-9328777.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.94
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.94
+    },
+    {
+        "script_text": "sailing for months, surviving",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/5703392/5703392-uhd_3840_2160_30fps.mp4": 1.62
+                },
+                {
+                    "https://videos.pexels.com/video-files/4327087/4327087-hd_1920_1080_24fps.mp4": 1.62
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/6195223/pexels-photo-6195223.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.62
+                },
+                {
+                    "https://images.pexels.com/photos/30412425/pexels-photo-30412425.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.62
+                },
+                {
+                    "https://images.pexels.com/photos/21546869/pexels-photo-21546869.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.62
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.62
+    },
+    {
+        "script_text": "scurvy,",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/28409851/12377619_3840_2160_30fps.mp4": 0.9
+                },
+                {
+                    "https://videos.pexels.com/video-files/31820458/13557048_3840_2160_30fps.mp4": 0.9
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/28830024/pexels-photo-28830024.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.9
+                },
+                {
+                    "https://images.pexels.com/photos/12404091/pexels-photo-12404091.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.9
+                },
+                {
+                    "https://images.pexels.com/photos/12404084/pexels-photo-12404084.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.9
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.9
+    },
+    {
+        "script_text": "pirates,",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/9837708/9837708-hd_1920_1080_30fps.mp4": 0.34
+                },
+                {
+                    "https://videos.pexels.com/video-files/16714568/16714568-hd_1920_1080_60fps.mp4": 0.34
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/9570297/pexels-photo-9570297.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.34
+                },
+                {
+                    "https://images.pexels.com/photos/3660228/pexels-photo-3660228.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.34
+                },
+                {
+                    "https://images.pexels.com/photos/28297306/pexels-photo-28297306.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.34
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.34
+    },
+    {
+        "script_text": "and shipwrecks.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/10194440/10194440-hd_1920_1080_30fps.mp4": 1.08
+                },
+                {
+                    "https://videos.pexels.com/video-files/10194441/10194441-hd_3840_2160_24fps.mp4": 1.08
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/36253411/pexels-photo-36253411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.08
+                },
+                {
+                    "https://images.pexels.com/photos/9713892/pexels-photo-9713892.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.08
+                },
+                {
+                    "https://images.pexels.com/photos/8130520/pexels-photo-8130520.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.08
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.08
+    },
+    {
+        "script_text": "But if you made it back with a single ship full of nutmeg, you were set for life.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/5703392/5703392-uhd_3840_2160_30fps.mp4": 4.5
+                },
+                {
+                    "https://videos.pexels.com/video-files/34411043/14577528_3840_2160_30fps.mp4": 4.5
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.5
+                },
+                {
+                    "https://images.pexels.com/photos/36140348/pexels-photo-36140348.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.5
+                },
+                {
+                    "https://images.pexels.com/photos/31950021/pexels-photo-31950021.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.5
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.5
+    },
+    {
+        "script_text": "The Dutch and the British fought bloody, brutal wars over these tiny islands.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/36096869/15308294_3840_2160_24fps.mp4": 4.22
+                },
+                {
+                    "https://videos.pexels.com/video-files/7117256/7117256-uhd_4096_2160_25fps.mp4": 4.22
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/31389737/pexels-photo-31389737.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.22
+                },
+                {
+                    "https://images.pexels.com/photos/33589238/pexels-photo-33589238.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.22
+                },
+                {
+                    "https://images.pexels.com/photos/29319297/pexels-photo-29319297.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.22
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.22
+    },
+    {
+        "script_text": "In fact, to secure a monopoly on nutmeg, the Dutch formally traded a different island they owned to the British.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/7977624/7977624-hd_1920_1080_30fps.mp4": 6.04
+                },
+                {
+                    "https://videos.pexels.com/video-files/7492690/7492690-hd_1920_1080_24fps.mp4": 6.04
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/9801351/pexels-photo-9801351.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.04
+                },
+                {
+                    "https://images.pexels.com/photos/8957697/pexels-photo-8957697.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.04
+                },
+                {
+                    "https://images.pexels.com/photos/7386039/pexels-photo-7386039.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.04
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 6.04
+    },
+    {
+        "script_text": "That island was Manhattan. Yep... New York City was traded for nutmeg.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/28855592/12496322_3840_2160_60fps.mp4": 4.9
+                },
+                {
+                    "https://videos.pexels.com/video-files/7850311/7850311-uhd_4000_2160_25fps.mp4": 4.9
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/33620033/pexels-photo-33620033.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.9
+                },
+                {
+                    "https://images.pexels.com/photos/35074876/pexels-photo-35074876.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.9
+                },
+                {
+                    "https://images.pexels.com/photos/36398474/pexels-photo-36398474.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.9
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.9
+    },
+    {
+        "script_text": "The entire map of the modern world was quite literally drawn by people desperately looking for a cheaper way to flavor their dinner.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/7431751/7431751-uhd_4096_2160_30fps.mp4": 7.16
+                },
+                {
+                    "https://videos.pexels.com/video-files/7431747/7431747-uhd_4096_2160_30fps.mp4": 7.16
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/7412069/pexels-photo-7412069.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.16
+                },
+                {
+                    "https://images.pexels.com/photos/9494906/pexels-photo-9494906.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.16
+                },
+                {
+                    "https://images.pexels.com/photos/9329805/pexels-photo-9329805.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.16
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 7.16
+    },
+    {
+        "script_text": "Because before global shipping, geography dictated your diet.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/1774945/1774945-hd_1920_1080_30fps.mp4": 4.86
+                },
+                {
+                    "https://videos.pexels.com/video-files/30550543/13086237_1920_1080_30fps.mp4": 4.86
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/33045202/pexels-photo-33045202.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.86
+                },
+                {
+                    "https://images.pexels.com/photos/34750835/pexels-photo-34750835.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.86
+                },
+                {
+                    "https://images.pexels.com/photos/1563005/pexels-photo-1563005.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.86
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.86
+    },
+    {
+        "script_text": "Take black pepper.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/7791634/7791634-hd_1920_1080_25fps.mp4": 0.96
+                },
+                {
+                    "https://videos.pexels.com/video-files/32736554/13956117_3840_2160_25fps.mp4": 0.96
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/33948998/pexels-photo-33948998.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.96
+                },
+                {
+                    "https://images.pexels.com/photos/5244105/pexels-photo-5244105.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.96
+                },
+                {
+                    "https://images.pexels.com/photos/8559086/pexels-photo-8559086.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.96
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.96
+    },
+    {
+        "script_text": "Today, it's on every restaurant table in the world.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/5101165/5101165-uhd_3840_2160_25fps.mp4": 2.26
+                },
+                {
+                    "https://videos.pexels.com/video-files/32710164/13944500_1920_1080_25fps.mp4": 2.26
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/2978020/pexels-photo-2978020.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.26
+                },
+                {
+                    "https://images.pexels.com/photos/7140277/pexels-photo-7140277.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.26
+                },
+                {
+                    "https://images.pexels.com/photos/33897441/pexels-photo-33897441.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.26
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.26
+    },
+    {
+        "script_text": "But originally, the black pepper vine was entirely native to the Malabar Coast of India, specifically Kerala.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/15533302/15533302-hd_1920_1080_24fps.mp4": 7.0
+                },
+                {
+                    "https://videos.pexels.com/video-files/7332191/7332191-hd_1920_1080_25fps.mp4": 7.76
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/18861235/pexels-photo-18861235.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.76
+                },
+                {
+                    "https://images.pexels.com/photos/16238699/pexels-photo-16238699.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.76
+                },
+                {
+                    "https://images.pexels.com/photos/3930019/pexels-photo-3930019.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.76
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 7.76
+    },
+    {
+        "script_text": "To get to Europe, it had to pass through dozens of middlemen\u2014Arab traders, Venetian merchants\u2014each jacking up the price.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/34863449/14774906_2560_1440_30fps.mp4": 6.16
+                },
+                {
+                    "https://videos.pexels.com/video-files/36134691/15324117_2560_1440_25fps.mp4": 6.16
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/28515826/pexels-photo-28515826.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.16
+                },
+                {
+                    "https://images.pexels.com/photos/30156546/pexels-photo-30156546.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.16
+                },
+                {
+                    "https://images.pexels.com/photos/34855132/pexels-photo-34855132.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.16
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 6.16
+    },
+    {
+        "script_text": "It was so valuable that when Alaric the Goth laid siege to Rome in the year 410,",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/19153890/19153890-uhd_3840_2160_24fps.mp4": 7.18
+                },
+                {
+                    "https://videos.pexels.com/video-files/7686722/7686722-uhd_3840_2160_24fps.mp4": 7.18
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/29827599/pexels-photo-29827599.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.18
+                },
+                {
+                    "https://images.pexels.com/photos/36808241/pexels-photo-36808241.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.18
+                },
+                {
+                    "https://images.pexels.com/photos/29708626/pexels-photo-29708626.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.18
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 7.18
+    },
+    {
+        "script_text": "his ransom demand to spare the city wasn't just gold and silver.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/8369975/8369975-hd_1920_1080_30fps.mp4": 4.76
+                },
+                {
+                    "https://videos.pexels.com/video-files/8369977/8369977-hd_1920_1080_30fps.mp4": 4.76
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/29927968/pexels-photo-29927968.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.76
+                },
+                {
+                    "https://images.pexels.com/photos/15954089/pexels-photo-15954089.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.76
+                },
+                {
+                    "https://images.pexels.com/photos/30123614/pexels-photo-30123614.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.76
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.76
+    },
+    {
+        "script_text": "He demanded\u2014and received\u2014three thousand pounds of black pepper.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/7791634/7791634-hd_1920_1080_25fps.mp4": 4.7
+                },
+                {
+                    "https://videos.pexels.com/video-files/7332191/7332191-hd_1920_1080_25fps.mp4": 4.7
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/33948998/pexels-photo-33948998.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.7
+                },
+                {
+                    "https://images.pexels.com/photos/5244105/pexels-photo-5244105.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.7
+                },
+                {
+                    "https://images.pexels.com/photos/3930019/pexels-photo-3930019.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.7
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.7
+    },
+    {
+        "script_text": "And because Europe was so entirely disconnected from where these spices actually grew, the merchants who controlled the trade simply made things up to keep the prices high.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/6257869/6257869-uhd_3840_2160_25fps.mp4": 4.55
+                },
+                {
+                    "https://videos.pexels.com/video-files/7431509/7431509-uhd_4096_2160_30fps.mp4": 4.55
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/35829362/pexels-photo-35829362.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.55
+                },
+                {
+                    "https://images.pexels.com/photos/4278035/pexels-photo-4278035.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.55
+                },
+                {
+                    "https://images.pexels.com/photos/7412013/pexels-photo-7412013.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.55
+                }
+            ]
+        },
+        "num_clips_needed": 2,
+        "max_runtime_per_clip_seconds": 4.55
+    },
+    {
+        "script_text": "Cinnamon comes from the inner bark of a specific tree native to Sri Lanka.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/32804207/13984051_2560_1440_60fps.mp4": 3.5
+                },
+                {
+                    "https://videos.pexels.com/video-files/36059135/15291757_1920_1080_60fps.mp4": 3.5
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/36847092/pexels-photo-36847092.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.5
+                },
+                {
+                    "https://images.pexels.com/photos/34086126/pexels-photo-34086126.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.5
+                },
+                {
+                    "https://images.pexels.com/photos/36873022/pexels-photo-36873022.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.5
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 3.5
+    },
+    {
+        "script_text": "But for centuries, Arab traders told the Greeks and Romans that cinnamon was gathered by giant, terrifying birds who used the spice to build their nests on sheer, unclimbable cliffs.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/20399497/20399497-uhd_3840_2160_30fps.mp4": 5.51
+                },
+                {
+                    "https://videos.pexels.com/video-files/9722314/9722314-uhd_4096_1742_25fps.mp4": 5.51
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/14347895/pexels-photo-14347895.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.51
+                },
+                {
+                    "https://images.pexels.com/photos/26050836/pexels-photo-26050836.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.51
+                },
+                {
+                    "https://images.pexels.com/photos/19878390/pexels-photo-19878390.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.51
+                }
+            ]
+        },
+        "num_clips_needed": 2,
+        "max_runtime_per_clip_seconds": 5.51
+    },
+    {
+        "script_text": "The traders claimed they had to leave heavy chunks of meat out for the birds,",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/31856449/13571174_3840_2160_25fps.mp4": 4.96
+                },
+                {
+                    "https://videos.pexels.com/video-files/4994456/4994456-hd_1920_1080_30fps.mp4": 4.96
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/20187071/pexels-photo-20187071.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.96
+                },
+                {
+                    "https://images.pexels.com/photos/8250368/pexels-photo-8250368.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.96
+                },
+                {
+                    "https://images.pexels.com/photos/31126181/pexels-photo-31126181.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.96
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.96
+    },
+    {
+        "script_text": "who would carry the meat to their nests, collapsing them, and sending the cinnamon tumbling down.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/6956366/6956366-hd_1920_1080_25fps.mp4": 4.86
+                },
+                {
+                    "https://videos.pexels.com/video-files/5703203/5703203-uhd_4096_2160_30fps.mp4": 4.86
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/5060299/pexels-photo-5060299.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.86
+                },
+                {
+                    "https://images.pexels.com/photos/14381804/pexels-photo-14381804.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.86
+                },
+                {
+                    "https://images.pexels.com/photos/5498005/pexels-photo-5498005.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.86
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.86
+    },
+    {
+        "script_text": "It was complete nonsense.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/36279165/15384250_1920_1080_24fps.mp4": 1.66
+                },
+                {
+                    "https://videos.pexels.com/video-files/7977620/7977620-hd_1920_1080_30fps.mp4": 1.66
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/10068857/pexels-photo-10068857.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.66
+                },
+                {
+                    "https://images.pexels.com/photos/33334140/pexels-photo-33334140.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.66
+                },
+                {
+                    "https://images.pexels.com/photos/8559319/pexels-photo-8559319.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.66
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.66
+    },
+    {
+        "script_text": "But the Europeans believed it, and happily paid the monster-bird premium.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/5902051/5902051-hd_1920_1080_30fps.mp4": 5.5
+                },
+                {
+                    "https://videos.pexels.com/video-files/10612770/10612770-hd_1920_1080_25fps.mp4": 5.5
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/30726969/pexels-photo-30726969.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.5
+                },
+                {
+                    "https://images.pexels.com/photos/36140591/pexels-photo-36140591.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.5
+                },
+                {
+                    "https://images.pexels.com/photos/36234989/pexels-photo-36234989.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.5
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.5
+    },
+    {
+        "script_text": "By the late 1400s,European powers were sick of paying these markups.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/8771658/8771658-hd_1920_1080_24fps.mp4": 4.48
+                },
+                {
+                    "https://videos.pexels.com/video-files/28512396/12404204_1920_1080_30fps.mp4": 4.48
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/11476941/pexels-photo-11476941.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.48
+                },
+                {
+                    "https://images.pexels.com/photos/37317626/pexels-photo-37317626.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.48
+                },
+                {
+                    "https://images.pexels.com/photos/18820281/pexels-photo-18820281.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.48
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.48
+    },
+    {
+        "script_text": "So, they started sailing west, looking for a backdoor to India.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/28409851/12377619_3840_2160_30fps.mp4": 3.72
+                },
+                {
+                    "https://videos.pexels.com/video-files/5703392/5703392-uhd_3840_2160_30fps.mp4": 3.72
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/37730/sunset-boat-sea-ship-37730.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
+                },
+                {
+                    "https://images.pexels.com/photos/7113306/pexels-photo-7113306.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
+                },
+                {
+                    "https://images.pexels.com/photos/8453208/pexels-photo-8453208.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 3.72
+    },
+    {
+        "script_text": "Which brings us to Christopher Columbus.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/18016882/18016882-uhd_3840_2160_30fps.mp4": 1.96
+                },
+                {
+                    "https://videos.pexels.com/video-files/6020096/6020096-hd_1920_1080_24fps.mp4": 1.96
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/37175018/pexels-photo-37175018.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.96
+                },
+                {
+                    "https://images.pexels.com/photos/37351470/pexels-photo-37351470.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.96
+                },
+                {
+                    "https://images.pexels.com/photos/34998137/pexels-photo-34998137.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.96
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.96
+    },
+    {
+        "script_text": "Columbus lands in the Americas,",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/17314241/17314241-uhd_3840_2160_30fps.mp4": 1.76
+                },
+                {
+                    "https://videos.pexels.com/video-files/17314263/17314263-uhd_3840_2160_30fps.mp4": 1.76
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/29189291/pexels-photo-29189291.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.76
+                },
+                {
+                    "https://images.pexels.com/photos/37175018/pexels-photo-37175018.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.76
+                },
+                {
+                    "https://images.pexels.com/photos/20458600/pexels-photo-20458600.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.76
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.76
+    },
+    {
+        "script_text": "thinks he's in India,",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/7431747/7431747-uhd_4096_2160_30fps.mp4": 1.18
+                },
+                {
+                    "https://videos.pexels.com/video-files/7431509/7431509-uhd_4096_2160_30fps.mp4": 1.18
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/9494906/pexels-photo-9494906.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.18
+                },
+                {
+                    "https://images.pexels.com/photos/30550489/pexels-photo-30550489.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.18
+                },
+                {
+                    "https://images.pexels.com/photos/9494910/pexels-photo-9494910.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.18
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.18
+    },
+    {
+        "script_text": "and is desperately looking for black pepper to justify the cost of his voyage.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/16296848/16296848-uhd_3840_2160_24fps.mp4": 3.74
+                },
+                {
+                    "https://videos.pexels.com/video-files/2539560/2539560-hd_1920_1080_24fps.mp4": 3.74
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/5244105/pexels-photo-5244105.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.74
+                },
+                {
+                    "https://images.pexels.com/photos/8559086/pexels-photo-8559086.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.74
+                },
+                {
+                    "https://images.pexels.com/photos/33948998/pexels-photo-33948998.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.74
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 3.74
+    },
+    {
+        "script_text": "He doesn't find it.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/4586959/4586959-uhd_3840_2160_25fps.mp4": 1.3
+                },
+                {
+                    "https://videos.pexels.com/video-files/10149185/10149185-uhd_3840_2160_24fps.mp4": 1.3
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/255527/pexels-photo-255527.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.3
+                },
+                {
+                    "https://images.pexels.com/photos/2844473/pexels-photo-2844473.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.3
+                },
+                {
+                    "https://images.pexels.com/photos/9017046/pexels-photo-9017046.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.3
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.3
+    },
+    {
+        "script_text": "But he does find a completely unrelated, violently spicy red fruit native to Mesoamerica.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/10039764/10039764-hd_1920_1080_24fps.mp4": 6.14
+                },
+                {
+                    "https://videos.pexels.com/video-files/34774758/14742546_3840_2160_30fps.mp4": 6.14
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/31025272/pexels-photo-31025272.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.14
+                },
+                {
+                    "https://images.pexels.com/photos/12695564/pexels-photo-12695564.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.14
+                },
+                {
+                    "https://images.pexels.com/photos/5968219/pexels-photo-5968219.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.14
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 6.14
+    },
+    {
+        "script_text": "He calls them \"peppers\" to make his investors happy.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/34774758/14742546_3840_2160_30fps.mp4": 3.66
+                },
+                {
+                    "https://videos.pexels.com/video-files/10039764/10039764-hd_1920_1080_24fps.mp4": 3.66
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/8813520/pexels-photo-8813520.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.66
+                },
+                {
+                    "https://images.pexels.com/photos/36703922/pexels-photo-36703922.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.66
+                },
+                {
+                    "https://images.pexels.com/photos/39390/chili-pepper-red-spicy-drying-39390.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.66
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 3.66
+    },
+    {
+        "script_text": "And unlike the fussy black pepper vines of India, these new \"chili peppers\" grew almost anywhere.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/4175185/4175185-hd_2048_996_30fps.mp4": 5.48
+                },
+                {
+                    "https://videos.pexels.com/video-files/4768418/4768418-hd_1920_1080_25fps.mp4": 5.48
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/34034331/pexels-photo-34034331.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.48
+                },
+                {
+                    "https://images.pexels.com/photos/8289875/pexels-photo-8289875.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.48
+                },
+                {
+                    "https://images.pexels.com/photos/28100330/pexels-photo-28100330.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.48
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.48
+    },
+    {
+        "script_text": "Within fifty years, they had spread across the globe,",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/29838682/12814047_3840_2160_24fps.mp4": 4.82
+                },
+                {
+                    "https://videos.pexels.com/video-files/7601118/7601118-hd_1920_1080_25fps.mp4": 4.82
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/7634764/pexels-photo-7634764.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.82
+                },
+                {
+                    "https://images.pexels.com/photos/3828833/pexels-photo-3828833.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.82
+                },
+                {
+                    "https://images.pexels.com/photos/7634763/pexels-photo-7634763.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.82
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.82
+    },
+    {
+        "script_text": "completely revolutionizing the cuisines of India, China, and Southeast Asia.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/34798481/14753602_1920_1080_25fps.mp4": 5.48
+                },
+                {
+                    "https://videos.pexels.com/video-files/27675563/12201476_3840_2160_50fps.mp4": 5.48
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/35532841/pexels-photo-35532841.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.48
+                },
+                {
+                    "https://images.pexels.com/photos/10508207/pexels-photo-10508207.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.48
+                },
+                {
+                    "https://images.pexels.com/photos/10672908/pexels-photo-10672908.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.48
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.48
+    },
+    {
+        "script_text": "So the next time you season your food,",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/5789844/5789844-hd_1920_1080_25fps.mp4": 2.18
+                },
+                {
+                    "https://videos.pexels.com/video-files/7219081/7219081-hd_1920_1080_24fps.mp4": 2.18
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/37099423/pexels-photo-37099423.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
+                },
+                {
+                    "https://images.pexels.com/photos/11719604/pexels-photo-11719604.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
+                },
+                {
+                    "https://images.pexels.com/photos/17359804/pexels-photo-17359804.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.18
+    },
+    {
+        "script_text": "look at what you're holding.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/8580856/8580856-hd_1920_1080_30fps.mp4": 1.22
+                },
+                {
+                    "https://videos.pexels.com/video-files/10568458/10568458-uhd_4096_2160_25fps.mp4": 1.22
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/27730567/pexels-photo-27730567.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.22
+                },
+                {
+                    "https://images.pexels.com/photos/34942955/pexels-photo-34942955.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.22
+                },
+                {
+                    "https://images.pexels.com/photos/3735206/pexels-photo-3735206.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.22
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.22
+    },
+    {
+        "script_text": "You aren't just holding dried bark and seeds.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/4902377/4902377-hd_1920_1080_30fps.mp4": 2.8
+                },
+                {
+                    "https://videos.pexels.com/video-files/32736557/13956105_3840_2160_25fps.mp4": 2.8
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/26595162/pexels-photo-26595162.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.8
+                },
+                {
+                    "https://images.pexels.com/photos/971077/pexels-photo-971077.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.8
+                },
+                {
+                    "https://images.pexels.com/photos/6439856/pexels-photo-6439856.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.8
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.8
+    },
+    {
+        "script_text": "You are holding the remnants of global monopolies,",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/7593623/7593623-uhd_4096_1974_30fps.mp4": 2.26
+                },
+                {
+                    "https://videos.pexels.com/video-files/8899929/8899929-hd_1920_1080_25fps.mp4": 2.26
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/9494906/pexels-photo-9494906.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.26
+                },
+                {
+                    "https://images.pexels.com/photos/30812649/pexels-photo-30812649.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.26
+                },
+                {
+                    "https://images.pexels.com/photos/4402272/pexels-photo-4402272.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.26
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.26
+    },
+    {
+        "script_text": "the fall of empires,",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/29548701/12719564_3840_2160_60fps.mp4": 1.24
+                },
+                {
+                    "https://videos.pexels.com/video-files/29548698/12719571_3840_2160_60fps.mp4": 1.24
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/8482669/pexels-photo-8482669.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.24
+                },
+                {
+                    "https://images.pexels.com/photos/12740233/pexels-photo-12740233.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.24
+                },
+                {
+                    "https://images.pexels.com/photos/34677365/pexels-photo-34677365.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.24
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.24
+    },
+    {
+        "script_text": "and the reason the map of the world looks the way it does today.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/7429967/7429967-uhd_4096_2160_30fps.mp4": 4.34
+                },
+                {
+                    "https://videos.pexels.com/video-files/6257869/6257869-uhd_3840_2160_25fps.mp4": 4.34
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/8828628/pexels-photo-8828628.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.34
+                },
+                {
+                    "https://images.pexels.com/photos/4611591/pexels-photo-4611591.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.34
+                },
+                {
+                    "https://images.pexels.com/photos/8472948/pexels-photo-8472948.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.34
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.34
+    }
+]

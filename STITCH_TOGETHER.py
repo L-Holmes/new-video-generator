@@ -1,42 +1,3 @@
-"""
-STITCH_TOGETHER.py
-==================
-Frame-precise concatenation of clips into the final video, with the script
-audio laid on top.
-
-About the drift you were seeing
--------------------------------
-The previous version used `-t <duration_seconds>` for each clip.  ffmpeg
-rounds duration-based trims to the nearest output frame, so each clip is
-±1 frame off its target.  At 30fps that's up to ±33ms per clip — and
-across 50 clips that drifts visibly out of sync with the audio.
-
-This version does it differently:
-
-  cumulative_frames[i] = round(cumulative_seconds[i] * fps)
-  clip_frames[i]       = cumulative_frames[i] - cumulative_frames[i-1]
-
-Every clip ends *exactly* on its target cumulative frame.  Because each
-clip's start is anchored to the previous clip's frame-aligned end, drift
-is mathematically impossible — the worst-case error for the entire video
-is ±1 frame, not ±N frames.
-
-Each clip is then rendered with `-frames:v <count>` (which writes exactly
-that many output frames, full stop) instead of `-t <seconds>` (which is a
-"close enough" duration).
-
-A `tpad=stop_mode=clone` filter is also added as a safety net — if a
-source video happens to be shorter than the requested frame count, its
-last frame is held instead of the clip ending early.  In normal operation
-the pad is unused.
-
-Audio is muxed at the end with `-shortest`.  Since the durations come
-from the synchronizer (which derived them from the audio itself), the
-silent video and the audio are the same length and stay in lockstep.
-
-Dependencies: ffmpeg + ffprobe on PATH.
-"""
-
 import json
 import os
 import shutil
@@ -44,31 +5,25 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+# --- CONFIGURATION ---
 TARGET_WIDTH  = 1920
 TARGET_HEIGHT = 1080
 TARGET_FPS    = 30
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif"}
 
-
 def _is_image(path: str) -> bool:
     return Path(path).suffix.lower() in IMAGE_EXTS
-
 
 def _load_json(path: str):
     p = Path(path)
     if not p.exists():
         return None
-    try:
-        return json.loads(p.read_text())
-    except Exception:
-        return None
+    return json.loads(p.read_text())
 
-
-def _run(cmd, **kw) -> subprocess.CompletedProcess:
+def _run(cmd, **kw):
     print("  $", " ".join(str(c) for c in cmd))
     return subprocess.run(cmd, check=True, **kw)
-
 
 def _audio_duration(path: str) -> float:
     r = subprocess.run(
@@ -78,154 +33,156 @@ def _audio_duration(path: str) -> float:
     )
     return float(r.stdout.strip())
 
-
-# Common video filter — same scaling/padding/SAR for every clip
 _VF_BASE = (
     f"scale={TARGET_WIDTH}:{TARGET_HEIGHT}:force_original_aspect_ratio=decrease,"
     f"pad={TARGET_WIDTH}:{TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2,setsar=1"
 )
 
+def _generate_clip(src: str, frames: int, out: str) -> None:
+    """Encodes a single clip/image to a .ts file with exact frame count."""
+    is_img = _is_image(src)
+    cmd = ["ffmpeg", "-y"]
+    
+    if is_img:
+        cmd += ["-loop", "1", "-framerate", str(TARGET_FPS), "-i", src]
+    else:
+        cmd += ["-i", src]
 
-def _image_to_clip(src: str, frames: int, out: str) -> None:
-    _run([
-        "ffmpeg", "-y",
-        "-loop", "1", "-framerate", str(TARGET_FPS),
-        "-i", src,
-        "-vf", f"{_VF_BASE},fps={TARGET_FPS}",
-        "-frames:v", str(frames),
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-an",
-        out,
-    ])
-
-
-def _video_to_clip(src: str, frames: int, out: str) -> None:
-    # tpad clone-pad as a safety net for shorter-than-expected sources.
-    _run([
-        "ffmpeg", "-y",
-        "-i", src,
-        "-vf", f"{_VF_BASE},fps={TARGET_FPS},tpad=stop_mode=clone:stop_duration=10",
+    cmd += [
+        "-vf", f"{_VF_BASE},fps={TARGET_FPS},tpad=stop_mode=clone:stop_duration=5",
         "-frames:v", str(frames),
         "-c:v", "libx264", "-preset", "fast", "-crf", "18", "-pix_fmt", "yuv420p",
-        "-an",
-        out,
-    ])
-
-
-def _concat(clip_paths: list[str], out: str) -> None:
-    list_file = out + ".list.txt"
-    with open(list_file, "w") as f:
-        for p in clip_paths:
-            esc = Path(p).resolve().as_posix().replace("'", r"'\''")
-            f.write(f"file '{esc}'\n")
-    _run([
-        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-        "-i", list_file, "-c", "copy", out,
-    ])
-    os.remove(list_file)
-
-
-def _add_audio(video: str, audio: str, out: str) -> None:
-    _run([
-        "ffmpeg", "-y",
-        "-i", video, "-i", audio,
-        "-map", "0:v:0", "-map", "1:a:0",
-        "-c:v", "copy",
-        "-c:a", "aac", "-b:a", "192k",
-        "-shortest",
-        out,
-    ])
-
+        "-video_track_timescale", "90000", # Fixed timescale to prevent concat drift
+        "-an", out
+    ]
+    _run(cmd)
 
 def stitch_together_video(
-    final_script_and_clips: str = "CACHE/final_script_to_clips.json",
-    history_file:           str = "CACHE/stock_footage/history.json",
+    final_script_and_clips: str = "CACHE-spices/final_script_to_clips.json",
+    absolute_timestamps:    str = "spices_timestamps_absolute.json",
+    history_file:           str = "history.json", # Update path if needed
     script_audio_file:      str = "script.wav",
-    output_file:            str = "OUTPUT/output_with_audio.mp4",
+    output_file:            str = "spices-OUTPUT/output.mp4",
 ) -> None:
+    # 1. Load Data
     clips_data = _load_json(final_script_and_clips)
-    if clips_data is None:
-        raise FileNotFoundError(f"Could not load: {final_script_and_clips}")
+    abs_ts = _load_json(absolute_timestamps)
     history = _load_json(history_file)
-    if history is None:
-        raise FileNotFoundError(f"Could not load: {history_file}")
-    if not Path(script_audio_file).exists():
-        raise FileNotFoundError(f"Audio not found: {script_audio_file}")
+    audio_len = _audio_duration(script_audio_file)
 
-    # ── Build flat segment list with frame-precise frame counts ─────────────
-    segments: list[tuple[str, int, float]] = []   # (path, frames, target_seconds_for_log)
-    cum_t = 0.0
-    cum_f = 0
+    if not all([clips_data, abs_ts, history]):
+        raise FileNotFoundError("Could not load required JSON files.")
 
-    for entry in clips_data:
-        for footage_item in entry.get("footage", []):
-            for url, duration in footage_item.items():
-                local = history.get(url)
-                if not local:
-                    raise KeyError(f"URL not in history.json: {url}")
-                if not Path(local).exists():
-                    raise FileNotFoundError(f"Media missing: {local}")
+    # 2. Plan the Frames
+    # We use the absolute timestamps as the "Truth" for sentence boundaries
+    segments_to_render = []
+    
+    # Sort absolute timestamps by time
+    sorted_anchors = sorted(abs_ts.items(), key=lambda x: float(x[1]))
+    
+    total_expected_frames = round(audio_len * TARGET_FPS)
+    current_frame_pos = 0
 
-                cum_t   += float(duration)
-                target_f = round(cum_t * TARGET_FPS)
-                clip_f   = target_f - cum_f
-                if clip_f <= 0:
-                    raise ValueError(
-                        f"Segment {len(segments)} got {clip_f} frames "
-                        f"(duration={duration!r}). A duration of 0s isn't valid."
-                    )
-                segments.append((local, clip_f, float(duration)))
-                cum_f = target_f
+    print(f"Planning {len(clips_data)} script segments...")
 
-    audio_dur = _audio_duration(script_audio_file)
-    target_video_secs = cum_f / TARGET_FPS
-    diff_frames = round((audio_dur - target_video_secs) * TARGET_FPS)
-    print(f"\nFrame-precise plan:")
-    print(f"  {len(segments)} clips → {cum_f} frames = {target_video_secs:.3f}s")
-    print(f"  sum of input durations:  {cum_t:.3f}s")
-    print(f"  audio length:            {audio_dur:.3f}s "
-          f"(diff: {audio_dur - target_video_secs:+.3f}s = {diff_frames:+d} frames)")
-    if abs(diff_frames) > 5:
-        print(f"  ⚠️  durations and audio length differ by {diff_frames} frames — "
-              f"check that the synchronizer ran on the same WAV.")
+    for i, (sentence_text, start_time) in enumerate(sorted_anchors):
+        # Determine the "End Anchor" for this sentence
+        if i < len(sorted_anchors) - 1:
+            next_start_time = float(sorted_anchors[i+1][1])
+        else:
+            next_start_time = audio_len
+        
+        # Calculate exactly how many frames this sentence block must occupy
+        target_end_frame = round(next_start_time * TARGET_FPS)
+        sentence_frame_budget = target_end_frame - current_frame_pos
 
-    # ── Encode each clip with exact frame count ─────────────────────────────
-    tmp = tempfile.mkdtemp(prefix="stitch_")
-    clip_files: list[str] = []
-    try:
-        for i, (src, frames, dur) in enumerate(segments):
-            out_clip = os.path.join(tmp, f"clip_{i:04d}.mp4")
-            kind = "IMAGE" if _is_image(src) else "VIDEO"
-            print(f"\n[{i+1}/{len(segments)}] {kind} target {dur:.2f}s "
-                  f"→ {frames}f ({frames/TARGET_FPS:.3f}s)  |  {Path(src).name}")
-            if _is_image(src):
-                _image_to_clip(src, frames, out_clip)
+        # Find the matching footage items in the clips_data
+        # We match based on the sentence text
+        match = next((item for item in clips_data if item["script_text"] == sentence_text), None)
+        
+        if not match or not match.get("footage"):
+            print(f"⚠️ No footage found for: {sentence_text[:30]}...")
+            # Fill with black or skip (adjusting pos to maintain sync)
+            current_frame_pos = target_end_frame
+            continue
+
+        footage_items = match["footage"]
+        
+        # If there are multiple clips for one sentence, distribute the budget
+        # based on their relative durations in the JSON
+        local_durations = [list(f.values())[0] for f in footage_items]
+        sum_local_durs = sum(local_durations)
+        
+        sentence_running_frames = 0
+        for j, f_item in enumerate(footage_items):
+            url = list(f_item.keys())[0]
+            rel_dur = list(f_item.values())[0]
+            local_path = history.get(url)
+
+            if not local_path:
+                print(f"❌ Missing file in history: {url}")
+                continue
+
+            # Calculate frame count for this specific clip
+            if j < len(footage_items) - 1:
+                # Share of the budget based on relative duration
+                clip_frames = round((rel_dur / sum_local_durs) * sentence_frame_budget)
             else:
-                _video_to_clip(src, frames, out_clip)
-            clip_files.append(out_clip)
+                # Last clip gets whatever is left in the sentence budget
+                clip_frames = sentence_frame_budget - sentence_running_frames
+            
+            if clip_frames > 0:
+                segments_to_render.append((local_path, clip_frames))
+                sentence_running_frames += clip_frames
+        
+        current_frame_pos += sentence_running_frames
 
-        # ── Concat ──────────────────────────────────────────────────────────
-        print(f"\nConcatenating {len(clip_files)} clip(s)…")
-        silent = os.path.join(tmp, "silent_concat.mp4")
-        _concat(clip_files, silent)
+    # 3. Execution
+    tmp = tempfile.mkdtemp(prefix="stitch_")
+    clip_files = []
+    try:
+        # Encode clips
+        for idx, (src, frames) in enumerate(segments_to_render):
+            out_path = os.path.join(tmp, f"segment_{idx:04d}.ts")
+            print(f"\n--- Processing Clip {idx+1}/{len(segments_to_render)} ---")
+            print(f"Source: {Path(src).name} | Target Frames: {frames}")
+            _generate_clip(src, frames, out_path)
+            clip_files.append(out_path)
 
-        # ── Mux audio ───────────────────────────────────────────────────────
+        # Concatenate .ts files
+        print("\nConcatenating intermediate files...")
+        concat_list = os.path.join(tmp, "clips.txt")
+        with open(concat_list, "w") as f:
+            for cf in clip_files:
+                f.write(f"file '{Path(cf).resolve().as_posix()}'\n")
+        
+        silent_video = os.path.join(tmp, "silent_final.ts")
+        _run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list, "-c", "copy", silent_video])
+
+        # Final Mux with Audio
+        print("\nAdding audio and finalizing MP4...")
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-        print(f"\nAdding audio from {script_audio_file}…")
-        _add_audio(silent, script_audio_file, output_file)
+        _run([
+            "ffmpeg", "-y",
+            "-i", silent_video,
+            "-i", script_audio_file,
+            "-map", "0:v:0",
+            "-map", "1:a:0",
+            "-c:v", "copy",
+            "-c:a", "aac", "-b:a", "192k",
+            "-shortest",
+            output_file
+        ])
 
-        # ── Verify ──────────────────────────────────────────────────────────
-        out_dur = _audio_duration(output_file)
-        print(f"\n✓ Output: {output_file}")
-        print(f"  output duration  = {out_dur:.3f}s")
-        print(f"  audio duration   = {audio_dur:.3f}s")
-        print(f"  difference       = {out_dur - audio_dur:+.3f}s  "
-              f"(within {round(abs(out_dur-audio_dur)*TARGET_FPS)} frame(s))")
+        # 4. Final Verify
+        actual_dur = _audio_duration(output_file)
+        print(f"\n✅ DONE.")
+        print(f"Expected Duration (Audio): {audio_len:.3f}s")
+        print(f"Actual Video Duration:     {actual_dur:.3f}s")
+        print(f"Final Drift: {actual_dur - audio_len:+.3f}s")
+
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-
-    print("\nDone.")
-
 
 if __name__ == "__main__":
     stitch_together_video()
