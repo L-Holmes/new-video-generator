@@ -15,11 +15,25 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif"}
 def _is_image(path: str) -> bool:
     return Path(path).suffix.lower() in IMAGE_EXTS
 
+# def _load_json(path: str):
+    # p = Path(path)
+    # if not p.exists():
+        # return None
+    # return json.loads(p.read_text(encoding="utf-8"))
+
 def _load_json(path: str):
+    from pathlib import Path
+
     p = Path(path)
-    if not p.exists():
-        return None
-    return json.loads(p.read_text())
+
+    print("READING FILE:", p.resolve())
+    print("EXISTS:", p.exists())
+    print("SIZE:", p.stat().st_size if p.exists() else "N/A")
+
+    raw = p.read_bytes()
+    print("FIRST 20 BYTES:", raw[:20])
+
+    return json.loads(raw.decode("utf-8"))
 
 def _run(cmd, **kw):
     print("  $", " ".join(str(c) for c in cmd))

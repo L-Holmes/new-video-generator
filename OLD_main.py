@@ -95,11 +95,6 @@ REVIEW_STOCK_FOOTAGE_OUTPUT_FILE       = f"{_CACHE_DIR}/stock_footage/review_acc
 
 FINAL_SCRIPT_AND_CLIPS = f"{_CACHE_DIR}/final_script_to_clips.json"
 
-# NEW: cache of the per-scene fetched candidates (2 videos + 3 images each).
-# This is what the review GUI consumes; FINAL_SCRIPT_AND_CLIPS is what stitch_together
-# consumes and is only written AFTER the user has finished picking.
-CANDIDATES_CACHE_FILE = f"{_CACHE_DIR}/footage_candidates.json"
-
 LINE_INDEX_TO_SEARCH_TERM_FILE = f"{_NAME}_script_to_search_term.json" if _NAME else "script_to_search_term.json"
 TIMESTAMPS_ABSOLUTE_FILE = f"{_CACHE_DIR}/{_NAME}_timestamps_absolute.json" if _NAME else f"{_CACHE_DIR}/timestamps_absolute.json"
 # ===========================================================================
@@ -394,56 +389,14 @@ def _download_clip(url: str) -> str | None:
     print(f"  [download] done → {dest.name}")
     return str(dest)
 
-
-def _download_image(url: str) -> str | None:
-    """
-    Download a single image to cache. Returns local path, or None on failure.
-    e.g. "CACHE/stock_footage/pexels-img-abc123.jpg"
-    """
-    history = _load_history()
-    if url in history and Path(history[url]).exists():
-        print(f"  [cache hit img] {Path(history[url]).name}")
-        return history[url]
-
-    url_hash = hashlib.md5(url.encode()).hexdigest()[:12]
-    # Try to preserve the extension from the URL
-    ext = ".jpg"
-    for cand_ext in (".jpg", ".jpeg", ".png", ".webp"):
-        if cand_ext in url.lower().split("?")[0]:
-            ext = cand_ext
-            break
-    filename = f"pexels-img-{url_hash}{ext}"
-
-    print(f"  [download img] {filename} ...")
-    STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    dest = STOCK_FOOTAGE_CACHE_DIR / filename
-
-    try:
-        img_resp = requests.get(url, stream=True, timeout=15)
-    except Exception as exc:
-        print(f"  [download img] FAILED {exc}")
-        return None
-    if img_resp.status_code != 200:
-        print(f"  [download img] FAILED {img_resp.status_code}")
-        return None
-
-    with open(dest, "wb") as f:
-        for chunk in img_resp.iter_content(chunk_size=65536):
-            f.write(chunk)
-
-    history[url] = str(dest)
-    _save_history(history)
-    print(f"  [download img] done → {dest.name}")
-    return str(dest)
-
-
 def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_seconds: float) -> list[dict]:
     """
-    [LEGACY — kept for backwards-compat / debugging.]
-    The new pipeline uses _fetch_stock_footage_candidates() instead.
-
     Fetch enough clips to fill the WHOLE scene runtime (num_clips * max_runtime_per_clip_seconds),
     with each individual clip capped at max_runtime_per_clip_seconds.
+
+    e.g. an 11.02s scene split into 2 clips of max 5.51s each
+         → fetch enough clips so the sum-of-trims = 11.02s
+         → each clip contributes at most 5.51s
     """
     total_needed = num_clips * max_runtime_per_clip_seconds   # the actual full scene duration
 
@@ -514,6 +467,8 @@ def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_
         return []
 
     # ── 4. Distribute trims so they sum to total_needed ───────────────────
+    # Each clip capped at min(its_real_duration, max_runtime_per_clip_seconds).
+    # Greedy fill, then redistribute leftover to clips that still have headroom.
     cap = lambda dur: min(dur, max_runtime_per_clip_seconds)
     trims: list[float] = [0.0] * len(valid)
     remaining = total_needed
@@ -523,6 +478,7 @@ def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_
         trims[i] = min(cap(dur), share)
         remaining -= trims[i]
 
+    # If short clips couldn't take their full share, redistribute to longer ones
     if remaining > 0.01:
         for i, (_, dur) in enumerate(valid):
             headroom = cap(dur) - trims[i]
@@ -533,7 +489,10 @@ def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_
                 if remaining <= 0.01:
                     break
 
+    # If we STILL have leftover (rare — every clip was already at its cap), stretch the last clip past the cap.
+    # This keeps the scene runtime correct, which is more important than respecting the per-clip cap.
     if remaining > 0.01:
+        # find the longest source available and lean on it
         i_best = max(range(len(valid)), key=lambda i: valid[i][1] - trims[i])
         extra = min(remaining, valid[i_best][1] - trims[i_best])
         trims[i_best] += extra
@@ -547,141 +506,33 @@ def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_
           f"total {total_trim:.2f}s (needed {total_needed:.2f}s)")
     return [{url: trim} for (url, _), trim in zip(valid, trims)]
 
-
-# ---------------------------------------------------------------------------
-# NEW: multi-candidate fetch (2 videos + 3 images per scene)
-# ---------------------------------------------------------------------------
-
-def _fetch_video_candidates(search_term: str, max_runtime_per_clip_seconds: float,
-                            num_videos: int = 2) -> list[dict]:
-    """
-    Fetch up to `num_videos` distinct candidate videos for a single scene.
-    Downloads each to local cache. Returns:
-        [{url: trim_secs}, ...]   (trim = min(real_duration, max_runtime_per_clip_seconds))
-    """
-    collected: list[tuple[str, float]] = []
-    seen: set[str] = set()
-
-    for page in range(1, 4):  # walk up to 3 pages of results
-        if len(collected) >= num_videos:
-            break
-        for url, dur in _get_video_metadata(search_term, max_results=10, page=page):
-            if url in seen or dur <= 0:
-                continue
-            seen.add(url)
-            collected.append((url, dur))
-            if len(collected) >= num_videos:
-                break
-
-    out: list[dict] = []
-    for url, dur in collected[:num_videos]:
-        local = _download_clip(url)
-        if not local:
-            continue
-        trim = min(dur, max_runtime_per_clip_seconds)
-        out.append({url: round(trim, 2)})
-
-    print(f"  [video candidates] '{search_term}' → {len(out)} video(s)")
-    return out
-
-
-def _fetch_image_candidates(search_term: str, max_runtime_per_clip_seconds: float,
-                            num_images: int = 3) -> list[dict]:
-    """
-    Fetch up to `num_images` distinct candidate images for a single scene.
-    Downloads each to local cache. Returns:
-        [{url: trim_secs}, ...]   (trim = max_runtime_per_clip_seconds, since images don't have a duration)
-    """
-    try:
-        resp = requests.get(
-            "https://api.pexels.com/v1/search",
-            headers={"Authorization": PEXELS_API_KEY},
-            params={"query": search_term, "per_page": max(num_images, 5),
-                    "orientation": "landscape"},
-            timeout=8,
-        )
-    except Exception as exc:
-        print(f"  [image candidates] API error: {exc}")
-        return []
-
-    if resp.status_code != 200:
-        print(f"  [image candidates] API error {resp.status_code} for '{search_term}'")
-        return []
-
-    photos = resp.json().get("photos", []) or []
-    out: list[dict] = []
-    seen: set[str] = set()
-    for p in photos:
-        if len(out) >= num_images:
-            break
-        url = (p.get("src") or {}).get("large2x") or (p.get("src") or {}).get("large")
-        if not url or url in seen:
-            continue
-        seen.add(url)
-        local = _download_image(url)
-        if not local:
-            continue
-        out.append({url: round(float(max_runtime_per_clip_seconds), 2)})
-
-    print(f"  [image candidates] '{search_term}' → {len(out)} image(s)")
-    return out
-
-
-def _fetch_stock_footage_candidates(search_term: str,
-                                    max_runtime_per_clip_seconds: float) -> dict:
-    """
-    Fetch a CANDIDATE BUNDLE for a single scene: 2 videos + 3 images.
-    The user picks from these via the review GUI.
-
-    Returns
-    -------
-    dict
-        {
-            "videos": [{url: trim_secs}, ...],    # up to 2 entries
-            "images": [{url: trim_secs}, ...],    # up to 3 entries
-        }
-    """
-    videos = _fetch_video_candidates(search_term, max_runtime_per_clip_seconds, num_videos=2)
-    images = _fetch_image_candidates(search_term, max_runtime_per_clip_seconds, num_images=3)
-    return {"videos": videos, "images": images}
-
-
 # ---------------------------------------------------------------------------
 
 def load_stock_footage(all_scenes: dict) -> list[dict]:
     """
-    Build the candidates list (2 videos + 3 images per scene) the review GUI
-    will display.
+    Returns an ORDERED LIST so stitch_together processes scenes in script order.
 
     Returns
     -------
-    list[dict]   e.g.::
+    list[dict]  e.g.
         [
-            {
-              "script_text": "The Empire State Building is really big.",
-              "candidates": {
-                "videos": [{url: trim}, {url: trim}],
-                "images": [{url: trim}, {url: trim}, {url: trim}],
-              },
-              "num_clips_needed": 1,
-              "max_runtime_per_clip_seconds": 4.8,
-            },
-            ...
+            {"script_text": "The Empire State Building is really big.",
+             "footage":      [{"https://images.pexels.com/photos/36042878/...jpeg":5}, ...],
+            {"script_text": "Back in 1946,",
+             "footage":      [{"https://images.pexels.com/photos/11223344/...jpeg":3.4}, ...],
         ]
     """
-    out: list[dict] = []
-    for script_text, search_term in all_scenes.items():
-        num_clips, max_runtime = _get_num_stock_images(script_text)
-        print(f"\n[fetch] '{script_text}'")
-        print(f"        search='{search_term}' clips={num_clips} max_runtime={max_runtime:.2f}s")
-        candidates = _fetch_stock_footage_candidates(search_term, max_runtime)
-        out.append({
-            "script_text":                    script_text,
-            "candidates":                     candidates,
-            "num_clips_needed":               num_clips,
-            "max_runtime_per_clip_seconds":   max_runtime,
+    footage_list: list[dict] = []
+    for script_text, stock_footage_search_term in all_scenes.items():
+        num_images, max_runtime_per_clip_seconds = _get_num_stock_images(script_text)
+        footage_to_runtime_seconds = _fetch_stock_footage(stock_footage_search_term, num_images, max_runtime_per_clip_seconds)
+
+        #TODO - change below to have a runtime_seconds associated with each clip
+        footage_list.append({
+            "script_text":     script_text,
+            "footage":         footage_to_runtime_seconds,
         })
-    return out
+    return footage_list
 
 
 # ===================================
@@ -786,82 +637,61 @@ def main() -> None:
                 # ...
                 # "the samurai of Japan ruled over the kingdom.": "samurai warriors japan", }
 
-    # 1.5)
+    #1.5)
     # Generate the timestamps to match up the recorded audio to the script
-    run_audio_script_synchronizer(SCRIPT_AUDIO_FILE, LINE_INDEX_TO_SEARCH_TERM_FILE,
-                                  SYNCHRONIZED_SCRIPT_OUTPUT_FILE, TIMESTAMPS_ABSOLUTE_FILE,
-                                  AUDIO_START_DELAY_SECONDS)
+    run_audio_script_synchronizer (SCRIPT_AUDIO_FILE, LINE_INDEX_TO_SEARCH_TERM_FILE, SYNCHRONIZED_SCRIPT_OUTPUT_FILE, TIMESTAMPS_ABSOLUTE_FILE, AUDIO_START_DELAY_SECONDS)
     # ---------------------
 
-    # 2) fetch CANDIDATES (2 videos + 3 images per scene)
+    # 2) fetch images
     print("====================================================================")
-    print("Loading stock footage candidates...")
+    print("Loading stock footage...")
 
-    candidates_data = load_from_cache(CANDIDATES_CACHE_FILE)
-    if candidates_data:
-        print(f"✅ Loaded {len(candidates_data)} candidate bundle(s) from cache.")
+    # Try to load from cache first
+    script_text_to_media_url_and_runtime = load_from_cache(FINAL_SCRIPT_AND_CLIPS)
+
+    if script_text_to_media_url_and_runtime:
+        print("✅ Loaded footage mapping from cache.")
     else:
-        print("🔍 Cache miss. Fetching candidates from Pexels...")
-        candidates_data = load_stock_footage(scriptTextToPexelSearch)
-        save_to_cache(candidates_data, CANDIDATES_CACHE_FILE)
-        print(f"💾 Cached {len(candidates_data)} candidate bundle(s) to {CANDIDATES_CACHE_FILE}.")
+        print("🔍 Cache miss. Fetching from Pexels...")
+        # If cache is empty, run the original function
+        script_text_to_media_url_and_runtime = load_stock_footage(scriptTextToPexelSearch)
+        
+        # Save the results for next time
+        save_to_cache(script_text_to_media_url_and_runtime, FINAL_SCRIPT_AND_CLIPS)
+        print("💾 Results cached to disk.")
 
-    # ---- PRINT THE CANDIDATES MAP ----
+    # ---- PRINT THE MAP BEFORE RETURNING ----
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print("\n=== SCRIPT → CANDIDATE MEDIA ===")
-    for entry in candidates_data:
+    print("\n=== SCRIPT → MEDIA MAP ===")
+
+    for entry in script_text_to_media_url_and_runtime:
         print(f"\nSCRIPT: {entry['script_text']}")
-        print(f"  needs {entry.get('num_clips_needed', 1)} clip(s), "
-              f"each ≤ {entry.get('max_runtime_per_clip_seconds', 0):.2f}s")
-        cands = entry.get("candidates", {}) or {}
-        print("  VIDEOS:")
-        for item in cands.get("videos", []):
-            for url, trim in item.items():
-                print(f"    - {url}  (trim: {trim}s)")
-        print("  IMAGES:")
-        for item in cands.get("images", []):
-            for url, trim in item.items():
-                print(f"    - {url}  (trim: {trim}s)")
+        print("FOOTAGE:")
+
+        for item in entry["footage"]:
+            # each item is a dict with 1 key:value pair
+            for url, score in item.items():
+                print(f"  - {url}  (score: {score})")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
     additional_steps_save_for_later()
 
-    # 2.5) review the candidates
-    print("====================================================================")
-    print("Launching media review GUI...")
-    final_data, has_manual = run_media_review(
-        candidates_data=candidates_data,
-        history_file=str(HISTORY_FILE),
-        review_state_file=REVIEW_STOCK_FOOTAGE_OUTPUT_FILE,
-        cache_dir=_CACHE_DIR,
+    #2.5) 
+    # review fetched footage
+    # TODO does this account for how long the clip actually is? with the new system of max runtime seconds???
+    run_media_review(
+        script_text_to_media_url_and_runtime=script_text_to_media_url_and_runtime,
+        stock_footage_map_path=STOCK_FOOTAGE_TO_DOWNLOADED_MEDIA_FILE,
+        output_file=REVIEW_STOCK_FOOTAGE_OUTPUT_FILE,
     )
 
-    if has_manual:
-        # Instructions have already been printed by run_media_review.
-        # User must drop their files, edit the JSONs, then re-run.
-        print("\n[main] Exiting so you can perform the manual fixes above.")
-        print("       Re-run when done — already-decided scenes will be skipped.")
-        sys.exit(0)
 
-    # All scenes decided automatically — persist the legacy-format mapping
-    # that stitch_together_video expects.
-    save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
-    print(f"💾 Final script→clips map written to {FINAL_SCRIPT_AND_CLIPS}.")
-
-    # ---- PRINT THE FINAL CHOSEN MAP ----
-    print("\n=== FINAL SCRIPT → CHOSEN MEDIA ===")
-    for entry in final_data:
-        print(f"\nSCRIPT: {entry['script_text']}")
-        for item in entry["footage"]:
-            for url, trim in item.items():
-                print(f"  ✓ {url}  (trim: {trim}s)")
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-    # 3)
+    # 3) 
     # Stitch together into initial video
-    # - maybe option to add the voice track? no probs not.
+    # - maybe option to add the voice track? no probs not. 
     print("====================================================================")
-    stitch_together_video(FINAL_SCRIPT_AND_CLIPS, TIMESTAMPS_ABSOLUTE_FILE, HISTORY_FILE, SCRIPT_AUDIO_FILE, OUTPUT_FILE)
+    # stitch_together_video(FINAL_SCRIPT_AND_CLIPS, HISTORY_FILE, SCRIPT_AUDIO_FILE, OUTPUT_FILE)
+    stitch_together_video(FINAL_SCRIPT_AND_CLIPS,TIMESTAMPS_ABSOLUTE_FILE, HISTORY_FILE, SCRIPT_AUDIO_FILE, OUTPUT_FILE)
 
     # et.log(DEBUG, f"Pipeline complete.  Final video: '{final_video}'")
 

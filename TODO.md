@@ -1,3 +1,12 @@
+
+ask opus to add a few more clauses to the script generator thing.
+
+todo;
+- copy across the new claude code + re-test...?
+
+
+------------
+
 instead of just fetching one video clip...
 fetch 2 video clips and 3 images.
 then display all on screen at same time (can do in lower resolution that original if that helps)
