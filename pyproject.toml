@@ -15,4 +15,7 @@ dependencies = [
     "spacy",
     "opencv-python",
     "pygame",
+    "moviepy >= 2.0",
+    "rembg",
+    "numpy"
 ]
