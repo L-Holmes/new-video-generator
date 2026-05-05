@@ -5,8 +5,9 @@ TODO MEGA MASTER PLAN:
 - ... 
 - Create a youtube formula!
     - add to list of rules:
-        - go through the big best youtubers.
+        - go through the big best youtubers. (will of course need a list first! I think i have on already on the website...)
         - analyse what they do.. how they structure, and add to my list of rules
+        - + perhaps also have a seperate document for general patterns underneath each.. (I could make a youtube video on this!)
     - .......
     - what lines should have what...
     - ... have like 5 options to pick from for certain things...
@@ -16,15 +17,8 @@ TODO MEGA MASTER PLAN:
             - each line will need the context of the other lines/scenes
             - identify what type of line it is. 
             - if its linked to other scenes, need to identify those (e.g. via index or something)
-
-
-
-----------
-
-- when gif as background isn't scaled correctly- image is stretched- it should be scaled and then just have black borders for any remaining space...
-    - in fact, double check this for all backgrounds etc...
-- do i add a way for 
-- go through the test things- remove things like the one by transition tests--- just do all those as a single test where i add like 10 images all with different transitions...
+- also just research 'youtube formula' both on youtube and online...
+    - i assume it'll be mostly script guides but just write them down....
 
 ----------
 
@@ -43,6 +37,8 @@ TODO:
     - e.g. show manhatten and then manhatten with text overlayed at slight angle: "traded for pepper"
 - do i intersplice text coming on the screen as I say it, for dull moments? 
     - is that even possible? Like the one by group of 5 words flash on screen in successive order, synched to the script???
+    - words on screen.
+    --> probs have a seperate python file that does this, and interacts with the audio script synchronizer thing and how it uses that thing to determine when words go...
 - hmmm
     - do i add a thing like cgp grey where you zoom out and then you show the same picture but on like a whiteboard and then a stickman, representing the teacher, sitting there???
     - what else could i use this method in? 
@@ -71,11 +67,11 @@ TODO:
 
 ------------
 
-
 TODO:
 - Add things to make the intro better
-    - e.g. the custom 'built on' images that add a new image to an arrangement as it goes on...
     - e.g. ??? whatever like highlighting or whatever to make intro more interesting...
+        - highlighting (feels manual...)
+        - darkening rest of area apart from the thing you're talking about (again, feels manual...)
 - Add the sound effects thing.
     - Download loads of sound effects
     - Have a system for adding the sound effects...
