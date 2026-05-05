@@ -19,6 +19,28 @@ TODO:
 - Link up wikipedia etc. if possible...
 - For longer things... like:  'Manhattan. Yep... New York City was traded for nutmeg.'
     - e.g. show manhatten and then manhatten with text overlayed at slight angle: "traded for pepper"
+- do i intersplice text coming on the screen as I say it, for dull moments? 
+    - is that even possible? Like the one by group of 5 words flash on screen in successive order, synched to the script???
+- hmmm
+    - do i add a thing like cgp grey where you zoom out and then you show the same picture but on like a whiteboard and then a stickman, representing the teacher, sitting there???
+    - what else could i use this method in? 
+        - (like a buid a library of reactions and add them at appropriate times in the video????)
+- maybe....
+    - can i add a system to identify sort of stock footage applicable scenes?
+    - because only clearly visible landscapes or whatever is good for stock footage... or maybe like black pepper type things... 
+    - but the rest will need to be more specific????
+- YEAH!
+    - I just need to build a system..
+    - so like 'for this [group of lines]... i do this...
+    - ... if longer than x seconds/words and its [this type of line].. i do this..
+    - ... and then I add this at a random point..
+    - SO:
+        - need to somehow categorize lines and groups of lines so that i can identify what to do!!!
+        - then make a document that details all of the rules
+        - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        - (need to watch some youtubers to get some ideas! ideally the good ones...)
     
 
 ------------
