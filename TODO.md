@@ -1,8 +1,26 @@
 
+
+TODO MEGA MASTER PLAN:
+- todo: go through the below notes...
+- ... 
+- Create a youtube formula!
+    - what lines should have what...
+    - ... have like 5 options to pick from for certain things...
+    - ... much like the script.. have a sort of formula or a few different variations for the script...
+    - Add line categroisation stage
+        - Go through the text.
+            - each line will need the context of the other lines/scenes
+            - identify what type of line it is. 
+            - if its linked to other scenes, need to identify those (e.g. via index or something)
+
+
+
 ----------
 
 - when gif as background isn't scaled correctly- image is stretched- it should be scaled and then just have black borders for any remaining space...
     - in fact, double check this for all backgrounds etc...
+- do i add a way for 
+- go through the test things- remove things like the one by transition tests--- just do all those as a single test where i add like 10 images all with different transitions...
 
 ----------
 
@@ -41,6 +59,10 @@ TODO:
         - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         - (need to watch some youtubers to get some ideas! ideally the good ones...)
+- hmmmm!!
+    - maybe just the explainer thing with teacher stickman each time?
+    - analyse the intros of the best faceless youtubers...
+    - get a plan for an intro.. or a few variations of intro which will always just work real good straight away...
     
 
 ------------
@@ -63,3 +85,12 @@ TODO LATER:
 - Get picture of the person
 - pipe into remove background
 - compose that on top of the animated background
+
+
+
+
+----
+
+debian 13
+- manual method of locking the screen? (e.g. for if I'm out and about??? (but when im just at home it doesn't lock?)
+        - also annoying with that error box that has started popping up saying that the screen didn't lock
