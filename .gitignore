@@ -1,6 +1,8 @@
 venv/
 CACHE/
 OUTPUT/
+_OUTPUT/
+_BACKGROUNDS/
 .venv/
 .env
 .pytest_cache/
@@ -8,5 +10,10 @@ OUTPUT/
 __pycache__/
 *.wav
 *.mp4
+*.png
+*.jpeg
+*.jpg
+*.gif
+*.avif
 tmp_stitch/
 uv.lock
