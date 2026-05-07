@@ -54,3 +54,11 @@ tech | fireship  | x |  y
 animation story time| odd1stout  | x |  y
 animation story time| odd1stout  | x |  y
 animation story time| odd1stout  | x |  y
+
+
+# running tests
+
+
+
+uv run python -m spacy download en_core_web_sm
+uv run python -m pytest test_sentence_splitter.py -v

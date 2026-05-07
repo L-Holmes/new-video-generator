@@ -1,3 +1,37 @@
+TODO:
+
+Add some more example texts for the sentence splitter. 
+
+
+Then ask claude to refine.
+
+
+
+
+-----------------
+
+
+- Optimise and improve my sentence splitter.
+- Add as many labled sections as possible, with comments that mention exmaples of their uses
+- also modify existing ones as necessary (e.g. you may want to add generic exceptions)
+- don't hardcode for any specific word examples- must be generalisable to anything!
+
+Here is the existing code:
+
+
+And here are my examples of *approximate* before and after of what you should aim for. 
+(You may want to create some pytests and see if you can get within say 90% accuracy of these!!!)
+here they are:
+
+
+
+
+
+
+-----------------
+
+
+
 
 
 TODO MEGA MASTER PLAN:
@@ -63,8 +97,14 @@ TODO:
     - maybe just the explainer thing with teacher stickman each time?
     - analyse the intros of the best faceless youtubers...
     - get a plan for an intro.. or a few variations of intro which will always just work real good straight away...
+- hm
+    - do i overlay like question marks that are kind of transparent on screen if we have questions?!?!?!?
+    - what other repeatable things are easily recognisable with NLP???
+- hmm
+    - would it be possible to integrate my stickman idea?
+    --> like match the sentiment of the sentence to a stick man?  like always have a stick person for comments people... (everytime I say "now, you may be thinking..."
+    --> or have the stick man at the desk or in the science lab...
     
-
 ------------
 
 TODO:

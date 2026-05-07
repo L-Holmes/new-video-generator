@@ -17,5 +17,11 @@ dependencies = [
     "pygame",
     "moviepy >= 2.0",
     "rembg",
-    "numpy"
+    "numpy",
+    "pytest>=9.0.3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
 ]
