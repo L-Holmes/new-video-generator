@@ -3,8 +3,9 @@ TODO:
 Add some more example texts for the sentence splitter. 
 
 
-Then ask claude to refine.
 
+- get some sound effects added...
+- link up wikipedia etc...
 
 
 
@@ -116,6 +117,14 @@ TODO:
     - Download loads of sound effects
     - Have a system for adding the sound effects...
 
+    ------------
+
+TODO LATER ISH
+- start planning the finance videos
+- find out how I can do that audio thing done by https://youtu.be/AGkRkNuhO_o?si=Jf38aI0woBjtVYAd ... 
+
+------------
+
 TODO LATER:
 - maybe link up the other image providers??!?!?!?!? (or actually... just stick with pexels for now...)
 
@@ -125,6 +134,28 @@ TODO LATER:
 - Get picture of the person
 - pipe into remove background
 - compose that on top of the animated background
+
+
+
+
+# Review against plan:
+
+1) Add things one by one
+- Add one by one, build on previous image..
+2) Paint..
+- Cut out pictures of subjects, places on blank background
+- ==> shadows, colour grading etc...
+3) custom animated
+- e.g. custom animated graph (e.g. bar chart or line going up.. . numbers ticking up...)
+4) visual hierarchy
+- blur unimportant
+- circle, highlight, arrow important..
+- bigger, brighter, moving...
+
+5) ==> reuse library of icons...
+
+
+"how can I design this visually step by step" 
 
 
 

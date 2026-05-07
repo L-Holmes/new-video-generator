@@ -19,6 +19,7 @@ import re
 import pytest
 from typing import List
 
+from sentence_splitter import split_text_into_sections
 
 
 # ---------------------------------------------------------------------------
