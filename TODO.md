@@ -1,3 +1,19 @@
+
+
+TODO: ask claude...
+
+ive created my own test again.
+Please analyse the results, and hen update / create new rules for the sentence splitter code in order for it to pass all flawlessly (or near flawlessly)
+
+I've annotated. any with 'fine' you don't have to worry about. 
+any others ive either left or added comments. 
+these need addressing. 
+
+here are the results:
+
+
+
+------------
 TODO:
 
 Add some more example texts for the sentence splitter. 

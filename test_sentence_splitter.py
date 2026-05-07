@@ -1,7 +1,7 @@
 """
 test_sentence_splitter.py
 =========================
-Run with:   pytest test_sentence_splitter.py -v
+ uv run python -m pytest test_sentence_splitter.py -v
 
 Two flavours of test:
 
