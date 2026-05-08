@@ -288,33 +288,30 @@ test #80) Because once you know what to look for, deserts start rev... :: FALSE
 - expected: ['Because once you know what to look for,', 'deserts start revealing evidence of entirely different worlds', 'hidden beneath them.']
  → 0%
 
- Looked up to here!
-jump
-
-test #81) That’s also why aerial footage works so well for this topic. :: FALSE
+test #81) That’s also why aerial footage works so well for this topic. :: FALSE - not sure why this split...
 - actual: ['That’s also why aerial footage works', 'so well for this topic.']
 - expected: ['That’s also why aerial footage works so well for this topic.']
  → 0%
-test #82) From ground level, fossils can look fragmented and abstract. :: FALSE
+test #82) From ground level, fossils can look fragmented and abstract. :: FALSE  - fineish - should split on the two things.... could even split on 'fragmented'... its about how they look... although.. this isn't desperate...
 - actual: ['From ground level,', 'fossils can look fragmented and abstract.']
 - expected: ['From ground level,', 'fossils can look fragmented and', 'abstract.']
  → 33%
-test #83) From above, suddenly you see the outline of giant marine ... :: FALSE
+test #83) From above, suddenly you see the outline of giant marine ... :: FALSE - fine
 - actual: ['From above,', 'suddenly you see', 'the outline of giant marine creatures embedded into endless dry terrain.']
 - expected: ['From above, suddenly you see the outline of', 'giant marine creatures embedded into endless dry terrain.']
  → 0%
-test #84) Skeletons stretched across landscapes where oceans no lon... :: FALSE
+test #84) Skeletons stretched across landscapes where oceans no lon... :: FALSE - fine but again, why landscapes by itself? because it should be 'landscapes where oceans no longere exist'
 - actual: ['Skeletons stretched across', 'landscapes', 'where oceans no longer exist.']
 - expected: ['Skeletons stretched across landscapes where oceans no longer exist.']
  → 0%
-test #85) It almost looks like the planet glitched. :: FALSE
+test #85) It almost looks like the planet glitched. :: FALSE - why?
 - actual: ['It almost looks', 'like the planet glitched.']
 - expected: ['It almost looks like the planet glitched.']
  → 0%
 test #86) And in a way, it did. :: TRUE
 - actual: ['And in a way,', 'it did.']
 - expected: ['And in a way,', 'it did.']
-test #87) Because Earth’s surface is far less stable than humans in... :: FALSE
+test #87) Because Earth’s surface is far less stable than humans in... :: FALSE - fineish humans here isn't a noun... I'm not that bothered about this... 
 - actual: ['Because Earth’s surface is far less stable than', 'humans instinctively assume.']
 - expected: ['Because Earth’s surface is far less stable than humans instinctively assume.']
  → 0%
@@ -327,23 +324,23 @@ test #89) Seas disappear. :: TRUE
 test #90) Climates flip dramatically. :: TRUE
 - actual: ['Climates flip dramatically.']
 - expected: ['Climates flip dramatically.']
-test #91) Entire ecosystems get erased and replaced repeatedly over... :: FALSE
+test #91) Entire ecosystems get erased and replaced repeatedly over... :: FALSE - fineish.. maybe split after the and rather than before it...
 - actual: ['Entire ecosystems get erased', 'and replaced repeatedly over deep time.']
 - expected: ['Entire ecosystems get erased and replaced repeatedly over deep time.']
  → 0%
-test #92) We just happen to live during one temporary version of th... :: FALSE
+test #92) We just happen to live during one temporary version of th... :: FALSE - fineish i personally wouldn't split and don't nuderstand it...
 - actual: ['We just happen to live during', 'one temporary version of the map.']
 - expected: ['We just happen to live during one temporary version of the map.']
  → 0%
-test #93) Which means someday, millions of years from now, some fut... :: FALSE
+test #93) Which means someday, millions of years from now, some fut... :: FALSE - should defo split on fossils- again any clealy picturable nouns.. same for 'our oceans'.. notice a pattern? 
 - actual: ['Which means someday,', 'millions of years from now,', 'some future species might stand in another desert looking at fossils from', 'our oceans wondering', 'how water ever existed there at all.']
 - expected: ['Which means someday,', 'millions of years from now, some', 'future species might stand in another desert looking', 'at fossils from our oceans', 'wondering how water ever existed there at all.']
  → 20%
-test #94) And honestly, that might be the creepiest part. :: FALSE
+test #94) And honestly, that might be the creepiest part. :: FALSE - finesish... its not really a reveal... because its abstract.. ideally dont just want 'that might be' by itself because what iamge would be associated?
 - actual: ['And honestly,', 'that might be', 'the creepiest part.']
 - expected: ['And honestly, that might be the creepiest part.']
  → 0%
-test #95) Not that there are whale bones in deserts. :: FALSE
+test #95) Not that there are whale bones in deserts. :: FALSE - fine
 - actual: ['Not that there are', 'whale bones in deserts.']
 - expected: ['Not that there are whale bones in deserts.']
  → 0%
@@ -353,18 +350,18 @@ test #96) That deserts themselves are only temporary too. :: TRUE
 whale_fossils_map → 42/96 passed
 
 === flat_places_map (89 tests) ===
-test #1) Some places on Earth are so flat… satellites use them to ... :: FALSE
+test #1) Some places on Earth are so flat… satellites use them to ... :: FALSE - fine
 - actual: ['Some places on Earth are', 'so flat…', 'satellites use them to check', 'if they’re broken.']
 - expected: ['Some places on Earth are', 'so flat…', 'satellites use them to check if they’re broken.']
  → 50%
 test #2) Not metaphorically. :: TRUE
 - actual: ['Not metaphorically.']
 - expected: ['Not metaphorically.']
-test #3) NASA literally calibrates space instruments using giant n... :: FALSE
+test #3) NASA literally calibrates space instruments using giant n... :: FALSE - calibrates after because that is what they do... and then it switches to differnt visual with 'giant...'
 - actual: ['NASA literally calibrates', 'space instruments using giant natural surfaces so level', 'that even tiny elevation changes become scientifically useful.']
 - expected: ['NASA literally', 'calibrates space instruments using', 'giant natural surfaces so level', 'that even tiny elevation changes become scientifically useful.']
  → 0%
-test #4) Which sounds impossible because humans are terrible at un... :: FALSE
+test #4) Which sounds impossible because humans are terrible at un... :: FALSE - fine...
 - actual: ['Which sounds impossible because humans are terrible at understanding true flatness.']
 - expected: ['Which sounds impossible because', 'humans are terrible at understanding', 'true flatness.']
  → 0%
@@ -374,11 +371,11 @@ test #5) A road looks flat. :: TRUE
 test #6) An ocean looks flat. :: TRUE
 - actual: ['An ocean looks flat.']
 - expected: ['An ocean looks flat.']
-test #7) Then you zoom out and realize both are full of imperfecti... :: FALSE
+test #7) Then you zoom out and realize both are full of imperfecti... :: FALSE - fine
 - actual: ['Then you zoom out and realize', 'both are full of', 'imperfections.']
 - expected: ['Then you zoom out and realize', 'both are full of imperfections.']
  → 33%
-test #8) But in Bolivia, there’s a place so absurdly level that af... :: FALSE
+test #8) But in Bolivia, there’s a place so absurdly level that af... :: FALSE - fine
 - actual: ['But in Bolivia,', 'there’s a place so absurdly level that after', 'rain,', 'the horizon disappears completely.']
 - expected: ['But in Bolivia,', 'there’s a place so absurdly level that', 'after rain,', 'the horizon disappears completely.']
  → 50%
@@ -388,7 +385,7 @@ test #9) Salar de Uyuni looks fake even in raw footage. :: TRUE
 test #10) An endless white salt plain stretching beyond visibility. :: TRUE
 - actual: ['An endless white salt plain stretching beyond visibility.']
 - expected: ['An endless white salt plain stretching beyond visibility.']
-test #11) Then rainwater forms a thin reflective layer across the s... :: FALSE
+test #11) Then rainwater forms a thin reflective layer across the s... :: FALSE - thin reflective layer is fine but don't split on 'the surface and suddenly', keep that part of same...
 - actual: ['Then rainwater forms', 'a thin reflective layer across', 'the surface and suddenly', 'the ground becomes a perfect mirror.']
 - expected: ['Then rainwater forms a thin reflective layer across the surface and suddenly', 'the ground becomes a perfect mirror.']
  → 0%
@@ -404,39 +401,39 @@ test #14) No visible horizon line separating them. :: TRUE
 test #15) Cars appear to float through clouds. :: TRUE
 - actual: ['Cars appear to float through clouds.']
 - expected: ['Cars appear to float through clouds.']
-test #16) People look like they’re walking through empty space. :: FALSE
+test #16) People look like they’re walking through empty space. :: FALSE - fine
 - actual: ['People look', 'like they’re walking through empty space.']
 - expected: ['People look like they’re walking through empty space.']
  → 0%
-test #17) And the reason it works so perfectly is because Salar de ... :: FALSE
+test #17) And the reason it works so perfectly is because Salar de ... :: FALSE - again why split the first sentence? other splits im not as bothered about
 - actual: ['And the reason', 'it works so perfectly is', 'because Salar de Uyuni is unbelievably flat —', 'deviations across', 'huge distances measure in centimeters.']
 - expected: ['And the reason it works so perfectly is because Salar de Uyuni is', 'unbelievably flat —', 'deviations across huge distances measure in centimeters.']
  → 0%
-test #18) That precision matters because satellites need known refe... :: FALSE
+test #18) That precision matters because satellites need known refe... :: FALSE - don't want just orbit by itself...
 - actual: ['That precision matters', 'because satellites need known reference surfaces to calibrate instruments measuring elevation and distance from', 'orbit.']
 - expected: ['That precision matters because', 'satellites need', 'known reference surfaces to', 'calibrate instruments measuring', 'elevation', 'and distance from orbit.']
  → 0%
-test #19) If you already know a landscape is almost perfectly level... :: FALSE
+test #19) If you already know a landscape is almost perfectly level... :: FALSE - fine
 - actual: ['If you already know a landscape is almost perfectly level,', 'you can compare satellite readings against it with', 'incredible accuracy.']
 - expected: ['If you already know a landscape is almost perfectly level,', 'you can compare satellite readings against it with incredible accuracy.']
  → 33%
-test #20) Which means somewhere above Earth, space hardware is lite... :: FALSE
+test #20) Which means somewhere above Earth, space hardware is lite... :: FALSE - fine
 - actual: ['Which means somewhere above Earth,', 'space hardware is literally checking itself against', 'a giant prehistoric lakebed in Bolivia.']
 - expected: ['Which means somewhere above Earth,', 'space hardware is literally', 'checking itself against a', 'giant prehistoric lake bed in Bolivia.']
  → 25%
-test #21) And honestly, the place feels extraterrestrial enough for... :: FALSE
+test #21) And honestly, the place feels extraterrestrial enough for... :: FALSE - fineish, again.. 'the place feels' i can't really but a visual with that...
 - actual: ['And honestly,', 'the place feels', 'extraterrestrial enough for it.']
 - expected: ['And honestly, the place feels extraterrestrial enough for it.']
  → 0%
-test #22) The salt flat formed when ancient lakes evaporated thousa... :: FALSE
+test #22) The salt flat formed when ancient lakes evaporated thousa... :: FALSE - defo split on massive mineral... 
 - actual: ['The salt flat formed', 'when ancient lakes evaporated', 'thousands of years ago, leaving behind massive mineral deposits smoothed naturally over immense timescales.']
 - expected: ['The salt flat formed when', 'ancient lakes', 'evaporated thousands of years ago, leaving behind', 'massive mineral deposits smoothed naturally over immense timescales.']
  → 0%
-test #23) What remains is this gigantic geometric surface where per... :: FALSE
+test #23) What remains is this gigantic geometric surface where per... :: FALSE - don't need 'is' and 'this', we want to split close to the adjective/noun.. 'is this' is too many words...
 - actual: ['What remains', 'is this gigantic geometric surface', 'where perspective starts malfunctioning.']
 - expected: ['What remains is this', 'gigantic geometric surface where perspective starts malfunctioning.']
  → 0%
-test #24) That’s the weird thing about extremely flat places: your ... :: FALSE
+test #24) That’s the weird thing about extremely flat places: your ... :: FALSE - fine
 - actual: ['That’s the weird thing about', 'extremely flat places:', 'your brain relies', 'on irregularities to judge scale.']
 - expected: ['That’s the weird thing about extremely flat places:', 'your brain relies on irregularities to judge scale.']
  → 0%
@@ -449,25 +446,29 @@ test #26) Hills. :: TRUE
 test #27) Anything. :: TRUE
 - actual: ['Anything.']
 - expected: ['Anything.']
-test #28) Remove them completely and humans get visually confused v... :: FALSE
+test #28) Remove them completely and humans get visually confused v... :: FALSE - again, you are revealing what the humans get... defo split...
 - actual: ['Remove them completely and', 'humans get visually confused very fast.']
 - expected: ['Remove them completely and humans get', 'visually confused very fast.']
  → 0%
 test #29) Distances become impossible to estimate. :: TRUE
 - actual: ['Distances become impossible to estimate.']
 - expected: ['Distances become impossible to estimate.']
-test #30) Objects seem smaller or larger than they should. :: FALSE
+test #30) Objects seem smaller or larger than they should. :: FALSE - fine
 - actual: ['Objects seem', 'smaller or larger than they should.']
 - expected: ['Objects seem', 'smaller or', 'larger than they should.']
  → 33%
-test #31) Horizon lines blur into atmosphere until the landscape st... :: FALSE
+test #31) Horizon lines blur into atmosphere until the landscape st... :: FALSE - again dont split into just one word, they are related....
 - actual: ['Horizon lines', 'blur', 'into atmosphere', 'until the landscape stops feeling real altogether.']
 - expected: ['Horizon lines', 'blur into atmosphere until', 'the landscape stops feeling real altogether.']
  → 25%
-test #32) Australia’s Nullarbor Plain has that exact psychological ... :: FALSE
+test #32) Australia’s Nullarbor Plain has that exact psychological ... :: FALSE - fineish... although again, second half isn't really a concrete tangible thing...
 - actual: ['Australia’s Nullarbor Plain has', 'that exact psychological effect.']
 - expected: ['Australia’s Nullarbor Plain has that exact psychological effect.']
  → 0%
+
+ Looked up to here!
+jump
+
 test #33) The name literally comes from Latin for “no trees,” which... :: FALSE
 - actual: ['The name literally comes', 'from Latin for', '“no trees,”', 'which is already ominous.']
 - expected: ['The name literally comes from Latin for', '“no trees,”', 'which is already ominous.']
