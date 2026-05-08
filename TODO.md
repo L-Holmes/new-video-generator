@@ -1,7 +1,11 @@
 
 
-TODO: ask claude...
+TODO: 
+- go through the output marking fine on tihngs that are fine...
+- wait till 12....
+- then ask claude...
 
+```
 ive created my own test again.
 Please analyse the results, and hen update / create new rules for the sentence splitter code in order for it to pass all flawlessly (or near flawlessly)
 
@@ -9,9 +13,13 @@ I've annotated. any with 'fine' you don't have to worry about.
 any others ive either left or added comments. 
 these need addressing. 
 
+
+Ensure that you seperately address every single issue that is occuring amongst each of the failed (non fine) lines.
+
 here are the results:
 
 
+```
 
 ------------
 TODO:
