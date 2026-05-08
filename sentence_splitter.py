@@ -227,12 +227,11 @@ def _nlp() -> "spacy.language.Language":
 # =============================================================================
 
 def _prev_split(splits: Set[int], i: int) -> int:
-    """Largest split index strictly less than *i*. (0 always present.)"""
-    return max(s for s in splits if s < i)
-
+    """Largest split index strictly less than *i*."""
+    return max((s for s in splits if s < i), default=0)
 
 def _next_split(splits: Set[int], i: int, doc_len: int) -> int:
-    """Smallest split index strictly greater than *i*. (len(doc) always present.)"""
+    """Smallest split index strictly greater than *i*."""
     return min((s for s in splits if s > i), default=doc_len)
 
 
@@ -1232,6 +1231,50 @@ def _throwaway_direction(doc: Doc, lo: int, hi: int) -> str:
         return "bwd"
     return "bwd"
 
+def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]]) -> List[str]:
+    """
+    Apply the smart head-aware merge.
+
+    Refinement: NEVER glue a throwaway BACKWARD across a sentence boundary —
+    if the previous chunk ends in HARD_PUNCT, force forward gluing instead.
+    This prevents bugs like "Not near" being appended to a previous "a desert.".
+    """
+    out: List[str] = []
+    fwd_buf = ""
+
+    for lo, hi in raw:
+        text = doc[lo:hi].text.strip()
+        if not text:
+            continue
+
+        if _is_throwaway_span(doc, lo, hi):
+            direction = _throwaway_direction(doc, lo, hi)
+            # don't glue across sentence boundaries — go forward instead
+            if direction == "bwd" and out and out[-1] and out[-1][-1] in HARD_PUNCT:
+                direction = "fwd"
+            # SPECIAL: if span is a lone dash and previous chunk ends in a
+            # closing quote ("…Whales" + "—"), glue the dash backward to the
+            # quote (it closes a parenthetical containing the quote).
+            if (direction == "fwd" and out
+                    and len(text) <= 2 and any(d in text for d in DASH_PUNCT)
+                    and out[-1].rstrip() and out[-1].rstrip()[-1] in CLOSE_QUOTES):
+                direction = "bwd"
+            if direction == "bwd" and out:
+                out[-1] = (out[-1] + " " + text).strip()
+            else:
+                fwd_buf += text + " "
+        else:
+            out.append((fwd_buf + text).strip())
+            fwd_buf = ""
+
+    if fwd_buf:
+        if out:
+            out[-1] = (out[-1] + " " + fwd_buf).strip()
+        else:
+            out.append(fwd_buf.strip())
+
+    return out
+
 
 def _fuse_orphans(doc: Doc, chunks: List[str], raw: List[Tuple[int, int]]) -> List[str]:
     """
@@ -1310,48 +1353,8 @@ def _fuse_orphans(doc: Doc, chunks: List[str], raw: List[Tuple[int, int]]) -> Li
         out.append(cur)
         i += 1
     return out
-    """
-    Apply the smart head-aware merge.
 
-    Refinement: NEVER glue a throwaway BACKWARD across a sentence boundary —
-    if the previous chunk ends in HARD_PUNCT, force forward gluing instead.
-    This prevents bugs like "Not near" being appended to a previous "a desert.".
-    """
-    out: List[str] = []
-    fwd_buf = ""
 
-    for lo, hi in raw:
-        text = doc[lo:hi].text.strip()
-        if not text:
-            continue
-
-        if _is_throwaway_span(doc, lo, hi):
-            direction = _throwaway_direction(doc, lo, hi)
-            # don't glue across sentence boundaries — go forward instead
-            if direction == "bwd" and out and out[-1] and out[-1][-1] in HARD_PUNCT:
-                direction = "fwd"
-            # SPECIAL: if span is a lone dash and previous chunk ends in a
-            # closing quote ("…Whales" + "—"), glue the dash backward to the
-            # quote (it closes a parenthetical containing the quote).
-            if (direction == "fwd" and out
-                    and len(text) <= 2 and any(d in text for d in DASH_PUNCT)
-                    and out[-1].rstrip() and out[-1].rstrip()[-1] in CLOSE_QUOTES):
-                direction = "bwd"
-            if direction == "bwd" and out:
-                out[-1] = (out[-1] + " " + text).strip()
-            else:
-                fwd_buf += text + " "
-        else:
-            out.append((fwd_buf + text).strip())
-            fwd_buf = ""
-
-    if fwd_buf:
-        if out:
-            out[-1] = (out[-1] + " " + fwd_buf).strip()
-        else:
-            out.append(fwd_buf.strip())
-
-    return out
 
 
 # =============================================================================

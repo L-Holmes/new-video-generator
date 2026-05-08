@@ -1,1803 +1,503 @@
-
-=== whale_fossils_map (96 tests) ===
-test #1) One of the best places on Earth to find whale fossils… is... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['One of the best places on Earth to find', 'whale fossils…', 'is a desert.']
- → 0%
-test #2) Not near a desert. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Not near a desert.']
- → 0%
-test #3) In one. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['In one.']
- → 0%
-test #4) In Egypt, there’s a valley filled with ancient whale skel... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['In Egypt,', 'there’s a valley filled with', 'ancient whale skeletons sitting directly in the sand —', 'ribs,', 'vertebrae,', 'entire fossilized bodies baking under one of the driest climates on Earth.']
- → 0%
-test #5) Which feels impossible until you realize the desert used ... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Which feels impossible until you realize the desert used to be', 'an ocean.']
- → 0%
-test #6) And once that clicks, deserts start getting weird very fast. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+test #6) And once that clicks, deserts start getting weird very fast. :: FALSE - no - not sure why..
+- actual: ['And once that clicks,', 'deserts start', 'getting weird very fast.']
 - expected: ['And once that clicks, deserts start getting weird very fast.']
- → 0%
-test #7) Because some of the driest places humans can stand today ... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+test #7) Because some of the driest places humans can stand today ... :: FALSE  - no
+- actual: ['Because some of the driest places', 'humans can stand', 'today were underwater for', 'millions of years.']
 - expected: ['Because some of the driest places humans can stand today were', 'underwater for millions of years.']
- → 0%
-test #8) Entire seas vanished. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Entire seas vanished.']
- → 0%
-test #9) Ecosystems disappeared. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Ecosystems disappeared.']
- → 0%
-test #10) Then time buried everything under dust and rock until the... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Then time buried everything under dust and rock until the planet basically erased the evidence.']
- → 0%
-test #11) Except occasionally… bones stick out. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Except occasionally… bones stick out.']
- → 0%
-test #12) Wadi Al-Hitan in Egypt — literally “Valley of the Whales”... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+test #12) Wadi Al-Hitan in Egypt — literally “Valley of the Whales”... :: FALSE - no, why didn't it split on 'valley of the whales???' IS IN SPEACH MARKS ... is it because of the fancy speach marks? the ai ones that aren;t the '"' char? 
+- actual: ['Wadi Al-Hitan in Egypt —', 'literally “Valley of the Whales” —', 'looks', 'almost cinematic from above.']
 - expected: ['Wadi Al-Hitan in Egypt — literally', '“Valley of the Whales” —', 'looks almost cinematic from above.']
- → 0%
-test #13) Endless pale desert, rolling sand, rocky outcrops. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Endless pale desert,', 'rolling sand,', 'rocky outcrops.']
- → 0%
-test #14) Then the camera drops lower and suddenly there’s a whale ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Then the camera drops lower and suddenly there’s', 'a whale spine in the middle of nowhere.']
- → 0%
-test #15) Not a small fossil either. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Not a small fossil either.']
- → 0%
-test #16) Full skeletons over 15 meters long scattered across the d... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Full skeletons over', '15 meters long', 'scattered across the desert floor.']
- → 0%
-test #17) And these whales are incredibly important because they ca... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And these whales are incredibly important because they capture evolution mid-transition.']
- → 0%
-test #18) Some species still had tiny back legs — remnants from whe... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Some species still had tiny back legs — remnants from when', 'whale ancestors walked on land millions of years earlier.']
- → 0%
-test #19) That’s the surreal part. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That’s the surreal part.']
- → 0%
-test #20) You can stand in one of the driest landscapes on Earth lo... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['You can stand in one of the driest landscapes on Earth looking at', 'the skeleton of a creature that evolved for the ocean…', 'while surrounded by terrain that hasn’t seen meaningful rain in ages.']
- → 0%
-test #21) Your brain struggles to connect the two realities. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Your brain struggles to connect the two realities.']
- → 0%
-test #22) Desert. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Desert.']
- → 0%
-test #23) Whale. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Whale.']
- → 0%
-test #24) They shouldn’t overlap. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['They shouldn’t overlap.']
- → 0%
 test #25) But around 40 million years ago, this entire region was c... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But around 40 million years ago,', 'this entire region was covered', 'by the Tethys Sea.']
 - expected: ['But around', '40 million years ago, this entire region was covered by', 'the Tethys Sea.']
- → 0%
-test #26) Warm shallow water filled with marine life. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Warm shallow water filled with marine life.']
- → 0%
-test #27) Then geology shifted, oceans retreated, land rose upward,... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Then geology shifted,', 'oceans retreated,', 'land rose upward,', 'climates changed.']
- → 0%
-test #28) And eventually the sea disappeared completely. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And eventually', 'the sea disappeared completely.']
- → 0%
-test #29) Leaving whales stranded not physically… :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Leaving whales stranded not physically…']
- → 0%
-test #30) …but historically. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['…but historically.']
- → 0%
-test #31) That’s what fossils really are: moments trapped after the... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That’s what fossils really are:', 'moments trapped after the environment around them moved on.']
- → 0%
-test #32) And nowhere makes that clearer than the Atacama Desert in... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+test #32) And nowhere makes that clearer than the Atacama Desert in... :: FALSE - no
+- actual: ['And nowhere makes', 'that clearer than', 'the Atacama Desert in Chile.']
 - expected: ['And nowhere makes that clearer than', 'the Atacama Desert in Chile.']
- → 0%
-test #33) Because the Atacama is so dry it almost preserves things ... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Because the Atacama is so dry it almost preserves things too well.']
- → 0%
-test #34) Some weather stations there have gone years without recor... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Some weather stations there have gone years', 'without recording rainfall.']
- → 0%
-test #35) Parts of the landscape look genuinely Martian — cracked e... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Parts of the landscape look genuinely Martian —', 'cracked earth,', 'red rock,', 'salt flats,', 'almost no vegetation.']
- → 0%
-test #36) Yet buried within this hyper-arid desert are enormous mar... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Yet buried within this hyper-arid desert are', 'enormous marine fossil deposits.']
- → 0%
-test #37) Whales. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Whales.']
- → 0%
-test #38) Fish. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Fish.']
- → 0%
-test #39) Ancient sea creatures. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Ancient sea creatures.']
- → 0%
-test #40) Entire graveyards from ecosystems that vanished millions ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Entire graveyards from ecosystems that vanished', 'millions of years ago.']
- → 0%
-test #41) And scientists still debate exactly how some of these wha... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+test #41) And scientists still debate exactly how some of these wha... :: FALSE - no. 
+- actual: ['And scientists still debate', 'exactly how some of these whale concentrations formed', 'because certain sites contain huge numbers of skeletons packed together unusually densely.']
 - expected: ['And scientists still debate exactly how some of these', 'whale concentrations formed because', 'certain sites contain', 'huge numbers of skeletons', 'packed together unusually densely.']
- → 0%
-test #42) One theory suggests toxic algal blooms poisoned large gro... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+test #42) One theory suggests toxic algal blooms poisoned large gro... :: FALSE - no... 
+- actual: ['One theory suggests', 'toxic algal blooms poisoned large groups of marine animals repeatedly over', 'time.']
 - expected: ['One theory suggests', 'toxic algal blooms poisoned large groups of marine animals repeatedly over time.']
- → 0%
-test #43) Their bodies drifted into coastal areas, became buried in... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+test #43) Their bodies drifted into coastal areas, became buried in... :: FALSE - no this is a list... and it also has the verb 'fossilised'.. notice how we split on the two things you can picture...
+- actual: ['Their bodies drifted into coastal areas,', 'became buried in sediment, then eventually fossilized', 'as the landscape transformed completely around them.']
 - expected: ['Their bodies drifted into coastal areas, became', 'buried in sediment, then eventually', 'fossilized as the landscape transformed completely around them.']
- → 0%
-test #44) Which creates this eerie effect where the desert feels li... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Which creates this eerie effect where the desert feels like it’s', 'remembering being underwater.']
- → 0%
-test #45) That’s the strange emotional power of marine fossils in d... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That’s the strange emotional power of marine fossils in deserts.']
- → 0%
-test #46) They expose deep time in a very physical way. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['They expose deep time in', 'a very physical way.']
- → 0%
-test #47) Normally humans experience landscapes as permanent. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Normally humans experience landscapes as permanent.']
- → 0%
-test #48) Deserts feel ancient. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Deserts feel ancient.']
- → 0%
-test #49) Oceans feel ancient. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Oceans feel ancient.']
- → 0%
-test #50) But whale bones in the sand reveal both are temporary. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['But whale bones in the sand reveal both are temporary.']
- → 0%
-test #51) The Sahara went through this too. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The Sahara went through this too.']
- → 0%
-test #52) Right now people imagine the Sahara as endless dunes and ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Right now people imagine the Sahara as', 'endless dunes and', 'unbearable heat.']
- → 0%
-test #53) But parts of it were once green — rivers, lakes, vegetati... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+
+
+test #53) But parts of it were once green — rivers, lakes, vegetati... :: FALSE - no obvoiusly split on the list i don't get why this hasn't worked.. and then the obvious 'massive wildlife..' after you are revealing what is being supported.. and its something you can visualise...
+- actual: ['But parts of it were once green —', 'rivers,', 'lakes,', 'vegetation, entire ecosystems supporting massive wildlife populations.']
 - expected: ['But parts of it were once green —', 'rivers,', 'lakes,', 'vegetation,', 'entire ecosystems supporting', 'massive wildlife populations.']
- → 0%
-test #54) There were crocodiles there. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['There were crocodiles there.']
- → 0%
-test #55) Hippos. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Hippos.']
- → 0%
-test #56) And marine fossils scattered through regions that are now... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+
+test #56) And marine fossils scattered through regions that are now... :: FALSE - again, split on brutally dry... you are revealing what the regions are...
+- actual: ['And marine fossils scattered through', 'regions that are now brutally dry.']
 - expected: ['And marine fossils scattered through regions that are now', 'brutally dry.']
- → 0%
-test #57) The Earth changes climates so aggressively over geologica... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The Earth changes climates so aggressively over geological timescales that places can completely switch identities.']
- → 0%
-test #58) Ocean becomes desert. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Ocean becomes desert.']
- → 0%
-test #59) Forest becomes wasteland. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Forest becomes wasteland.']
- → 0%
-test #60) Seabed becomes mountain range. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Seabed becomes mountain range.']
- → 0%
-test #61) And humans are very bad at emotionally understanding time... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And humans are very bad at emotionally understanding timescales large enough for that transformation to happen.']
- → 0%
-test #62) That’s why these fossils feel uncanny. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That’s why these fossils feel uncanny.']
- → 0%
-test #63) Because they compress millions of years into one image. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Because they compress millions of years into', 'one image.']
- → 0%
-test #64) A whale skeleton in sand instantly forces your brain to i... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['A whale skeleton in', 'sand instantly forces your brain to imagine impossible environmental change.']
- → 0%
-test #65) And honestly, deserts preserve that evidence beautifully. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And honestly, deserts preserve that evidence beautifully.']
- → 0%
-test #66) No dense forests hiding fossils. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['No dense forests hiding fossils.']
- → 0%
-test #67) Very little rainfall eroding them away quickly. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Very little rainfall eroding them away quickly.']
- → 0%
-test #68) Just exposed landscapes where ancient bones slowly emerge... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Just exposed landscapes where', 'ancient bones slowly', 'emerge from the ground like', 'the Earth is uncovering its own memory.']
- → 0%
-test #69) Some skeletons at Wadi Al-Hitan are so well preserved tha... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+
+test #69) Some skeletons at Wadi Al-Hitan are so well preserved tha... :: FALSE - no, it reveals the visual thing 'the spine'... should split on that...
+- actual: ['Some skeletons at', 'Wadi Al-Hitan are so well preserved', 'that you can clearly trace the shape of the spine through', 'the desert surface.']
 - expected: ['Some skeletons at', 'Wadi Al-Hitan are so well preserved that you can clearly trace the shape of', 'the spine through the desert surface.']
- → 0%
-test #70) Ribs curve outward into the sand almost like the animal d... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Ribs curve outward into the sand', 'almost like the animal died recently.']
- → 0%
-test #71) Except it died before humans existed. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Except it died before humans existed.']
- → 0%
-test #72) Before ice ages. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Before ice ages.']
- → 0%
-test #73) Before modern continents looked the way they do now. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Before modern continents looked the way they do now.']
- → 0%
-test #74) That scale is hard to process. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That scale is hard to process.']
- → 0%
-test #75) And what’s fascinating is how often humans accidentally d... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['And what’s fascinating is how often humans', 'accidentally discover these sites.']
- → 0%
-test #76) Construction crews. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Construction crews.']
- → 0%
-test #77) Miners. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Miners.']
- → 0%
-test #78) Travelers. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Travelers.']
- → 0%
-test #79) People crossing empty landscapes suddenly noticing shapes... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+
+test #79) People crossing empty landscapes suddenly noticing shapes... :: FALSE - no should split on 'empty landscapes' as you are revleaing what they're crossing.. and again, we are revealing 'ancient vertebrae'... which is a noun you can visualise... but skull fragments is one word! don't split that one word come on you missed this last time as well!
+- actual: ['People crossing empty landscapes suddenly noticing', 'shapes in rock', 'that turn out to be ancient vertebrae or', 'skull', 'fragments.']
 - expected: ['People crossing', 'empty landscapes suddenly noticing', 'shapes in rock that turn out to be', 'ancient vertebrae or', 'skull fragments.']
- → 0%
-test #80) Because once you know what to look for, deserts start rev... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+
+test #80) Because once you know what to look for, deserts start rev... :: FALSE - no
+- actual: ['Because once you know', 'what to look for, deserts start', 'revealing evidence of entirely different worlds hidden beneath them.']
 - expected: ['Because once you know what to look for,', 'deserts start revealing evidence of entirely different worlds', 'hidden beneath them.']
- → 0%
-test #81) That’s also why aerial footage works so well for this topic. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That’s also why aerial footage works so well for this topic.']
- → 0%
-test #82) From ground level, fossils can look fragmented and abstract. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['From ground level,', 'fossils can look fragmented and', 'abstract.']
- → 0%
-test #83) From above, suddenly you see the outline of giant marine ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['From above, suddenly you see the outline of', 'giant marine creatures embedded into endless dry terrain.']
- → 0%
-test #84) Skeletons stretched across landscapes where oceans no lon... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Skeletons stretched across landscapes where oceans no longer exist.']
- → 0%
-test #85) It almost looks like the planet glitched. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It almost looks like the planet glitched.']
- → 0%
-test #86) And in a way, it did. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And in a way,', 'it did.']
- → 0%
-test #87) Because Earth’s surface is far less stable than humans in... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Because Earth’s surface is far less stable than humans instinctively assume.']
- → 0%
-test #88) Coastlines move. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Coastlines move.']
- → 0%
-test #89) Seas disappear. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Seas disappear.']
- → 0%
-test #90) Climates flip dramatically. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Climates flip dramatically.']
- → 0%
-test #91) Entire ecosystems get erased and replaced repeatedly over... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Entire ecosystems get erased and replaced repeatedly over deep time.']
- → 0%
-test #92) We just happen to live during one temporary version of th... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['We just happen to live during one temporary version of the map.']
- → 0%
-test #93) Which means someday, millions of years from now, some fut... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Which means someday,', 'millions of years from now, some', 'future species might stand in another desert looking', 'at fossils from our oceans', 'wondering how water ever existed there at all.']
- → 0%
-test #94) And honestly, that might be the creepiest part. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And honestly, that might be the creepiest part.']
- → 0%
-test #95) Not that there are whale bones in deserts. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Not that there are whale bones in deserts.']
- → 0%
-test #96) That deserts themselves are only temporary too. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That deserts themselves are only temporary too.']
- → 0%
-whale_fossils_map → 0/96 passed
 
 === flat_places_map (89 tests) ===
-test #1) Some places on Earth are so flat… satellites use them to ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Some places on Earth are', 'so flat…', 'satellites use them to check if they’re broken.']
- → 0%
-test #2) Not metaphorically. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Not metaphorically.']
- → 0%
-test #3) NASA literally calibrates space instruments using giant n... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+test #3) NASA literally calibrates space instruments using giant n... :: FALSE - no defo split on 'giant' as you are showing what they are using.. again visual things...
+- actual: ['NASA literally calibrates', 'space instruments using giant natural surfaces so level', 'that even tiny elevation changes become scientifically useful.']
 - expected: ['NASA literally', 'calibrates space instruments using', 'giant natural surfaces so level', 'that even tiny elevation changes become scientifically useful.']
- → 0%
-test #4) Which sounds impossible because humans are terrible at un... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Which sounds impossible because', 'humans are terrible at understanding', 'true flatness.']
- → 0%
-test #5) A road looks flat. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['A road looks flat.']
- → 0%
-test #6) An ocean looks flat. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['An ocean looks flat.']
- → 0%
-test #7) Then you zoom out and realize both are full of imperfecti... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Then you zoom out and realize', 'both are full of imperfections.']
- → 0%
-test #8) But in Bolivia, there’s a place so absurdly level that af... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['But in Bolivia,', 'there’s a place so absurdly level that', 'after rain,', 'the horizon disappears completely.']
- → 0%
-test #9) Salar de Uyuni looks fake even in raw footage. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Salar de Uyuni looks fake even in raw footage.']
- → 0%
-test #10) An endless white salt plain stretching beyond visibility. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['An endless white salt plain stretching beyond visibility.']
- → 0%
-test #11) Then rainwater forms a thin reflective layer across the s... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Then rainwater forms a thin reflective layer across the surface and suddenly', 'the ground becomes a perfect mirror.']
- → 0%
-test #12) Sky above. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Sky above.']
- → 0%
-test #13) Sky below. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Sky below.']
- → 0%
-test #14) No visible horizon line separating them. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['No visible horizon line separating them.']
- → 0%
-test #15) Cars appear to float through clouds. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Cars appear to float through clouds.']
- → 0%
-test #16) People look like they’re walking through empty space. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['People look like they’re walking through empty space.']
- → 0%
-test #17) And the reason it works so perfectly is because Salar de ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And the reason it works so perfectly is because Salar de Uyuni is', 'unbelievably flat —', 'deviations across huge distances measure in centimeters.']
- → 0%
-test #18) That precision matters because satellites need known refe... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That precision matters because', 'satellites need', 'known reference surfaces to', 'calibrate instruments measuring', 'elevation', 'and distance from orbit.']
- → 0%
-test #19) If you already know a landscape is almost perfectly level... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['If you already know a landscape is almost perfectly level,', 'you can compare satellite readings against it with incredible accuracy.']
- → 0%
-test #20) Which means somewhere above Earth, space hardware is lite... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Which means somewhere above Earth,', 'space hardware is literally', 'checking itself against a', 'giant prehistoric lake bed in Bolivia.']
- → 0%
-test #21) And honestly, the place feels extraterrestrial enough for... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And honestly, the place feels extraterrestrial enough for it.']
- → 0%
-test #22) The salt flat formed when ancient lakes evaporated thousa... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The salt flat formed when', 'ancient lakes', 'evaporated thousands of years ago, leaving behind', 'massive mineral deposits smoothed naturally over immense timescales.']
- → 0%
-test #23) What remains is this gigantic geometric surface where per... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['What remains is this', 'gigantic geometric surface where perspective starts malfunctioning.']
- → 0%
-test #24) That’s the weird thing about extremely flat places: your ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That’s the weird thing about extremely flat places:', 'your brain relies on irregularities to judge scale.']
- → 0%
-test #25) Trees. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Trees.']
- → 0%
-test #26) Hills. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Hills.']
- → 0%
-test #27) Anything. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Anything.']
- → 0%
-test #28) Remove them completely and humans get visually confused v... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Remove them completely and humans get', 'visually confused very fast.']
- → 0%
-test #29) Distances become impossible to estimate. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Distances become impossible to estimate.']
- → 0%
-test #30) Objects seem smaller or larger than they should. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Objects seem', 'smaller or', 'larger than they should.']
- → 0%
-test #31) Horizon lines blur into atmosphere until the landscape st... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Horizon lines', 'blur into atmosphere until', 'the landscape stops feeling real altogether.']
- → 0%
-test #32) Australia’s Nullarbor Plain has that exact psychological ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Australia’s Nullarbor Plain has that exact psychological effect.']
- → 0%
-test #33) The name literally comes from Latin for “no trees,” which... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The name literally comes from Latin for', '“no trees,”', 'which is already ominous.']
- → 0%
-test #34) And driving across it feels slightly like crossing anothe... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['And driving across it feels slightly like crossing another planet.']
- → 0%
-test #35) Endless horizon. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Endless horizon.']
- → 0%
-test #36) Almost no elevation change. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Almost no elevation change.']
- → 0%
-test #37) Straight roads vanishing into heat haze for absurd distan... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Straight roads vanishing into', 'heat haze for absurd distances.']
- → 0%
-test #38) There are stretches where the terrain becomes so visually... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['There are stretches where the terrain becomes so visually consistent that', 'pilots and drivers report', 'strange depth perception effects', 'because the landscape gives your brain almost nothing to work with.']
- → 0%
-test #39) And flatness at this scale changes how humans emotionally... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And flatness at this scale changes how humans emotionally experience space.']
- → 0%
-test #40) Mountains feel dramatic because they constantly reveal ne... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Mountains feel dramatic because they constantly reveal new information.']
- → 0%
-test #41) Flat plateaus do the opposite. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Flat plateaus do the opposite.']
- → 0%
-test #42) They expose everything immediately. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['They expose everything immediately.']
- → 0%
-test #43) No cover. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['No cover.']
- → 0%
-test #44) No interruption. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['No interruption.']
- → 0%
-test #45) Just horizon. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Just horizon.']
- → 0%
-test #46) Which sounds peaceful until you’re actually inside it for... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Which sounds peaceful until you’re actually inside it for hours.']
- → 0%
-test #47) Then it becomes strangely overwhelming. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Then it becomes strangely overwhelming.']
- → 0%
-test #48) That same feeling appears on the Ustyurt Plateau between ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That same feeling appears on the', 'Ustyurt Plateau between', 'Kazakhstan and', 'Uzbekistan.']
- → 0%
-test #49) This place looks almost digitally generated from above — ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['This place looks almost digitally generated from above —', 'enormous flat expanses broken occasionally by', 'sharp cliff edges where', 'the plateau', 'abruptly collapses into', 'surrounding desert basins.']
- → 0%
-test #50) And because the terrain is so open, light behaves differe... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And because the terrain is so open,', 'light behaves differently there.']
- → 0%
-test #51) Sunsets stretch forever. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Sunsets stretch forever.']
- → 0%
-test #52) Storms become visible from extraordinary distances. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Storms become visible from extraordinary distances.']
- → 0%
-test #53) Cloud shadows move across the landscape like slow-moving ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Cloud shadows move across the landscape', 'like slow-moving continents.']
- → 0%
-test #54) There’s something unsettling about environments this expo... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['There’s something unsettling about environments this exposed because', 'humans evolved around', 'varied terrain.']
- → 0%
-test #55) Forests. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Forests.']
- → 0%
-test #56) Valleys. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Valleys.']
- → 0%
-test #57) Places with visual boundaries. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Places with visual boundaries.']
- → 0%
-test #58) Extreme flatness removes all of that. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Extreme flatness removes all of that.']
- → 0%
-test #59) Which is probably why these landscapes feel simultaneousl... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Which is probably why these landscapes feel simultaneously', 'calming', 'and alien.']
- → 0%
-test #60) Even small objects become dramatic. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Even small objects become dramatic.']
- → 0%
-test #61) A single vehicle crossing Salar de Uyuni looks microscopic. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['A single vehicle crossing Salar de Uyuni looks microscopic.']
- → 0%
-test #62) One building on the Nullarbor appears stranded. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['One building on the Nullarbor appears stranded.']
- → 0%
-test #63) A lone person walking across Alvord Desert in Oregon feel... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['A lone person walking across', 'Alvord Desert', 'in Oregon', 'feels almost emotionally vulnerable.']
- → 0%
-test #64) Alvord’s fascinating because unlike Uyuni’s bright reflec... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Alvord’s fascinating because unlike', 'Uyuni’s bright reflective salt surface,', 'it’s this dry pale playa surrounded by mountains that somehow make', 'the flatness feel even more intense by contrast.']
- → 0%
-test #65) And after rainfall, parts of it transform into temporary ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And after rainfall, parts of it transform into', 'temporary mirrors too —', 'thin water layers reflecting sky so perfectly', 'the ground almost disappears.']
- → 0%
-test #66) That visual effect keeps happening in ultra-flat environm... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That visual effect keeps happening in', 'ultra-flat environments because', 'water naturally reveals surface precision.']
- → 0%
-test #67) Even slight elevation changes break reflections apart. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Even slight elevation changes break reflections apart.']
- → 0%
-test #68) So when entire landscapes reflect cleanly for kilometers,... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['So when entire landscapes reflect cleanly for kilometers,', 'you’re looking at a level of flatness humans rarely encounter naturally.']
- → 0%
-test #69) And honestly, we’re not psychologically prepared for it. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And honestly, we’re not psychologically prepared for it.']
- → 0%
-test #70) That’s why footage from these places spreads constantly o... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That’s why footage from these places spreads constantly online.']
- → 0%
-test #71) Tiny humans against infinite horizons. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Tiny humans against infinite horizons.']
- → 0%
-test #72) Vehicles reflected in perfect mirrors. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Vehicles reflected in perfect mirrors.']
- → 0%
-test #73) Drones pulling upward until landscape and sky become indi... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Drones pulling upward until landscape and sky become indistinguishable.']
- → 0%
-test #74) It triggers something strange in people. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It triggers something strange in people.']
- → 0%
-test #75) Partly awe. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Partly awe.']
- → 0%
-test #76) Partly disorientation. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Partly disorientation.']
- → 0%
-test #77) Because extreme flatness breaks expectations just as much... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Because extreme flatness breaks expectations just as much as', 'giant mountains do.']
- → 0%
-test #78) We expect the Earth to vary. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['We expect the Earth to vary.']
- → 0%
-test #79) When it doesn’t, reality starts feeling simplified in a s... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['When it doesn’t, reality starts feeling', 'simplified in a slightly uncomfortable way.']
- → 0%
-test #80) Almost artificial. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Almost artificial.']
- → 0%
-test #81) And the craziest part is that many of these places only b... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And the craziest part is that many of these places only became useful to', 'space agencies because', 'they’re more consistent than surfaces humans could realistically engineer ourselves at that scale.']
- → 0%
-test #82) Nature accidentally produced calibration tools larger tha... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Nature accidentally produced', 'calibration tools larger than cities.']
- → 0%
-test #83) That’s absurd. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That’s absurd.']
- → 0%
-test #84) Especially considering how ancient the processes behind t... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Especially considering how ancient the processes behind them are.']
- → 0%
-test #85) Evaporated lakes. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Evaporated lakes.']
- → 0%
-test #86) Sediment compression. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Sediment compression.']
- → 0%
-test #87) Geological settling happening over immense stretches of t... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Geological settling happening over', 'immense stretches of time until eventually you get', 'surfaces so level they become', 'scientifically valuable from orbit.']
- → 0%
-test #88) Which creates this amazing contrast: some of the most adv... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Which creates this amazing contrast:', 'some of the most advanced technology humans have ever built depends partly on', 'landscapes formed', 'before human civilization existed.']
- → 0%
-test #89) Satellites traveling thousands of kilometers per hour thr... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Satellites traveling', 'thousands of kilometers per hour through space…', 'checking their measurements against prehistoric deserts.']
- → 0%
-flat_places_map → 0/89 passed
 
-=== small_examples_map (9 tests) ===
-test #1) The old lighthouse keeper the wandering sailor the curiou... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['the wandering sailor', 'the curious child and', 'the patient dog', 'all walked along the endless shoreline where the', 'crashing waves', 'the drifting clouds', 'the distant mountains', 'and the whispering wind', 'created a tapestry of', 'motion and', 'sound', 'that inspired', 'the painter', 'the poet', 'the musician and', 'the dreamer', 'who gathered', 'their brushes', 'their notebooks', 'their instruments', 'and their hopes', 'as the', 'gentle sun', 'the rising tide', 'the circling gulls and', 'the rustling dunes', 'surrounded them with a quiet reminder', 'that the world', 'the sea', 'the sky', 'and the land are always alive with', 'stories waiting to be found']
- → 0%
-test #2) The fast cat sat on the comfortable mat :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The fast cat sat', 'on the comfortable mat']
- → 0%
-test #3) The baker kneaded the bread while the fire crackled :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The baker kneaded the bread', 'while the fire crackled']
- → 0%
-test #4) The red car the blue truck the green bike sped past the h... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+test #18) That precision matters because satellites need known refe... :: FALSE - again, try not to have single words...  also we are showing what the satellites need... and the the visual calibrate instruments... many wrong here..
+- actual: ['That precision matters', 'because satellites need known reference surfaces to calibrate instruments measuring elevation and distance from', 'orbit.']
+- expected: ['That precision matters because', 'satellites need', 'known reference surfaces to', 'calibrate instruments measuring', 'elevation', 'and distance from orbit.']
+
+test #19) If you already know a landscape is almost perfectly level... :: FALSE - again, if x, y... we are revealing
+- actual: ['If you already know a landscape is almost perfectly level, you can compare satellite readings against it with incredible accuracy.']
+- expected: ['If you already know a landscape is almost perfectly level,', 'you can compare satellite readings against it with incredible accuracy.']
+
+jump
+
+test #20) Which means somewhere above Earth, space hardware is lite... :: FALSE
+- actual: ['Which means somewhere above Earth,', 'space hardware is literally checking itself against', 'a giant prehistoric lakebed in Bolivia.']
+- expected: ['Which means somewhere above Earth,', 'space hardware is literally', 'checking itself against a', 'giant prehistoric lake bed in Bolivia.']
+test #21) And honestly, the place feels extraterrestrial enough for... :: FALSE
+- actual: ['And honestly,', 'the place feels', 'extraterrestrial enough for it.']
+- expected: ['And honestly, the place feels extraterrestrial enough for it.']
+test #22) The salt flat formed when ancient lakes evaporated thousa... :: FALSE
+- actual: ['The salt flat formed', 'when ancient lakes evaporated', 'thousands of years ago,', 'leaving behind massive mineral deposits smoothed naturally over immense timescales.']
+- expected: ['The salt flat formed when', 'ancient lakes', 'evaporated thousands of years ago, leaving behind', 'massive mineral deposits smoothed naturally over immense timescales.']
+test #23) What remains is this gigantic geometric surface where per... :: FALSE
+- actual: ['What remains is this gigantic geometric surface', 'where perspective starts malfunctioning.']
+- expected: ['What remains is this', 'gigantic geometric surface where perspective starts malfunctioning.']
+test #24) That’s the weird thing about extremely flat places: your ... :: FALSE
+- actual: ['That’s the weird thing about', 'extremely flat places:', 'your brain relies on', 'irregularities to judge scale.']
+- expected: ['That’s the weird thing about extremely flat places:', 'your brain relies on irregularities to judge scale.']
+test #28) Remove them completely and humans get visually confused v... :: FALSE
+- actual: ['Remove them completely and humans get visually confused very fast.']
+- expected: ['Remove them completely and humans get', 'visually confused very fast.']
+test #30) Objects seem smaller or larger than they should. :: FALSE
+- actual: ['Objects seem', 'smaller or larger than they should.']
+- expected: ['Objects seem', 'smaller or', 'larger than they should.']
+test #31) Horizon lines blur into atmosphere until the landscape st... :: FALSE
+- actual: ['Horizon lines', 'blur', 'into atmosphere', 'until the landscape stops feeling real altogether.']
+- expected: ['Horizon lines', 'blur into atmosphere until', 'the landscape stops feeling real altogether.']
+test #32) Australia’s Nullarbor Plain has that exact psychological ... :: FALSE
+- actual: ['Australia’s Nullarbor Plain has', 'that exact psychological effect.']
+- expected: ['Australia’s Nullarbor Plain has that exact psychological effect.']
+test #33) The name literally comes from Latin for “no trees,” which... :: FALSE
+- actual: ['The name literally comes', 'from Latin for', '“no trees,”', 'which is already ominous.']
+- expected: ['The name literally comes from Latin for', '“no trees,”', 'which is already ominous.']
+test #34) And driving across it feels slightly like crossing anothe... :: FALSE
+- actual: ['And driving across it feels', 'slightly like crossing another planet.']
+- expected: ['And driving across it feels slightly like crossing another planet.']
+test #37) Straight roads vanishing into heat haze for absurd distan... :: FALSE
+- actual: ['Straight roads vanishing into heat haze for absurd distances.']
+- expected: ['Straight roads vanishing into', 'heat haze for absurd distances.']
+test #38) There are stretches where the terrain becomes so visually... :: FALSE
+- actual: ['There are', 'stretches where', 'the terrain becomes so visually consistent', 'that pilots and drivers report strange depth perception effects', 'because the landscape gives your brain', 'almost nothing to work with.']
+- expected: ['There are stretches where the terrain becomes so visually consistent that', 'pilots and drivers report', 'strange depth perception effects', 'because the landscape gives your brain almost nothing to work with.']
+test #39) And flatness at this scale changes how humans emotionally... :: FALSE
+- actual: ['And flatness at this scale changes', 'how humans emotionally experience space.']
+- expected: ['And flatness at this scale changes how humans emotionally experience space.']
+test #48) That same feeling appears on the Ustyurt Plateau between ... :: FALSE
+- actual: ['That same feeling appears on', 'the Ustyurt Plateau between', 'Kazakhstan and', 'Uzbekistan.']
+- expected: ['That same feeling appears on the', 'Ustyurt Plateau between', 'Kazakhstan and', 'Uzbekistan.']
+test #49) This place looks almost digitally generated from above — ... :: FALSE
+- actual: ['This place looks', 'almost digitally generated from above —', 'enormous flat expanses broken occasionally by', 'sharp cliff edges', 'where the plateau abruptly collapses into surrounding desert basins.']
+- expected: ['This place looks almost digitally generated from above —', 'enormous flat expanses broken occasionally by', 'sharp cliff edges where', 'the plateau', 'abruptly collapses into', 'surrounding desert basins.']
+test #50) And because the terrain is so open, light behaves differe... :: FALSE
+- actual: ['And because the terrain is', 'so open,', 'light behaves differently there.']
+- expected: ['And because the terrain is so open,', 'light behaves differently there.']
+test #52) Storms become visible from extraordinary distances. :: FALSE
+- actual: ['Storms become', 'visible from extraordinary distances.']
+- expected: ['Storms become visible from extraordinary distances.']
+test #53) Cloud shadows move across the landscape like slow-moving ... :: FALSE
+- actual: ['Cloud shadows move', 'across the landscape like', 'slow-moving continents.']
+- expected: ['Cloud shadows move across the landscape', 'like slow-moving continents.']
+test #54) There’s something unsettling about environments this expo... :: FALSE
+- actual: ['There’s something unsettling about', 'environments this exposed', 'because humans evolved around varied terrain.']
+- expected: ['There’s something unsettling about environments this exposed because', 'humans evolved around', 'varied terrain.']
+test #57) Places with visual boundaries. :: FALSE
+- actual: ['Places with', 'visual boundaries.']
+- expected: ['Places with visual boundaries.']
+test #59) Which is probably why these landscapes feel simultaneousl... :: FALSE
+- actual: ['Which is probably why these landscapes feel simultaneously calming and alien.']
+- expected: ['Which is probably why these landscapes feel simultaneously', 'calming', 'and alien.']
+test #61) A single vehicle crossing Salar de Uyuni looks microscopic. :: FALSE
+- actual: ['A single vehicle crossing', 'Salar de Uyuni looks microscopic.']
+- expected: ['A single vehicle crossing Salar de Uyuni looks microscopic.']
+test #63) A lone person walking across Alvord Desert in Oregon feel... :: FALSE
+- actual: ['A lone person walking across', 'Alvord Desert in Oregon feels almost emotionally vulnerable.']
+- expected: ['A lone person walking across', 'Alvord Desert', 'in Oregon', 'feels almost emotionally vulnerable.']
+test #64) Alvord’s fascinating because unlike Uyuni’s bright reflec... :: FALSE
+- actual: ['Alvord’s fascinating because unlike', 'Uyuni’s bright reflective salt surface, it’s this dry pale playa surrounded by', 'mountains that somehow make the flatness feel even more intense by contrast.']
+- expected: ['Alvord’s fascinating because unlike', 'Uyuni’s bright reflective salt surface,', 'it’s this dry pale playa surrounded by mountains that somehow make', 'the flatness feel even more intense by contrast.']
+test #65) And after rainfall, parts of it transform into temporary ... :: FALSE
+- actual: ['And after rainfall,', 'parts of it transform', 'into temporary mirrors too —', 'thin water layers reflecting sky so perfectly', 'the ground almost disappears.']
+- expected: ['And after rainfall, parts of it transform into', 'temporary mirrors too —', 'thin water layers reflecting sky so perfectly', 'the ground almost disappears.']
+test #66) That visual effect keeps happening in ultra-flat environm... :: FALSE
+- actual: ['That visual effect keeps', 'happening in', 'ultra-flat environments', 'because water naturally reveals surface precision.']
+- expected: ['That visual effect keeps happening in', 'ultra-flat environments because', 'water naturally reveals surface precision.']
+test #68) So when entire landscapes reflect cleanly for kilometers,... :: FALSE
+- actual: ['So when entire landscapes reflect cleanly for kilometers, you’re looking at', 'a level of flatness humans rarely encounter naturally.']
+- expected: ['So when entire landscapes reflect cleanly for kilometers,', 'you’re looking at a level of flatness humans rarely encounter naturally.']
+test #69) And honestly, we’re not psychologically prepared for it. :: FALSE
+- actual: ['And honestly,', 'we’re', 'not psychologically prepared for it.']
+- expected: ['And honestly, we’re not psychologically prepared for it.']
+test #70) That’s why footage from these places spreads constantly o... :: FALSE
+- actual: ['That’s why footage from', 'these places spreads constantly online.']
+- expected: ['That’s why footage from these places spreads constantly online.']
+test #71) Tiny humans against infinite horizons. :: FALSE
+- actual: ['Tiny humans against', 'infinite horizons.']
+- expected: ['Tiny humans against infinite horizons.']
+test #77) Because extreme flatness breaks expectations just as much... :: FALSE
+- actual: ['Because extreme flatness breaks expectations just as much', 'as giant mountains do.']
+- expected: ['Because extreme flatness breaks expectations just as much as', 'giant mountains do.']
+test #78) We expect the Earth to vary. :: FALSE
+- actual: ['We expect', 'the Earth to vary.']
+- expected: ['We expect the Earth to vary.']
+test #79) When it doesn’t, reality starts feeling simplified in a s... :: FALSE
+- actual: ['When it doesn’t,', 'reality starts', 'feeling simplified in', 'a slightly uncomfortable way.']
+- expected: ['When it doesn’t, reality starts feeling', 'simplified in a slightly uncomfortable way.']
+test #81) And the craziest part is that many of these places only b... :: FALSE
+- actual: ['And the craziest part is', 'that many of', 'these places only became useful to space agencies', 'because they’re more consistent than surfaces', 'humans could realistically engineer ourselves at that scale.']
+- expected: ['And the craziest part is that many of these places only became useful to', 'space agencies because', 'they’re more consistent than surfaces humans could realistically engineer ourselves at that scale.']
+test #82) Nature accidentally produced calibration tools larger tha... :: FALSE
+- actual: ['Nature accidentally produced', 'calibration tools larger than', 'cities.']
+- expected: ['Nature accidentally produced', 'calibration tools larger than cities.']
+test #84) Especially considering how ancient the processes behind t... :: FALSE
+- actual: ['Especially considering', 'how ancient the processes behind them are.']
+- expected: ['Especially considering how ancient the processes behind them are.']
+test #87) Geological settling happening over immense stretches of t... :: FALSE
+- actual: ['Geological settling happening over', 'immense stretches of time', 'until eventually you get surfaces so level they become scientifically valuable from orbit.']
+- expected: ['Geological settling happening over', 'immense stretches of time until eventually you get', 'surfaces so level they become', 'scientifically valuable from orbit.']
+test #89) Satellites traveling thousands of kilometers per hour thr... :: FALSE
+- actual: ['Satellites traveling', 'thousands of kilometers per hour through', 'space…', 'checking', 'their measurements against', 'prehistoric deserts.']
+- expected: ['Satellites traveling', 'thousands of kilometers per hour through space…', 'checking their measurements against prehistoric deserts.']
+flat_places_map → 41/89 passed
+
+=== small_examples_map (9 tests) === (DONE)
+test #1) The old lighthouse keeper the wandering sailor the curiou... :: FALSE - again this is very wrong... why isn't it splitting on the nouns?  like 'crashing waves'..
+- actual: ['The old lighthouse keeper', 'the wandering sailor', 'the curious child and', 'the patient dog all', 'walked along the endless shoreline', 'where the crashing waves the drifting clouds the distant mountains and', 'the whispering wind created', 'a tapestry of motion and sound', 'that inspired the painter', 'the poet', 'the musician and', 'the dreamer', 'who gathered their brushes', 'their notebooks their instruments and', 'their hopes as', 'the gentle sun', 'the rising tide', 'the circling gulls and', 'the rustling dunes surrounded them with', 'a quiet reminder', 'that the world', 'the sea', 'the sky and', 'the land are always alive with', 'stories waiting to be found']
+- expected: [                           'the wandering sailor', 'the curious child and', 'the patient dog', 'all walked along the endless shoreline where the', 'crashing waves', 'the drifting clouds', 'the distant mountains', 'and the whispering wind', 'created a tapestry of', 'motion and', 'sound', 'that inspired', 'the painter', 'the poet', 'the musician and', 'the dreamer', 'who gathered', 'their brushes', 'their notebooks', 'their instruments', 'and their hopes', 'as the', 'gentle sun', 'the rising tide', 'the circling gulls and', 'the rustling dunes', 'surrounded them with a quiet reminder', 'that the world', 'the sea', 'the sky', 'and the land are always alive with', 'stories waiting to be found']
+
+test #4) The red car the blue truck the green bike sped past the h... :: FALSE - again, why not split on 'the house?'
+- actual: ['The red car', 'the blue truck', 'the green bike sped past the house']
 - expected: ['The red car', 'the blue truck', 'the green bike sped past', 'the house']
- → 0%
-test #5) anyway, here is a sentence that has punctuatoin :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['anyway, here is a sentence', 'that has punctuatoin']
- → 0%
-test #6) and here is another- does it handle everything all fine? ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['and here is another-', 'does it handle everything all fine?', 'but what if the', 'other person and', 'the dragon', 'laid down together at the edge of the brook?']
- → 0%
-test #7) The empire state building is really big. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The empire state building is really big.']
- → 0%
-test #8) Built in Manhattan in the 19th century. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Built in Manhattan in the 19th century.']
- → 0%
-test #9) Back in 1946, the technician John Ford the second created... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Back in 1946,', 'the technician John Ford the second created', 'a new OpenAI carburettor for', 'the lift in the skyscraper', 'where they drunk chanoyu tea,', 'which would go on to revolutionize the entire world.']
- → 0%
-small_examples_map → 0/9 passed
 
 === nutmeg_map (39 tests) ===
-test #1) If you open your kitchen cupboard right now, you probably... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['If you open your kitchen cupboard right now, you probably have', 'a jar of nutmeg.']
- → 0%
-test #2) It costs about two dollars. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It costs about two dollars.']
- → 0%
-test #3) But in the 1600s, this little wrinkled seed was the singl... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['But in the 1600s,', 'this little wrinkled seed was the single most contested resource on the planet.']
- → 0%
-test #4) It was worth more than its weight in gold. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It was worth more than its weight in gold.']
- → 0%
-test #5) Nutmeg only grew in one place on Earth: The Banda Islands. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Nutmeg only grew in one place on Earth:', 'The Banda Islands.']
- → 0%
-test #6) A tiny, incredibly remote volcanic archipelago in modern-... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.']
- → 0%
-test #7) If you were a European merchant, getting it meant sailing... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+test #7) If you were a European merchant, getting it meant sailing... :: FALSE - again why not split on the first list item of 'scurvy'?
+- actual: ['If you were a European merchant,', 'getting it meant sailing for months, surviving scurvy,', 'pirates, and', 'shipwrecks.']
 - expected: ['If you were a European merchant, getting it meant', 'sailing for months, surviving', 'scurvy,', 'pirates,', 'and shipwrecks. But if you made it back with a']
- → 0%
+
+
+
+
+
 test #8) But if you made it back with a single ship full of nutmeg... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But if you made it back with', 'a single ship full of', 'nutmeg, you were set for life.']
 - expected: ['But if you made it back with a single ship full of nutmeg, you were set for life.']
- → 0%
 test #9) The Dutch and the British fought bloody, brutal wars over... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['The Dutch and', 'the British fought bloody,', 'brutal wars over', 'these tiny islands.']
 - expected: ['The Dutch and the British fought bloody, brutal wars over these tiny islands.']
- → 0%
 test #10) In fact, to secure a monopoly on nutmeg, the Dutch formal... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['In fact,', 'to secure a monopoly on nutmeg,', 'the Dutch formally traded', 'a different island they owned to the British.']
 - expected: ['In fact, to secure a monopoly on nutmeg,', 'the Dutch formally traded a different island they owned to the British.']
- → 0%
 test #11) That island was Manhattan. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['That island was', 'Manhattan.']
 - expected: ['That island was Manhattan.']
- → 0%
-test #12) Yep... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Yep...']
- → 0%
-test #13) New York City was traded for nutmeg. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['New York City was traded for nutmeg.']
- → 0%
 test #14) The entire map of the modern world was quite literally dr... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['The entire map of the modern world was quite literally drawn by', 'people desperately looking for', 'a cheaper way to flavor their dinner.']
 - expected: ['The entire map of the modern world was quite literally drawn by people desperately looking for a cheaper way to flavor their dinner.']
- → 0%
-test #15) Because before global shipping, geography dictated your d... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Because before global shipping,', 'geography dictated your diet.']
- → 0%
-test #16) Take black pepper. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Take black pepper.']
- → 0%
 test #17) Today, it’s on every restaurant table in the world. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Today,', 'it’s on', 'every restaurant table in the world.']
 - expected: ['Today, it’s on every restaurant table in the world.']
- → 0%
 test #18) But originally, the black pepper vine was entirely native... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But originally,', 'the black pepper vine was entirely native to', 'the Malabar Coast of India,', 'specifically Kerala.']
 - expected: ['But originally, the black pepper vine was entirely native to the', 'Malabar Coast of India, specifically', 'Kerala.']
- → 0%
 test #19) To get to Europe, it had to pass through dozens of middle... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['To get to Europe,', 'it had to pass through', 'dozens of middlemen—', 'Arab traders,', 'Venetian merchants—', 'each jacking up the price.']
 - expected: ['To get to Europe, it had to pass through dozens of middlemen—Arab traders,', 'Venetian merchants—each jacking up the price.']
- → 0%
 test #20) It was so valuable that when Alaric the Goth laid siege t... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['It was so valuable', 'that when Alaric', 'the Goth laid siege to Rome in', 'the year 410,', "his ransom demand to spare the city wasn't just gold and", 'silver.']
 - expected: ['It was so valuable that when', 'Alaric the Goth', 'laid siege to Rome in the year 410,', "his ransom demand to spare the city wasn't just", 'gold and silver.']
- → 0%
 test #21) He demanded—and received—three thousand pounds of black p... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['He demanded —', 'and received —', 'three thousand pounds of black pepper.']
 - expected: ['He demanded—and received—three thousand pounds of', 'black pepper.']
- → 0%
 test #22) And because Europe was so entirely disconnected from wher... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['And because Europe was so entirely disconnected from', 'where these spices actually grew,', 'the merchants who controlled the trade simply made things up to keep the prices high.']
 - expected: ['And because Europe was so entirely disconnected', 'from where these spices actually grew,', 'the merchants who controlled the trade simply made things up to keep the prices high.']
- → 0%
 test #23) Cinnamon comes from the inner bark of a specific tree nat... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Cinnamon comes from', 'the inner bark of a specific tree native to', 'Sri Lanka.']
 - expected: ['Cinnamon comes from the inner bark of a specific tree native to Sri Lanka.']
- → 0%
 test #24) But for centuries, Arab traders told the Greeks and Roman... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But for centuries,', 'Arab traders told the Greeks and', 'Romans that cinnamon was gathered by', 'giant, terrifying birds', 'who used the spice to build their nests on', 'sheer, unclimbable cliffs.']
 - expected: ['But for centuries, Arab traders told', 'the Greeks and Romans that cinnamon was gathered', 'by giant, terrifying birds who used the spice', 'to build their nests', 'on sheer, unclimbable cliffs.']
- → 0%
 test #25) The traders claimed they had to leave heavy chunks of mea... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['The traders claimed', 'they had to leave heavy chunks of meat out for', 'the birds,', 'who would carry the meat to their nests, collapsing them,', 'and sending the cinnamon tumbling down.']
 - expected: ['The traders claimed they had to leave', 'heavy chunks of meat out for the birds,', 'who would carry the meat to their nests,', 'collapsing them, and', 'sending the cinnamon tumbling down.']
- → 0%
-test #26) It was complete nonsense. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It was complete nonsense.']
- → 0%
 test #27) But the Europeans believed it, and happily paid the monst... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But the Europeans believed it,', 'and happily paid', 'the monster-bird premium.']
 - expected: ['But the Europeans believed it,', 'and happily paid the monster-bird premium.']
- → 0%
 test #28) By the late 1400s,European powers were sick of paying the... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['By the late 1400s,', 'European powers were sick of paying these markups.']
 - expected: ['By the late 1400s,European powers were sick of paying these markups.']
- → 0%
 test #29) So, they started sailing west, looking for a backdoor to ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['So, they started sailing west, looking for', 'a backdoor to India.']
 - expected: ['So, they started sailing west, looking for a backdoor to India.']
- → 0%
 test #30) Which brings us to Christopher Columbus. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['Which brings us to', 'Christopher Columbus.']
 - expected: ['Which brings us to Christopher Columbus.']
- → 0%
 test #31) Columbus lands in the Americas, thinks he's in India, and... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Columbus lands in the Americas,', 'thinks', "he's in India, and is desperately looking for black pepper to justify the cost of his voyage."]
 - expected: ['Columbus lands in the Americas,', "thinks he's in India,", 'and is desperately looking for black pepper to justify the cost of his voyage.']
- → 0%
-test #32) He doesn't find it. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ["He doesn't find it."]
- → 0%
 test #33) But he does find a completely unrelated, violently spicy ... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But he does find a completely unrelated,', 'violently spicy red fruit native to', 'Mesoamerica.']
 - expected: ['But he does find a completely unrelated, violently spicy red fruit native to Mesoamerica.']
- → 0%
-test #34) He calls them "peppers" to make his investors happy. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['He calls them', '"peppers"', 'to make his investors happy.']
- → 0%
 test #35) And unlike the fussy black pepper vines of India, these n... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['And unlike the fussy black pepper vines of India,', 'these new', '"chili peppers"', 'grew almost anywhere.']
 - expected: ['And unlike the fussy black pepper vines of India,', 'these new "chili peppers" grew almost anywhere.']
- → 0%
 test #36) Within fifty years, they had spread across the globe, com... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Within fifty years,', 'they had spread across the globe, completely revolutionizing the cuisines of India,', 'China, and', 'Southeast Asia.']
 - expected: ['Within fifty years, they had spread across the globe,', 'completely revolutionizing the cuisines of India, China, and Southeast Asia.']
- → 0%
 test #37) So the next time you season your food, look at what you’r... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['So the next time you season your food, look at', 'what you’re holding.']
 - expected: ['So the next time you season your food,', 'look at what you’re holding.']
- → 0%
 test #38) You aren't just holding dried bark and seeds. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ["You aren't just holding", 'dried bark and', 'seeds.']
 - expected: ["You aren't just holding dried bark and seeds."]
- → 0%
 test #39) You are holding the remnants of global monopolies, the fa... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['You are holding', 'the remnants of global monopolies,', 'the fall of', 'empires, and the reason', 'the map of the world looks the way it does', 'today.']
 - expected: ['You are holding the remnants of global monopolies,', 'the fall of empires,', 'and the reason the map of the world looks the way it does today.']
- → 0%
-nutmeg_map → 0/39 passed
+nutmeg_map → 7/39 passed
 
 === romans_map (214 tests) ===
 test #1) Two thousand years ago, the Romans built the fastest deli... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Two thousand years ago,', 'the Romans built', 'the fastest delivery system on Earth.']
 - expected: ['Two thousand years ago, the Romans built the fastest delivery system on Earth.']
- → 0%
-test #2) They did it by swapping transports. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['They did it by swapping transports.']
- → 0%
-test #3) A series of checkpoints, all with a horse at each. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['A series of checkpoints, all with', 'a horse at each.']
- → 0%
 test #4) The idea was simple: Ride hard. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['The idea was simple:', 'Ride hard.']
 - expected: ['The idea was simple: Ride hard.']
- → 0%
-test #5) Switch to a fresh steed. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Switch to a fresh steed.']
- → 0%
-test #6) Keep going. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Keep going.']
- → 0%
-test #7) Over and over. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Over and over.']
- → 0%
 test #8) The system was called the Cursus Publicus. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['The system was called', 'the Cursus Publicus.']
 - expected: ['The system was called the Cursus Publicus.']
- → 0%
-test #9) And it was absurdly efficient. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['And it was absurdly efficient.']
- → 0%
-test #10) Well... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Well...']
- → 0%
-test #11) If everything worked. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['If everything worked.']
- → 0%
-test #12) It got me thinking... what’s the modern equivalent of that? :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It got me thinking...', 'what’s the modern equivalent of that?']
- → 0%
 test #13) This thought started at 6:23am, on the 20th of May, 2025. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['This thought started at 6:23am, on', 'the 20th of May, 2025.']
 - expected: ['This thought started at 6:23am, on the 20th of May, 2025.']
- → 0%
 test #14) A little red toyota stranded amongst a sea of other loud ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['A little red toyota stranded amongst', 'a sea of', 'other loud metal boxes...']
 - expected: ['A little red toyota stranded amongst a sea of other loud metal boxes...']
- → 0%
-test #15) Inside, of course was me. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Inside, of course was me.']
- → 0%
 test #16) Not knowing that I was about to have a big realisation. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Not knowing', 'that I was about to have a big realisation.']
 - expected: ['Not knowing that I was about to have a big realisation.']
- → 0%
 test #17) Driving was draining my soul. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Driving', 'was draining my soul.']
 - expected: ['Driving was draining my soul.']
- → 0%
 test #18) The busses took 4 hours. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['The busses took', '4 hours.']
 - expected: ['The busses took 4 hours.']
- → 0%
 test #19) A taxi would cost half my yearly wage. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['A taxi would cost', 'half my yearly wage.']
 - expected: ['A taxi would cost half my yearly wage.']
- → 0%
-test #20) So that left trains. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['So that left trains.']
- → 0%
 test #21) But they had a fatal flaw: the station was too far to wal... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But they had a fatal flaw:', 'the station was too far to walk to at both ends.']
 - expected: ['But they had a fatal flaw: the station was too far to walk to at both ends.']
- → 0%
-test #22) Then it clicked. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Then it clicked.']
- → 0%
 test #23) I needed to build my own Cursus Publicus. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['I needed to build', 'my own Cursus Publicus.']
 - expected: ['I needed to build my own Cursus Publicus.']
- → 0%
-test #24) Just with slightly less impressive stallions. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Just with slightly less impressive stallions.']
- → 0%
-test #25) What if I just swapped transports? :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['What if I just swapped transports?']
- → 0%
-test #26) Bike to the station. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Bike to the station.']
- → 0%
-test #27) Train into the city. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Train into the city.']
- → 0%
 test #28) Bike the last bit. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Bike', 'the last bit.']
 - expected: ['Bike the last bit.']
- → 0%
 test #29) Now you may think, "train with a bike, that's not a new c... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Now you may think,', '"train with a bike, that\'s not a new concept"', '..', "well, I'd agree."]
 - expected: ['Now you may think, "train with a bike, that\'s not a new concept" .. well, I\'d agree.']
- → 0%
 test #30) But it's how it developed that I don't see mentioned. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ["But it's how it developed", "that I don't see mentioned."]
 - expected: ["But it's how it developed that I don't see mentioned."]
- → 0%
 test #31) But before that, here's what actually got me excited abou... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But before that,', "here's what actually got me excited about", 'the bi-train concept:', 'Its not the speed.']
 - expected: ["But before that, here's what actually got me excited about", 'the bi-train concept:', 'Its not the speed.']
- → 0%
 test #32) The thing not many people mention is that: driving doesn’... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['The thing', 'not many people mention is that:', 'driving', 'doesn’t just cost money.']
 - expected: ['The thing not many people mention is that: driving doesn’t just cost money.']
- → 0%
 test #33) It costs something much more valuable. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['It costs', 'something much more valuable.']
 - expected: ['It costs something much more valuable.']
- → 0%
-test #34) It uses up your time. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It uses up your time.']
- → 0%
 test #35) Whilst driving, you’re locked in. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Whilst driving,', 'you’re locked in.']
 - expected: ['Whilst driving, you’re locked in.']
- → 0%
-test #36) Focused. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Focused.']
- → 0%
-test #37) But on public transport? :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['But on public transport?']
- → 0%
-test #38) Different story. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Different story.']
- → 0%
-test #39) You can work. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['You can work.']
- → 0%
-test #40) Watch something. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Watch something.']
- → 0%
-test #41) Switch off. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Switch off.']
- → 0%
-test #42) That middle chunk of your journey becomes actual life. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That middle chunk of your journey becomes actual life.']
- → 0%
-test #43) Do that every day and you’re not saving minutes. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Do that every day and you’re not saving minutes.']
- → 0%
-test #44) You’re gaining days back every year. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['You’re gaining days back every year.']
- → 0%
-test #45) Now you might be thinking about cost. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Now you might be thinking about cost.']
- → 0%
 test #46) Or just thinking... this wouldn’t work where I live. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['Or just thinking', '...', 'this wouldn’t work where I live.']
 - expected: ['Or just thinking... this wouldn’t work where I live.']
- → 0%
 test #47) And... that’s fair. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['And...', 'that’s fair.']
 - expected: ['And... that’s fair.']
- → 0%
-test #48) We’ll come back to that. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['We’ll come back to that.']
- → 0%
-test #49) Anyway, back to the numbers. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Anyway, back to the numbers.']
- → 0%
-test #50) Here's a quick spreadsheet I whipped up earlier. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ["Here's a quick spreadsheet I whipped up earlier."]
- → 0%
 test #51) As you can see a car is easily £3,600 a year, and that's ... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['As you can see a car is easily', "£3,600 a year, and that's with", 'me being fairly strict with costs.']
 - expected: ["As you can see a car is easily £3,600 a year, and that's with me being fairly strict with costs."]
- → 0%
 test #52) When you really look, the fuel alone is just crazy. - $80... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['When you really look,', 'the fuel alone is just crazy.', '- $800,000 over a lifetime?']
 - expected: ['When you really look, the fuel alone is just crazy. - $800,000 over a lifetime?']
- → 0%
 test #53) Yeah... _if_ I can avoid that, I will. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Yeah...', '_if_ I can avoid that,', 'I will.']
 - expected: ['Yeah... _if_ I can avoid that, I will.']
- → 0%
-test #54) So if driving’s expensive... what about the alternative? :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['So if driving’s expensive...', 'what about the alternative?']
- → 0%
 test #55) So instead I looked into the cost of a yearly train pass ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['So instead I looked into', 'the cost of a yearly train pass instead...']
 - expected: ['So instead I looked into the cost of a yearly train pass instead...']
- → 0%
 test #56) It was 1,110 pounds- yeah I also fell off my seat.. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['It was 1,110 pounds- yeah I also fell off my', 'seat..']
 - expected: ['It was 1,110 pounds- yeah I also fell off my seat..']
- → 0%
-test #57) But its actually still around half the cost of just the f... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['But its actually still around half the cost of just the fuel would be for driving!']
- → 0%
 test #58) Then add on the relitively small cost of a bike and the f... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Then add on', 'the relitively small cost of a bike and', 'the fact', "that a bike's fuel is essentailly 'free'"]
 - expected: ['Then add on the relitively small cost of', 'a bike and the fact that', "a bike's fuel is essentailly", "'free'"]
- → 0%
 test #59) I'd say there is a clear winner... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ["I'd say", 'there is a clear winner...']
 - expected: ["I'd say there is a clear winner..."]
- → 0%
 test #60) and Sooo the money checks out. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['and Sooo', 'the money checks out.']
 - expected: ['and Sooo the money checks out.']
- → 0%
 test #61) Public transport plus a bike is already cheaper than driv... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Public transport plus', 'a bike is already cheaper than driving.']
 - expected: ['Public transport plus a bike is already cheaper than driving.']
- → 0%
 test #62) But cost isn’t the only problem- friction is. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But cost isn’t', 'the only problem- friction is.']
 - expected: ['But cost isn’t the only problem-', 'friction is.']
- → 0%
 test #63) Every time you switch between modes, something slows you ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Every time you switch between modes,', 'something slows you down.']
 - expected: ['Every time you switch between modes, something slows you down.']
- → 0%
-test #64) Parking. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Parking.']
- → 0%
-test #65) Locking up. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Locking up.']
- → 0%
 test #66) And, realistically... hoping your bike’s still there when... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['And, realistically...', 'hoping', 'your bike’s still there', 'when you get back.']
 - expected: ['And, realistically... hoping your bike’s still there when you get back.']
- → 0%
 test #67) So the next optimisation isn’t about price- it’s about tr... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['So the next optimisation isn’t about price-', 'it’s about transitions.']
 - expected: ['So the next optimisation isn’t about price-', 'it’s about', 'transitions.']
- → 0%
-test #68) My pitch to myself was simple: spend less, lose less time. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['My pitch to myself was simple:', 'spend less,', 'lose less time.']
- → 0%
-test #69) And that’s where this comes in: a Brompton. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['And that’s where this comes in:', 'a Brompton.']
- → 0%
-test #70) Because it doesn’t just fold smaller- it changes the rules. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Because it doesn’t just fold smaller- it changes the rules.']
- → 0%
-test #71) You take it onto the Tube. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['You take it onto the Tube.']
- → 0%
-test #72) Onto trains. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Onto trains.']
- → 0%
-test #73) In the boot of a mate’s car. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['In the boot of a mate’s car.']
- → 0%
-test #74) Even on a bus. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Even on a bus.']
- → 0%
 test #75) No locking it outside, no worrying about it getting nicked. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['No locking it outside,', 'no worrying about it getting nicked.']
 - expected: ['No locking it outside, no worrying about it getting nicked.']
- → 0%
 test #76) And suddenly, all those separate systems start to link to... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['And suddenly,', 'all those separate systems start to link together.']
 - expected: ['And suddenly, all those separate systems start to link together.']
- → 0%
-test #77) This- this is it! :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['This- this is it!']
- → 0%
 test #78) The culmination of a modern, multi-transport network. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['The culmination of a modern,', 'multi-transport network.']
 - expected: ['The culmination of a modern, multi-transport network.']
- → 0%
-test #79) Everything connected. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Everything connected.']
- → 0%
-test #80) Everything flowing. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Everything flowing.']
- → 0%
-test #81) Which... sounds familiar. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Which...', 'sounds familiar.']
- → 0%
-test #82) It’s the exact same idea as the Romans. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It’s the exact same idea as the Romans.']
- → 0%
 test #83) But there’s a reason most people weren’t using the Cursus... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But there’s a reason', 'most people weren’t using', 'the Cursus Publicus.']
 - expected: ['But there’s a reason most people weren’t using the Cursus Publicus.']
- → 0%
-test #84) It only worked if everything worked. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It only worked if everything worked.']
- → 0%
-test #85) Routes maintained. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Routes maintained.']
- → 0%
-test #86) Stations reliable. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Stations reliable.']
- → 0%
-test #87) Perfect handovers. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Perfect handovers.']
- → 0%
 test #88) Because the moment one link failed… the whole journey slo... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['Because the moment', 'one', 'link failed…', 'the whole journey slowed down.']
 - expected: ['Because the moment one link failed…', 'the whole journey slowed down.']
- → 0%
-test #89) And it wasn’t just the Romans. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['And it wasn’t just the Romans.']
- → 0%
-test #90) Victorian Britain tried this too. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Victorian Britain tried this too.']
- → 0%
-test #91) Carriage to the station. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Carriage to the station.']
- → 0%
-test #92) Train to the next town. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Train to the next town.']
- → 0%
-test #93) Another carriage at the other end. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Another carriage at the other end.']
- → 0%
 test #94) Miss one connection.. and you’re stuck. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['Miss one', 'connection..', 'and you’re stuck.']
 - expected: ['Miss one connection..', 'and you’re stuck.']
- → 0%
-test #95) Same idea. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Same idea.']
- → 0%
-test #96) Same problem. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Same problem.']
- → 0%
 test #97) And... it still isn’t perfect today. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['And...', 'it still isn’t perfect', 'today.']
 - expected: ['And...', 'it still isn’t perfect today.']
- → 0%
-test #98) Trains get delayed. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Trains get delayed.']
- → 0%
-test #99) Roads aren’t built for cycling. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Roads aren’t built for cycling.']
- → 0%
-test #100) Weather does whatever it wants. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Weather does whatever it wants.']
- → 0%
-test #101) Real life isn’t clean. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Real life isn’t clean.']
- → 0%
-test #102) You’re tired. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['You’re tired.']
- → 0%
-test #103) It’s raining. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It’s raining.']
- → 0%
-test #104) You’re late. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['You’re late.']
- → 0%
 test #105) And now instead of one decision “do I drive?” — you’ve go... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['And now instead of one decision', '“do I drive?” —', 'you’ve got a chain.']
 - expected: ['And now instead of one decision', '“do I drive?”', '— you’ve got a chain.']
- → 0%
-test #106) Bike. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Bike.']
- → 0%
-test #107) Fold. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Fold.']
- → 0%
-test #108) Train. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Train.']
- → 0%
-test #109) Unfold. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Unfold.']
- → 0%
-test #110) Bike again. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Bike again.']
- → 0%
-test #111) Each step is simple. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Each step is simple.']
- → 0%
-test #112) But Together... mayyyybe not. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['But Together...', 'mayyyybe not.']
- → 0%
 test #113) And that brings us full circle back to me sat on the M6. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['And that brings us full circle back to me sat on the M6.']
 - expected: ['And that brings us full circle back', 'to me sat on the M6.']
- → 0%
-test #114) Because cars are brutally flexible. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Because cars are brutally flexible.']
- → 0%
-test #115) Need to make a quick detour? :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Need to make a quick detour?']
- → 0%
 test #116) Or maybe Last night's chow mein has given you an _unexpec... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ["Or maybe Last night's chow mein has given", 'you an _unexpected_ suprise in', 'the morning?']
 - expected: ["Or maybe Last night's chow mein has given you an _unexpected_ suprise in the morning?"]
- → 0%
 test #117) Quick detour at the next junction and straight back home. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Quick detour at', 'the next junction and straight back home.']
 - expected: ['Quick detour at the next junction and straight back home.']
- → 0%
-test #118) Once you've committed to bike-plus-train, you're locked in. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ["Once you've committed to bike-plus-train, you're locked in."]
- → 0%
-test #119) No nipping back if you forgot something. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['No nipping back if you forgot something.']
- → 0%
-test #120) No emergency runs. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['No emergency runs.']
- → 0%
-test #121) No flexability. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['No flexability.']
- → 0%
-test #122) But let's play devil's advocate. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ["But let's play devil's advocate."]
- → 0%
 test #123) Let's assume you have great cycle paths and missing train... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ["Let's assume you have great cycle paths and", 'missing trains is', 'an afterthought.']
 - expected: ["Let's assume you have great cycle paths and missing trains is an afterthought."]
- → 0%
 test #124) You're still enticed by the immense time and cost savings. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ["You're still enticed by", 'the immense time and', 'cost savings.']
 - expected: ["You're still enticed by the immense time and cost savings."]
- → 0%
-test #125) That is exactly the position I was in. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That is exactly the position I was in.']
- → 0%
-test #126) It's why I bought my Brompton. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ["It's why I bought my Brompton."]
- → 0%
-test #127) But here's the crux: :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ["But here's the crux:"]
- → 0%
 test #128) Do you know how many times I’ve used it in the past few m... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Do you know', 'how many times I’ve used it in', 'the past few months?']
 - expected: ['Do you know how many times I’ve used it in the past few months?']
- → 0%
 test #129) Basically zero. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Basically zero.']
 - expected: ['Basically', 'zero.']
- → 0%
-test #130) Not because the bike doesn’t work. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Not because the bike doesn’t work.']
- → 0%
 test #131) But because, in a way... _I_ don’t. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['But because,', 'in a way...', '_I_ don’t.']
 - expected: ['But because, in a way... _I_ don’t.']
- → 0%
 test #132) All it takes is one close miss with a car. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['All it takes is one close miss with', 'a car.']
 - expected: ['All it takes is one close miss with a car.']
- → 0%
-test #133) Not dramatic. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Not dramatic.']
- → 0%
-test #134) Not cinematic. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Not cinematic.']
- → 0%
-test #135) Just... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Just...']
- → 0%
-test #136) A normal Tuesday. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['A normal Tuesday.']
- → 0%
-test #137) The driver didn’t look. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The driver didn’t look.']
- → 0%
 test #138) I didn’t trust the road enough. yeah.. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['I didn’t trust the road enough.', 'yeah..']
 - expected: ['I didn’t trust the road enough. yeah..']
- → 0%
-test #139) That was close enough for me. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['That was close enough for me.']
- → 0%
 test #140) And that’s roughly the moment I realised this *brilliant*... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['And that’s roughly the moment I realised this *brilliant*,', 'beautifully engineered folding bike might not be for me...']
 - expected: ['And that’s roughly the moment I realised this *brilliant*, beautifully engineered folding bike', 'might not be for me...']
- → 0%
 test #141) Cycling sounds great until you’re dodging parked cars, sq... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Cycling sounds great until you’re dodging parked cars, squeezed by traffic, soaked in the rain,', 'and trying', 'not to die on a roundabout.']
 - expected: ['Cycling sounds great until you’re', 'dodging parked cars,', 'squeezed by traffic,', 'soaked in the rain, and', 'trying not to die on a roundabout.']
- → 0%
-test #142) So now the choice isn’t “drive or not.” :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['So now the choice isn’t', '“drive or not.”']
- → 0%
-test #143) It’s this: :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It’s this:']
- → 0%
-test #144) One hour in a car… :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['One hour in a car…']
- → 0%
 test #145) or two and a half hours of trains, cycling, and hoping no... :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['or two and a half hours of trains,', 'cycling, and hoping nothing goes wrong.']
 - expected: ['or two and a half hours of trains,', 'cycling,', 'and hoping nothing goes wrong.']
- → 0%
-test #146) "Alright," you say. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['"Alright," you say.']
- → 0%
 test #147) "What about short trips? :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['" What about short trips?']
 - expected: ['"What about short trips?']
- → 0%
-test #148) Shops. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Shops.']
- → 0%
-test #149) Gym. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Gym.']
- → 0%
 test #150) The pub." :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['The pub. "']
 - expected: ['The pub."']
- → 0%
 test #151) Here’s the problem with a Brompton: you can’t just *leave... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Here’s the problem with', 'a Brompton:', 'you can’t just *leave* it.']
 - expected: ['Here’s the problem with a Brompton:', 'you can’t just *leave* it.']
- → 0%
 test #152) Even with the best lock in the world, leaving a £1,000 fo... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Even with the best lock in the world, leaving a', '£1,000 folding bike outside', 'a shop in 2026 is essentially', 'a charitable donation to', 'the local bolt-cutter enthusiast.']
 - expected: ['Even with the best lock in the world,', 'leaving a £1,000 folding bike outside a shop in 2026 is essentially a charitable donation', 'to the local bolt-cutter enthusiast.']
- → 0%
-test #153) So, you bring it inside. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['So, you bring it inside.']
- → 0%
 test #154) That’s the "ingenious" part, right? :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['That’s the "ingenious"', 'part,', 'right?']
 - expected: ['That’s the "ingenious" part, right?']
- → 0%
 test #155) No locks, no theft. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['No locks,', 'no theft.']
 - expected: ['No locks, no theft.']
- → 0%
-test #156) Unfortunately not. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Unfortunately not.']
- → 0%
 test #157) The British high street wasn't designed for "ingenious fo... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ["The British high street wasn't designed for", '"ingenious folding solutions."']
 - expected: ['The British high street wasn\'t designed for "ingenious folding solutions."']
- → 0%
 test #158) Try taking a folded Brompton into a quiet post office. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['Try', 'taking a folded Brompton into', 'a quiet post office.']
 - expected: ['Try taking a folded Brompton into a quiet post office.']
- → 0%
-test #159) Or a chemist. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Or a chemist.']
- → 0%
 test #160) You aren't "a person with a bike" —you are a "problem wit... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['You aren\'t "a person with a bike" —', 'you are a', '"problem with wheels."', 'Tight aisles.']
 - expected: ['You aren\'t "a person with a bike" —you are a "problem with wheels." Tight aisles.']
- → 0%
-test #161) Small shops. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Small shops.']
- → 0%
-test #162) Staring queues. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Staring queues.']
- → 0%
 test #163) Now, lets imagine you’re in a crowded pub in Glasgow. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['Now, lets imagine', 'you’re in', 'a crowded pub in Glasgow.']
 - expected: ['Now, lets imagine you’re in a crowded pub in Glasgow.']
- → 0%
 test #164) You’ve had a brilliant evening, the atmosphere is electri... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['You’ve had a brilliant evening,', 'the atmosphere is electric, and everyone decides to move to the next spot.']
 - expected: ['You’ve had a brilliant evening, the atmosphere is electric, and everyone decides to move to the next spot.']
- → 0%
 test #165) Suddenly, you aren't a friend; you’re the guy with the 12... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ["Suddenly, you aren't a friend;", 'you’re', 'the guy with', 'the 12kg anchor.']
 - expected: ["Suddenly, you aren't a friend; you’re the guy with the 12kg anchor."]
- → 0%
 test #166) Lugging it around like Jacob Marley. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+- actual: ['Lugging it around like', 'Jacob Marley.']
 - expected: ['Lugging it around like Jacob Marley.']
- → 0%
 test #167) You’re unfolding it in a doorway.... while your mates dis... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['You’re unfolding it in a doorway....', 'while your mates disappear into an Uber.']
 - expected: ['You’re unfolding it in a doorway.... while your mates disappear into an Uber.']
- → 0%
-test #168) You aren't free. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ["You aren't free."]
- → 0%
 test #169) You are a **tethered goat**. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['You are a **tethered goat**.']
- → 0%
-test #170) You are constantly negotiating your space. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['You are constantly negotiating your space.']
- → 0%
-test #171) And honestly… then there’s the appearance. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And honestly… then there’s the appearance.']
- → 0%
-test #172) People will say, “no one cares.” :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['People will say,', '“no one cares.”']
- → 0%
 test #173) And mostly, they don’t. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
+- actual: ['And mostly,', 'they don’t.']
 - expected: ['And mostly, they don’t.']
- → 0%
-test #174) But unless you’re completely sure you don’t... it lingers. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['But unless you’re completely sure you don’t...', 'it lingers.']
- → 0%
-test #175) It’s like suddenly realising you’re the only one wearing ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It’s like suddenly realising you’re the only one wearing bright red jeans and a neon top... while everyone else isn’t.']
- → 0%
-test #176) No one’s said anything. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['No one’s said anything.']
- → 0%
-test #177) Nothing’s wrong. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Nothing’s wrong.']
- → 0%
-test #178) You’re just... aware. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['You’re just...', 'aware.']
- → 0%
-test #179) Some people won’t notice. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Some people won’t notice.']
- → 0%
-test #180) Some will. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Some will.']
- → 0%
-test #181) And you don’t get to know which. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['And you don’t get to know which.']
- → 0%
-test #182) So even if it’s small... it’s always there. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['So even if it’s small...', 'it’s always there.']
- → 0%
-test #183) The design is perfect. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The design is perfect.']
- → 0%
-test #184) But the world it rolls into isn’t. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+
+
+
+test #175) It’s like suddenly realising you’re the only one wearing ... :: FALSE - again, the obiouvs split on 'bright red jeans'... (what they were wearing to a visual...). And then splitting isn't! do not split a word in half!
+- actual: ['It’s like', 'suddenly realising', 'you’re the only one wearing bright red jeans and', 'a neon top...', 'while everyone else is', 'n’t.']
+- expected: ['It’s like', 'suddenly realising', 'you’re the only one wearing' , 'bright red jeans and', 'a neon top...', 'while everyone else is', 'n’t.']
+test #184) But the world it rolls into isn’t. :: FALSE - are you kidding me? you've split a word in half!
+- actual: ['But the world it rolls into is', 'n’t.']
 - expected: ['But the world it rolls into isn’t.']
- → 0%
-test #185) So here’s the actual test. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['So here’s the actual test.']
- → 0%
-test #186) Think about your most common journeys. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+test #186) Think about your most common journeys. :: FALSE - hmmm don't mind this that much...
+- actual: ['Think about', 'your most common journeys.']
 - expected: ['Think about your most common journeys.']
- → 0%
-test #187) Not ideal ones — real ones. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Not ideal ones — real ones.']
- → 0%
-test #188) And ask: does a Brompton genuinely make any of them easier? :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['And ask:', 'does a Brompton genuinely make any of them easier?']
- → 0%
-test #189) Not in theory. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Not in theory.']
- → 0%
-test #190) In practice. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['In practice.']
- → 0%
-test #191) If the answer is yes — consistently — then it’s brilliant. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['If the answer is yes — consistently — then it’s brilliant.']
- → 0%
-test #192) If it’s “maybe”... it won’t be. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
+test #191) If the answer is yes — consistently — then it’s brilliant. :: FALSE - no it should actualy
+- expected: ['If the answer is yes —', 'consistently — then', it’s brilliant.']
+test #192) If it’s “maybe”... it won’t be. :: FALSE - no the elipses should be part of the previous.. don't just have elipses by itself!
+- actual: ['If it’s “maybe”', '...', 'it won’t be.']
 - expected: ['If it’s “maybe”...', 'it won’t be.']
- → 0%
-test #193) Because this only works when it really works. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Because this only works when it really works.']
- → 0%
-test #194) Most people are close. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Most people are close.']
- → 0%
-test #195) But “close” is exactly what breaks it. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['But “close” is exactly what breaks it.']
- → 0%
-test #196) The problem isn’t the bike. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The problem isn’t the bike.']
- → 0%
-test #197) It’s everything around it. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It’s everything around it.']
- → 0%
-test #198) Roads built for cars. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Roads built for cars.']
- → 0%
-test #199) Patchy transport. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Patchy transport.']
- → 0%
-test #200) Small bits of friction that add up. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Small bits of friction that add up.']
- → 0%
-test #201) A tool is only useful if you actually use it. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['A tool is only useful if you actually use it.']
- → 0%
-test #202) Systems like this — mixing modes, switching between them ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Systems like this —', 'mixing modes,', 'switching between them —', 'only really work in perfect conditions.']
- → 0%
-test #203) When everything’s reliable. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['When everything’s reliable.']
- → 0%
-test #204) Predictable. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Predictable.']
- → 0%
-test #205) Joined up. :: FALSE
-- actual: ['ERROR: ValueError: max() iterable argument is empty']
-- expected: ['Joined up.']
- → 0%
-test #206) The Brompton isn’t just a bike. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The Brompton isn’t just a bike.']
- → 0%
-test #207) It’s a system. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It’s a system.']
- → 0%
-test #208) And if your life doesn’t fit that system, it doesn’t matt... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['And if your life doesn’t fit that system, it doesn’t matter how clever it is.']
- → 0%
-test #209) It won’t save you time. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It won’t save you time.']
- → 0%
-test #210) It won’t save you money. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It won’t save you money.']
- → 0%
-test #211) It’ll just sit there, waiting for a version of your life ... :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['It’ll just sit there,', 'waiting for a version of your life that doesn’t quite exist.']
- → 0%
-test #212) The machine is a masterpiece. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['The machine is a masterpiece.']
- → 0%
-test #213) I just don’t know if the world is ready for it. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['I just don’t know if the world is ready for it.']
- → 0%
-test #214) Yet. :: FALSE
-- actual: ["ERROR: NameError: name '_merge_throwaways' is not defined"]
-- expected: ['Yet.']
- → 0%
-romans_map → 0/214 passed
+
+romans_map → 128/214 passed

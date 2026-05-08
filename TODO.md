@@ -1,4 +1,26 @@
 
+--------------------------------
+changes:
+
+
+Changed two functoins:
+
+def _prev_split(splits: Set[int], i: int) -> int:
+    """Largest split index strictly less than *i*."""
+    return max((s for s in splits if s < i), default=0)
+
+def _next_split(splits: Set[int], i: int, doc_len: int) -> int:
+    """Smallest split index strictly greater than *i*."""
+    return min((s for s in splits if s > i), default=doc_len)
+
+added back in merge trhowaways which accidentally got merged with the functoin below it...
+
+
+def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]]) -> List[str]:
+
+--------------------------------
+
+
 
 TODO: 
 - ask claude again... still no merge throwaways...
