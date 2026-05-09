@@ -1,4 +1,12 @@
 
+
+
+
+- manually make a list of changes and new rules i want adding.
+    - do i maybe ask claude to, for each, give a rule that would fix that specific issue?
+    ... so i can later pass hte list of rules to add?
+- ask new claude to edit, rather than just continue with the old thread...
+
 --------------------------------
 changes:
 
