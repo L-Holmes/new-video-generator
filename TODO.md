@@ -1,66 +1,14 @@
 
 
 
-maybe make like pytests just to check for like obvious things like..
-splitting on elipses..
-splitting on lists...
-splitting on reveals.. (is this possible?)
+continue just tackling one sentence splitter issue at once...
+then processing with this:
+sed -nE '/^test #(175|164|141|117|53|79|59|1|142|123|56|69|28|37|49|61|82|87|4|7|8|113|9|25|41|145|18|23|116|19|63|64|68|6|62|67|191|81|112|178|42|43)\)/,+3p' log_test_8_processed.txt
 
-then ask AI one by one to solve that one issue...
+then get to a decent level...
+then in future again, just tackle issues one by one...
 
-until we have something workable...
-
----------
-
-
-next:
-- ask ai to go through every single thing that didn't work, and ask why it didn't work...
-- then ask for fixes for all of those...
-
-
-----------
-
-- manually make a list of changes and new rules i want adding.
-    - do i maybe ask claude to, for each, give a rule that would fix that specific issue?
-    ... so i can later pass hte list of rules to add?
-- ask new claude to edit, rather than just continue with the old thread...
-
---------------------------------
-changes:
-
-
-Changed two functoins:
-
-def _prev_split(splits: Set[int], i: int) -> int:
-    """Largest split index strictly less than *i*."""
-    return max((s for s in splits if s < i), default=0)
-
-def _next_split(splits: Set[int], i: int, doc_len: int) -> int:
-    """Smallest split index strictly greater than *i*."""
-    return min((s for s in splits if s > i), default=doc_len)
-
-added back in merge trhowaways which accidentally got merged with the functoin below it...
-
-
-def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]]) -> List[str]:
-
---------------------------------
-
-
-
-TODO: 
-- ask claude again... still no merge throwaways...
-- then retest..
-
-
-```
-
-------------
-TODO:
-
-Add some more example texts for the sentence splitter. 
-
-
+-------
 
 - get some sound effects added...
 - link up wikipedia etc...

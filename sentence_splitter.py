@@ -315,6 +315,38 @@ def _matches_ellipsis(text: str) -> bool:
     return bool(re.fullmatch(r"\.{2,}|\u2026+", text))
 
 
+def _is_big_punct_split(doc: Doc, i: int) -> bool:
+    """True if the split at *i* is "punctuation-driven" — either the token
+    immediately to its LEFT or to its RIGHT is "big" (non-comma) punctuation
+    that should always force a line-break:
+
+        • hard-punct      .  !  ?  ;  :
+        • ellipsis        ...  ….
+        • dash            —   –   --   -
+        • quote           "  '  “  ”  ‘  ’  «  »  ‹  ›  „  ‚  `
+        • bracket         (  )  [  ]  {  }
+
+    These splits are NEVER wiped by any anti-rule.  Big punctuation marks
+    a deliberate visual break by the writer — even short sentences should
+    honour it.  (Commas are deliberately NOT included: they're soft
+    break-points and the existing comma rules decide when to split.)
+    """
+    if i <= 0 or i > len(doc):
+        return False
+    BIG = HARD_PUNCT | DASH_PUNCT | ANY_QUOTE | OPEN_BRACKETS | CLOSE_BRACKETS
+    # left side
+    if i > 0:
+        lt = doc[i - 1]
+        if lt.text in BIG or _matches_ellipsis(lt.text):
+            return True
+    # right side
+    if i < len(doc):
+        rt = doc[i]
+        if rt.text in BIG or _matches_ellipsis(rt.text):
+            return True
+    return False
+
+
 def _is_in_runon(doc: Doc, i: int) -> bool:
     """
     True if token *i* lives in a long sentence (≥ RUNON_SENT_MIN_TOKENS)
@@ -380,6 +412,73 @@ def rule_strip_markdown(text: str) -> str:
 
 
 # -----------------------------------------------------------------------------
+# RULE 0.5 — NORMALISE PUNCTUATION  (preprocessing)
+# Replaces "weird" Unicode punctuation variants with canonical forms AND
+# ensures spaCy will tokenize them as separate tokens by adding whitespace
+# around them when they're glued to alphanumeric characters.
+#
+# Why this matters:
+#   • spaCy sometimes fuses an ellipsis with the preceding word into one
+#     token ("Which..." → single token).  This kills the post-ellipsis
+#     split because rule_ellipsis can't find a stand-alone ellipsis token.
+#   • Stray "weird" quotes (single open `‘`, single close `’`) and dashes
+#     can confuse the splitter.  We normalise them.
+#
+# Normalisations performed:
+#   • U+2026 (horizontal ellipsis "…") → "..."
+#   • Add a space after "..." or "…" when followed by an alphanumeric
+#   • Add a space before "..." or "…" when preceded by an alphanumeric
+#     and the dots are followed by whitespace or end-of-string (so we
+#     don't tear "1.2.3").  Heuristic: only force a space when the run
+#     of dots is ≥ 2 in length AND the surrounding context makes the
+#     dot-run punctuation (not decimal point).
+#   • Long-dash forcing: ensure em/en dashes have whitespace either side
+#     when they sit between alphanumerics (so "yes—consistently" still
+#     splits cleanly).  Single hyphen "-" is left alone to preserve
+#     "self-driving" style compounds.
+#
+# All changes are conservative — we never change the SEMANTICS of the
+# string, only the WHITESPACE around already-existing punctuation.
+# -----------------------------------------------------------------------------
+def rule_normalise_punct(text: str) -> str:
+    # Canonicalise U+2026 ellipsis to three dots (so RULE 3 catches it
+    # via the same regex path).  Keep already-existing "..." untouched.
+    text = text.replace("\u2026", "...")
+    # Ensure "..." has a space before it when glued to a preceding word.
+    # Pattern: <alphanumeric>...<whitespace OR end> → "<alphanumeric>... "
+    text = re.sub(r"(?<=[A-Za-z0-9])(\.{2,})(?=\s|$)",
+                  lambda m: " " + m.group(1), text)
+    # Ensure "..." has a space after it when glued to a following word
+    # AND the "..." starts at the beginning of the string OR after whitespace.
+    # We CAN'T use a variable-width lookbehind here (Python's re module
+    # rejects `(?<=\s|^)`), so we match the leading whitespace/start
+    # explicitly as a capture group and re-insert it.
+    text = re.sub(r"(^|\s)(\.{2,})(?=[A-Za-z0-9])",
+                  lambda m: m.group(1) + m.group(2) + " ", text)
+    # Mid-word "..." (alphanumeric on BOTH sides) → split on both sides
+    # so "Which...sounds" becomes "Which ... sounds".  This handles the
+    # case where spaCy fuses the ellipsis with adjacent text.
+    text = re.sub(r"(?<=[A-Za-z0-9])(\.{2,})(?=[A-Za-z0-9])",
+                  lambda m: " " + m.group(1) + " ", text)
+    # Em-dash / en-dash / double-hyphen glued to alphanumerics on both
+    # sides → ensure whitespace either side.
+    for dash in ("—", "–", "--"):
+        # alphanum + dash + alphanum  →  alphanum + " " + dash + " " + alphanum
+        text = re.sub(
+            r"(?<=[A-Za-z0-9])(" + re.escape(dash) + r")(?=[A-Za-z0-9])",
+            lambda m: " " + m.group(1) + " ", text,
+        )
+    # Smart-quote normalisation: replace curly singles ‘ ’ that are clearly
+    # bracket-quotes (not apostrophes).  Heuristic: if a curly single
+    # appears glued to whitespace on one side and an alphanumeric on the
+    # other, AND it's the OUTER kind (open vs close), we don't touch
+    # apostrophes embedded in words like "isn't".  Conservative: leave
+    # curly singles inside words alone.  (Apostrophe detection is handled
+    # by anti_rule_possessive downstream.)
+    return text
+
+
+# -----------------------------------------------------------------------------
 # RULE 1 — HARD PUNCTUATION  (.  !  ?  ;  :)
 # Always end a line at sentence-final punctuation.
 # Examples:  "He left."        → "He left." +
@@ -393,27 +492,21 @@ def rule_hard_punct(doc: Doc) -> Set[int]:
 
 # -----------------------------------------------------------------------------
 # RULE 2 — DASHES  (—  –  --  -)
-# Split AROUND dashes — both before AND after long dashes (em/en/double),
-# and after spaCy-glued single hyphens like "another-" tokens.
+# Split AFTER em/en/double-hyphen dashes and after spaCy-glued single hyphens
+# like "another-" tokens.  Dashes attach to the PRECEDING text on their line.
 #
 # Examples:
 #   "fold smaller — it changes the rules"
-#       → split BEFORE "—" and AFTER "—"
+#       → split AFTER "—" → ['fold smaller —', 'it changes the rules']
 #   "If the answer is yes — consistently — then it's brilliant."
-#       → splits before/after BOTH em-dashes, so "consistently" can stand
-#         alone as a parenthetical reveal.
+#       → splits AFTER each em-dash, NOT before.  Preserves the natural
+#         reading flow.
 #   "and here is another- does it..."
 #       → spaCy may emit "another-" as a single token; we detect a token
 #         that ends in "-" with alphanumeric before AND a trailing space,
 #         and split AFTER it.
 #   "self-driving"
 #       → NOT split (single hyphen with no whitespace either side).
-#
-# Refinements vs the previous version:
-#   • For long dashes (—, –, --) with whitespace BEFORE, we now ALSO add a
-#     split BEFORE the dash so the dash starts a new line.
-#   • Detects single-hyphen-suffix tokens like "another-" produced when
-#     spaCy fails to split on a stray hyphen attached to a word.
 # -----------------------------------------------------------------------------
 def rule_dashes(doc: Doc) -> Set[int]:
     out = set()
@@ -433,15 +526,8 @@ def rule_dashes(doc: Doc) -> Set[int]:
                 and not t.whitespace_
                 and not doc[t.i - 1].whitespace_):
             continue
-        # Single-hyphen attached only on the LEFT to alphanum — that means
-        # it's actually a punctuation dash ("only problem-" / "problem- it").
-        # We split AFTER it (already done below).  Don't add a split BEFORE
-        # because there's no whitespace there.
-        out.add(t.i + 1)                               # AFTER the dash
-        # For long dashes (—, –, --) flanked by whitespace before, ALSO
-        # split BEFORE the dash so it starts a new line.
-        if t.text in LONG_DASH_PUNCT and t.i > 0 and doc[t.i - 1].whitespace_:
-            out.add(t.i)
+        # Split AFTER the dash so dashes attach to the preceding chunk.
+        out.add(t.i + 1)
     return out
 
 
@@ -2384,6 +2470,11 @@ def anti_rule_neg_modifier(doc: Doc, splits: Set[int]) -> Set[int]:
         if i <= 0 or i >= len(doc):
             continue
         if doc[i - 1].lower_ in {"not", "no", "never", "n't"}:
+            # NEVER wipe a punctuation-driven split.  "isn't | \"drive..."
+            # / "didn't | ... | really happen" — the writer's punctuation
+            # is intentional.  Fixes #142.
+            if _is_big_punct_split(doc, i):
+                continue
             bad.add(i)
     return bad
 
@@ -2489,8 +2580,13 @@ def anti_rule_short_sentence(doc: Doc, splits: Set[int]) -> Set[int]:
         for i in splits:
             if not (sent.start < i < sent.end):
                 continue
-            # PRESERVE: split immediately after an ellipsis token
-            if i > 0 and _matches_ellipsis(doc[i - 1].text):
+            # PRESERVE: split adjacent to BIG (non-comma) punctuation —
+            # ellipsis, dash, hard-punct, quote, bracket.  Big punctuation
+            # always marks a deliberate visual break by the writer, so
+            # splits around it are never wiped, even in short sentences.
+            # Fixes #81 "Which... | sounds familiar.", #112 "But Together...
+            # | mayyyybe not.", #178 "You're just... | aware.".
+            if _is_big_punct_split(doc, i):
                 continue
             # PRESERVE: split before last noun in `is + ADP + NOUN` pattern
             if copula_pp_reveal_ok and last_noun_i is not None:
@@ -2603,13 +2699,13 @@ def anti_rule_content_starved(doc: Doc, splits: Set[int]) -> Set[int]:
                         if t.pos_ in {"NOUN", "PROPN", "VERB", "ADJ", "NUM"})
         if n_content > 0:
             continue
-        # if chunk ends in hard punct, leave alone — it's a sentence boundary
-        last_nonspace = None
-        for t in reversed(list(span)):
-            if not t.is_space:
-                last_nonspace = t
-                break
-        if last_nonspace is not None and last_nonspace.text in HARD_PUNCT:
+        # NEVER remove a split that is punctuation-driven on EITHER boundary.
+        # The chunk in question may be light on content but if it's flanked
+        # by big punctuation (ellipsis, dash, quote, bracket, hard-punct)
+        # the writer marked an intentional break.  Fixes the bug where
+        # "Which..." (function-word + ellipsis) was being merged with
+        # "sounds familiar." because the chunk had no content POS.
+        if _is_big_punct_split(doc, lo) or _is_big_punct_split(doc, hi):
             continue
         # remove the RIGHT boundary so this chunk glues forward into the
         # next, except when the next split is doc end (would leave no
@@ -2711,13 +2807,19 @@ def _throwaway_direction(doc: Doc, lo: int, hi: int) -> str:
     return "bwd"
 
 
-def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]]) -> List[str]:
+def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]],
+                  protected: Optional[Set[int]] = None) -> List[str]:
     """
     Post-merge pass that fixes orphan single-content-word lines.
 
     KEY DESIGN: this pass works structurally (POS / DEP) on the underlying
     spaCy tokens, NOT on hardcoded word lists.  That way it generalises to
     any vocabulary.
+
+    NEW: never fuses across PROTECTED boundaries — those are big-punctuation
+    splits (ellipsis, dash, colon, etc.) that must remain inviolate.  Any
+    fusion candidate is rejected if the boundary between the two chunks
+    being fused is in `protected`.
 
     The chunks list and the chunk_spans list are aligned: chunk_spans[k]
     gives the (lo, hi) token range that produced chunks[k] (post-merge).
@@ -2745,7 +2847,11 @@ def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]
       (5) Tiny chunks consisting entirely of orphaned punctuation (e.g. "...",
           "—", "..") merge backward into the previous chunk.  Fixes
           "If it's \"maybe\" / ... / it won't be." → "If it's \"maybe\"... / ..."
+          EXCEPT when the trailing boundary is protected (would erase a
+          big-punct split).
     """
+    if protected is None:
+        protected = set()
     if len(chunks) <= 1:
         return chunks
 
@@ -2780,7 +2886,9 @@ def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]
         # dash on its own line is never desirable; attach it to whatever came
         # before.  Fixes 'If it\'s "maybe" / ... / it won\'t be.' becoming
         # 'If it\'s "maybe"... / it won\'t be.'
-        if _all_punct(cur_lo, cur_hi):
+        # NEW guard: don't fuse if `cur_lo` is a protected boundary (would
+        # erase the inviolate split).
+        if _all_punct(cur_lo, cur_hi) and cur_lo not in protected:
             if out:
                 # if previous ends in sentence-final punct, append after that
                 # punct (e.g. "Yep." + "..." → "Yep...")
@@ -2793,10 +2901,12 @@ def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]
             continue
 
         # ----- pattern (1): single-noun then relative pronoun -----
+        # Skip if the boundary between this chunk and the next is protected.
         if (i + 1 < len(chunks)
                 and len(cur_content) == 1
                 and cur_content[0].pos_ in {"NOUN", "PROPN"}
-                and not cur_text.rstrip().endswith((".", "!", "?", ":", ";"))):
+                and not cur_text.rstrip().endswith((".", "!", "?", ":", ";"))
+                and cur_hi not in protected):
             nxt_lo, nxt_hi = chunk_spans[i + 1]
             first = _first_content_tok(nxt_lo, nxt_hi)
             if first is not None and first.tag_ in REL_TAGS:
@@ -2808,8 +2918,10 @@ def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]
 
         # ----- pattern (2): orphaned-after-prep — previous chunk ends with
         #       an ADP/PART whose head lives INSIDE this chunk -----
+        # Skip if the boundary at cur_lo is protected.
         if (out and len(cur_content) <= 2
-                and not cur_text.rstrip().endswith((".", "!", "?", ":", ";"))):
+                and not cur_text.rstrip().endswith((".", "!", "?", ":", ";"))
+                and cur_lo not in protected):
             prev_lo, prev_hi = out_spans[-1]
             prev_last = _last_content_tok(prev_lo, prev_hi)
             if (prev_last is not None
@@ -2829,7 +2941,9 @@ def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]
             nxt_lo, nxt_hi = chunk_spans[i + 1]
             verb = cur_content[0]
             # if any child of the verb lives in the next chunk, fuse
-            if any(nxt_lo <= c.i < nxt_hi for c in verb.children):
+            # Guard: don't fuse across a protected boundary
+            if any(nxt_lo <= c.i < nxt_hi for c in verb.children) \
+                    and cur_hi not in protected:
                 fused = (cur_text + " " + chunks[i + 1]).strip()
                 out.append(fused)
                 out_spans.append((cur_lo, nxt_hi))
@@ -2837,9 +2951,11 @@ def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]
                 continue
 
         # ----- pattern (4): bare DET-only chunk glues forward -----
+        # Guard: don't fuse across a protected boundary
         if (i + 1 < len(chunks)
                 and len(cur_content) == 1
-                and cur_content[0].pos_ == "DET"):
+                and cur_content[0].pos_ == "DET"
+                and cur_hi not in protected):
             nxt_lo, nxt_hi = chunk_spans[i + 1]
             fused = (cur_text + " " + chunks[i + 1]).strip()
             out.append(fused)
@@ -2851,7 +2967,8 @@ def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]
         out_spans.append((cur_lo, cur_hi))
         i += 1
     return out
-def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]]
+def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
+                       protected: Optional[Set[int]] = None
                        ) -> Tuple[List[str], List[Tuple[int, int]]]:
     """
     Apply the smart head-aware merge.
@@ -2860,9 +2977,24 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]]
     if the previous chunk ends in HARD_PUNCT, force forward gluing instead.
     This prevents bugs like "Not near" being appended to a previous "a desert.".
 
+    NEW: never merge across a PROTECTED split (i.e. a big-punctuation boundary
+    like ellipsis, dash, colon, etc).  If a throwaway chunk's left or right
+    boundary is in `protected`, we honour it strictly:
+      • right boundary protected → throwaway can't glue FORWARD (would erase
+        the protected boundary).  It glues BACKWARD instead.
+      • left boundary protected → throwaway can't glue BACKWARD.  It glues
+        FORWARD instead.
+      • BOTH boundaries protected → don't merge at all (keep as-is).
+
+    This is what gives big-punctuation splits their "inviolate" property:
+    "Which... | sounds familiar." cannot collapse into one chunk even if
+    "Which..." passes the throwaway test.
+
     Returns (chunks, spans) where spans[k] is the (lo, hi) token range that
     produced chunks[k] — needed by _fuse_orphans for structural decisions.
     """
+    if protected is None:
+        protected = set()
     out: List[str] = []
     out_spans: List[Tuple[int, int]] = []
     fwd_buf = ""
@@ -2874,9 +3006,27 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]]
             continue
 
         if _is_throwaway_span(doc, lo, hi):
+            # NEW: respect protected boundaries.
+            left_protected  = lo in protected
+            right_protected = hi in protected
+            if left_protected and right_protected:
+                # both sides inviolate — keep this chunk as-is even if tiny
+                out.append((fwd_buf + text).strip())
+                start_lo = fwd_lo if fwd_lo is not None else lo
+                out_spans.append((start_lo, hi))
+                fwd_buf = ""
+                fwd_lo  = None
+                continue
+
             direction = _throwaway_direction(doc, lo, hi)
             # don't glue across sentence boundaries — go forward instead
             if direction == "bwd" and out and out[-1] and out[-1][-1] in HARD_PUNCT:
+                direction = "fwd"
+            # NEW: if the right boundary is protected, can't go forward
+            if direction == "fwd" and right_protected:
+                direction = "bwd" if out else "keep"
+            # NEW: if the left boundary is protected, can't go backward
+            if direction == "bwd" and left_protected:
                 direction = "fwd"
             # SPECIAL: if span is a lone dash and previous chunk ends in a
             # closing quote ("…Whales" + "—"), glue the dash backward to the
@@ -2888,6 +3038,12 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]]
             if direction == "bwd" and out:
                 out[-1] = (out[-1] + " " + text).strip()
                 out_spans[-1] = (out_spans[-1][0], hi)
+            elif direction == "keep":
+                out.append((fwd_buf + text).strip())
+                start_lo = fwd_lo if fwd_lo is not None else lo
+                out_spans.append((start_lo, hi))
+                fwd_buf = ""
+                fwd_lo  = None
             else:
                 if fwd_lo is None:
                     fwd_lo = lo
@@ -2928,9 +3084,26 @@ def split_text_into_sections(text: str) -> List[str]:
        6) merge throwaway fragments with head-aware direction
     """
     text = rule_strip_markdown(text)
+    text = rule_normalise_punct(text)
     nlp_pipe = _nlp()
     doc = nlp_pipe(text)
     splits: Set[int] = {0, len(doc)}
+
+    # ---- compute PROTECTED (inviolate) splits ------------------------------
+    # Big punctuation splits — ellipses, dashes, semicolons, colons, full
+    # stops, exclamation marks, question marks, quotation marks, brackets —
+    # are NEVER wiped by anti-rules or merged by throwaway logic.  This
+    # makes "Which... | sounds familiar." reliably produce 2 chunks even
+    # though both halves are short.
+    #
+    # Comma splits are NOT protected — they're soft, RULE 7/8 may add or
+    # withhold them and anti-rules may rebalance.
+    protected: Set[int] = set()
+    protected |= rule_hard_punct(doc)
+    protected |= rule_dashes(doc)
+    protected |= rule_ellipsis(doc)
+    protected |= rule_quotes(doc)
+    protected |= rule_brackets(doc)
 
     # ---- positive rules (add splits) ----------------------------------------
     splits |= rule_hard_punct(doc)
@@ -2973,6 +3146,9 @@ def split_text_into_sections(text: str) -> List[str]:
     splits |= rule_infinitive_split(doc, splits)    # RULE 32
 
     # ---- forbidden splits (remove) ------------------------------------------
+    # Each anti-rule subtracts its bad indices, but protected indices are
+    # immediately re-added at the end so they CANNOT be removed by any
+    # anti-rule (compound NE, hyphen compound, possessive, etc.).
     splits -= anti_rule_compound_ne(doc, splits)
     splits -= anti_rule_aux_main_verb(doc, splits)
     splits -= anti_rule_hyphen_compound(doc, splits)
@@ -2998,17 +3174,18 @@ def split_text_into_sections(text: str) -> List[str]:
     splits -= anti_rule_orphan_measure_tail(doc, splits)   # NEW
     splits -= anti_rule_content_starved(doc, splits)       # NEW (#15)
 
-    # always preserve sentinel splits
+    # always preserve sentinel splits AND protected (big-punct) splits.
     splits |= {0, len(doc)}
+    splits |= protected
 
     raw = _build_raw_chunks(doc, splits)
-    merged, merged_spans = _merge_throwaways(doc, raw)
+    merged, merged_spans = _merge_throwaways(doc, raw, protected)
     # filter empties while keeping spans aligned
     pairs = [(c, s) for c, s in zip(merged, merged_spans) if c]
     if not pairs:
         return []
     merged, merged_spans = [p[0] for p in pairs], [p[1] for p in pairs]
-    fused = _fuse_orphans(doc, merged, merged_spans)
+    fused = _fuse_orphans(doc, merged, merged_spans, protected)
     return fused
 
 
