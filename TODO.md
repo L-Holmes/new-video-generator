@@ -1,6 +1,24 @@
 
 
 
+maybe make like pytests just to check for like obvious things like..
+splitting on elipses..
+splitting on lists...
+splitting on reveals.. (is this possible?)
+
+then ask AI one by one to solve that one issue...
+
+until we have something workable...
+
+---------
+
+
+next:
+- ask ai to go through every single thing that didn't work, and ask why it didn't work...
+- then ask for fixes for all of those...
+
+
+----------
 
 - manually make a list of changes and new rules i want adding.
     - do i maybe ask claude to, for each, give a rule that would fix that specific issue?

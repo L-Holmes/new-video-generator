@@ -59,6 +59,11 @@ HARD_PUNCT       = {".", "!", "?", ";", ":"}
 # minus (−).  In-word hyphens are filtered out via whitespace check.
 DASH_PUNCT       = {"—", "–", "--", "-", "−"}
 
+# "Long" dashes — em / en / double-hyphen.  These ALWAYS earn a split before
+# AND after themselves when whitespace-flanked.  Single hyphen "-" is more
+# delicate (could be in-word) and handled separately in rule_dashes.
+LONG_DASH_PUNCT  = {"—", "–", "--"}
+
 # Quotation marks — straight, smart, French «», German „".
 OPEN_QUOTES      = {'"', "\u201C", "\u2018", "\u00AB", "\u2039", "\u201E", "\u201A", "`"}
 CLOSE_QUOTES     = {'"', "\u201D", "\u2019", "\u00BB", "\u203A"}
@@ -87,6 +92,9 @@ REVEAL_ENTS      = {
     "DATE", "TIME", "MONEY", "QUANTITY", "PERCENT",
 }
 
+# Multi-token entity types that earn a "post-entity" split (RULE 30).
+LOCATION_ENTS    = {"GPE", "LOC", "FAC", "ORG", "PERSON", "EVENT", "WORK_OF_ART"}
+
 # Numeric/measure entities — atomic, never cut internally.
 NUMERIC_ENTS     = {"CARDINAL", "ORDINAL", "QUANTITY", "MONEY",
                     "DATE", "TIME", "PERCENT"}
@@ -94,6 +102,12 @@ NUMERIC_ENTS     = {"CARDINAL", "ORDINAL", "QUANTITY", "MONEY",
 # Numeric ent labels we DON'T want to "reveal" when single-token (these are
 # usually part of measure phrases like "thousands of kilometers").
 NUMERIC_NO_REVEAL = {"CARDINAL", "QUANTITY", "PERCENT", "ORDINAL"}
+
+# Numeric/measurement entity types that, when preceded by an ADP in a shorter
+# sentence, are qualifier PPs ("in the 19th century", "for 40 years", "by
+# 1946") rather than reveals.  Used by RULE 18 condition (ii').
+NUMERIC_QUALIFIER_ENTS = {"DATE", "TIME", "MONEY", "QUANTITY",
+                          "PERCENT", "CARDINAL", "ORDINAL"}
 
 # A verb whose dep is one of these is *not heading a top-level clause*,
 # so we do NOT use it as a clause boundary.  Includes:
@@ -215,6 +229,30 @@ SHORT_SENT_NO_SPLIT       = 4       # sentences with ≤ this many *non-punct* t
                                     # rule_verb_clause / rule_long_preps / rule_clause_starters
                                     # do most of the work now (≤ 8-9 token threshold there);
                                     # this just catches the genuinely tiny ones.
+LONG_SUBORD_OPENER_TOKENS = 6       # tokens needed inside an SCONJ/wh-led opener
+                                    # before we split after its closing comma (RULE 26)
+
+# --- thresholds for NEW rules (31-38) ---------------------------------------
+LONG_COMMA_LEAD_CONTENT   = 5       # min content tokens in lead before generic-long-comma split (RULE 31)
+LONG_COMMA_TAIL_CONTENT   = 3       # min content tokens in tail
+INFINITIVE_SPLIT_SENT_MIN = 12      # RULE 32: min sent ntok to allow `to + VERB` split
+INFINITIVE_SPLIT_LEAD_MIN = 6
+INFINITIVE_SPLIT_TAIL_MIN = 4
+OF_REVEAL_SENT_MIN        = 12      # RULE 33: terminal-of reveal
+OF_REVEAL_LEAD_MIN        = 5
+PROGRESSIVE_SENT_MIN      = 10      # RULE 34: split before VBG in `be + Ving`
+PROGRESSIVE_LEAD_MIN      = 3
+COPULA_REVEAL_SENT_MIN    = 9       # RULE 35: copula-attribute reveal
+COPULA_REVEAL_CHUNK_MIN   = 2       # RULE 35: min noun-chunk length to count as reveal
+PP_PRON_PART_SENT_MIN     = 9       # RULE 36: PP-with-PRON-participle reveal
+PP_PRON_PART_LEAD_MIN     = 4
+AUX_PP_REVEAL_LEAD_MIN    = 3       # RULE 37: terminal `'s about X` reveal
+CHAINED_PART_SENT_MIN     = 11      # RULE 38: chained-participle reveal
+DOBJ_DISQUAL_SENT_MIN     = 8       # min sent length to allow dobj-disqualifier in RULE 12
+
+# Comparative markers — when a verb's dobj subtree contains one, the dobj is
+# a "reveal NP" worth splitting before instead of gluing.
+COMPARATIVE_MARKERS = {"than", "more", "less", "fewer"}
 
 
 # =============================================================================
@@ -319,6 +357,14 @@ def _tokens_to_next_punct(doc: Doc, i: int) -> int:
     return j - i
 
 
+def _content_count(doc: Doc, lo: int, hi: int) -> int:
+    """Count NOUN/PROPN/VERB/ADJ/ADV/NUM tokens in doc[lo:hi].  Used by
+    the long-clause / infinitive / progressive / `of`-reveal rules to
+    measure how much "real content" is on each side of a candidate split."""
+    return sum(1 for x in doc[lo:hi]
+               if x.pos_ in {"NOUN", "PROPN", "VERB", "ADJ", "ADV", "NUM"})
+
+
 # =============================================================================
 # RULE FUNCTIONS  —  each returns a *set of token indices* where a split is
 # desired.  "Split at i" means: the chunk boundary lies BEFORE doc[i].
@@ -347,24 +393,55 @@ def rule_hard_punct(doc: Doc) -> Set[int]:
 
 # -----------------------------------------------------------------------------
 # RULE 2 — DASHES  (—  –  --  -)
-# Always split AFTER em / en / double-hyphen dashes.
-# A single hyphen INSIDE a word ("self-driving") is filtered via the
-# whitespace check.
-# Examples:  "fold smaller — it changes the rules"  → split after "—"
-#            "and here is another- does it..."      → split after "-"
-#            "self-driving"                         → NOT split
+# Split AROUND dashes — both before AND after long dashes (em/en/double),
+# and after spaCy-glued single hyphens like "another-" tokens.
+#
+# Examples:
+#   "fold smaller — it changes the rules"
+#       → split BEFORE "—" and AFTER "—"
+#   "If the answer is yes — consistently — then it's brilliant."
+#       → splits before/after BOTH em-dashes, so "consistently" can stand
+#         alone as a parenthetical reveal.
+#   "and here is another- does it..."
+#       → spaCy may emit "another-" as a single token; we detect a token
+#         that ends in "-" with alphanumeric before AND a trailing space,
+#         and split AFTER it.
+#   "self-driving"
+#       → NOT split (single hyphen with no whitespace either side).
+#
+# Refinements vs the previous version:
+#   • For long dashes (—, –, --) with whitespace BEFORE, we now ALSO add a
+#     split BEFORE the dash so the dash starts a new line.
+#   • Detects single-hyphen-suffix tokens like "another-" produced when
+#     spaCy fails to split on a stray hyphen attached to a word.
 # -----------------------------------------------------------------------------
 def rule_dashes(doc: Doc) -> Set[int]:
     out = set()
     for t in doc:
         if t.text not in DASH_PUNCT:
+            # Detect spaCy-glued hyphen-suffix token: "another-" with
+            # whitespace after.  Split AFTER such a token.
+            if (len(t.text) > 1
+                    and t.text.endswith("-")
+                    and t.text[-2].isalnum()
+                    and t.whitespace_):
+                out.add(t.i + 1)
             continue
+        # In-word single hyphen ("self-driving") — skip.
         if (t.text == "-"
                 and t.i > 0
                 and not t.whitespace_
                 and not doc[t.i - 1].whitespace_):
             continue
-        out.add(t.i + 1)
+        # Single-hyphen attached only on the LEFT to alphanum — that means
+        # it's actually a punctuation dash ("only problem-" / "problem- it").
+        # We split AFTER it (already done below).  Don't add a split BEFORE
+        # because there's no whitespace there.
+        out.add(t.i + 1)                               # AFTER the dash
+        # For long dashes (—, –, --) flanked by whitespace before, ALSO
+        # split BEFORE the dash so it starts a new line.
+        if t.text in LONG_DASH_PUNCT and t.i > 0 and doc[t.i - 1].whitespace_:
+            out.add(t.i)
     return out
 
 
@@ -496,6 +573,22 @@ def rule_initial_adverbial_comma(doc: Doc) -> Set[int]:
                              or any(x.like_num
                                     or x.ent_type_ in {"DATE", "TIME", "GPE", "LOC", "PERSON"}
                                     or x.pos_ == "PROPN" for x in lead))
+            # TIGHTENED: in shorter sentences (≤10 non-punct tokens), require
+            # a clear "scene-setter" — the lead must contain a NUM, DATE/TIME/
+            # GPE/LOC/PERSON entity, or PROPN.  This kills over-splitting of
+            # short sentences like "And once that clicks, deserts start
+            # getting weird very fast." while still firing on "Back in 1946,
+            # the technician..." and "In Egypt, there's a valley...".
+            sent_ntok = sum(1 for x in sent if not x.is_punct)
+            if sent_ntok <= 10:
+                strong_substance = any(
+                    x.like_num
+                    or x.ent_type_ in {"DATE", "TIME", "GPE", "LOC", "PERSON"}
+                    or x.pos_ == "PROPN"
+                    for x in lead
+                )
+                if not strong_substance:
+                    break
             if has_substance and t.i + 1 < len(doc):
                 out.add(t.i + 1)
             break       # only the FIRST comma in the sentence
@@ -539,7 +632,14 @@ def rule_comma_split(doc: Doc) -> Set[int]:
         # (b) noun list: NOUN, + (NOUN/DET/ADJ/ADV/NUM) with no early verb
         if prev.pos_ in {"NOUN", "PROPN"} and nxt.pos_ in {"NOUN", "PROPN", "DET", "ADJ", "ADV", "NUM"}:
             window_end = min(t.i + 4, len(doc))
-            has_early_verb = any(doc[k].pos_ == "VERB" for k in range(t.i + 1, window_end))
+            # Treat VBG/VBN as participles (not finite verbs) — they don't
+            # block list flow.  Fixes #53 "...vegetation, entire ecosystems
+            # supporting massive..." — `supporting` (VBG) was killing the
+            # split after `vegetation,`.
+            has_early_verb = any(
+                doc[k].pos_ == "VERB" and doc[k].tag_ not in {"VBG", "VBN"}
+                for k in range(t.i + 1, window_end)
+            )
             if not has_early_verb:
                 out.add(t.i + 1)
     return out
@@ -656,7 +756,15 @@ def rule_verb_clause(doc: Doc) -> Set[int]:
         if sent_ntok <= 9:
             continue
         if t.dep_ in VERB_MOD_DEPS:
-            continue
+            # EXCEPTION: a finite VERB heading a LONG relative clause /
+            # advcl is a genuine clause boundary worth splitting after.
+            # Fixes #49 ("...where the plateau abruptly collapses into
+            # surrounding desert basins.") — the relcl subtree is ≥8 tokens
+            # so we let it split.  Doesn't apply to amod/acl participles.
+            is_long_subclause = (t.dep_ in {"relcl", "acl:relcl", "advcl"}
+                                 and len(list(t.subtree)) >= 8)
+            if not is_long_subclause:
+                continue
         # phrasal-verb particle next → keep together
         if t.i + 1 < len(doc) and doc[t.i + 1].dep_ in PARTICLE_DEPS:
             continue
@@ -679,17 +787,40 @@ def rule_verb_clause(doc: Doc) -> Set[int]:
                 and doc[t.i + 1].lower_ == "to"
                 and doc[t.i + 2].pos_ == "VERB"):
             continue
-        # short direct object stays with verb
+        # short direct object stays with verb — UNLESS the dobj subtree
+        # contains a comparative marker ("than"/"more"/"less"/"fewer") OR
+        # is a multi-modifier reveal NP (≥1 ADJ and ≥2 NOUN/PROPN tokens
+        # in its subtree) in a sentence ≥ DOBJ_DISQUAL_SENT_MIN tokens.
+        # Both signal "this is the visual reveal, please split before it".
+        # Fixes #82 (calibration tools larger than cities), #123 (great
+        # cycle paths), #87 (surfaces so level they become...).
         dobj = next((c for c in t.children if c.dep_ in {"dobj", "obj"}), None)
         if dobj and len(list(dobj.subtree)) <= 5 and (dobj.i - t.i) < 6:
-            continue
+            subtree_toks = list(dobj.subtree)
+            has_comparative = any(x.lower_ in COMPARATIVE_MARKERS
+                                  for x in subtree_toks)
+            n_adj   = sum(1 for x in subtree_toks if x.pos_ == "ADJ")
+            n_nouns = sum(1 for x in subtree_toks if x.pos_ in {"NOUN", "PROPN"})
+            is_reveal_np = (sent_ntok >= DOBJ_DISQUAL_SENT_MIN
+                            and n_adj >= 1 and n_nouns >= 2)
+            if not (has_comparative or is_reveal_np):
+                continue
         # short COMPLEMENT (xcomp/attr/acomp/ccomp) stays with verb.
         # Catches "Which sounds impossible because..." — "sounds" should not
         # split off from its short attr complement "impossible".
+        # Same disqualifier applies (comparative inside / multi-modifier reveal NP).
         comp = next((c for c in t.children
                      if c.dep_ in {"xcomp", "attr", "acomp", "ccomp"}), None)
         if comp and len(list(comp.subtree)) <= 5 and (comp.i - t.i) < 6:
-            continue
+            subtree_toks = list(comp.subtree)
+            has_comparative = any(x.lower_ in COMPARATIVE_MARKERS
+                                  for x in subtree_toks)
+            n_adj   = sum(1 for x in subtree_toks if x.pos_ == "ADJ")
+            n_nouns = sum(1 for x in subtree_toks if x.pos_ in {"NOUN", "PROPN"})
+            is_reveal_np = (sent_ntok >= DOBJ_DISQUAL_SENT_MIN
+                            and n_adj >= 1 and n_nouns >= 2)
+            if not (has_comparative or is_reveal_np):
+                continue
         # IMPERATIVE / SUBJECTLESS verb + short PP stays together.
         # "Switch to a fresh steed" — verb has no nsubj, prep complement is
         # short, so we keep them together.  Doesn't apply to S-V-PP sentences
@@ -739,6 +870,12 @@ def rule_long_lead_in(doc: Doc, splits: Set[int]) -> Set[int]:
 # long (≥ LONG_PREP_SUBTREE_MIN tokens).  Short PPs like "in the box",
 # "on the comfortable mat", "in the sand", "in Egypt" are kept intact.
 # "of" is excluded entirely — it almost always wants to bind to its head NP.
+#
+# REFINEMENT: skip ADPs whose subtree contains a VERB or AUX — these are
+# preposition-led relative clauses ("through regions that are now brutally
+# dry") where splitting after the prep would amputate the descriptor tail.
+# Letting RULE 22 (terminal descriptor) reveal the tail produces a far
+# better break: "...scattered through regions that are now | brutally dry".
 # -----------------------------------------------------------------------------
 def rule_long_preps(doc: Doc) -> Set[int]:
     out = set()
@@ -750,8 +887,21 @@ def rule_long_preps(doc: Doc) -> Set[int]:
         sent_ntok = sum(1 for x in t.sent if not x.is_punct)
         if sent_ntok <= 9:
             continue
-        if len(list(t.subtree)) >= LONG_PREP_SUBTREE_MIN:
-            out.add(t.i + 1)
+        subtree = list(t.subtree)
+        if len(subtree) < LONG_PREP_SUBTREE_MIN:
+            continue
+        # NEW: relative-clause guard — if subtree contains its own verb/aux
+        # (e.g. "through regions that ARE now brutally dry"), don't break
+        # after this prep.  Other rules will handle the descriptor reveal.
+        if any(x.pos_ in {"VERB", "AUX"} for x in subtree):
+            continue
+        # TIGHTENED: require ≥3 nouns in subtree.  Short PPs with just one
+        # noun and lots of modifiers (e.g. "under dust and rock", "during
+        # one temporary version") aren't reveals — they're qualifiers.
+        n_nouns = sum(1 for x in subtree if x.pos_ in {"NOUN", "PROPN"})
+        if n_nouns < 3:
+            continue
+        out.add(t.i + 1)
     return out
 
 
@@ -930,6 +1080,18 @@ def rule_entity_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         prev_tok = doc[split_at - 1] if split_at > 0 else None
         if len(ent) == 1 and prev_tok is not None and prev_tok.pos_ == "ADP":
             continue
+        # (ii') multi-token numeric/measure entity preceded by ADP
+        # (e.g. "in the 19th century", "for 40 years", "by 1946") — these
+        # are qualifiers, not reveals.  Only blocked in shorter sentences;
+        # longer sentences have enough build-up to justify a reveal.
+        sent_ntok_here = sum(1 for x in doc[split_at].sent if not x.is_punct)
+        if (ent.label_ in NUMERIC_QUALIFIER_ENTS
+                and prev_tok is not None and prev_tok.pos_ == "ADP"
+                and sent_ntok_here < 12):
+            # However: if the ADP is preceded by another ADP-PP chain (e.g.
+            # "Built in Manhattan / in the 19th century"), the second PP is
+            # the qualifier — still skip.  This is the default branch.
+            continue
         # (v) appositive — preceded by a NOUN/PROPN ("the technician John Ford")
         if prev_tok is not None and prev_tok.pos_ in {"NOUN", "PROPN"}:
             continue
@@ -987,20 +1149,81 @@ def rule_imperative_start(doc: Doc) -> Set[int]:
 # clause-and ("he ran and she walked").
 # -----------------------------------------------------------------------------
 def rule_and_or_clause(doc: Doc, splits: Set[int]) -> Set[int]:
+    """Split BEFORE a coordinating 'and'/'or' under any of these patterns:
+
+    (1) Clausal coordination: 'and' followed by a clear new clause
+        (PRON + verb, or AUX/VERB).  This is the original behaviour.
+
+    (2) Parallel NPs at end-of-clause: 'and'/'or' followed by a noun chunk
+        when the chunk before the conjunction was also a noun chunk and the
+        conjunction sits within the last ~6 tokens of its sentence.
+        Fixes #79 "ancient vertebrae or | skull fragments." and
+        #18 "elevation | and distance from orbit.".
+
+    (3) Parallel PPs / adverbials: 'and'/'or' followed by an ADP or ADV
+        starting a new prepositional/adverbial phrase, and the previous
+        chunk also started with an ADP/ADV.  Fixes #117
+        "Quick detour at the next junction | and straight back home.".
+
+    All variants gate on a substantial lead-in (≥ MIN_LEAD_FOR_AND_CLAUSE).
+    All are structural — no hardcoded vocabulary.
+    """
     out = set()
+    chunks = list(doc.noun_chunks)
     for t in doc:
         if t.pos_ != "CCONJ" or t.lower_ not in {"and", "or"}:
             continue
         if t.i + 1 >= len(doc):
             continue
         nxt = doc[t.i + 1]
+        prev = _prev_split(splits | out, t.i)
+        if t.i - prev <= MIN_LEAD_FOR_AND_CLAUSE:
+            continue
+
+        # (1) classic clausal-and
         looks_clausal = (nxt.pos_ == "PRON"
                          or (nxt.pos_ in {"AUX", "VERB"} and nxt.dep_ != "amod"))
-        if not looks_clausal:
-            continue
-        prev = _prev_split(splits | out, t.i)
-        if t.i - prev > MIN_LEAD_FOR_AND_CLAUSE:
+        if looks_clausal:
             out.add(t.i)
+            continue
+
+        # (2) parallel-NP near end of clause: previous chunk ends just
+        # before this CCONJ, and next chunk begins right after.
+        # Tightened: only fires in long sentences (≥12 content tokens) AND
+        # the conjunction must be in the last 5 tokens.  Avoids over-firing
+        # on short coordinations like "Quick detour at the next junction
+        # and straight back home." or "the atmosphere is electric, and
+        # everyone decides to move".
+        sent = t.sent
+        sent_ntok = sum(1 for x in sent if not x.is_punct)
+        toks_after_in_sent = sum(1 for x in sent if x.i > t.i and not x.is_punct)
+        if sent_ntok >= 12 and toks_after_in_sent <= 5:
+            prev_chunk_ends_here = any(c.end == t.i for c in chunks)
+            next_chunk_starts_here = any(c.start == t.i + 1 for c in chunks)
+            if prev_chunk_ends_here and next_chunk_starts_here:
+                # Don't fire across a comma — comma-separated NPs are
+                # already a list, RULE 8 / RULE 25 handle them.
+                if t.i > 0 and doc[t.i - 1].text == ",":
+                    pass
+                else:
+                    out.add(t.i)
+                    continue
+
+        # (3) parallel-PP / parallel-adverbial: 'and' followed by an ADP/ADV
+        # that begins a new PP, AND the immediate previous CHUNK started
+        # with an ADP/ADV.  Walks back over the previous split to find what
+        # that chunk opens with.  Tightened: requires ≥12 sentence tokens.
+        if nxt.pos_ in {"ADP", "ADV"} and sent_ntok >= 12:
+            # find start of previous chunk
+            prev_chunk_start = prev
+            if prev_chunk_start < len(doc) and prev_chunk_start < t.i:
+                # skip past leading whitespace/punct
+                k = prev_chunk_start
+                while k < t.i and doc[k].is_punct:
+                    k += 1
+                if k < t.i and doc[k].pos_ in {"ADP", "ADV"}:
+                    out.add(t.i)
+                    continue
     return out
 
 
@@ -1025,6 +1248,13 @@ def rule_and_or_clause(doc: Doc, splits: Set[int]) -> Set[int]:
 #   • OR a final ADJ whose head is a copular AUX/VERB earlier in the clause
 #   • the lead-in must be substantial (≥ MIN_LEAD_FOR_DESCRIPTOR tokens)
 # We split BEFORE the descriptor, so its descriptive impact lands solo.
+#
+# REFINEMENTS:
+#   • Pattern A guard: skip if sentence has < 8 non-punct tokens.  Keeps
+#     "The empire state building is really big." whole (5 content words).
+#   • Pattern B loosened: also fires when sentence_ntok ≥ 9 AND the head is
+#     a real VERB (not AUX) — catches "...looks | microscopic" where the
+#     head-distance is only 2 but the sentence has plenty of build-up.
 # -----------------------------------------------------------------------------
 MIN_LEAD_FOR_DESCRIPTOR = 5
 
@@ -1068,22 +1298,48 @@ def rule_terminal_descriptor(doc: Doc, splits: Set[int]) -> Set[int]:
             continue
         sent_ntok = sum(1 for x in sent if not x.is_punct)
 
-        # Pattern A: final ADJ/ADV with preceding intensifier ADV
+        # Pattern A: final ADJ/ADV with preceding intensifier ADV.
+        # GUARD: only fires when sentence has substantial build-up
+        # (≥ 8 content tokens).  Otherwise short copular sentences like
+        # "The empire state building is really big." would over-split.
+        #
+        # Walk-back rule: step BACK over any ADV/ADJ chain UNTIL we hit
+        # either (a) a token whose head is a VERB/AUX (clause boundary) or
+        # (b) a token whose POS is not ADV/ADJ.  This lets us correctly
+        # land the split BEFORE the FIRST element of the descriptor chain:
+        #   #28  "visually confused very fast"  →  before "visually"
+        #   #56  "are now brutally dry"         →  before "brutally"
+        #   #41  "packed together unusually densely" → before "together"
         if last.pos_ in {"ADJ", "ADV"} and last.i > sent.start + 1:
             prev_tok = doc[last.i - 1]
             if prev_tok.pos_ == "ADV":
+                if sent_ntok < 8:
+                    continue
                 start = prev_tok.i
-                while start > sent.start and doc[start - 1].pos_ == "ADV":
+                # Walk back through ADV/ADJ tokens whose head is in this
+                # tail descriptor chain — stop when head is a finite VERB/AUX
+                # that is NOT itself in the trailing descriptor span.
+                while start > sent.start and doc[start - 1].pos_ in {"ADV", "ADJ"}:
+                    candidate = doc[start - 1]
+                    # never cross a punct boundary
+                    if candidate.is_punct:
+                        break
                     start -= 1
                 prev_split = _prev_split(splits | out, start)
                 if start - prev_split >= MIN_LEAD_FOR_DESCRIPTOR:
                     out.add(start)
                 continue
 
-        # Pattern B: final ADJ tied to a copular AUX/VERB earlier in clause
+        # Pattern B: final ADJ tied to a copular AUX/VERB earlier in clause.
+        # Fires when EITHER (a) the head is at least 3 tokens back, OR
+        # (b) the sentence has ≥ 9 non-punct tokens AND the head is a real
+        # VERB (not just an AUX) — catches "...crossing X looks | microscopic"
+        # where the head distance is small but the sentence has build-up.
         if last.pos_ == "ADJ" and last.dep_ in {"acomp", "attr"} \
                 and last.head.pos_ in {"VERB", "AUX"} and last.head.i < last.i:
-            if last.i - last.head.i >= 3:
+            head_far  = (last.i - last.head.i >= 3)
+            long_verb = (sent_ntok >= 9 and last.head.pos_ == "VERB")
+            if head_far or long_verb:
                 prev_split = _prev_split(splits | out, last.i)
                 if last.i - prev_split >= MIN_LEAD_FOR_DESCRIPTOR:
                     out.add(last.i)
@@ -1097,7 +1353,7 @@ def rule_terminal_descriptor(doc: Doc, splits: Set[int]) -> Set[int]:
                     and not doc[np_start - 1].is_punct:
                 np_start -= 1
             if np_start > sent.start and doc[np_start - 1].lower_ == "than" \
-                    and sent_ntok >= 8:
+                    and sent_ntok >= 10:
                 prev_split = _prev_split(splits | out, np_start)
                 if np_start - prev_split >= MIN_LEAD_FOR_DESCRIPTOR:
                     out.add(np_start)
@@ -1196,6 +1452,725 @@ def rule_numeric_phrase_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
     return out
 
 
+# -----------------------------------------------------------------------------
+# RULE 25 — COMMA LIST EXTENSION
+# Extends RULE 8 to cover three additional comma patterns that the canonical
+# clausal-or-noun split misses:
+#
+#   (a) NOUN/PRON + "," + VERB  (participle-list element)
+#       "dodging parked cars, squeezed by traffic, soaked in the rain..."
+#       → each comma starts a new participle phrase.  RULE 8 doesn't fire
+#         here because the LEFT of the comma is a NOUN, but the RIGHT is a
+#         VERB (a present/past participle), so the existing noun-list branch
+#         (which requires a noun-y RHS) can't trigger.
+#
+#   (b) any content + "," + CCONJ  (list-final coordinator)
+#       "trains, cycling, and hoping nothing goes wrong"
+#       "the atmosphere is electric, and everyone decides to move"
+#       → split AFTER the comma so the trailing CCONJ phrase reads alone.
+#         RULE 8 also misses this because the RHS is CCONJ, not noun-y.
+#
+#   (c) ADJ + "," + ADJ  (adjective series)
+#       "wide, flat, ancient surfaces"
+#       → split between successive adjectives in a series.
+#
+# All three are structural (POS-only), no vocabulary.
+# -----------------------------------------------------------------------------
+def rule_comma_list_extension(doc: Doc) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.text != ",":
+            continue
+        if t.i + 1 >= len(doc) or t.i == 0:
+            continue
+        prev = doc[t.i - 1]
+        nxt  = doc[t.i + 1]
+        # (a) NOUN/PRON + "," + VERB  — participle-list element.
+        # Restricted to VBG/VBN tagged verbs: TRUE participles ("dodging",
+        # "squeezed", "soaked").  Finite VBD verbs ("became", "fossilized")
+        # after a comma are clause continuations not list items, so we
+        # don't split there.  Fixes #43 vs preserves #141.
+        if (prev.pos_ in {"NOUN", "PROPN", "PRON"}
+                and nxt.pos_ == "VERB"
+                and nxt.tag_ in {"VBG", "VBN"}):
+            out.add(t.i + 1)
+            continue
+        # (b) any content + "," + CCONJ  — list-final coord
+        if (prev.pos_ in {"NOUN", "PROPN", "ADJ", "ADV", "VERB"}
+                and nxt.pos_ == "CCONJ"):
+            out.add(t.i + 1)
+            continue
+        # (c) ADJ + "," + ADJ  — adjective series
+        if prev.pos_ == "ADJ" and nxt.pos_ == "ADJ":
+            out.add(t.i + 1)
+            continue
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 26 — LONG SUBORDINATE-CLAUSE OPENER WITH CLOSING COMMA
+# When a sentence opens with an SCONJ or wh-word that leads a substantial
+# subordinate clause (≥ LONG_SUBORD_OPENER_TOKENS content tokens, contains a
+# verb), and that clause closes with a comma, split AFTER the closing comma.
+#
+# Examples:
+#   "If you already know a landscape is almost perfectly level,"
+#         + " | you can compare satellite readings against it..."
+#   "Because the site contained huge numbers of skeletons,"
+#         + " | scientists have debated..."
+#   "When entire landscapes reflect cleanly for kilometers,"
+#         + " | you're looking at a level of flatness..."
+#
+# RULE 7 already covers single-comma adverbial openers ("Back in 1946,").
+# This rule covers the LONGER subordinate-clause variant where RULE 7
+# under-shoots because it only inspects the first 8 tokens.  Skips leading
+# CCONJ/INTJ ("And"/"But"/"So"/"Or") so "And if you already know X, Y" still
+# triggers cleanly.
+# -----------------------------------------------------------------------------
+def rule_long_subord_comma(doc: Doc) -> Set[int]:
+    out = set()
+    for sent in doc.sents:
+        if len(sent) < 8:
+            continue
+        # skip leading CCONJ/INTJ
+        first_idx = 0
+        while first_idx < len(sent) and sent[first_idx].pos_ in {"CCONJ", "INTJ"}:
+            first_idx += 1
+        if first_idx >= len(sent):
+            continue
+        first_tok = sent[first_idx]
+        # only triggers on SCONJ or wh-word openers
+        if first_tok.pos_ != "SCONJ" and first_tok.tag_ not in WH_TAGS:
+            continue
+        # find the FIRST comma in this sentence with enough lead and a verb
+        for t in sent:
+            if t.text != ",":
+                continue
+            tokens_before = sum(1 for x in sent
+                                if x.i < t.i and not x.is_punct)
+            if tokens_before < LONG_SUBORD_OPENER_TOKENS:
+                # don't break — there may be a later, longer-led comma
+                continue
+            has_verb = any(x.pos_ in {"VERB", "AUX"}
+                           for x in sent if x.i < t.i)
+            if not has_verb:
+                continue
+            if t.i + 1 < len(doc):
+                out.add(t.i + 1)
+            break       # only the first qualifying comma
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 27 — TERMINAL COORDINATED ADJECTIVE PAIR
+# When a sentence ends with a coordinated adjective pair after a copular
+# verb + intensifier ADV chain, split BEFORE the first ADJ AND BEFORE the
+# CCONJ — so each adjective in the pair gets its own line.
+#
+# Pattern (sentence-final):
+#   VERB/AUX  +  ADV+  +  ADJ  +  CCONJ  +  ADJ
+#
+# Example:
+#   "these landscapes feel simultaneously calming and alien."
+#         → ["these landscapes feel simultaneously",
+#            "calming",
+#            "and alien."]
+#   "the design is genuinely powerful but flawed."
+#         → ["the design is genuinely",
+#            "powerful",
+#            "but flawed."]
+#
+# We accept VBG/VBN-tagged verbs as adj-like (e.g. "stunning and gripping",
+# "burnt and forgotten") because they often function as predicate adjectives.
+# -----------------------------------------------------------------------------
+def rule_terminal_adj_coord(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for sent in doc.sents:
+        sent_ntok = sum(1 for x in sent if not x.is_punct)
+        if sent_ntok < 7:
+            continue
+        # find last non-punct token
+        last = None
+        for t in reversed(list(sent)):
+            if t.is_punct or t.is_space:
+                continue
+            last = t
+            break
+        if last is None:
+            continue
+        # last must be ADJ or VBG/VBN-tagged verb (adj-like)
+        is_adj_like = (last.pos_ == "ADJ" or last.tag_ in {"VBG", "VBN"})
+        if not is_adj_like:
+            continue
+        # walk back: expect CCONJ before last
+        if last.i - 1 < sent.start:
+            continue
+        cconj = doc[last.i - 1]
+        if cconj.pos_ != "CCONJ":
+            continue
+        # before CCONJ: ADJ or VBG/VBN verb
+        if cconj.i - 1 < sent.start:
+            continue
+        first_adj = doc[cconj.i - 1]
+        first_adj_is_adj = (first_adj.pos_ == "ADJ" or first_adj.tag_ in {"VBG", "VBN"})
+        if not first_adj_is_adj:
+            continue
+        # before first_adj: at least one ADV
+        if first_adj.i - 1 < sent.start:
+            continue
+        adv = doc[first_adj.i - 1]
+        if adv.pos_ != "ADV":
+            continue
+        # walk back through any ADV chain
+        adv_start = adv.i
+        while adv_start > sent.start and doc[adv_start - 1].pos_ == "ADV":
+            adv_start -= 1
+        # before ADVs: VERB or AUX
+        if adv_start - 1 < sent.start:
+            continue
+        verb = doc[adv_start - 1]
+        if verb.pos_ not in {"VERB", "AUX"}:
+            continue
+        # split BEFORE first_adj and BEFORE cconj
+        prev1 = _prev_split(splits | out, first_adj.i)
+        if first_adj.i - prev1 >= 2:
+            out.add(first_adj.i)
+        out.add(cconj.i)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 28 — PP-INTRODUCTORY REVEAL
+# Splits AFTER a preposition whose subtree contains ≥ 2 NOUNs and NO VERB
+# or AUX — i.e. a "fat" prepositional phrase whose object is a non-trivial
+# noun sequence rather than a relative clause.  Reads like an introduction
+# to a visual reveal.
+#
+# Examples:
+#   "Straight roads vanishing into | heat haze for absurd distances."
+#   "Nature accidentally produced calibration tools larger than | cities."
+#   "scientists need known reference surfaces to calibrate instruments
+#       measuring elevation and distance from | orbit."
+#
+# Why exclude "of"?  "of" almost always wants to bind to its head NP
+# ("hours of trains", "the shape of the spine") — splitting after it would
+# orphan a tiny qualifier.
+#
+# Why exclude subtrees containing a VERB/AUX?  Those are relative-clause
+# preps ("through regions that are now brutally dry") — RULE 22 (terminal
+# descriptor) handles those better.
+# -----------------------------------------------------------------------------
+def rule_pp_intro_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.pos_ != "ADP" or t.lower_ in PROMISCUOUS_PREPS:
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        # Require longer sentences (≥10 content tokens) to avoid over-
+        # splitting medium sentences like #92 "...live during one temporary
+        # version of the map." where the PP-tail is a qualifier.
+        if sent_ntok < 10:
+            continue
+        subtree = list(t.subtree)
+        n_nouns = sum(1 for x in subtree if x.pos_ in {"NOUN", "PROPN"})
+        has_verb = any(x.pos_ in {"VERB", "AUX"} for x in subtree)
+        # Require ≥3 nouns in subtree — short qualifier PPs ("of the map")
+        # don't qualify.  Real reveals are PPs with multiple nouns.
+        if n_nouns < 3 or has_verb:
+            continue
+        # require ≥ 3 lead tokens with NO HARD_PUNCT in the lead
+        prev = _prev_split(splits | out, t.i + 1)
+        lead_tokens = doc[prev:t.i + 1]
+        n_lead = sum(1 for x in lead_tokens if not x.is_punct)
+        if n_lead < 3:
+            continue
+        if any(x.text in HARD_PUNCT for x in lead_tokens):
+            continue
+        # require the lead to contain a VERB
+        if not any(x.pos_ in {"VERB", "AUX"} for x in lead_tokens):
+            continue
+        out.add(t.i + 1)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 29 — PARTICIPLE REVEAL
+# After a present- or past-participle verb (VBG/VBN), split BEFORE the next
+# multi-token noun chunk that the participle introduces.  This is the
+# "reveal what's being acted on" pattern.
+#
+# Examples:
+#   "People crossing | empty landscapes suddenly noticing..."
+#   "Bodies drifted into | coastal areas..."
+#   "Cycling sounds great until you're | dodging parked cars..."
+#
+# Skipped when:
+#   • sentence is short (< 9 non-punct tokens)
+#   • the next noun-chunk is single-token (probably part of the same idiom)
+#   • the participle is more than 3 tokens away from the chunk
+#   • there's a HARD_PUNCT between them
+#   • it would slice a multi-token NE
+# -----------------------------------------------------------------------------
+def rule_participle_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    chunks = list(doc.noun_chunks)
+    for t in doc:
+        # restrict to tokens spaCy tags as gerund / past-participle and
+        # which actually function as a verb (avoids amod adjectives).
+        if t.tag_ not in {"VBG", "VBN"}:
+            continue
+        if t.pos_ not in {"VERB", "AUX"}:
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 9:
+            continue
+        # find next noun chunk after the participle
+        nxt_chunk: Optional[Span] = None
+        for nc in chunks:
+            if nc.start > t.i:
+                nxt_chunk = nc
+                break
+        if nxt_chunk is None:
+            continue
+        if len(nxt_chunk) < 2:
+            continue
+        if nxt_chunk.start - t.i > 3:
+            continue
+        # don't cross a hard punct
+        if any(x.text in HARD_PUNCT for x in doc[t.i:nxt_chunk.start]):
+            continue
+        if _in_compound_ne(doc, nxt_chunk.start):
+            continue
+        prev = _prev_split(splits | out, nxt_chunk.start)
+        if nxt_chunk.start - prev < 2:
+            continue
+        out.add(nxt_chunk.start)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 30 — POST-ENTITY LOCATION SPLIT
+# After a multi-token named entity, split BEFORE a following preposition.
+# This separates the entity (the "where") from a qualifier prepositional
+# phrase that often follows ("in Oregon", "in Egypt", "of India").
+#
+# Examples:
+#   "A lone person walking across Alvord Desert | in Oregon..."
+#   "Wadi Al-Hitan | in Egypt — literally..."
+#   "The Atacama Desert | in Chile..."
+#
+# We require:
+#   • the entity is multi-token (single-token entities are not "the reveal")
+#   • the next token is a preposition (ADP)
+#   • we're not slicing another compound NE
+#   • the sentence has substantial length and there's enough lead-in
+# -----------------------------------------------------------------------------
+def rule_post_entity_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for ent in doc.ents:
+        if ent.label_ not in LOCATION_ENTS:
+            continue
+        if len(ent) < 2:
+            continue
+        end = ent.end
+        if end >= len(doc):
+            continue
+        nxt = doc[end]
+        if nxt.pos_ != "ADP":
+            continue
+        if _in_compound_ne(doc, end):
+            continue
+        sent_ntok = sum(1 for x in nxt.sent if not x.is_punct)
+        if sent_ntok < 8:
+            continue
+        prev = _prev_split(splits | out, end)
+        if end - prev < 3:
+            continue
+        out.add(end)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 31 — GENERIC LONG-CLAUSE COMMA SPLIT
+# Splits AFTER any comma where the lead from the previous split contains
+# ≥ LONG_COMMA_LEAD_CONTENT content tokens AND the tail until the next
+# punctuation contains ≥ LONG_COMMA_TAIL_CONTENT content tokens.
+#
+# This is the catch-all "many words before a comma" rule.  RULE 7 only
+# inspects the first 8 tokens of a sentence; RULE 26 only fires for
+# SCONJ/wh-led openers.  This catches everything else:
+#   #64 "Alvord's fascinating because unlike Uyuni's bright reflective salt
+#        surface, | it's this dry pale playa..."
+#   #19 "If you already know a landscape is almost perfectly level, | you
+#        can compare..." (also caught by RULE 26)
+#
+# Skipped when the comma is inside a quoted span or bracket (handled by
+# anti-rules H/I downstream).
+# -----------------------------------------------------------------------------
+def rule_long_clause_comma(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.text != ",":
+            continue
+        if t.i + 1 >= len(doc):
+            continue
+        # TIGHTENED: only fire in sentences with ≥14 non-punct tokens.  This
+        # is a "very long sentence" rule — for medium sentences, RULE 7,
+        # RULE 8, and RULE 26 cover the necessary cases.
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 14:
+            continue
+        # lead from previous split
+        prev = _prev_split(splits | out, t.i + 1)
+        lead_content = _content_count(doc, prev, t.i + 1)
+        if lead_content < LONG_COMMA_LEAD_CONTENT:
+            continue
+        # don't fire if there's already a hard punct in the lead — would
+        # mean the lead "content" comes from a separate clause.
+        if any(doc[k].text in HARD_PUNCT for k in range(prev, t.i)):
+            continue
+        # tail content tokens until next punct or sentence end
+        sent_end = t.sent.end
+        tail_end = t.i + 1
+        while tail_end < sent_end and doc[tail_end].text not in HARD_PUNCT:
+            tail_end += 1
+        tail_content = _content_count(doc, t.i + 1, tail_end)
+        if tail_content < LONG_COMMA_TAIL_CONTENT:
+            continue
+        out.add(t.i + 1)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 32 — INFINITIVE SPLIT
+# Splits BEFORE a `to + VERB` infinitive in a long sentence when the
+# lead-in is substantial AND the tail is substantial.  Fixes #18
+# "...known reference surfaces | to calibrate instruments measuring..."
+# -----------------------------------------------------------------------------
+def rule_infinitive_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.lower_ != "to":
+            continue
+        if t.dep_ != "aux":
+            continue
+        if t.i + 1 >= len(doc):
+            continue
+        if doc[t.i + 1].pos_ != "VERB":
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < INFINITIVE_SPLIT_SENT_MIN:
+            continue
+        prev = _prev_split(splits | out, t.i)
+        lead_content = _content_count(doc, prev, t.i)
+        if lead_content < INFINITIVE_SPLIT_LEAD_MIN:
+            continue
+        # tail
+        sent_end = t.sent.end
+        tail_end = t.i
+        while tail_end < sent_end and doc[tail_end].text not in HARD_PUNCT:
+            tail_end += 1
+        tail_content = _content_count(doc, t.i, tail_end)
+        if tail_content < INFINITIVE_SPLIT_TAIL_MIN:
+            continue
+        # skip if directly preceded by a verb/AUX that explicitly takes the
+        # infinitive ("want to", "need to", "have to", "going to")
+        if t.i > 0:
+            prev_tok = doc[t.i - 1]
+            if (prev_tok.lower_, t.lower_) in FROZEN_BIGRAMS:
+                continue
+            # NEXT pair check too
+            if t.i + 1 < len(doc):
+                # already handled by FROZEN_BIGRAMS — fine
+                pass
+        out.add(t.i)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 33 — TERMINAL `OF` REVEAL
+# Splits AFTER `of` ONLY when the `of`-headed NP is the LAST chunk in the
+# sentence AND the lead before `of` is ≥ OF_REVEAL_LEAD_MIN content tokens.
+# Fixes #69 "...trace the shape of | the spine through the desert surface."
+#
+# `of` is normally in PROMISCUOUS_PREPS (binds tightly).  This is the
+# narrow carve-out for sentence-final reveals — short PPs like "of India"
+# still won't fire because the lead threshold blocks them.
+# -----------------------------------------------------------------------------
+def rule_terminal_of_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.lower_ != "of" or t.pos_ != "ADP":
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < OF_REVEAL_SENT_MIN:
+            continue
+        # `of`-headed subtree must reach (close to) sentence end
+        subtree = list(t.subtree)
+        if not subtree:
+            continue
+        subtree_end = max(x.i for x in subtree)
+        sent_end_i = max(x.i for x in t.sent if not x.is_punct)
+        if subtree_end < sent_end_i - 2:   # subtree must close at the tail
+            continue
+        # require ≥2 nouns in subtree (so a "real" NP follows)
+        n_nouns = sum(1 for x in subtree if x.pos_ in {"NOUN", "PROPN"})
+        if n_nouns < 2:
+            continue
+        # don't fire if subtree contains its own verb/aux
+        if any(x.pos_ in {"VERB", "AUX"} for x in subtree):
+            continue
+        prev = _prev_split(splits | out, t.i + 1)
+        lead = _content_count(doc, prev, t.i + 1)
+        if lead < OF_REVEAL_LEAD_MIN:
+            continue
+        out.add(t.i + 1)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 34 — PROGRESSIVE-FORM SPLIT (split BEFORE `be + Ving`)
+# When an AUX (`'re`, `was`, `is`, `are`) is immediately followed by a VBG
+# verb in a long sentence, split BEFORE the VBG so the action gets its own
+# reveal line.
+#
+# Fixes #141: "Cycling sounds great until you're | dodging parked cars..."
+# Also helps #1 (lighthouse): "the sun, the tide... | surrounded them..."
+#
+# Distinguish from passive `be + VBN` (e.g. "was covered") — that's a
+# qualifier, not an action reveal.  We only fire on VBG (gerund/present
+# participle in progressive form).
+# -----------------------------------------------------------------------------
+def rule_progressive_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    """Splits BEFORE a VBG in a `be + Ving` progressive construction.
+
+    TIGHTENED in v2: requires sentence ≥12 tokens (was 10) AND lead ≥5
+    content tokens (was 3).  Short progressives like "...keeps happening
+    in environments..." or "I was looking..." stay whole — only long
+    sentences with substantial build-up justify the action-reveal split.
+    """
+    out = set()
+    for t in doc:
+        if t.tag_ != "VBG":
+            continue
+        if t.i == 0:
+            continue
+        prev_tok = doc[t.i - 1]
+        if prev_tok.pos_ != "AUX":
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 12:
+            continue
+        prev = _prev_split(splits | out, t.i)
+        lead = _content_count(doc, prev, t.i)
+        if lead < 5:
+            continue
+        out.add(t.i)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 35 — COPULA-ATTRIBUTE REVEAL
+# Splits BEFORE a multi-token attribute / acomp NP that follows a copula
+# (AUX `be` or stative VERB), when the NP has ≥1 modifier and the sentence
+# is long enough.
+#
+# Fixes #23 "What remains is | this gigantic geometric surface where..."
+# and #79 "...that turn out to be | ancient vertebrae or skull fragments."
+#
+# Detection (all structural):
+#   • copular AUX/VERB whose attr/acomp child is a NOUN/PROPN chunk
+#   • chunk contains ≥1 ADJ or ≥2 NOUN tokens (multi-modifier reveal)
+#   • chunk size ≥ COPULA_REVEAL_CHUNK_MIN
+#   • lead-in ≥ MIN_LEAD_FOR_ENTITY tokens, no HARD_PUNCT in lead
+# -----------------------------------------------------------------------------
+def rule_copula_attr_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    """Splits BEFORE a multi-token attribute/acomp NP that follows a copular
+    AUX/VERB, when the NP is substantial enough to be its own visual reveal.
+
+    TIGHTENED in v2: requires sentence ≥ 12 tokens (was 9) AND chunk ≥ 4
+    tokens (was 2).  Short copular sentences like "It's the exact same idea
+    as the Romans." or "That middle chunk of your journey becomes actual
+    life." should stay whole — only really long sentences with substantial
+    reveal-NPs justify the split.
+    """
+    out = set()
+    for t in doc:
+        if t.pos_ not in {"AUX", "VERB"}:
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 12:
+            continue
+        # find an attr/acomp NOUN child
+        attr = next((c for c in t.children
+                     if c.dep_ in {"attr", "acomp"}
+                     and c.pos_ in {"NOUN", "PROPN"}), None)
+        if attr is None:
+            continue
+        # find the noun chunk containing attr
+        chunk = _chunk_containing(doc, attr.i)
+        if chunk is None or len(chunk) < 4:
+            continue
+        # chunk must contain ≥1 ADJ AND ≥1 NOUN/PROPN (real reveal NP, not
+        # just a determiner + noun phrase).
+        n_adj   = sum(1 for x in chunk if x.pos_ == "ADJ")
+        n_nouns = sum(1 for x in chunk if x.pos_ in {"NOUN", "PROPN"})
+        if n_adj < 1 or n_nouns < 1:
+            continue
+        # split before the chunk
+        split_at = chunk.start
+        if split_at <= 0:
+            continue
+        prev = _prev_split(splits | out, split_at)
+        # lead must contain ≥4 content tokens (substantial build-up)
+        if _content_count(doc, prev, split_at) < 4:
+            continue
+        if any(doc[k].text in HARD_PUNCT for k in range(prev, split_at)):
+            continue
+        out.add(split_at)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 36 — PRONOUN-PARTICIPLE PP REVEAL
+# Splits AFTER an ADP whose object is a PRONOUN immediately followed by a
+# past/present-participle (`me sat`, `him standing`, `her crossing`).  The
+# pattern is a reduced relative clause — the pronoun + participle phrase
+# is the visual reveal.
+#
+# Fixes #113 "...full circle back to | me sat on the M6."
+# -----------------------------------------------------------------------------
+def rule_pron_participle_pp_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    """Splits BEFORE an ADP whose object is `PRON + participle (VBN/VBG)`.
+
+    The PRON+participle phrase is a reduced relative clause that acts as
+    the visual reveal.  Splits BEFORE the ADP so the whole phrase including
+    the preposition lands on its own line:
+
+        "...back | to me sat on the M6."     (#113)
+        "...waiting | for him standing there..."
+
+    TIGHTENED in v2: split moved from `t.i + 1` to `t.i` (before the ADP).
+    """
+    out = set()
+    for t in doc:
+        if t.pos_ != "ADP":
+            continue
+        if t.i + 2 >= len(doc):
+            continue
+        pron = doc[t.i + 1]
+        part = doc[t.i + 2]
+        if pron.pos_ != "PRON":
+            continue
+        if part.tag_ not in {"VBN", "VBG"}:
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < PP_PRON_PART_SENT_MIN:
+            continue
+        prev = _prev_split(splits | out, t.i)
+        lead = _content_count(doc, prev, t.i)
+        if lead < PP_PRON_PART_LEAD_MIN:
+            continue
+        out.add(t.i)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 37 — TERMINAL PP-AFTER-COPULA REVEAL
+# When a sentence ends with `[AUX/VERB] + [ADV*] + [ADJ] + ADP + NP`,
+# split BEFORE the final ADP so the descriptor reveals on its own line.
+#
+# Fixes #87 "...surfaces so level they become | scientifically valuable
+# from orbit." — wait, actually the user wants "scientifically valuable
+# from orbit" together and the split BEFORE "scientifically".  But
+# subsequent runs handled by Pattern A.  This rule handles the simpler
+# case of a final PP after a copular ADJ:
+#   "...is brilliant | from above."
+# -----------------------------------------------------------------------------
+def rule_terminal_pp_after_copula(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for sent in doc.sents:
+        sent_ntok = sum(1 for x in sent if not x.is_punct)
+        if sent_ntok < 9:
+            continue
+        # find last non-punct token
+        last = None
+        for t in reversed(list(sent)):
+            if t.is_punct or t.is_space:
+                continue
+            last = t
+            break
+        if last is None or last.pos_ not in {"NOUN", "PROPN"}:
+            continue
+        # walk back to find ADP head of last
+        head = last.head
+        if head is last or head.pos_ != "ADP":
+            continue
+        adp = head
+        # before ADP must be ADJ or VBN/VBG (the descriptor we DON'T split)
+        if adp.i - 1 < sent.start:
+            continue
+        before_adp = doc[adp.i - 1]
+        if before_adp.pos_ not in {"ADJ", "VERB"}:
+            continue
+        # before that, an AUX/VERB chain must exist (the copula)
+        # we don't strictly require it for this terminal-PP variant; the
+        # adj/ADP/NP combo is enough.  Just require a substantial lead.
+        prev = _prev_split(splits | out, adp.i)
+        lead_content = _content_count(doc, prev, adp.i)
+        if lead_content < MIN_LEAD_FOR_DESCRIPTOR:
+            continue
+        out.add(adp.i)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 38 — PHRASAL-VERB OBJECT REVEAL
+# When a sentence contains a phrasal verb (VERB + PRT) followed by a
+# multi-token noun chunk in a long-enough sentence, split BEFORE the
+# direct-object noun chunk.
+#
+# Fixes #4 "the green bike sped past | the house"
+# -----------------------------------------------------------------------------
+def rule_phrasal_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    chunks = list(doc.noun_chunks)
+    for t in doc:
+        if t.pos_ != "VERB":
+            continue
+        # look for a particle child
+        prt = next((c for c in t.children if c.dep_ in PARTICLE_DEPS), None)
+        if prt is None:
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 7:
+            continue
+        # find next chunk strictly after the particle
+        nxt_chunk: Optional[Span] = None
+        for nc in chunks:
+            if nc.start > prt.i:
+                nxt_chunk = nc
+                break
+        if nxt_chunk is None:
+            continue
+        # require multi-token chunk and reasonable proximity
+        if len(nxt_chunk) < 2:
+            continue
+        if nxt_chunk.start - prt.i > 2:
+            continue
+        # don't slice an entity
+        if _in_compound_ne(doc, nxt_chunk.start):
+            continue
+        # don't cross hard punct
+        if any(doc[k].text in HARD_PUNCT for k in range(prt.i, nxt_chunk.start)):
+            continue
+        prev = _prev_split(splits | out, nxt_chunk.start)
+        if nxt_chunk.start - prev < 2:
+            continue
+        out.add(nxt_chunk.start)
+    return out
+
+
 # =============================================================================
 # ANTI-RULES  —  return indices to *remove* from the splits set.
 # =============================================================================
@@ -1225,16 +2200,18 @@ def anti_rule_hyphen_compound(doc: Doc, splits: Set[int]) -> Set[int]:
 
 
 # D — never split a contraction or possessive marker from its host word.
-#     Covers EVERY contraction structurally: any token containing an
-#     apostrophe (straight ', curly ’, ‘, or backtick) is glued on both sides.
-#     This catches:
-#       isn't → "is" + "n't"          (split would tear the word)
-#       wasn't → "wasn" + "'t"
-#       Rome's → "Rome" + "'s"
+#     A token containing an apostrophe (straight ', curly ’, ‘, or backtick)
+#     is glued ONLY when the left token has no trailing whitespace — i.e.
+#     the two tokens were one orthographic word in the source.  This catches:
+#       isn't → "is" + "n't"            (no whitespace between → glue)
+#       Rome's → "Rome" + "'s"          (no whitespace between → glue)
 #       they're → "they" + "'re"
-#       I'd / we'll / you've / I'm     (all variants, regular AND smart quotes)
-#     The detection is purely structural: scan each token's text for any
-#     apostrophe character.  No hardcoded contraction list.
+#     But it does NOT block legitimate splits like:
+#       'isn't | "drive or not."'       ("n't" + " " + opening-quote → KEEP)
+#     because there IS whitespace between "n't" and the opening quote.
+#
+#     Detection is purely structural: scan each token's text for any
+#     apostrophe character AND verify the tokens were unspaced in source.
 def anti_rule_possessive(doc: Doc, splits: Set[int]) -> Set[int]:
     bad = set()
     APOS = {"'", "\u2019", "\u2018", "`"}
@@ -1245,11 +2222,13 @@ def anti_rule_possessive(doc: Doc, splits: Set[int]) -> Set[int]:
     for i in splits:
         if i <= 0 or i >= len(doc):
             continue
-        # right token contains an apostrophe → likely contraction tail/start
-        if _has_apos(doc[i].text):
-            bad.add(i)
-        # left token contains an apostrophe → likely contraction head/tail
-        if _has_apos(doc[i - 1].text):
+        left = doc[i - 1]
+        right = doc[i]
+        # Only a contraction/possessive boundary if the tokens were ONE
+        # orthographic word (no whitespace between left and right).
+        if left.whitespace_ != "":
+            continue
+        if _has_apos(left.text) or _has_apos(right.text):
             bad.add(i)
     return bad
 
@@ -1463,6 +2442,10 @@ def anti_rule_markdown_emphasis(doc: Doc, splits: Set[int]) -> Set[int]:
 #       "Things appeared lighter."            (3 words)
 #     The guard only fires when the *entire* sentence has a content load
 #     small enough to read at a glance.
+#
+#     EXCEPTION: a split that falls IMMEDIATELY AFTER an ellipsis ("...", "…")
+#     is preserved even in a tiny sentence, because ellipses are inherently
+#     dramatic line-breaks ("Yep... done.", "You're just... aware.").
 def anti_rule_short_sentence(doc: Doc, splits: Set[int]) -> Set[int]:
     bad = set()
     for sent in doc.sents:
@@ -1470,10 +2453,54 @@ def anti_rule_short_sentence(doc: Doc, splits: Set[int]) -> Set[int]:
         ntok = sum(1 for t in sent if not t.is_punct)
         if ntok > SHORT_SENT_NO_SPLIT:
             continue
-        # remove any split that lands strictly inside this sentence
+        # Identify the last content noun in the sentence — if the sentence
+        # ends with [AUX/VERB] + ADP + NOUN[.], a split BEFORE the final
+        # noun is the "reveal what it's about" pattern and should NOT be
+        # wiped.  Fixes #67 "...isn't about price- | it's about | transitions."
+        last_noun_i: Optional[int] = None
+        for t in reversed(list(sent)):
+            if t.is_punct or t.is_space:
+                continue
+            if t.pos_ in {"NOUN", "PROPN"}:
+                last_noun_i = t.i
+                break
+            else:
+                break  # last content tok isn't a noun → pattern fails
+        copula_pp_reveal_ok = False
+        if last_noun_i is not None:
+            # walk back from the noun looking for ADP + AUX/VERB pattern
+            j = last_noun_i - 1
+            # skip DET / ADJ between the noun and the ADP
+            while j > sent.start and doc[j].pos_ in {"DET", "ADJ"}:
+                j -= 1
+            if j > sent.start and doc[j].pos_ == "ADP":
+                k = j - 1
+                # skip ADV between ADP and verb ("is really about X")
+                while k > sent.start and doc[k].pos_ == "ADV":
+                    k -= 1
+                if k >= sent.start and doc[k].pos_ in {"AUX", "VERB"}:
+                    # there must be ≥ AUX_PP_REVEAL_LEAD_MIN tokens of lead
+                    # before the noun, otherwise it's just "it's about X"
+                    # with no build-up.
+                    lead_content = sum(1 for x in sent
+                                       if x.i < last_noun_i and not x.is_punct)
+                    if lead_content >= AUX_PP_REVEAL_LEAD_MIN:
+                        copula_pp_reveal_ok = True
         for i in splits:
-            if sent.start < i < sent.end:
-                bad.add(i)
+            if not (sent.start < i < sent.end):
+                continue
+            # PRESERVE: split immediately after an ellipsis token
+            if i > 0 and _matches_ellipsis(doc[i - 1].text):
+                continue
+            # PRESERVE: split before last noun in `is + ADP + NOUN` pattern
+            if copula_pp_reveal_ok and last_noun_i is not None:
+                # the "before-noun" split is the noun's chunk-start; allow
+                # ANY split that lands ≥ position (last_noun_i - 1) up to last_noun_i
+                # (covers `before "transitions"` whether tokenizer offers
+                #  DET at noun-1 or not).
+                if last_noun_i - 1 <= i <= last_noun_i:
+                    continue
+            bad.add(i)
     return bad
 
 
@@ -1513,6 +2540,87 @@ def anti_rule_verb_to_dem_pron(doc: Doc, splits: Set[int]) -> Set[int]:
     return bad
 
 
+# W — never split if it would orphan a tiny measurement-tail like
+#     "over time", "for years", "in seconds", "by minutes" — these read
+#     poorly as a standalone visual chunk and almost always belong on the
+#     previous line.
+#
+#     Detection: from split point i, walk forward to the next HARD_PUNCT.
+#     If the intervening content tokens are ≤ 2 AND end with a token in
+#     MEASURE_NOUNS AND a preposition appears in the tail, forbid the split.
+#
+#     Examples preserved (split forbidden):
+#       "...poisoned large groups of marine animals repeatedly | over time."
+#                                                          ^^^^^^^^^^^^
+#       "...trying to do this | for years."
+#                            ^^^^^^^^^^^
+def anti_rule_orphan_measure_tail(doc: Doc, splits: Set[int]) -> Set[int]:
+    bad = set()
+    for i in splits:
+        if i <= 0 or i >= len(doc):
+            continue
+        # walk from i to next hard-punct (or end of doc)
+        j = i
+        while j < len(doc) and doc[j].text not in HARD_PUNCT:
+            j += 1
+        tail = doc[i:j]
+        content = [x for x in tail if not x.is_punct and not x.is_space]
+        if not content or len(content) > 2:
+            continue
+        # last content token must be a measure noun
+        if content[-1].lower_ not in MEASURE_NOUNS:
+            continue
+        # a preposition must appear in the tail before the measure noun
+        if not any(x.pos_ == "ADP" for x in content[:-1]):
+            continue
+        bad.add(i)
+    return bad
+
+
+# X — never produce a chunk made entirely of function words.  Walks the
+#     splits in order and removes any "right" split that would leave a
+#     chunk whose tokens are all DET / PRON / ADP / PART / ADV / SCONJ /
+#     CCONJ / AUX (no NOUN / PROPN / VERB / ADJ / NUM at all).  The
+#     length cap (≤ 4 words) leaves big incidental chunks alone.
+#
+#     Fixes #81 "that many of" being isolated as its own chunk.  The
+#     rule removes the split AFTER the chunk so it glues forward into
+#     the next chunk.
+def anti_rule_content_starved(doc: Doc, splits: Set[int]) -> Set[int]:
+    bad = set()
+    idx = sorted(splits)
+    for k in range(len(idx) - 1):
+        lo, hi = idx[k], idx[k + 1]
+        span = doc[lo:hi]
+        # word count
+        text = span.text.strip()
+        if not text:
+            continue
+        if len(text.split()) > 4:
+            continue
+        # content POS count
+        n_content = sum(1 for t in span
+                        if t.pos_ in {"NOUN", "PROPN", "VERB", "ADJ", "NUM"})
+        if n_content > 0:
+            continue
+        # if chunk ends in hard punct, leave alone — it's a sentence boundary
+        last_nonspace = None
+        for t in reversed(list(span)):
+            if not t.is_space:
+                last_nonspace = t
+                break
+        if last_nonspace is not None and last_nonspace.text in HARD_PUNCT:
+            continue
+        # remove the RIGHT boundary so this chunk glues forward into the
+        # next, except when the next split is doc end (would leave no
+        # forward chunk to glue into — in that case remove the LEFT one).
+        if hi < len(doc):
+            bad.add(hi)
+        elif lo > 0:
+            bad.add(lo)
+    return bad
+
+
 # =============================================================================
 # CHUNK BUILDING & SMART MERGE LOGIC
 # =============================================================================
@@ -1528,11 +2636,22 @@ def _is_throwaway_span(doc: Doc, lo: int, hi: int) -> bool:
       • it's very short (< 3 words), AND
       • it has no content word (NOUN / PROPN / NUM / VERB / ADJ), AND
       • it doesn't end with hard punctuation or a comma.
+
+    EXCEPTION: a single ADV/ADJ flanked by long dashes (em/en/double) is the
+    parenthetical visual content — NEVER throwaway, even though it lacks a
+    canonical content POS.  Fixes #191 "If the answer is yes — | consistently
+    | — then it's brilliant." so `consistently` stands alone.
     """
     span = doc[lo:hi]
     text = span.text.strip()
     if not text:
         return True
+    # EXCEPTION for parenthetical ADV/ADJ between long dashes:
+    if (len(span) == 1 and span[0].pos_ in {"ADV", "ADJ"}
+            and lo > 0 and hi < len(doc)
+            and doc[lo - 1].text in LONG_DASH_PUNCT
+            and doc[hi].text in LONG_DASH_PUNCT):
+        return False
     if len(text.split()) >= 3:
         return False
     if text[-1] in HARD_PUNCT | {","}:
@@ -1567,6 +2686,13 @@ def _throwaway_direction(doc: Doc, lo: int, hi: int) -> str:
         return "bwd"
     # SPECIAL: single AUX tokens always introduce a predicate to the right
     if len(span) == 1 and span[0].pos_ == "AUX":
+        return "fwd"
+    # SPECIAL: single SCONJ ('as', 'while', 'because', 'though', 'if', etc.)
+    # introduces what follows — always glue forward so subordinators don't
+    # get stranded at the end of the previous chunk.  Fixes #1 lighthouse
+    # paragraph "their hopes as | the gentle sun" → "their hopes" + "as the
+    # gentle sun".
+    if len(span) == 1 and span[0].pos_ == "SCONJ":
         return "fwd"
     # SPECIAL: ADV/ADJ between dash-on-left and quote/dash-on-right → bwd
     if (len(span) == 1 and span[0].pos_ in {"ADV", "ADJ"}
@@ -1815,22 +2941,36 @@ def split_text_into_sections(text: str) -> List[str]:
     splits |= rule_brackets(doc)
     splits |= rule_initial_adverbial_comma(doc)
     splits |= rule_comma_split(doc)
+    splits |= rule_comma_list_extension(doc)        # RULE 25
+    splits |= rule_long_subord_comma(doc)           # RULE 26
+    splits |= rule_long_clause_comma(doc, splits)   # RULE 31
     splits |= rule_appositive_comma(doc)
     splits |= rule_clause_starters(doc, splits)
     splits |= rule_but_or_coord(doc, splits)
     splits |= rule_verb_clause(doc)
     splits |= rule_long_lead_in(doc, splits)
     splits |= rule_long_preps(doc)
+    splits |= rule_pp_intro_reveal(doc, splits)     # RULE 28
+    splits |= rule_terminal_of_reveal(doc, splits)  # RULE 33
     splits |= rule_noun_lists(doc)
     splits |= rule_bare_noun_lists(doc, splits)
     splits |= rule_list_quantifiers(doc)
     splits |= rule_entity_reveal(doc, splits)
+    splits |= rule_post_entity_split(doc, splits)   # RULE 30
     splits |= rule_currency_reveal(doc, splits)
     splits |= rule_imperative_start(doc)
     splits |= rule_and_or_clause(doc, splits)
     splits |= rule_terminal_descriptor(doc, splits)
+    splits |= rule_terminal_adj_coord(doc, splits)  # RULE 27
     splits |= rule_adjective_reveal(doc, splits)
     splits |= rule_numeric_phrase_reveal(doc, splits)
+    splits |= rule_participle_split(doc, splits)    # RULE 29
+    splits |= rule_progressive_split(doc, splits)   # RULE 34
+    splits |= rule_copula_attr_reveal(doc, splits)  # RULE 35
+    splits |= rule_pron_participle_pp_reveal(doc, splits)  # RULE 36
+    splits |= rule_terminal_pp_after_copula(doc, splits)   # RULE 37
+    splits |= rule_phrasal_object_reveal(doc, splits)      # RULE 38
+    splits |= rule_infinitive_split(doc, splits)    # RULE 32
 
     # ---- forbidden splits (remove) ------------------------------------------
     splits -= anti_rule_compound_ne(doc, splits)
@@ -1855,6 +2995,8 @@ def split_text_into_sections(text: str) -> List[str]:
     splits -= anti_rule_short_sentence(doc, splits)
     splits -= anti_rule_verb_to_verb(doc, splits)
     splits -= anti_rule_verb_to_dem_pron(doc, splits)
+    splits -= anti_rule_orphan_measure_tail(doc, splits)   # NEW
+    splits -= anti_rule_content_starved(doc, splits)       # NEW (#15)
 
     # always preserve sentinel splits
     splits |= {0, len(doc)}
@@ -1896,6 +3038,19 @@ if __name__ == "__main__":
         "Bike. Fold. Train. Unfold. Bike again.",
         "In Egypt, there's a valley filled with ancient whale skeletons sitting directly in the sand.",
         "Some places on Earth are so flat… satellites use them to check if they're broken.",
+        # NEW CASES exercising RULE 25-30 + modifications
+        "Cycling sounds great until you're dodging parked cars, squeezed by traffic, soaked in the rain.",
+        "If you already know a landscape is almost perfectly level, you can compare satellite readings against it.",
+        "Which is probably why these landscapes feel simultaneously calming and alien.",
+        "Straight roads vanishing into heat haze for absurd distances.",
+        "People crossing empty landscapes suddenly noticing shapes in rock.",
+        "A lone person walking across Alvord Desert in Oregon feels almost emotionally vulnerable.",
+        "The empire state building is really big.",
+        "A single vehicle crossing Salar de Uyuni looks microscopic.",
+        "And marine fossils scattered through regions that are now brutally dry.",
+        "So now the choice isn't \"drive or not.\"",
+        "But Together... mayyyybe not.",
+        "One theory suggests toxic algal blooms poisoned large groups of marine animals repeatedly over time.",
     ]
     for t in cases:
         _run_test(t)
