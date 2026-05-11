@@ -1,4 +1,11 @@
 
+TODO NEXT:
+- copy across the #5 test results so i can start removing thing sthat ive fixed...
+- do the lists next... ensure they are processed correctly...
+
+
+
+-----
 
 
 continue just tackling one sentence splitter issue at once...
