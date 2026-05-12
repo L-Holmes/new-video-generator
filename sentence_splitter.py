@@ -1,6 +1,8 @@
 """
 sentence_splitter.py
 ====================
+VERSION: v17  (post-merge unvisualisable rewrite, aggressive iteration)
+
 Split prose into short, scannable phrase-lines for visual presentation —
 captions, kinetic typography, slide-decks, animation cues, YouTube videos.
 
@@ -44,6 +46,12 @@ from typing import List, Set, Optional, Tuple
 
 import spacy
 from spacy.tokens import Doc, Span, Token
+
+
+# === VERSION marker — change me when shipping a new revision ===========
+# The user can check this at runtime: `from sentence_splitter import VERSION`.
+# If it doesn't match the version you expect, they're running stale code.
+VERSION = "v17-2026-05-12"
 
 
 # =============================================================================
@@ -395,6 +403,96 @@ def _content_count(doc: Doc, lo: int, hi: int) -> int:
     measure how much "real content" is on each side of a candidate split."""
     return sum(1 for x in doc[lo:hi]
                if x.pos_ in {"NOUN", "PROPN", "VERB", "ADJ", "ADV", "NUM"})
+
+
+# Lemma set for "weak" verbs that shouldn't qualify a chunk as visualisable
+# on their own — copulas and similar functional verbs.  A chunk containing
+# ONLY weak verbs (no nouns, no adjectives, no concrete verbs) is essentially
+# a connective phrase ("It's", "that has", "which were", "had been").
+WEAK_VERB_LEMMAS = {
+    "be", "have", "do", "get", "make", "go", "come",
+    "seem", "appear", "become", "remain", "stay",
+}
+
+# All surface forms of the above weak verbs, including clitic contractions.
+# Some spaCy parses tag clitics with non-canonical lemmas ("'re" instead of
+# "be") so the lemma-based check alone misses them.  We also check the
+# token's text.lower() against this set.
+WEAK_VERB_FORMS = {
+    # be
+    "be", "am", "is", "are", "was", "were", "been", "being",
+    "'s", "’s", "'re", "’re", "'m", "’m", "'ve", "’ve",
+    # have
+    "have", "has", "had", "having", "'d", "’d", "'ll", "’ll",
+    # do
+    "do", "does", "did", "done", "doing",
+    # get
+    "get", "gets", "got", "gotten", "getting",
+    # make
+    "make", "makes", "made", "making",
+    # go
+    "go", "goes", "went", "gone", "going",
+    # come
+    "come", "comes", "came", "coming",
+    # seem / appear / become / remain / stay
+    "seem", "seems", "seemed", "seeming",
+    "appear", "appears", "appeared", "appearing",
+    "become", "becomes", "became", "becoming",
+    "remain", "remains", "remained", "remaining",
+    "stay", "stays", "stayed", "staying",
+}
+
+# Lemma set for "weak" adjectives — quantifier-ish words that spaCy tags
+# as ADJ but don't add visual content on their own.  A chunk like "many",
+# "much", "few", "some" alone is not visualisable.  Real descriptive ADJs
+# ("red", "tiny", "ancient", "brilliant") are visualisable.
+WEAK_ADJ_LEMMAS = {
+    "many", "much", "more", "less", "few", "fewer", "some", "any",
+    "such", "other", "same", "different", "various", "several",
+    "certain", "particular", "specific", "general",
+    "own", "whole", "entire", "main", "only", "very", "too",
+}
+
+
+def _has_visualisable_content(doc: Doc, lo: int, hi: int) -> bool:
+    """True if the span has at least one tangible/concrete content token.
+
+    A token is "visualisable" when:
+      • it's a NOUN or PROPN (you can see a thing/place/person), OR
+      • it's a NUM (you can see a number), OR
+      • it's an ADJ whose lemma isn't a quantifier-ish weak word
+        ("many", "few", "some", "such", "other"...), OR
+      • it's a VERB whose lemma isn't a copula/auxiliary-like ("is", "be",
+        "have", "do", "get", "seem", "become"…) — these are connectives
+        that don't carry independent visual content.
+
+    Function words alone (DET / PRON / SCONJ / CCONJ / PART / ADP / AUX /
+    interjections / ADV) do NOT make a chunk visualisable.
+
+    Examples:
+      "that many of"     → False (PRON + weak-ADJ + ADP)
+      "It's"             → False (PRON + copula AUX)
+      "which is the"     → False (PRON + copula + DET)
+      "the patient dog"  → True  (NOUN)
+      "ran fast"         → True  (concrete VERB)
+      "was running"      → True  (running is VBG/VERB with lemma "run")
+      "abstract."        → True  (real ADJ)
+    """
+    for t in doc[lo:hi]:
+        if t.pos_ in {"NOUN", "PROPN", "NUM"}:
+            return True
+        if t.pos_ == "ADJ" and t.lemma_.lower() not in WEAK_ADJ_LEMMAS:
+            return True
+        if t.pos_ == "VERB":
+            # Strict: verb counts as visualisable ONLY if its lemma AND its
+            # text are both outside the weak-form sets.  Clitic contractions
+            # like "'re", "'s", "'ve" sometimes have non-canonical lemmas in
+            # spaCy, so the lemma-only check would miss them.
+            lemma_weak = t.lemma_.lower() in WEAK_VERB_LEMMAS
+            text_weak  = t.text.lower() in WEAK_VERB_FORMS
+            if not (lemma_weak or text_weak):
+                return True
+    return False
 
 
 # =============================================================================
@@ -2666,46 +2764,69 @@ def anti_rule_orphan_measure_tail(doc: Doc, splits: Set[int]) -> Set[int]:
         # last content token must be a measure noun
         if content[-1].lower_ not in MEASURE_NOUNS:
             continue
-        # a preposition must appear in the tail before the measure noun
-        if not any(x.pos_ == "ADP" for x in content[:-1]):
+        # CASE A: a preposition appears IN the tail before the measure noun.
+        # (e.g. split at "X over time" → tail is ["over", "time"])
+        if any(x.pos_ == "ADP" for x in content[:-1]):
+            bad.add(i)
             continue
-        bad.add(i)
+        # CASE B: the immediately preceding token (just before the split)
+        # is an ADP.  (e.g. split at "X over | time." → tail is ["time."],
+        # but the ADP "over" sits just to the left of the split.)  This
+        # catches the common case where the split point falls BETWEEN the
+        # prep and its measure-noun object.
+        if i > 0 and doc[i - 1].pos_ == "ADP":
+            bad.add(i)
+            continue
     return bad
 
 
-# X — never produce a chunk made entirely of function words.  Walks the
-#     splits in order and removes any "right" split that would leave a
-#     chunk whose tokens are all DET / PRON / ADP / PART / ADV / SCONJ /
-#     CCONJ / AUX (no NOUN / PROPN / VERB / ADJ / NUM at all).  The
-#     length cap (≤ 4 words) leaves big incidental chunks alone.
+# X — never produce a chunk that lacks visualisable content.  A chunk is
+#     "visualisable" when it has at least one NOUN / PROPN / NUM / ADJ /
+#     concrete-VERB (excluding copulas: be/have/do/get/seem/become).
+#     Connective fragments like "It's", "that many of", "and then the"
+#     have no visualisable content — they fail this test.
 #
-#     Fixes #81 "that many of" being isolated as its own chunk.  The
-#     rule removes the split AFTER the chunk so it glues forward into
-#     the next chunk.
+#     This anti-rule walks splits in order, identifies non-visualisable
+#     chunks, and removes the split that would isolate them so they
+#     glue forward into the next chunk.  Length cap raised to 6 words
+#     so phrases like "and that is just" / "but it's how it" get caught.
+#
+#     Fixes #81 "that many of", #175 "It's", #81-2 "That's", etc.
 def anti_rule_content_starved(doc: Doc, splits: Set[int]) -> Set[int]:
     bad = set()
     idx = sorted(splits)
     for k in range(len(idx) - 1):
         lo, hi = idx[k], idx[k + 1]
         span = doc[lo:hi]
-        # word count
+        # word count — cap at 6 (was 4) so longer connective phrases
+        # like "but it's how it" also get re-merged.
         text = span.text.strip()
         if not text:
             continue
-        if len(text.split()) > 4:
+        if len(text.split()) > 6:
             continue
-        # content POS count
-        n_content = sum(1 for t in span
-                        if t.pos_ in {"NOUN", "PROPN", "VERB", "ADJ", "NUM"})
-        if n_content > 0:
+        # Use the strict visualisability check (NOUN/PROPN/NUM/ADJ/
+        # concrete-VERB) — excludes copulas and AUX.
+        if _has_visualisable_content(doc, lo, hi):
             continue
         # NEVER remove a split that is punctuation-driven on EITHER boundary.
         # The chunk in question may be light on content but if it's flanked
         # by big punctuation (ellipsis, dash, quote, bracket, hard-punct)
         # the writer marked an intentional break.  Fixes the bug where
-        # "Which..." (function-word + ellipsis) was being merged with
-        # "sounds familiar." because the chunk had no content POS.
+        # "Which..." was being merged with "sounds familiar." because the
+        # chunk had no content POS.
         if _is_big_punct_split(doc, lo) or _is_big_punct_split(doc, hi):
+            continue
+        # If the chunk ends in a HARD_PUNCT (sentence-final), it's a
+        # deliberate sentence break — don't wipe.  This is also caught by
+        # the protect-big-punct check above (HARD_PUNCT ∈ big punct), but
+        # double-guard for clarity.
+        last_nonspace = None
+        for t in reversed(list(span)):
+            if not t.is_space:
+                last_nonspace = t
+                break
+        if last_nonspace is not None and last_nonspace.text in HARD_PUNCT:
             continue
         # remove the RIGHT boundary so this chunk glues forward into the
         # next, except when the next split is doc end (would leave no
@@ -2808,7 +2929,7 @@ def _throwaway_direction(doc: Doc, lo: int, hi: int) -> str:
 
 
 def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]],
-                  protected: Optional[Set[int]] = None) -> List[str]:
+                  protected: Optional[Set[int]] = None) -> Tuple[List[str], List[Tuple[int, int]]]:
     """
     Post-merge pass that fixes orphan single-content-word lines.
 
@@ -2853,7 +2974,7 @@ def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]
     if protected is None:
         protected = set()
     if len(chunks) <= 1:
-        return chunks
+        return chunks, chunk_spans
 
     REL_TAGS  = {"WDT", "WP", "WP$", "WRB"}
     PUNCT_ONLY_RE = re.compile(r"^[^\w\s]+$")  # no letters/digits
@@ -2966,7 +3087,97 @@ def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]
         out.append(cur_text)
         out_spans.append((cur_lo, cur_hi))
         i += 1
-    return out
+    return out, out_spans
+
+
+def _post_merge_unvisualisable(doc: Doc,
+                                chunks: List[str],
+                                chunk_spans: List[Tuple[int, int]],
+                                protected: Set[int]) -> Tuple[List[str], List[Tuple[int, int]]]:
+    """
+    Final pass: any chunk that is NOT visualisable on its own gets re-glued
+    to a neighbour.  A "visualisable" chunk has at least one NOUN / PROPN /
+    NUM / ADJ / concrete-VERB (see `_has_visualisable_content`).
+
+    AGGRESSIVE REWRITE: this pass is the LAST line of defense.  It runs until
+    EVERY remaining chunk is either (a) visualisable, (b) ends in HARD_PUNCT
+    (sentence tail — leave alone), or (c) can't be merged due to protected
+    boundaries on BOTH sides.
+
+    Gluing direction:
+        • prefer BACKWARD (attach to the END of the previous chunk)
+        • if there is no previous chunk OR the left boundary is protected,
+          glue FORWARD
+        • if BOTH boundaries are protected, leave alone
+
+    Iterates aggressively — up to 10 passes — so chained non-visualisable
+    chunks all collapse.
+    """
+    if len(chunks) <= 1:
+        return chunks, chunk_spans
+
+    # Run until no more changes happen
+    for _iter in range(10):
+        # Find the first non-visualisable chunk that CAN be merged
+        target_idx: Optional[int] = None
+        for i, (lo, hi) in enumerate(chunk_spans):
+            text = chunks[i].strip()
+            if not text:
+                continue
+            # leave sentence tails alone
+            if text[-1] in {".", "!", "?"}:
+                continue
+            if _has_visualisable_content(doc, lo, hi):
+                continue
+            # not visualisable — can we merge?
+            left_protected  = lo in protected
+            right_protected = hi in protected
+            if left_protected and right_protected:
+                continue  # island, leave alone
+            # at least one direction is open
+            target_idx = i
+            break
+
+        if target_idx is None:
+            break  # all chunks are now visualisable or sealed
+
+        # Merge target_idx into a neighbour
+        i = target_idx
+        lo, hi = chunk_spans[i]
+        left_protected  = lo in protected
+        right_protected = hi in protected
+        can_back = i > 0 and not left_protected
+        can_fwd  = i + 1 < len(chunks) and not right_protected
+
+        if can_back:
+            # merge i into i-1
+            prev_lo, prev_hi = chunk_spans[i - 1]
+            new_chunks = list(chunks)
+            new_spans  = list(chunk_spans)
+            new_chunks[i - 1] = (chunks[i - 1] + " " + chunks[i]).strip()
+            new_spans[i - 1]  = (prev_lo, hi)
+            del new_chunks[i]
+            del new_spans[i]
+            chunks = new_chunks
+            chunk_spans = new_spans
+        elif can_fwd:
+            # merge i into i+1
+            nxt_lo, nxt_hi = chunk_spans[i + 1]
+            new_chunks = list(chunks)
+            new_spans  = list(chunk_spans)
+            new_chunks[i] = (chunks[i] + " " + chunks[i + 1]).strip()
+            new_spans[i]  = (lo, nxt_hi)
+            del new_chunks[i + 1]
+            del new_spans[i + 1]
+            chunks = new_chunks
+            chunk_spans = new_spans
+        else:
+            # Shouldn't happen given the earlier filter, but be safe.
+            break
+
+    return chunks, chunk_spans
+
+
 def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
                        protected: Optional[Set[int]] = None
                        ) -> Tuple[List[str], List[Tuple[int, int]]]:
@@ -3070,7 +3281,7 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
 # MAIN ENTRY-POINT
 # =============================================================================
 
-def split_text_into_sections(text: str) -> List[str]:
+def split_text_into_sections(text: str, debug: bool = False) -> List[str]:
     """
     Split *text* into a list of phrase-sized sections suitable for kinetic
     typography, captions, or YouTube-style on-screen text.
@@ -3082,6 +3293,11 @@ def split_text_into_sections(text: str) -> List[str]:
        4) remove forbidden splits via each ANTI-RULE
        5) build raw chunk spans
        6) merge throwaway fragments with head-aware direction
+       7) post-merge: re-glue any chunk with no visualisable content
+
+    Set debug=True to print the chunk shape at each pipeline stage.  Use
+    this when investigating why a particular sentence isn't being split
+    the way you expect.
     """
     text = rule_strip_markdown(text)
     text = rule_normalise_punct(text)
@@ -3179,13 +3395,36 @@ def split_text_into_sections(text: str) -> List[str]:
     splits |= protected
 
     raw = _build_raw_chunks(doc, splits)
+    if debug:
+        print("=== STAGE: post-anti-rule splits ===")
+        for lo, hi in raw:
+            print(f"  [{lo:3d}:{hi:3d}] {doc[lo:hi].text!r}")
     merged, merged_spans = _merge_throwaways(doc, raw, protected)
+    if debug:
+        print("=== STAGE: after _merge_throwaways ===")
+        for chunk, (lo, hi) in zip(merged, merged_spans):
+            print(f"  [{lo:3d}:{hi:3d}] {chunk!r}")
     # filter empties while keeping spans aligned
     pairs = [(c, s) for c, s in zip(merged, merged_spans) if c]
     if not pairs:
         return []
     merged, merged_spans = [p[0] for p in pairs], [p[1] for p in pairs]
-    fused = _fuse_orphans(doc, merged, merged_spans, protected)
+    fused, fused_spans = _fuse_orphans(doc, merged, merged_spans, protected)
+    if debug:
+        print("=== STAGE: after _fuse_orphans ===")
+        for chunk, (lo, hi) in zip(fused, fused_spans):
+            vis = _has_visualisable_content(doc, lo, hi)
+            print(f"  [{lo:3d}:{hi:3d}] vis={vis} {chunk!r}")
+    # FINAL POST-PASS: re-merge any chunk that lacks visualisable content
+    # (NOUN / PROPN / NUM / ADJ / concrete VERB).  Connective fragments
+    # like "that many of", "It's", "and then the" get glued backward into
+    # the previous chunk.  Respects PROTECTED boundaries (big-punct splits
+    # are never crossed).
+    fused, fused_spans = _post_merge_unvisualisable(doc, fused, fused_spans, protected)
+    if debug:
+        print("=== STAGE: after _post_merge_unvisualisable ===")
+        for chunk, (lo, hi) in zip(fused, fused_spans):
+            print(f"  [{lo:3d}:{hi:3d}] {chunk!r}")
     return fused
 
 

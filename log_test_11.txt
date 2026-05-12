@@ -1,5 +1,13 @@
 
 === whale_fossils_map (96 tests) ===
+test #1) One of the best places on Earth to find whale fossils… is... :: FALSE
+- actual: ['One of the best places on Earth to find', 'whale fossils ...', 'is a desert.']
+- expected: ['One of the best places on Earth to find', 'whale fossils…', 'is a desert.']
+ → 67%
+test #4) In Egypt, there’s a valley filled with ancient whale skel... :: FALSE
+- actual: ['In Egypt,', 'there’s a valley filled with', 'ancient whale skeletons sitting directly in', 'the sand —', 'ribs,', 'vertebrae,', 'entire fossilized bodies baking under one of', 'the driest climates on Earth.']
+- expected: ['In Egypt,', 'there’s a valley filled with', 'ancient whale skeletons sitting directly in the sand —', 'ribs,', 'vertebrae,', 'entire fossilized bodies baking under one of the driest climates on Earth.']
+ → 25%
 test #5) Which feels impossible until you realize the desert used ... :: FALSE
 - actual: ['Which feels impossible until you realize the desert used to be an ocean.']
 - expected: ['Which feels impossible until you realize the desert used to be', 'an ocean.']
@@ -16,7 +24,11 @@ test #10) Then time buried everything under dust and rock until the... :: FALSE
 - actual: ['Then time buried everything under dust and rock', 'until the planet basically erased the evidence.']
 - expected: ['Then time buried everything under dust and rock until the planet basically erased the evidence.']
  → 0%
-test #12) Wadi Al-Hitan in Egypt — literally “Valley of the Whales”... :: FALSE  - don't leave just punctuation by itslef... join it to the next line or previous...
+test #11) Except occasionally… bones stick out. :: FALSE
+- actual: ['Except occasionally ...', 'bones stick out.']
+- expected: ['Except occasionally… bones stick out.']
+ → 0%
+test #12) Wadi Al-Hitan in Egypt — literally “Valley of the Whales”... :: FALSE
 - actual: ['Wadi Al-Hitan', 'in Egypt —', 'literally', '“Valley of the Whales”', '—', 'looks almost cinematic from above.']
 - expected: ['Wadi Al-Hitan in Egypt — literally', '“Valley of the Whales” —', 'looks almost cinematic from above.']
  → 0%
@@ -40,20 +52,30 @@ test #20) You can stand in one of the driest landscapes on Earth lo... :: FALSE
 - actual: ['You can stand', 'in one of the driest landscapes on Earth looking at', 'the skeleton of a creature', 'that evolved for the ocean ...', 'while surrounded', 'by terrain', 'that hasn’t seen', 'meaningful rain in ages.']
 - expected: ['You can stand in one of the driest landscapes on Earth looking at', 'the skeleton of a creature that evolved for the ocean…', 'while surrounded by terrain that hasn’t seen meaningful rain in ages.']
  → 0%
-
-test #25) But around 40 million years ago, this entire region was c... :: FALSE - ? am I bothered about the date/time split?
+test #25) But around 40 million years ago, this entire region was c... :: FALSE
 - actual: ['But around 40 million years ago,', 'this entire region was covered', 'by the Tethys Sea.']
 - expected: ['But around', '40 million years ago, this entire region was covered by', 'the Tethys Sea.']
  → 0%
-
+test #28) And eventually the sea disappeared completely. :: FALSE
+- actual: ['And eventually the sea disappeared completely.']
+- expected: ['And eventually', 'the sea disappeared completely.']
+ → 0%
+test #29) Leaving whales stranded not physically… :: FALSE
+- actual: ['Leaving whales stranded not physically ...']
+- expected: ['Leaving whales stranded not physically…']
+ → 0%
+test #30) …but historically. :: FALSE
+- actual: ['but historically.']
+- expected: ['…but historically.']
+ → 0%
 test #31) That’s what fossils really are: moments trapped after the... :: FALSE
 - actual: ['That’s what fossils really are:', 'moments trapped after', 'the environment around them moved on.']
 - expected: ['That’s what fossils really are:', 'moments trapped after the environment around them moved on.']
  → 33%
 test #32) And nowhere makes that clearer than the Atacama Desert in... :: FALSE
-- actual: ['And nowhere makes', 'that clearer than', 'the Atacama Desert', 'in Chile.']
+- actual: ['And nowhere makes that clearer than', 'the Atacama Desert', 'in Chile.']
 - expected: ['And nowhere makes that clearer than', 'the Atacama Desert in Chile.']
- → 0%
+ → 33%
 test #33) Because the Atacama is so dry it almost preserves things ... :: FALSE
 - actual: ['Because the Atacama is so dry it almost preserves things', 'too well.']
 - expected: ['Because the Atacama is so dry it almost preserves things too well.']
@@ -138,10 +160,6 @@ test #80) Because once you know what to look for, deserts start rev... :: FALSE
 - actual: ['Because once you know', 'what to look for,', 'deserts start revealing evidence of entirely different worlds hidden beneath them.']
 - expected: ['Because once you know what to look for,', 'deserts start revealing evidence of entirely different worlds', 'hidden beneath them.']
  → 0%
-test #81) That’s also why aerial footage works so well for this topic. :: FALSE - why does this split on 'that's?' whatever is doing that needs to stop as its way too strong...
-- actual: ['That’s', 'also why aerial footage works so well for this topic.']
-- expected: ['That’s also why aerial footage works so well for this topic.']
- → 0%
 test #82) From ground level, fossils can look fragmented and abstract. :: FALSE
 - actual: ['From ground level,', 'fossils can look fragmented and abstract.']
 - expected: ['From ground level,', 'fossils can look fragmented and', 'abstract.']
@@ -170,7 +188,7 @@ test #93) Which means someday, millions of years from now, some fut... :: FALSE
 - actual: ['Which means someday,', 'millions of years from now,', 'some future species might stand in another desert looking at fossils from', 'our oceans wondering', 'how water ever existed there at all.']
 - expected: ['Which means someday,', 'millions of years from now, some', 'future species might stand in another desert looking', 'at fossils from our oceans', 'wondering how water ever existed there at all.']
  → 20%
-whale_fossils_map → 48/96 passed
+whale_fossils_map → 49/96 passed
 
 === flat_places_map (89 tests) ===
 test #1) Some places on Earth are so flat… satellites use them to ... :: FALSE
@@ -246,7 +264,7 @@ test #34) And driving across it feels slightly like crossing anothe... :: FALSE
 - expected: ['And driving across it feels slightly like crossing another planet.']
  → 0%
 test #38) There are stretches where the terrain becomes so visually... :: FALSE
-- actual: ['There are', 'stretches where', 'the terrain becomes', 'so visually consistent', 'that pilots and drivers report strange depth perception effects', 'because the landscape gives your brain', 'almost nothing to work with.']
+- actual: ['There are stretches where', 'the terrain becomes', 'so visually consistent', 'that pilots and drivers report strange depth perception effects', 'because the landscape gives your brain', 'almost nothing to work with.']
 - expected: ['There are stretches where the terrain becomes so visually consistent that', 'pilots and drivers report', 'strange depth perception effects', 'because the landscape gives your brain almost nothing to work with.']
  → 0%
 test #39) And flatness at this scale changes how humans emotionally... :: FALSE
@@ -306,7 +324,7 @@ test #68) So when entire landscapes reflect cleanly for kilometers,... :: FALSE
 - expected: ['So when entire landscapes reflect cleanly for kilometers,', 'you’re looking at a level of flatness humans rarely encounter naturally.']
  → 33%
 test #70) That’s why footage from these places spreads constantly o... :: FALSE
-- actual: ['That’s', 'why footage from', 'these places spreads constantly online.']
+- actual: ['That’s why footage from', 'these places spreads constantly online.']
 - expected: ['That’s why footage from these places spreads constantly online.']
  → 0%
 test #71) Tiny humans against infinite horizons. :: FALSE
@@ -326,7 +344,7 @@ test #79) When it doesn’t, reality starts feeling simplified in a s... :: FALS
 - expected: ['When it doesn’t, reality starts feeling', 'simplified in a slightly uncomfortable way.']
  → 0%
 test #81) And the craziest part is that many of these places only b... :: FALSE
-- actual: ['And the craziest part is', 'that many of', 'these places only became useful to space agencies', 'because they’re', 'more consistent than surfaces humans could realistically engineer ourselves at that scale.']
+- actual: ['And the craziest part is', 'that many of these places only became useful to space agencies', 'because they’re more consistent than surfaces humans could realistically engineer ourselves at that scale.']
 - expected: ['And the craziest part is that many of these places only became useful to', 'space agencies because', 'they’re more consistent than surfaces humans could realistically engineer ourselves at that scale.']
  → 0%
 test #82) Nature accidentally produced calibration tools larger tha... :: FALSE
@@ -396,7 +414,7 @@ test #7) If you were a European merchant, getting it meant sailing... :: FALSE
 - expected: ['If you were a European merchant, getting it meant', 'sailing for months, surviving', 'scurvy,', 'pirates,', 'and shipwrecks. But if you made it back with a']
  → 20%
 test #8) But if you made it back with a single ship full of nutmeg... :: FALSE
-- actual: ['But if you made', 'it back with a single ship full of', 'nutmeg,', 'you were set for life.']
+- actual: ['But if you made it back with a single ship full of', 'nutmeg,', 'you were set for life.']
 - expected: ['But if you made it back with a single ship full of nutmeg, you were set for life.']
  → 0%
 test #9) The Dutch and the British fought bloody, brutal wars over... :: FALSE
@@ -416,7 +434,7 @@ test #14) The entire map of the modern world was quite literally dr... :: FALSE
 - expected: ['The entire map of the modern world was quite literally drawn by people desperately looking for a cheaper way to flavor their dinner.']
  → 0%
 test #17) Today, it’s on every restaurant table in the world. :: FALSE
-- actual: ['Today,', 'it’s', 'on every restaurant table in the world.']
+- actual: ['Today,', 'it’s on every restaurant table in the world.']
 - expected: ['Today, it’s on every restaurant table in the world.']
  → 0%
 test #18) But originally, the black pepper vine was entirely native... :: FALSE
@@ -638,6 +656,10 @@ test #78) The culmination of a modern, multi-transport network. :: FALSE
 - actual: ['The culmination of a modern,', 'multi-transport network.']
 - expected: ['The culmination of a modern, multi-transport network.']
  → 0%
+test #81) Which... sounds familiar. :: FALSE
+- actual: ['Which ...', 'sounds familiar.']
+- expected: ['Which...', 'sounds familiar.']
+ → 50%
 test #83) But there’s a reason most people weren’t using the Cursus... :: FALSE
 - actual: ['But there’s a reason', 'most people weren’t using the Cursus Publicus.']
 - expected: ['But there’s a reason most people weren’t using the Cursus Publicus.']
@@ -658,6 +680,10 @@ test #105) And now instead of one decision “do I drive?” — you’ve go... 
 - actual: ['And now instead of one decision', '“do I drive?', '”', '—', 'you’ve got a chain.']
 - expected: ['And now instead of one decision', '“do I drive?”', '— you’ve got a chain.']
  → 20%
+test #112) But Together... mayyyybe not. :: FALSE
+- actual: ['But Together ...', 'mayyyybe not.']
+- expected: ['But Together...', 'mayyyybe not.']
+ → 50%
 test #113) And that brings us full circle back to me sat on the M6. :: FALSE
 - actual: ['And that brings us full circle back to me sat', 'on the M6.']
 - expected: ['And that brings us full circle back', 'to me sat on the M6.']
@@ -791,21 +817,21 @@ test #172) People will say, “no one cares.” :: FALSE
 - expected: ['People will say,', '“no one cares.”']
  → 33%
 test #174) But unless you’re completely sure you don’t... it lingers. :: FALSE
-- actual: ['But unless you’re', 'completely sure you don’t ...', 'it lingers.']
+- actual: ['But unless you’re completely sure you don’t ...', 'it lingers.']
 - expected: ['But unless you’re completely sure you don’t...', 'it lingers.']
- → 0%
+ → 50%
 test #175) It’s like suddenly realising you’re the only one wearing ... :: FALSE
-- actual: ['It’s', 'like suddenly realising', 'you’re the only one wearing', 'bright red jeans and', 'a neon top ...', 'while everyone else isn’t.']
+- actual: ['It’s like suddenly realising', 'you’re the only one wearing', 'bright red jeans and', 'a neon top ...', 'while everyone else isn’t.']
 - expected: ['It’s like suddenly realising you’re the only one wearing bright red jeans and a neon top... while everyone else isn’t.']
  → 0%
 test #178) You’re just... aware. :: FALSE
-- actual:   ['You’re just ...', 'aware.']
+- actual: ['You’re just ...', 'aware.']
 - expected: ['You’re just...', 'aware.']
  → 50%
 test #182) So even if it’s small... it’s always there. :: FALSE
-- actual: ['So even if it’s', 'small ...', 'it’s always there.']
+- actual: ['So even if it’s small ...', 'it’s always there.']
 - expected: ['So even if it’s small...', 'it’s always there.']
- → 0%
+ → 50%
 test #187) Not ideal ones — real ones. :: FALSE
 - actual: ['Not ideal ones —', 'real ones.']
 - expected: ['Not ideal ones — real ones.']

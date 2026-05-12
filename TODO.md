@@ -10,7 +10,8 @@ TODO NEXT:
 
 continue just tackling one sentence splitter issue at once...
 then processing with this:
-sed -nE '/^test #(175|164|141|117|53|79|59|1|142|123|56|69|28|37|49|61|82|87|4|7|8|113|9|25|41|145|18|23|116|19|63|64|68|6|62|67|191|81|112|178|42|43)\)/,+3p' log_test_8_processed.txt
+uv run test_ss_against_real_before_after.py -v > log_test_9.txt
+sed -nE '/^test #(175|164|141|117|53|79|59|1|142|123|56|69|28|37|49|61|82|87|4|7|8|113|9|25|41|145|18|23|116|19|63|64|68|6|62|67|191|81|112|178|42|43)\)/,+3p' log_test_8.txt
 
 then get to a decent level...
 then in future again, just tackle issues one by one...
