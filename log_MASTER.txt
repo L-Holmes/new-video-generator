@@ -299,7 +299,12 @@ test #62) But cost isn’t the only problem- friction is. :: FALSE - should spli
 jump.. TODO NOW
 
 
- test #6) and here is another- does it handle everything all fine? ... :: FALSE
+
+
+ Please fix my issue, which I think it happening with the rejoining stage, which happens after, to rejoin any non-visualisable phrases...
+
+e.g. 
+ test #6) and here is another- does it handle everything all fine? ... :: FALSE - should split on the visualisable 'othe rperson', and then again, on the vreb 'laid down' of  wht they do together. why doesn't it?
 - actual: ['and here is another-', 'does it handle everything all fine?', 'but what if the other person and', 'the dragon laid down together at the edge of the brook?']
 - expected: ['and here is another-', 'does it handle everything all fine?', 'but what if the', 'other person and', 'the dragon', 'laid down together at the edge of the brook?']
  → 33%
