@@ -19,7 +19,7 @@ from sentence_splitter import split_text_into_sections
 # ============================================================================
 # INPUT TEXT — change this to test different sentences
 # ============================================================================
-INPUT_TEXT =  "and here is another- does it handle everything all fine? but what if the other person and the dragon laid down together at the edge of the brook?"
+INPUT_TEXT =  "Their bodies drifted into coastal areas, became buried in sediment, then eventually fossilized as the landscape transformed completely around them."
 
 # ============================================================================
 # Alternatively, uncomment one of these:

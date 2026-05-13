@@ -2452,6 +2452,64 @@ def rule_phrasal_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
     return out
 
 
+
+# -----------------------------------------------------------------------------
+# RULE 39 — PREPOSITIONAL OBJECT REVEAL
+# When a preposition introduces a new visual shot (its head is a VERB, AUX,
+# or an ADJ modifying a VERB) and its object is a multi-token noun chunk,
+# split BEFORE the preposition so the whole PP gets its own reveal line.
+#
+# Keeps short PPs and qualifier PPs intact.
+#
+# Examples:
+#   "became useful to space agencies"  → "became useful | to space agencies"
+#   "engineer ourselves at that scale" → "engineer ourselves | at that scale"
+#   "sat on the comfortable mat"       → "sat | on the comfortable mat" (if sent >= 9)
+#   "the lift in the skyscraper"       → NO SPLIT (head is NOUN)
+# -----------------------------------------------------------------------------
+def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.pos_ != "ADP":
+            continue
+            
+        # Only split if the ADP introduces a new visual shot.
+        # Qualifier PPs (head is NOUN/PROPN) stay glued.
+        is_visual_prep = False
+        if t.head.pos_ in {"VERB", "AUX", "ADV"}:
+            is_visual_prep = True
+        elif t.head.pos_ == "ADJ":
+            # ADJ -> ADP (e.g., "useful to space agencies")
+            # Check if the ADJ modifies a VERB/AUX or is a predicate
+            if t.head.head.pos_ in {"VERB", "AUX"} or t.head.dep_ in {"acomp", "attr"}:
+                is_visual_prep = True
+                
+        if not is_visual_prep:
+            continue
+            
+        # Check the object of the preposition
+        pobj = next((c for c in t.children if c.dep_ in {"pobj", "obj"}), None)
+        if pobj is None:
+            continue
+            
+        # Is the object a multi-token noun chunk? (e.g. "space agencies")
+        chunk = _chunk_containing(doc, pobj.i)
+        if chunk is None or len(chunk) < 2:
+            continue
+            
+        # Sentence length check (short sentences don't need this split)
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok <= 8:
+            continue
+            
+        # Don't split if it's a blocked prep like "of"
+        if t.lower_ in PROMISCUOUS_PREPS:
+            continue
+            
+        out.add(t.i) # Split BEFORE the ADP
+    return out
+
+
 # =============================================================================
 # ANTI-RULES  —  return indices to *remove* from the splits set.
 # =============================================================================
@@ -3418,6 +3476,7 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_terminal_pp_after_copula", rule_terminal_pp_after_copula, True),
     ("rule_phrasal_object_reveal",   rule_phrasal_object_reveal,   True),
     ("rule_infinitive_split",        rule_infinitive_split,        True),
+    ("rule_prep_object_reveal",      rule_prep_object_reveal,      True),  
 ]
 
 # Anti-rules: (name, function)
