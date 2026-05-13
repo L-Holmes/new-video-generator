@@ -54,6 +54,13 @@ from spacy.tokens import Doc, Span, Token
 VERSION = "v17-2026-05-12"
 
 
+ # === SINGLE-RUN DEBUG FLAG ================================================
+# Set to True to always print stage-by-stage output when
+# split_text_into_sections() is called.  Can also be enabled per-call
+# via split_text_into_sections(text, debug=True).
+SINGLE_RUN_DEBUG = False
+
+
 # =============================================================================
 # CONFIG  —  punctuation / structural sets
 # (lexical content lives in spaCy's POS/DEP/NER tags, not here, so the rules
@@ -403,6 +410,44 @@ def _content_count(doc: Doc, lo: int, hi: int) -> int:
     measure how much "real content" is on each side of a candidate split."""
     return sum(1 for x in doc[lo:hi]
                if x.pos_ in {"NOUN", "PROPN", "VERB", "ADJ", "ADV", "NUM"})
+
+
+# --- debug helpers ---------------------------------------------------------
+
+def _splits_to_chunks_list(doc: Doc, splits: Set[int]) -> List[str]:
+    """Build list of chunk texts from a splits set (for debug display)."""
+    idx = sorted(splits)
+    chunks: List[str] = []
+    for i in range(len(idx) - 1):
+        text = doc[idx[i]:idx[i + 1]].text.strip()
+        if text:
+            chunks.append(text)
+    return chunks
+
+
+def _format_chunks_debug(chunks: List[str]) -> str:
+    """Format a chunk list with '|||' separators for debug display."""
+    if not chunks:
+        return "[]"
+    return '["' + '" ||| "'.join(chunks) + '"]'
+
+
+def _debug_print_stage(name: str, was_applied: bool,
+                       doc_or_chunks) -> None:
+    """Print one line of debug output for a pipeline stage.
+
+    *doc_or_chunks* is either a tuple ``(doc, splits)`` (for rule stages)
+    or a plain ``List[str]`` of chunk texts (for post-processing stages).
+    """
+    status = "TRUE" if was_applied else "FALSE"
+    bang = " !!!!!" if was_applied else ""
+    if isinstance(doc_or_chunks, tuple):
+        doc, splits = doc_or_chunks
+        chunks = _splits_to_chunks_list(doc, splits)
+    else:
+        chunks = doc_or_chunks
+    print(f"==> {name} ({status}){bang}")
+    print(f"    {_format_chunks_debug(chunks)}")
 
 
 # Lemma set for "weak" verbs that shouldn't qualify a chunk as visualisable
@@ -1108,49 +1153,89 @@ def rule_long_preps(doc: Doc) -> Set[int]:
 # Examples:
 #   "the red car the blue truck the green bike sped"  → splits between each
 #   "John Ford the second"                            → kept together
-#   "dust and rock"                                   → kept together
+#   "dust and rock"                                   → split
 #   "endless dunes and unbearable heat"               → 2 lines (chunks > 1 tok)
 # -----------------------------------------------------------------------------
 def rule_noun_lists(doc: Doc) -> Set[int]:
     out = set()
     chunks = list(doc.noun_chunks)
+
+    # Explicit prep sets for visual typography splitting
+    BLOCKED_PREPS = {
+        "of", "with", "for", "about", "as", "like", "than", "per", "via"
+    }
+    SPLITTABLE_PREPS = {
+        # location
+        "in", "at", "on", "under", "over", "above", "below", "beneath",
+        "behind", "beside", "between", "among", "around", "near", "by",
+        "inside", "outside", "within", "into", "onto", "through", "across",
+        "along", "past", "toward", "towards", "off", "up", "down",
+        "underneath", "against", "upon",
+        # time
+        "after", "before", "during", "since", "until", "till"
+    }
+
     for a, b in zip(chunks[:-1], chunks[1:]):
         between = doc[a.end:b.start]
-        # 1) verb between → not a list
-        if any(x.pos_ == "VERB" for x in between):
+
+        # 1) verb between → different clauses
+        if any(t.pos_ == "VERB" for t in between):
             continue
-        # 2) hard punctuation between → cross-sentence, not a list
-        if any(x.text in HARD_PUNCT for x in between):
+        # 2) hard punctuation → let sentence rules handle
+        if any(t.text in HARD_PUNCT for t in between):
             continue
-        # 2b) either side is a pronoun-only chunk → not a list, this is just
-        #     "the reason it works..." being parsed as two chunks.
-        if (len(a) == 1 and a[0].pos_ == "PRON") or (len(b) == 1 and b[0].pos_ == "PRON"):
+        # 2b) pronoun fragments on the right side
+        if len(b) == 1 and b[0].pos_ == "PRON":
             continue
-        # 3) appositive
+        # 3) appositives
         if b.root.dep_ == "appos":
             continue
-        # 4) shared dobj/obj head
-        if a.root.head == b.root.head and a.root.dep_ in {"dobj", "obj"}:
-            continue
-        # 5) ordinal appositive: "X the second"
+        # 5) ordinal: "Henry the Eighth"
         if b.text.lower().startswith("the ") and len(b) >= 2 and _is_ordinal(b[1]):
             continue
-        # 6) single short prep between (≤ 3 chars) — "the lift in the skyscraper"
-        if len(between) == 1 and between[0].pos_ == "ADP" and len(between[0].text) <= 3:
-            continue
-        # 7) "X and Y" where BOTH chunks are single NOUN tokens → keep together
-        #    (handles "dust and rock", "salt and pepper", "love and war")
-        if (len(a) == 1 and len(b) == 1
-                and len(between) == 1 and between[0].pos_ == "CCONJ"
-                and a[0].pos_ in {"NOUN", "PROPN"} and b[0].pos_ in {"NOUN", "PROPN"}):
-            continue
-        # 8) frozen bigram immediately before b ("what if ...")
-        if b.start >= 2 and (doc[b.start - 2].lower_, doc[b.start - 1].lower_) in FROZEN_BIGRAMS:
-            continue
-        # 9) don't slice a multi-token NE
+
+        # 6) prepositions – visual typography logic
+        if len(between) == 1 and between[0].pos_ == "ADP":
+            prep = between[0].lower_
+            
+            # If Chunk A is a lightweight opener (PRON), Chunk B is the
+            # visual subject. We split to reveal it, unless it's strictly
+            # "of" which binds too tightly. (e.g. "what about | the frog")
+            if a.root.pos_ not in {"NOUN", "PROPN"}:
+                if prep == "of":
+                    continue
+                # else: fall through and split
+            else:
+                # Chunk A is a substantial NP (NOUN/PROPN).
+                # Check if Chunk B is a qualifier of Chunk A (same NP)
+                # or a new clause/opener (different head).
+                is_qualifier = False
+                head = b.root
+                for _ in range(4): # walk up max 4 levels in the tree
+                    if head == a.root:
+                        is_qualifier = True
+                        break
+                    if head.head == head: # reached the sentence root
+                        break
+                    head = head.head
+                
+                if is_qualifier:
+                    continue # Keep "the lift in the skyscraper" together
+                
+                # If it's not structurally a qualifier, but prep is blocked 
+                # or unknown, still don't split (safe fallback).
+                if prep in BLOCKED_PREPS or prep not in SPLITTABLE_PREPS:
+                    continue
+
+        # 9) don't cut a named entity
         if _in_compound_ne(doc, b.start):
             continue
+
         out.add(b.start)
+        # for coordinations, also mark the left side so both items get a reveal
+        if len(between) == 1 and between[0].pos_ == "CCONJ":
+            out.add(a.start)
+
     return out
 
 
@@ -3274,6 +3359,84 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
 
     return out, out_spans
 
+# =============================================================================
+# PIPELINE DEFINITIONS  —  used by split_text_into_sections for both normal
+# execution and stage-by-stage debug output.
+# =============================================================================
+
+# Positive rules: (name, function, takes_splits_arg)
+#   takes_splits_arg=True  → call as fn(doc, splits)
+#   takes_splits_arg=False → call as fn(doc)
+_POSITIVE_PIPELINE: List[tuple] = [
+    ("rule_hard_punct",              rule_hard_punct,              False),
+    ("rule_dashes",                  rule_dashes,                  False),
+    ("rule_ellipsis",                rule_ellipsis,                False),
+    ("rule_pre_ellipsis_reveal",     rule_pre_ellipsis_reveal,     True),
+    ("rule_quotes",                  rule_quotes,                  False),
+    ("rule_brackets",                rule_brackets,                False),
+    ("rule_initial_adverbial_comma", rule_initial_adverbial_comma, False),
+    ("rule_comma_split",             rule_comma_split,             False),
+    ("rule_comma_list_extension",    rule_comma_list_extension,    False),
+    ("rule_long_subord_comma",       rule_long_subord_comma,       False),
+    ("rule_long_clause_comma",       rule_long_clause_comma,       True),
+    ("rule_appositive_comma",        rule_appositive_comma,        False),
+    ("rule_clause_starters",         rule_clause_starters,         True),
+    ("rule_but_or_coord",            rule_but_or_coord,            True),
+    ("rule_verb_clause",             rule_verb_clause,             False),
+    ("rule_long_lead_in",            rule_long_lead_in,            True),
+    ("rule_long_preps",              rule_long_preps,              False),
+    ("rule_pp_intro_reveal",         rule_pp_intro_reveal,         True),
+    ("rule_terminal_of_reveal",      rule_terminal_of_reveal,      True),
+    ("rule_noun_lists",              rule_noun_lists,              False),
+    ("rule_bare_noun_lists",         rule_bare_noun_lists,         True),
+    ("rule_list_quantifiers",        rule_list_quantifiers,        False),
+    ("rule_entity_reveal",           rule_entity_reveal,           True),
+    ("rule_post_entity_split",       rule_post_entity_split,       True),
+    ("rule_currency_reveal",         rule_currency_reveal,         True),
+    ("rule_imperative_start",        rule_imperative_start,        False),
+    ("rule_and_or_clause",           rule_and_or_clause,           True),
+    ("rule_terminal_descriptor",     rule_terminal_descriptor,     True),
+    ("rule_terminal_adj_coord",      rule_terminal_adj_coord,      True),
+    ("rule_adjective_reveal",        rule_adjective_reveal,        True),
+    ("rule_numeric_phrase_reveal",   rule_numeric_phrase_reveal,   True),
+    ("rule_participle_split",        rule_participle_split,        True),
+    ("rule_progressive_split",       rule_progressive_split,       True),
+    ("rule_copula_attr_reveal",      rule_copula_attr_reveal,      True),
+    ("rule_pron_participle_pp_reveal", rule_pron_participle_pp_reveal, True),
+    ("rule_terminal_pp_after_copula", rule_terminal_pp_after_copula, True),
+    ("rule_phrasal_object_reveal",   rule_phrasal_object_reveal,   True),
+    ("rule_infinitive_split",        rule_infinitive_split,        True),
+]
+
+# Anti-rules: (name, function)
+# All anti-rules are called as fn(doc, splits)
+_ANTI_PIPELINE: List[tuple] = [
+    ("anti_rule_compound_ne",        anti_rule_compound_ne),
+    ("anti_rule_aux_main_verb",      anti_rule_aux_main_verb),
+    ("anti_rule_hyphen_compound",    anti_rule_hyphen_compound),
+    ("anti_rule_possessive",         anti_rule_possessive),
+    ("anti_rule_phrasal_particle",   anti_rule_phrasal_particle),
+    ("anti_rule_numeric_unit",       anti_rule_numeric_unit),
+    ("anti_rule_det_head",           anti_rule_det_head),
+    ("anti_rule_inside_quote",       anti_rule_inside_quote),
+    ("anti_rule_inside_bracket",     anti_rule_inside_bracket),
+    ("anti_rule_frozen_bigram",      anti_rule_frozen_bigram),
+    ("anti_rule_adj_noun",           anti_rule_adj_noun),
+    ("anti_rule_to_infinitive",      anti_rule_to_infinitive),
+    ("anti_rule_numeric_range",      anti_rule_numeric_range),
+    ("anti_rule_no_split_before_comma", anti_rule_no_split_before_comma),
+    ("anti_rule_currency_glued",     anti_rule_currency_glued),
+    ("anti_rule_num_unit",           anti_rule_num_unit),
+    ("anti_rule_neg_modifier",       anti_rule_neg_modifier),
+    ("anti_rule_compound_noun",      anti_rule_compound_noun),
+    ("anti_rule_markdown_emphasis",  anti_rule_markdown_emphasis),
+    ("anti_rule_short_sentence",     anti_rule_short_sentence),
+    ("anti_rule_verb_to_verb",       anti_rule_verb_to_verb),
+    ("anti_rule_verb_to_dem_pron",   anti_rule_verb_to_dem_pron),
+    ("anti_rule_orphan_measure_tail", anti_rule_orphan_measure_tail),
+    ("anti_rule_content_starved",    anti_rule_content_starved),
+]
+
 
 # =============================================================================
 # MAIN ENTRY-POINT
@@ -3293,136 +3456,104 @@ def split_text_into_sections(text: str, debug: bool = False) -> List[str]:
        6) merge throwaway fragments with head-aware direction
        7) post-merge: re-glue any chunk with no visualisable content
 
-    Set debug=True to print the chunk shape at each pipeline stage.  Use
-    this when investigating why a particular sentence isn't being split
-    the way you expect.
+    Set debug=True (or set SINGLE_RUN_DEBUG=True at module level) to print
+    the chunk shape after each pipeline stage.
     """
+    is_debug = debug or SINGLE_RUN_DEBUG
+
     text = rule_strip_markdown(text)
     text = rule_normalise_punct(text)
     nlp_pipe = _nlp()
     doc = nlp_pipe(text)
     splits: Set[int] = {0, len(doc)}
 
-    # ---- compute PROTECTED (inviolate) splits ------------------------------
-    # Big punctuation splits — ellipses, dashes, semicolons, colons, full
-    # stops, exclamation marks, question marks, quotation marks, brackets —
-    # are NEVER wiped by anti-rules or merged by throwaway logic.  This
-    # makes "Which... | sounds familiar." reliably produce 2 chunks even
-    # though both halves are short.
-    #
-    # Comma splits are NOT protected — they're soft, RULE 7/8 may add or
-    # withhold them and anti-rules may rebalance.
+    # Rules whose splits are "protected" (inviolate — never wiped by
+    # anti-rules and never crossed by merge logic).  Tracked as a
+    # by-product of the positive-pipeline so each rule is called only once.
+    PROTECTED_RULE_NAMES = {
+        "rule_hard_punct", "rule_dashes", "rule_ellipsis",
+        "rule_quotes", "rule_brackets",
+    }
     protected: Set[int] = set()
-    protected |= rule_hard_punct(doc)
-    protected |= rule_dashes(doc)
-    protected |= rule_ellipsis(doc)
-    protected |= rule_quotes(doc)
-    protected |= rule_brackets(doc)
+
+    # ---- show original text in debug mode -----------------------------------
+    if is_debug:
+        print("Original: ")
+        print(f'    {_format_chunks_debug([text.strip()])}')
+        print()
 
     # ---- positive rules (add splits) ----------------------------------------
-    splits |= rule_hard_punct(doc)
-    splits |= rule_dashes(doc)
-    splits |= rule_ellipsis(doc)
-    splits |= rule_pre_ellipsis_reveal(doc, splits)
-    splits |= rule_quotes(doc)
-    splits |= rule_brackets(doc)
-    splits |= rule_initial_adverbial_comma(doc)
-    splits |= rule_comma_split(doc)
-    splits |= rule_comma_list_extension(doc)        # RULE 25
-    splits |= rule_long_subord_comma(doc)           # RULE 26
-    splits |= rule_long_clause_comma(doc, splits)   # RULE 31
-    splits |= rule_appositive_comma(doc)
-    splits |= rule_clause_starters(doc, splits)
-    splits |= rule_but_or_coord(doc, splits)
-    splits |= rule_verb_clause(doc)
-    splits |= rule_long_lead_in(doc, splits)
-    splits |= rule_long_preps(doc)
-    splits |= rule_pp_intro_reveal(doc, splits)     # RULE 28
-    splits |= rule_terminal_of_reveal(doc, splits)  # RULE 33
-    splits |= rule_noun_lists(doc)
-    splits |= rule_bare_noun_lists(doc, splits)
-    splits |= rule_list_quantifiers(doc)
-    splits |= rule_entity_reveal(doc, splits)
-    splits |= rule_post_entity_split(doc, splits)   # RULE 30
-    splits |= rule_currency_reveal(doc, splits)
-    splits |= rule_imperative_start(doc)
-    splits |= rule_and_or_clause(doc, splits)
-    splits |= rule_terminal_descriptor(doc, splits)
-    splits |= rule_terminal_adj_coord(doc, splits)  # RULE 27
-    splits |= rule_adjective_reveal(doc, splits)
-    splits |= rule_numeric_phrase_reveal(doc, splits)
-    splits |= rule_participle_split(doc, splits)    # RULE 29
-    splits |= rule_progressive_split(doc, splits)   # RULE 34
-    splits |= rule_copula_attr_reveal(doc, splits)  # RULE 35
-    splits |= rule_pron_participle_pp_reveal(doc, splits)  # RULE 36
-    splits |= rule_terminal_pp_after_copula(doc, splits)   # RULE 37
-    splits |= rule_phrasal_object_reveal(doc, splits)      # RULE 38
-    splits |= rule_infinitive_split(doc, splits)    # RULE 32
+    for name, fn, takes_splits in _POSITIVE_PIPELINE:
+        prev = splits.copy()
+        if takes_splits:
+            new = fn(doc, splits)
+        else:
+            new = fn(doc)
+        was_applied = bool(new - prev)
+        splits |= new
+        # track protected (big-punct) splits
+        if name in PROTECTED_RULE_NAMES:
+            protected |= new
+        if is_debug:
+            _debug_print_stage(name, was_applied, (doc, splits))
 
     # ---- forbidden splits (remove) ------------------------------------------
-    # Each anti-rule subtracts its bad indices, but protected indices are
-    # immediately re-added at the end so they CANNOT be removed by any
-    # anti-rule (compound NE, hyphen compound, possessive, etc.).
-    splits -= anti_rule_compound_ne(doc, splits)
-    splits -= anti_rule_aux_main_verb(doc, splits)
-    splits -= anti_rule_hyphen_compound(doc, splits)
-    splits -= anti_rule_possessive(doc, splits)
-    splits -= anti_rule_phrasal_particle(doc, splits)
-    splits -= anti_rule_numeric_unit(doc, splits)
-    splits -= anti_rule_det_head(doc, splits)
-    splits -= anti_rule_inside_quote(doc, splits)
-    splits -= anti_rule_inside_bracket(doc, splits)
-    splits -= anti_rule_frozen_bigram(doc, splits)
-    splits -= anti_rule_adj_noun(doc, splits)
-    splits -= anti_rule_to_infinitive(doc, splits)
-    splits -= anti_rule_numeric_range(doc, splits)
-    splits -= anti_rule_no_split_before_comma(doc, splits)
-    splits -= anti_rule_currency_glued(doc, splits)
-    splits -= anti_rule_num_unit(doc, splits)
-    splits -= anti_rule_neg_modifier(doc, splits)
-    splits -= anti_rule_compound_noun(doc, splits)
-    splits -= anti_rule_markdown_emphasis(doc, splits)
-    splits -= anti_rule_short_sentence(doc, splits)
-    splits -= anti_rule_verb_to_verb(doc, splits)
-    splits -= anti_rule_verb_to_dem_pron(doc, splits)
-    splits -= anti_rule_orphan_measure_tail(doc, splits)   # NEW
-    splits -= anti_rule_content_starved(doc, splits)       # NEW (#15)
+    if is_debug:
+        print()
+    for name, fn in _ANTI_PIPELINE:
+        prev = splits.copy()
+        bad = fn(doc, splits)
+        was_applied = bool(bad & prev)
+        splits -= bad
+        if is_debug:
+            _debug_print_stage(name, was_applied, (doc, splits))
 
     # always preserve sentinel splits AND protected (big-punct) splits.
     splits |= {0, len(doc)}
     splits |= protected
 
+    if is_debug:
+        print()
+        print(f"  [protected split indices: {sorted(protected)}]")
+        print()
+
+    # ---- post-processing ----------------------------------------------------
+    if is_debug:
+        print("=== POST-PROCESSING ===")
+        print()
+
     raw = _build_raw_chunks(doc, splits)
-    if debug:
-        print("=== STAGE: post-anti-rule splits ===")
-        for lo, hi in raw:
-            print(f"  [{lo:3d}:{hi:3d}] {doc[lo:hi].text!r}")
+
+    # -- merge throwaways --
+    raw_text = [doc[lo:hi].text.strip() for lo, hi in raw]
+    raw_text = [t for t in raw_text if t]
     merged, merged_spans = _merge_throwaways(doc, raw, protected)
-    if debug:
-        print("=== STAGE: after _merge_throwaways ===")
-        for chunk, (lo, hi) in zip(merged, merged_spans):
-            print(f"  [{lo:3d}:{hi:3d}] {chunk!r}")
+    merged_clean = [c for c in merged if c]
+    if is_debug:
+        _debug_print_stage("merge_throwaways",
+                           raw_text != merged_clean, merged_clean)
+
     # filter empties while keeping spans aligned
     pairs = [(c, s) for c, s in zip(merged, merged_spans) if c]
     if not pairs:
         return []
     merged, merged_spans = [p[0] for p in pairs], [p[1] for p in pairs]
+
+    # -- fuse orphans --
+    prev_chunks = list(merged)
     fused, fused_spans = _fuse_orphans(doc, merged, merged_spans, protected)
-    if debug:
-        print("=== STAGE: after _fuse_orphans ===")
-        for chunk, (lo, hi) in zip(fused, fused_spans):
-            vis = _has_visualisable_content(doc, lo, hi)
-            print(f"  [{lo:3d}:{hi:3d}] vis={vis} {chunk!r}")
-    # FINAL POST-PASS: re-merge any chunk that lacks visualisable content
-    # (NOUN / PROPN / NUM / ADJ / concrete VERB).  Connective fragments
-    # like "that many of", "It's", "and then the" get glued backward into
-    # the previous chunk.  Respects PROTECTED boundaries (big-punct splits
-    # are never crossed).
-    fused, fused_spans = _post_merge_unvisualisable(doc, fused, fused_spans, protected)
-    if debug:
-        print("=== STAGE: after _post_merge_unvisualisable ===")
-        for chunk, (lo, hi) in zip(fused, fused_spans):
-            print(f"  [{lo:3d}:{hi:3d}] {chunk!r}")
+    if is_debug:
+        _debug_print_stage("fuse_orphans",
+                           prev_chunks != fused, fused)
+
+    # -- post-merge unvisualisable --
+    prev_chunks = list(fused)
+    fused, fused_spans = _post_merge_unvisualisable(
+        doc, fused, fused_spans, protected)
+    if is_debug:
+        _debug_print_stage("post_merge_unvisualisable",
+                           prev_chunks != fused, fused)
+
     return fused
 
 
