@@ -978,12 +978,24 @@ def rule_verb_clause(doc: Doc) -> Set[int]:
     for t in doc:
         if t.pos_ != "VERB":
             continue
-        # CRITICAL: skip short sentences entirely.  "Think about your most
-        # common journeys" / "We expect the Earth to vary" / "It costs
-        # something much more valuable" — these all read better as one line.
+            
+        # CRITICAL: skip short sentences entirely.
         sent_ntok = sum(1 for x in t.sent if not x.is_punct)
         if sent_ntok <= 9:
             continue
+
+        # NEW: Compound Subject Reveal
+        # If the verb has a compound subject (contains "and"/"or"),
+        # split BEFORE the verb to reveal the action separately.
+        # E.g. "the person and the dragon | laid down together"
+        # But for single subjects: "the dragon laid at the edge" (no split before verb)
+        subj = next((c for c in t.children if c.dep_ in {"nsubj", "nsubjpass"}), None)
+        if subj:
+            is_compound_subj = any(x.pos_ == "CCONJ" for x in subj.subtree)
+            if is_compound_subj:
+                out.add(t.i)
+                continue # We found our split, skip the rest of the checks for this verb
+
         if t.dep_ in VERB_MOD_DEPS:
             # EXCEPTION: a finite VERB heading a LONG relative clause /
             # advcl is a genuine clause boundary worth splitting after.
