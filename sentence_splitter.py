@@ -2452,6 +2452,8 @@ def rule_copula_attr_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
             
         prev = _prev_split(splits | out, split_at)
         
+        lead_content = split_at - prev  
+
         if lead_content < 2 and visual_weight < 3:
             continue
             

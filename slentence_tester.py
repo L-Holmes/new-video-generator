@@ -19,7 +19,7 @@ from sentence_splitter import split_text_into_sections
 # ============================================================================
 # INPUT TEXT — change this to test different sentences
 # ============================================================================
-INPUT_TEXT =  "The empire state building is really big."
+INPUT_TEXT =  "Nature accidentally produced calibration tools larger than cities."
 
 # ============================================================================
 # Alternatively, uncomment one of these:
