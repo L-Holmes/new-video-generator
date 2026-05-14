@@ -1827,18 +1827,35 @@ def rule_numeric_phrase_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
             tokens_after = sent.end - t.i - 1
             if tokens_after > 6:
                 continue
-            # what's directly before?  If it's a NOUN/VERB ending a meaningful
-            # phrase, we split before the NUM.
-            prev_tok = doc[t.i - 1] if t.i > 0 else None
+                
+            # Find the true start of this numeric phrase/chunk so we don't
+            # split mid-entity (e.g. inside "the 19th century").
+            split_at = t.i
+            chunk = _chunk_containing(doc, t.i)
+            if chunk is not None:
+                split_at = chunk.start
+            elif t.ent_iob_ in {"B", "I"}:
+                # walk back to entity start
+                k = t.i
+                while k > sent.start and doc[k-1].ent_iob_ == "I" and doc[k-1].ent_type_ == t.ent_type_:
+                    k -= 1
+                split_at = k
+                
+            if split_at == 0 or split_at == sent.start:
+                continue
+                
+            # what's directly before? If it's a NOUN/VERB/ADJ/ADP ending a meaningful
+            # phrase, we split before the numeric phrase.
+            prev_tok = doc[split_at - 1] if split_at > 0 else None
             if prev_tok is None:
                 continue
-            if prev_tok.pos_ not in {"NOUN", "VERB", "ADJ", "PART"}:
+            if prev_tok.pos_ not in {"NOUN", "VERB", "ADJ", "PART", "ADP"}:
                 continue
             # require substantial lead-in
-            prev_split = _prev_split(splits | out, t.i)
-            if t.i - prev_split < 5:
+            prev = _prev_split(splits | out, split_at)
+            if split_at - prev < 5:
                 continue
-            out.add(t.i)
+            out.add(split_at)
             break  # one per sentence
     return out
 
@@ -2394,8 +2411,13 @@ def rule_copula_attr_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         # 1. Is the chunk heavy enough to be a visual reveal on its own?
         n_adj = sum(1 for x in chunk if x.pos_ == "ADJ")
         n_nouns = sum(1 for x in chunk if x.pos_ in {"NOUN", "PROPN"})
+        # Count VBG/VBN as visual payload as well (e.g., "cheaper than driving")
+        n_visual_verbs = sum(1 for x in chunk if x.tag_ in {"VBG", "VBN"})
+        is_comparative = any(x.lower_ == "than" for x in chunk)
         
-        is_heavy = (len(chunk) >= 4) or (n_adj >= 2 and n_nouns >= 1)
+        visual_weight = n_adj + n_nouns + n_visual_verbs
+        
+        is_heavy = (len(chunk) >= 4) or visual_weight >= 2 or is_comparative
         if not is_heavy:
             continue
             
@@ -2420,8 +2442,6 @@ def rule_copula_attr_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
             continue
             
         # 4. Does the chunk come AFTER the verb? 
-        # (This ensures it's the visual predicate, NOT the subject.
-        # e.g., "The [big red car] is..." -> chunk is BEFORE verb -> no split)
         if chunk.start <= head_verb.i:
             continue
             
@@ -2431,8 +2451,6 @@ def rule_copula_attr_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
             continue
             
         prev = _prev_split(splits | out, split_at)
-        visual_weight = n_adj + n_nouns
-        lead_content = _content_count(doc, prev, split_at)
         
         if lead_content < 2 and visual_weight < 3:
             continue
@@ -2586,25 +2604,8 @@ def rule_phrasal_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         out.add(nxt_chunk.start)
     return out
 
-
-
 # -----------------------------------------------------------------------------
 # RULE 39 — PREPOSITIONAL OBJECT REVEAL
-# When a preposition introduces a new visual shot (its head is a VERB, AUX,
-# or an ADJ modifying a VERB) and its object is a multi-token noun chunk,
-# split BEFORE the preposition so the whole PP gets its own reveal line.
-#
-# NEW: Also splits for NOUN-headed PPs if the object is a substantial
-# visual element (≥2 nouns), e.g. "carburettor for the lift in the skyscraper".
-#
-# Keeps short PPs and qualifier PPs intact.
-#
-# Examples:
-#   "became useful to space agencies"  → "became useful | to space agencies"
-#   "engineer ourselves at that scale" → "engineer ourselves | at that scale"
-#   "sat on the comfortable mat"       → "sat | on the comfortable mat" (if sent >= 9)
-#   "the lift in the skyscraper"       → NO SPLIT (head is NOUN, short PP)
-#   "carburettor for the lift in the skyscraper" → "carburettor for | the lift in the skyscraper"
 # -----------------------------------------------------------------------------
 def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
     out = set()
@@ -2612,12 +2613,14 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         if t.pos_ != "ADP":
             continue
             
+        # COMPARATIVE REVEAL:
+        # If the ADP is "than" and its head is an ADJ/ADV, split AFTER "than"
+        if t.lower_ == "than" and t.head.pos_ in {"ADJ", "ADV"}:
+            out.add(t.i + 1)
+            continue
+            
         sent_ntok = sum(1 for x in t.sent if not x.is_punct)
             
-        # Only split if the ADP introduces a new visual shot.
-        # Qualifier PPs (head is NOUN/PROPN) stay glued, UNLESS the noun
-        # is the last noun of the sentence (terminal reveal) OR the PP
-        # introduces a substantial visual element.
         is_visual_prep = False
         is_terminal_pp = False
         
@@ -2628,17 +2631,14 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
                 is_visual_prep = True
         
         # TERMINAL NOUN REVEAL LOGIC:
-        # If a preposition's object is the very last NOUN/PROPN in the sentence,
-        # it's a dramatic visual reveal (e.g. "distance from | orbit.").
         pobj = next((c for c in t.children if c.dep_ in {"pobj", "obj"}), None)
         if pobj is not None:
-            last_noun_i = max((tt.i for tt in t.sent if tt.pos_ in {"NOUN", "PROPN"}), default=-1)
+            last_noun_i = max((tt.i for tt in t.sent if tt.pos_ in {"NOUN", "PROPN", "NUM"}), default=-1)
             if pobj.i == last_noun_i:
                 is_terminal_pp = True
                 is_visual_prep = True
                 
-        # NEW: NOUN-headed PPs with substantial visual objects
-        # e.g. "carburettor for the lift in the skyscraper"
+        # NOUN-headed PPs with substantial visual objects
         if not is_visual_prep and t.head.pos_ in {"NOUN", "PROPN"}:
             if pobj is not None:
                 pobj_subtree = list(pobj.subtree)
@@ -2652,7 +2652,7 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         if pobj is None:
             continue
             
-        # Is the object a multi-token noun chunk? (e.g. "space agencies")
+        # Is the object a multi-token noun chunk?
         chunk = _chunk_containing(doc, pobj.i)
         if chunk is None:
             continue
@@ -2662,30 +2662,29 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
             continue
             
         # Sentence length check (short sentences don't need this split)
-        if sent_ntok <= 8:
+        # EXCEPTION: Allow terminal numeric/temporal reveals even in short sentences
+        # e.g. "Built in Manhattan in the 19th century."
+        pobj_subtree = list(pobj.subtree)
+        has_numeric = any(x.like_num or x.ent_type_ in {"DATE", "TIME", "CARDINAL", "QUANTITY", "PERCENT", "MONEY"} for x in pobj_subtree)
+        if sent_ntok <= 8 and not (is_terminal_pp and has_numeric):
             continue
             
         # Don't split if it's a blocked prep like "of"
         if t.lower_ in PROMISCUOUS_PREPS:
             continue
 
-
         # LOCATION ENTITY REVEAL:
-        # If the object of the preposition is a GPE/LOC/FAC entity, split
-        # AFTER the preposition so the preposition hangs on the previous
-        # line as a cliffhanger, and the location starts its own reveal line.
-        # e.g. "Alvord Desert in" / "Oregon feels..."
-        # e.g. "walking across" / "Alvord Desert in Oregon..."
-        
         pobj_ent_type = doc[pobj.i].ent_type_
         if pobj_ent_type in {"GPE", "LOC", "FAC", "ORG", "PERSON"}:
             out.add(t.i + 1) # Split AFTER the ADP
         elif is_terminal_pp:
-            out.add(pobj.i) # Split BEFORE the terminal noun
+            # Split BEFORE the terminal noun CHUNK to avoid slicing mid-entity.
+            # e.g. "in the 19th century" -> split before "the 19th century"
+            split_idx = chunk.start if chunk else pobj.i
+            out.add(split_idx)
         else:
             # For NOUN-headed PPs that introduce a substantial visual NP,
-            # split AFTER the ADP so the ADP acts as a cliffhanger on the
-            # previous line, and the visual NP starts the next line.
+            # split AFTER the ADP so the ADP acts as a cliffhanger.
             if t.head.pos_ in {"NOUN", "PROPN"}:
                 out.add(t.i + 1)
             else:
@@ -2736,25 +2735,19 @@ def rule_transition_adverb(doc: Doc, splits: Set[int]) -> Set[int]:
 
 # -----------------------------------------------------------------------------
 # RULE 41 — SCONJ HANGING CONNECTOR
-# Splits AFTER a subordinating conjunction ("because", "if", "while", "since")
-# so it clings to the end of the previous line as a cliffhanger.
-# This overrides any split placed *before* the SCONJ by earlier rules.
-#
-# Examples:
-#   "That precision matters because | satellites need..."
-#   "I went to the store because | I was hungry"
 # -----------------------------------------------------------------------------
 def rule_sconj_hang(doc: Doc, splits: Set[int]) -> Set[int]:
     out = set()
     for t in doc:
         if t.pos_ != "SCONJ":
             continue
-        # Skip short sentences
+        # Skip short sentences, UNLESS it's a comparative "than"
+        # which introduces a visual payload ("cheaper than driving").
         sent_ntok = sum(1 for x in t.sent if not x.is_punct)
-        if sent_ntok <= 8:
+        is_comparative_than = (t.lower_ == "than" and t.head.pos_ in {"ADJ", "ADV"})
+        if sent_ntok <= 8 and not is_comparative_than:
             continue
         # Skip if next token is ADP (e.g., "because of", "instead of")
-        # We want "because of the rain" to stay together.
         if t.i + 1 < len(doc) and doc[t.i + 1].pos_ == "ADP":
             continue
         # Add split AFTER the SCONJ

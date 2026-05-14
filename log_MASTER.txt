@@ -230,29 +230,6 @@ test #28) Remove them completely and humans get visually confused v... :: FALSE 
 - expected: ['Built in Manhattan in the 19th century.']
  → 0%
 
- test #113) And that brings us full circle back to me sat on the M6. :: FALSE -  we are revealing 'me'.. we are revealing what brings us full circle... so break.
-- actual: ['And that brings us full circle back to me sat on the M6.']
-- expected: ['And that brings us full circle back to', 'me sat on the M6.']
- → 0%
-- actual: ['And that brings us full circle back to me sat on the M6.']
-- expected: ['And that brings us full circle back to', 'me sat on the M6.']
- → 0%
-
- test #61) Public transport plus a bike is already cheaper than driv... :: FALSE - should maybe split on 'cheaper' 
-- actual: ['Public transport plus', 'a bike is already cheaper than driving.']
-- expected: ['Public transport plus a bike is already cheaper than driving.']
- → 0%
-
- test #9) Back in 1946, the technician John Ford the second created... :: FALSE
-- actual: ['Back in 1946,', 'the technician John Ford the second created a new OpenAI carburettor for', 'the lift in the skyscraper', 'where they drunk chanoyu tea,', 'which would go on to revolutionize the entire world.']
-- expected: ['Back in 1946,', 'the technician John Ford the second created', 'a new OpenAI carburettor for', 'the lift in the skyscraper', 'where they drunk chanoyu tea,', 'which would go on to revolutionize the entire world.']
- → 17%
-
- test #113) And that brings us full circle back to me sat on the M6. :: FALSE -  we are revealing 'me'.. we are revealing what brings us full circle... so break.
-- actual: ['And that brings us full circle back to me sat on the M6.']
-- expected: ['And that brings us full circle back to', 'me sat on the M6.']
- → 0%
-
 ========================================
 ========================================
 ========================================

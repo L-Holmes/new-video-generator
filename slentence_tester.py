@@ -19,7 +19,7 @@ from sentence_splitter import split_text_into_sections
 # ============================================================================
 # INPUT TEXT — change this to test different sentences
 # ============================================================================
-INPUT_TEXT =  "And that brings us full circle back to me sat on the M6."
+INPUT_TEXT =  "Built in Manhattan in the 19th century."
 
 # ============================================================================
 # Alternatively, uncomment one of these:
