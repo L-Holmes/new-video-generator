@@ -266,7 +266,7 @@ PROGRESSIVE_LEAD_MIN      = 3
 COPULA_REVEAL_SENT_MIN    = 7       # RULE 35: copula-attribute reveal
 COPULA_REVEAL_CHUNK_MIN   = 2       # RULE 35: min noun-chunk length to count as reveal
 PP_PRON_PART_SENT_MIN     = 9       # RULE 36: PP-with-PRON-participle reveal
-PP_PRON_PART_LEAD_MIN     = 4
+PP_PRON_PART_LEAD_MIN     = 2
 AUX_PP_REVEAL_LEAD_MIN    = 3       # RULE 37: terminal `'s about X` reveal
 CHAINED_PART_SENT_MIN     = 11      # RULE 38: chained-participle reveal
 DOBJ_DISQUAL_SENT_MIN     = 8       # min sent length to allow dobj-disqualifier in RULE 12
@@ -2448,23 +2448,23 @@ def rule_copula_attr_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
 # -----------------------------------------------------------------------------
 # RULE 36 — PRONOUN-PARTICIPLE PP REVEAL
 # Splits AFTER an ADP whose object is a PRONOUN immediately followed by a
-# past/present-participle (`me sat`, `him standing`, `her crossing`).  The
-# pattern is a reduced relative clause — the pronoun + participle phrase
-# is the visual reveal.
+# participle or past-tense verb acting as a participle (`me sat`, `him standing`,
+# `her crossing`). The pronoun + verb phrase is the visual reveal.
 #
 # Fixes #113 "...full circle back to | me sat on the M6."
 # -----------------------------------------------------------------------------
 def rule_pron_participle_pp_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
-    """Splits BEFORE an ADP whose object is `PRON + participle (VBN/VBG)`.
+    """Splits AFTER an ADP whose object is `PRON + participle/verb (VBN/VBG/VBD)`.
 
-    The PRON+participle phrase is a reduced relative clause that acts as
-    the visual reveal.  Splits BEFORE the ADP so the whole phrase including
-    the preposition lands on its own line:
+    The PRON+verb phrase acts as a reduced relative clause that serves as
+    the visual reveal. Splits AFTER the ADP so the phrase including
+    the pronoun lands on its own line:
 
-        "...back | to me sat on the M6."     (#113)
-        "...waiting | for him standing there..."
+        "...full circle back to | me sat on the M6."
+        "...waiting for | him standing there..."
 
-    TIGHTENED in v2: split moved from `t.i + 1` to `t.i` (before the ADP).
+    Now includes VBD (past tense) to catch colloquial/dialectal structures
+    where a past tense verb functions as a participle ("me sat", "him stood").
     """
     out = set()
     for t in doc:
@@ -2476,16 +2476,18 @@ def rule_pron_participle_pp_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         part = doc[t.i + 2]
         if pron.pos_ != "PRON":
             continue
-        if part.tag_ not in {"VBN", "VBG"}:
+        # Allow VBN, VBG, and VBD (colloquial "me sat", "him stood")
+        if part.tag_ not in {"VBN", "VBG", "VBD"}:
             continue
         sent_ntok = sum(1 for x in t.sent if not x.is_punct)
         if sent_ntok < PP_PRON_PART_SENT_MIN:
             continue
-        prev = _prev_split(splits | out, t.i)
-        lead = _content_count(doc, prev, t.i)
+        prev = _prev_split(splits | out, t.i + 1)
+        lead = _content_count(doc, prev, t.i + 1)
         if lead < PP_PRON_PART_LEAD_MIN:
             continue
-        out.add(t.i)
+        # Split AFTER the ADP so the PRON+verb phrase starts a new reveal line
+        out.add(t.i + 1)
     return out
 
 
