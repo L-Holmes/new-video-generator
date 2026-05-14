@@ -6,34 +6,6 @@
 
 --------
 
---> I'll need a way to manually see the flow...
-so I want a test file where there is a variable for input text (e.g. "and here is another, does it handle everything all fine? but what if the other person and the dragon laid down together at the edge of the brook?")
-then I'll need a flag, like 'SINGLE_RUN_DEBUG=TRUE' at the top of the main file.
-
-The test file will run it with TRUE though... which will...
-for each stage, it will say the name of the stage, whether it was applied or not, and then the after (i.e. the array that we have so far...)
-(do '|||' instead of commas so i can see them...)
-add !!!!! after true to make more obvoius...
-
-example output:
-
-Original: 
-    ["and here is another, does it handle everything all fine? but what if the other person and the dragon laid down together at the edge of the brook?"]
-==> rule_hard_punct (TRUE) !!!!!
-    ["and here is another, does it handle everything all fine?" ||| "but what if the other person and the dragon laid down together at the edge of the brook?"]
-==> rule_dashes (FALSE) 
-    ["and here is another, does it handle everything all fine?" ||| "but what if the other person and the dragon laid down together at the edge of the brook?"]
-...
-==> anti_rule_content_starved (FALSE)
-    ... 
-    
-etc. 
-
-
-Update the sentence splitter to allow for this optional debugging and create me the test file.
-
---------
-
 
 TODO NEXT:
 - copy across the #5 test results so i can start removing thing sthat ive fixed...

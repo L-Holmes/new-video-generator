@@ -224,6 +224,12 @@ ADV_INTRODUCERS  = {
     "exactly", "precisely", "literally",
 }
 
+# Adverbs that signal a new visual shot/scene transition.
+TRANSITION_ADVERBS = {
+    "then", "later", "suddenly", "eventually", "finally",
+    "afterwards", "subsequently", "next", "soon", "now",
+}
+
 # Tunables ----------------------------------------------------------------
 MIN_LEAD_FOR_CLAUSE_SPLIT = 3       # tokens before wh/SCONJ to enable split
 MIN_LEAD_FOR_BUT_OR       = 3       # tokens before "but"/"or" coord
@@ -440,7 +446,7 @@ def _debug_print_stage(name: str, was_applied: bool,
     or a plain ``List[str]`` of chunk texts (for post-processing stages).
     """
     status = "TRUE" if was_applied else "FALSE"
-    bang = " !!!!!" if was_applied else ""
+    bang = " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" if was_applied else ""
     if isinstance(doc_or_chunks, tuple):
         doc, splits = doc_or_chunks
         chunks = _splits_to_chunks_list(doc, splits)
@@ -848,23 +854,30 @@ def rule_comma_split(doc: Doc) -> Set[int]:
             continue
         prev = doc[t.i - 1]
         nxt  = doc[t.i + 1]
+        
         # (a) clausal: VERB,  + anything substantive → split
         if prev.pos_ == "VERB":
             out.add(t.i + 1)
             continue
-        # (a') clausal-end via adverb/adjective whose HEAD is a verb in this
-        # sentence — captures "land rose upward, climates changed" where
-        # "upward" (ADV) closes the clause headed by "rose" (VERB).
+            
+        # (a') clausal-end via adverb/adjective whose HEAD is a verb in this sentence
         if prev.pos_ in {"ADV", "ADJ"} and prev.head.pos_ == "VERB" and prev.head.i < prev.i:
             out.add(t.i + 1)
             continue
+            
+        # (c) NOUN/PROPN + "," + ADV  — sequential/transition adverb.
+        # "buried in sediment, | then eventually fossilized"
+        # "drifted into areas, | later becoming..."
+        # These adverbs introduce a new visual clause, so we always split.
+        if prev.pos_ in {"NOUN", "PROPN"} and nxt.pos_ == "ADV":
+            out.add(t.i + 1)
+            continue
+            
         # (b) noun list: NOUN, + (NOUN/DET/ADJ/ADV/NUM) with no early verb
         if prev.pos_ in {"NOUN", "PROPN"} and nxt.pos_ in {"NOUN", "PROPN", "DET", "ADJ", "ADV", "NUM"}:
             window_end = min(t.i + 4, len(doc))
             # Treat VBG/VBN as participles (not finite verbs) — they don't
-            # block list flow.  Fixes #53 "...vegetation, entire ecosystems
-            # supporting massive..." — `supporting` (VBG) was killing the
-            # split after `vegetation,`.
+            # block list flow.
             has_early_verb = any(
                 doc[k].pos_ == "VERB" and doc[k].tag_ not in {"VBG", "VBN"}
                 for k in range(t.i + 1, window_end)
@@ -2510,6 +2523,48 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
     return out
 
 
+# -----------------------------------------------------------------------------
+# RULE 40 — TRANSITION ADVERB REVEAL
+# Splits BEFORE a transition adverb (then, later, suddenly, etc.) when it
+# introduces a new visual clause/shot.
+#
+# Avoids breaking internal verb phrases ("will then leave") by requiring a
+# substantial lead-in and skipping adverbs immediately following an AUX.
+#
+# Examples:
+#   "drifted into areas then eventually fossilized" → "drifted into areas | then eventually fossilized"
+#   "He will then leave"                           → NO SPLIT (short lead, follows AUX)
+# -----------------------------------------------------------------------------
+def rule_transition_adverb(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.pos_ != "ADV" or t.lower_ not in TRANSITION_ADVERBS:
+            continue
+        if t.i == 0:
+            continue
+            
+        # Don't split if it's an adjective modifying a noun ("the then president")
+        if t.dep_ == "amod":
+            continue
+            
+        # Don't split right after an auxiliary verb ("will then", "was suddenly")
+        if t.i > 0 and doc[t.i - 1].pos_ == "AUX":
+            continue
+            
+        # Short sentences don't need this split
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok <= 8:
+            continue
+            
+        # Require a substantial lead-in (so we don't split "He | then left")
+        prev = _prev_split(splits | out, t.i)
+        if t.i - prev < MIN_LEAD_FOR_CLAUSE_SPLIT:
+            continue
+            
+        out.add(t.i)
+    return out
+
+
 # =============================================================================
 # ANTI-RULES  —  return indices to *remove* from the splits set.
 # =============================================================================
@@ -3477,6 +3532,7 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_phrasal_object_reveal",   rule_phrasal_object_reveal,   True),
     ("rule_infinitive_split",        rule_infinitive_split,        True),
     ("rule_prep_object_reveal",      rule_prep_object_reveal,      True),  
+    ("rule_transition_adverb",       rule_transition_adverb,       True),
 ]
 
 # Anti-rules: (name, function)
