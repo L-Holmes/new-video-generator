@@ -225,11 +225,6 @@ test #28) Remove them completely and humans get visually confused v... :: FALSE 
 - expected: ['The empire state building is really big.']
  → 0%
 
- test #8) Built in Manhattan in the 19th century. :: FALSE - reveal of the time/date...
-- actual: ['Built in Manhattan in', 'the 19th century.']
-- expected: ['Built in Manhattan in the 19th century.']
- → 0%
-
 ========================================
 ========================================
 ========================================

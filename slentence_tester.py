@@ -19,7 +19,7 @@ from sentence_splitter import split_text_into_sections
 # ============================================================================
 # INPUT TEXT — change this to test different sentences
 # ============================================================================
-INPUT_TEXT =  "Built in Manhattan in the 19th century."
+INPUT_TEXT =  "The empire state building is really big."
 
 # ============================================================================
 # Alternatively, uncomment one of these:
