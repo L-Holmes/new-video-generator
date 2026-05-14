@@ -159,6 +159,7 @@ test #79) People crossing empty landscapes suddenly noticing shapes... :: FALSE 
 test #142) So now the choice isn’t “drive or not.” :: FALSE - we are revealing the choice...
 - actual: ['So now the choice isn’t “drive or not.”']
 - expected: ['So now the choice isn’t', '“drive or not.”']
+- expected: ['So now the choice isn’t', '“drive or', ' not.”']
  → 0%
 
 test #123) Let's assume you have great cycle paths and missing train... :: FALSE - again we are revealing cycle paths.. its the obvoius split on the noun
@@ -252,83 +253,9 @@ test #28) Remove them completely and humans get visually confused v... :: FALSE 
 - expected: ['And that brings us full circle back to', 'me sat on the M6.']
  → 0%
 
- test #25) But around 40 million years ago, this entire region was c... :: FALSE - should split on the reveal... (but around..) and then also split on the amount as well...
-- actual: ['But around 40 million years ago,', 'this entire region was covered', 'by the Tethys Sea.']
-- expected: ['But around', '40 million years ago, this entire region was covered by', 'the Tethys Sea.']
- → 0%
-
- test #41) And scientists still debate exactly how some of these wha... :: FALSE - should split on the reveal of what is being contained...
-- actual: ['And scientists still debate', 'exactly how some of these whale concentrations formed', 'because certain sites contain huge numbers of skeletons packed', 'together unusually densely.']
-- expected: ['And scientists still debate exactly how some of these', 'whale concentrations formed because', 'certain sites contain', 'huge numbers of skeletons', 'packed together unusually densely.']
- → 0%
-
-
 ========================================
 ========================================
 ========================================
-
-# rule split on locatoin
-
-
- test #63) A lone person walking across Alvord Desert in Oregon feel... :: FALSE  - split on where a location is...
-- actual: ['A lone person walking across', 'Alvord Desert in Oregon feels', 'almost emotionally vulnerable.']
-- expected: ['A lone person walking across', 'Alvord Desert', 'in Oregon', 'feels almost emotionally vulnerable.']
- → 25%
-
-
-# rule splitting after many words before a comma...  (/ other punctuation)...
-
- test #6) and here is another- does it handle everything all fine? ... :: FALSE  - should almost always spliit on a dash assuming that there is at least 3 words before the dash...
-- actual:   ['and here is another- does it handle everything', 'all fine?', 'but what if the other person and', 'the dragon laid down together at', 'the edge of the brook?']
-- expected: ['and here is another-', 'does it handle everything all fine?', 'but what if the', 'other person and', 'the dragon', 'laid down together at the edge of the brook?']
- → 0%
-
-test #62) But cost isn’t the only problem- friction is. :: FALSE - should split on friction (anything afte a dash... or a semi colon... etc. Should split... (BUT NOT ON COMMAS- ignore commas)
-- actual: ['But cost isn’t the only problem- friction is.']
-- expected: ['But cost isn’t the only problem-', 'friction is.']
- → 0%
-
- test #67) So the next optimisation isn’t about price- it’s about tr... :: FALSE - again, split on dash, and then also we are revealing 'transitions.. (what its about), so split on the reveal. 
-- actual: ['So the next optimisation isn’t about price- it’s about transitions.']
-- expected: ['So the next optimisation isn’t about price-', 'it’s about', 'transitions.']
- → 0%
-
-
-
-# rule: re-joining:
-
-
-
- =======
-
-# rule- splitting on visualisable nouns etc...
-
-
- test #43) Their bodies drifted into coastal areas, became buried in... :: FALSE - sediment is a visualisable noun.. and fossilized is a visualisable verb(?) so why didn't it split?
-- actual:   ['Their bodies drifted into coastal areas,', 'became buried in sediment, then eventually fossilized', 'as the landscape transformed completely around them.']
-- expected: ['Their bodies drifted into coastal areas, became', 'buried in sediment, then eventually', 'fossilized as the landscape transformed completely around them.']
- → 0%
-
- test #23) What remains is this gigantic geometric surface where per... :: FALSE
-- actual: ['What remains is this gigantic geometric surface', 'where perspective starts malfunctioning.']
-- expected: ['What remains is this', 'gigantic geometric surface, ',' where perspective starts malfunctioning.']
-
-test #18) That precision matters because satellites need known refe... :: FALSE - split on nouns you can visualise!
-- actual:   ['That precision matters', 'because satellites need known reference surfaces to calibrate instruments measuring elevation', 'and distance from', 'orbit.']
-- expected: ['That precision matters because', 'satellites need', 'known reference surfaces to', 'calibrate instruments measuring', 'elevation', 'and distance from orbit.']
- → 0%
-
- =========
-
-TODO NEXT:
-- fix these two minor issues...
-
-
- test #182) So even if it’s small... it’s always there. :: FALSE - can we have it so the elipses comes straight after the word? rather than there being a gap?
-- actual:   ['So even if it’s small ...', 'it’s always there.']
-- expected: ['So even if it’s small...', 'it’s always there.']
- → 50%
-
 
 
  =========
