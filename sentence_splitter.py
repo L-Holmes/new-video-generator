@@ -1842,6 +1842,7 @@ def rule_noun_lists(doc: Doc) -> Set[int]:
 #       → split before each "the"
 # -----------------------------------------------------------------------------
 def rule_bare_noun_lists(doc: Doc, splits: Set[int]) -> Set[int]:
+    DEBUG = True
     out = set()
     for i in range(1, len(doc) - 1):
         if doc[i].pos_ != "DET":
@@ -1852,9 +1853,25 @@ def rule_bare_noun_lists(doc: Doc, splits: Set[int]) -> Set[int]:
             continue
         if _in_compound_ne(doc, i):
             continue
+
+        # NEW: title-appositive guard
+        # Pattern: PROPN + "the" + Capitalised → "Alaric the Goth"
+        if (doc[i - 1].pos_ == "PROPN"
+                and doc[i].lower_ == "the"
+                and i + 1 < len(doc)
+                and doc[i + 1].text[:1].isupper()
+                and doc[i + 1].pos_ in {"NOUN", "PROPN", "ADJ"}):
+            if DEBUG:
+                print(f"  [bare-list] SKIP at idx {i}: title appositive "
+                      f"'{doc[i-1].text} {doc[i].text} {doc[i+1].text}'")
+            continue
+
         prev = _prev_split(splits | out, i)
         if any(t.pos_ == "VERB" or t.text in HARD_PUNCT for t in doc[prev:i]):
             continue
+        if DEBUG:
+            print(f"  [bare-list] ADD split at idx {i}: "
+                  f"'{doc[i-1].text} | {doc[i].text} {doc[i+1].text if i+1<len(doc) else ''}'")
         out.add(i)
     return out
 
@@ -1933,6 +1950,7 @@ def rule_entity_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         if len(ent) == 1 and ent.label_ in {"DATE", "TIME", "MONEY"}:
             continue
 
+
         # (iv) compound modifier ("OpenAI carburettor")
         if len(ent) == 1 and doc[ent_start].dep_ == "compound":
             continue
@@ -1998,6 +2016,20 @@ def rule_entity_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         sent_ntok_here2 = sum(1 for x in doc[split_at].sent if not x.is_punct)
         if sent_ntok_here2 <= 10 and prev_tok is not None and prev_tok.pos_ == "ADP":
             continue
+
+        # (vi'') Title-appositive guard: skip when the entity sits inside
+        # a "PROPN + the + Capitalised" pattern — these are titles
+        # attached to a name, not standalone reveals.
+        # Catches: "Alaric the Goth", "Henry the Eighth", "Ivan the Terrible",
+        # "William the Conqueror", "Catherine the Great".
+        if split_at >= 2:
+            two_back = doc[split_at - 2]
+            one_back = doc[split_at - 1]
+            if (two_back.pos_ == "PROPN"
+                    and one_back.lower_ == "the"
+                    and doc[split_at].text[:1].isupper()
+                    and doc[split_at].pos_ in {"NOUN", "PROPN", "ADJ"}):
+                continue
 
         # SPECIAL: if preceded by an introducer adverb ("specifically Kerala",
         # "namely Smith", "especially China"), always reveal — these adverbs
@@ -2494,9 +2526,24 @@ def rule_comma_list_extension(doc: Doc) -> Set[int]:
                 and nxt.pos_ == "CCONJ"):
             out.add(t.i + 1)
             continue
-        # (c) ADJ + "," + ADJ  — adjective series
+        # (c) ADJ + "," + ADJ  — adjective series.
+        # Only fires for 3+ chained adjectives ("wide, flat, ancient
+        # surfaces"), NOT for simple 2-ADJ pairs ("giant, terrifying
+        # birds" or "sheer, unclimbable cliffs") which are tight
+        # descriptor stacks belonging to the same noun.
         if prev.pos_ == "ADJ" and nxt.pos_ == "ADJ":
-            out.add(t.i + 1)
+            # Look ahead: must be ADJ + comma + ADJ + (comma or "and") + ADJ
+            # to qualify as a real series.  Otherwise it's a pair, keep
+            # together.
+            is_chain = False
+            k = t.i + 2  # skip past current comma and next ADJ
+            if k < len(doc):
+                if doc[k].text == "," and k + 1 < len(doc) and doc[k + 1].pos_ == "ADJ":
+                    is_chain = True
+                elif doc[k].lower_ == "and" and k + 1 < len(doc) and doc[k + 1].pos_ == "ADJ":
+                    is_chain = True
+            if is_chain:
+                out.add(t.i + 1)
             continue
     return out
 
@@ -2815,28 +2862,35 @@ def rule_post_entity_split(doc: Doc, splits: Set[int]) -> Set[int]:
 # anti-rules H/I downstream).
 # -----------------------------------------------------------------------------
 def rule_long_clause_comma(doc: Doc, splits: Set[int]) -> Set[int]:
+    DEBUG = True
     out = set()
     for t in doc:
         if t.text != ",":
             continue
         if t.i + 1 >= len(doc):
             continue
-        # TIGHTENED: only fire in sentences with ≥14 non-punct tokens.  This
-        # is a "very long sentence" rule — for medium sentences, RULE 7,
-        # RULE 8, and RULE 26 cover the necessary cases.
         sent_ntok = sum(1 for x in t.sent if not x.is_punct)
         if sent_ntok < 14:
             continue
-        # lead from previous split
+
+        # NEW: don't fire when the comma sits between two adjectives
+        # ("giant, terrifying birds" / "sheer, unclimbable cliffs").
+        # These are tight descriptor stacks, not clause boundaries.
+        if t.i > 0 and t.i + 1 < len(doc):
+            prev_tok = doc[t.i - 1]
+            next_tok = doc[t.i + 1]
+            if prev_tok.pos_ == "ADJ" and next_tok.pos_ == "ADJ":
+                if DEBUG:
+                    print(f"  [long-comma] SKIP at idx {t.i}: ADJ-pair "
+                          f"'{prev_tok.text}, {next_tok.text}'")
+                continue
+
         prev = _prev_split(splits | out, t.i + 1)
         lead_content = _content_count(doc, prev, t.i + 1)
         if lead_content < LONG_COMMA_LEAD_CONTENT:
             continue
-        # don't fire if there's already a hard punct in the lead — would
-        # mean the lead "content" comes from a separate clause.
         if any(doc[k].text in HARD_PUNCT for k in range(prev, t.i)):
             continue
-        # tail content tokens until next punct or sentence end
         sent_end = t.sent.end
         tail_end = t.i + 1
         while tail_end < sent_end and doc[tail_end].text not in HARD_PUNCT:
@@ -2844,6 +2898,9 @@ def rule_long_clause_comma(doc: Doc, splits: Set[int]) -> Set[int]:
         tail_content = _content_count(doc, t.i + 1, tail_end)
         if tail_content < LONG_COMMA_TAIL_CONTENT:
             continue
+        if DEBUG:
+            print(f"  [long-comma] ADD split at idx {t.i + 1}: "
+                  f"lead={lead_content}, tail={tail_content}")
         out.add(t.i + 1)
     return out
 
@@ -2905,32 +2962,80 @@ def rule_infinitive_split(doc: Doc, splits: Set[int]) -> Set[int]:
 # still won't fire because the lead threshold blocks them.
 # -----------------------------------------------------------------------------
 def rule_terminal_of_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    DEBUG = True
     out = set()
     for t in doc:
         if t.lower_ != "of" or t.pos_ != "ADP":
             continue
         sent_ntok = sum(1 for x in t.sent if not x.is_punct)
         if sent_ntok < OF_REVEAL_SENT_MIN:
+            if DEBUG: print(f"  [of-reveal] SKIP at idx {t.i}: sent too short ({sent_ntok})")
             continue
-        # `of`-headed subtree must reach (close to) sentence end
         subtree = list(t.subtree)
         if not subtree:
             continue
         subtree_end = max(x.i for x in subtree)
         sent_end_i = max(x.i for x in t.sent if not x.is_punct)
-        if subtree_end < sent_end_i - 2:   # subtree must close at the tail
-            continue
-        # require ≥2 nouns in subtree (so a "real" NP follows)
+
+        # NEW: detect list pattern in the FORWARD scan from "of" instead
+        # of relying on subtree.  Look forward from "of" within its
+        # sentence for the pattern NOUN/PROPN + comma + ... + and/or.
+        # If found, this is "of X, Y, and Z" — a list reveal.
+        scan_end = min(t.i + 15, t.sent.end)
+        n_commas_fwd = 0
+        has_list_conj_fwd = False
+        has_hard_punct = False
+        for k in range(t.i + 1, scan_end):
+            if doc[k].text in HARD_PUNCT:
+                has_hard_punct = True
+                break
+            if doc[k].text == ",":
+                n_commas_fwd += 1
+            if doc[k].lower_ in {"and", "or"} and doc[k].pos_ == "CCONJ":
+                has_list_conj_fwd = True
+        is_forward_list = (n_commas_fwd >= 2) or (n_commas_fwd >= 1 and has_list_conj_fwd)
+
+        if DEBUG:
+            print(f"  [of-reveal] idx {t.i}: subtree_end={subtree_end}, "
+                  f"sent_end={sent_end_i}, "
+                  f"fwd_commas={n_commas_fwd}, fwd_and={has_list_conj_fwd}, "
+                  f"is_list={is_forward_list}")
+
+        # Subtree-end check (existing): UNLESS we detected a forward list,
+        # in which case skip this check since spaCy may have attached the
+        # list members elsewhere in the tree.
+        if not is_forward_list:
+            if subtree_end < sent_end_i - 2:
+                if DEBUG: print(f"    SKIP: subtree doesn't reach sent end")
+                continue
+
         n_nouns = sum(1 for x in subtree if x.pos_ in {"NOUN", "PROPN"})
-        if n_nouns < 2:
+        if n_nouns < 2 and not is_forward_list:
+            if DEBUG: print(f"    SKIP: only {n_nouns} nouns in subtree")
             continue
-        # don't fire if subtree contains its own verb/aux
         if any(x.pos_ in {"VERB", "AUX"} for x in subtree):
+            if DEBUG: print(f"    SKIP: subtree contains verb")
             continue
+
         prev = _prev_split(splits | out, t.i + 1)
         lead = _content_count(doc, prev, t.i + 1)
-        if lead < OF_REVEAL_LEAD_MIN:
+
+        # Use existing list-detection from subtree as secondary check
+        n_commas = sum(1 for x in subtree if x.text == ",")
+        has_list_conj = any(x.lower_ in {"and", "or"} and x.pos_ == "CCONJ"
+                            for x in subtree)
+        is_subtree_list = (n_commas >= 2) or (n_commas >= 1 and has_list_conj)
+        is_list = is_forward_list or is_subtree_list
+
+        threshold = 1 if is_list else OF_REVEAL_LEAD_MIN
+        if DEBUG:
+            print(f"    lead={lead}, threshold={threshold} (is_list={is_list})")
+        if lead < threshold:
+            if DEBUG: print(f"    SKIP: lead too short")
             continue
+
+        if DEBUG:
+            print(f"    ADD split at idx {t.i + 1} (after 'of')")
         out.add(t.i + 1)
     return out
 
@@ -3209,10 +3314,26 @@ def rule_phrasal_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
 # RULE 39 — PREPOSITIONAL OBJECT REVEAL
 # -----------------------------------------------------------------------------
 def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    DEBUG = True
     out = set()
     for t in doc:
         if t.pos_ != "ADP":
             continue
+
+        # NEW: don't split if next non-DET token after the prep is an ADJ.
+        # ADJ following a prep ("by giant terrifying birds") is part of
+        # the prep's object NP, not a separate reveal — splitting between
+        # them isolates the ADJ which is meaningless on its own.
+        j = t.i + 1
+        while j < len(doc) and doc[j].pos_ == "DET":
+            j += 1
+        if j < len(doc) and doc[j].pos_ == "ADJ":
+            if DEBUG:
+                print(f"  [prep-obj] SKIP at idx {t.i}: prep '{t.text}' "
+                      f"followed by ADJ '{doc[j].text}'")
+            continue
+
+        # ... rest of existing rule unchanged ...
 
         # NEW: skip when this PP qualifies a dobj of a possession verb
         head = t.head
@@ -4228,6 +4349,71 @@ def rule_and_visualisables_split(doc: Doc, splits: Set[int]) -> Set[int]:
         if DEBUG:
             print(f"    -> ADD split at {t.i + 1} (after '{t.text}')")
         out.add(t.i + 1)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 50 — TITLE APPOSITIVE VERB REVEAL
+# 
+# Splits BEFORE the verb that follows a title-appositive subject like
+# "Alaric the Goth", "Henry the Eighth", "Ivan the Terrible".  The
+# character intro (name + title) becomes its own line, then the verb
+# phrase reveals what they did.
+# 
+# Pattern: PROPN + "the" + Capitalised + <intervening modifiers?> + VERB
+# 
+# Sentence must be ≥10 non-punct tokens to avoid over-splitting
+# short character mentions like "Henry the Eighth died."
+# 
+# Examples that FIRE:
+#   "Alaric the Goth | laid siege to Rome..."
+#   "Ivan the Terrible | crowned himself emperor."
+#   "Henry the Eighth | dissolved every monastery..."
+# 
+# Examples that DON'T FIRE:
+#   "Henry the Eighth died."         (short sentence)
+#   "Alaric the Goth and his men..." (no verb immediately following)
+# -----------------------------------------------------------------------------
+def rule_title_appositive_verb_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    DEBUG = True
+    out = set()
+    for i in range(len(doc) - 2):
+        # Detect PROPN + "the" + Capitalised
+        if doc[i].pos_ != "PROPN":
+            continue
+        if doc[i + 1].lower_ != "the":
+            continue
+        if i + 2 >= len(doc):
+            continue
+        title_tok = doc[i + 2]
+        if not title_tok.text[:1].isupper():
+            continue
+        if title_tok.pos_ not in {"NOUN", "PROPN", "ADJ"}:
+            continue
+        # Walk forward past any additional title tokens (continued Capitalised
+        # words / NOUN/PROPN) to find the post-title VERB.
+        j = i + 3
+        while j < len(doc) and doc[j].text[:1].isupper() \
+                and doc[j].pos_ in {"NOUN", "PROPN", "ADJ"}:
+            j += 1
+        # j is now the first non-title token; must be a VERB
+        if j >= len(doc):
+            continue
+        if doc[j].pos_ != "VERB":
+            if DEBUG:
+                print(f"  [title-verb] SKIP at idx {j}: not VERB "
+                      f"(found {doc[j].pos_} '{doc[j].text}')")
+            continue
+        # Sentence length floor
+        sent_ntok = sum(1 for x in doc[j].sent if not x.is_punct)
+        if sent_ntok < 10:
+            if DEBUG:
+                print(f"  [title-verb] SKIP at idx {j}: sent too short ({sent_ntok})")
+            continue
+        if DEBUG:
+            print(f"  [title-verb] ADD split at idx {j} (before VERB '{doc[j].text}'): "
+                  f"after title '{doc[i].text} {doc[i+1].text} ...'")
+        out.add(j)
     return out
 
 
@@ -5401,6 +5587,7 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_result_clause_reveal_split",  rule_result_clause_reveal_split,  True),
     ("rule_equation_reveal_split",       rule_equation_reveal_split,       True), 
     ("rule_and_visualisables_split",   rule_and_visualisables_split,   True), 
+    ("rule_title_appositive_verb_split", rule_title_appositive_verb_split, True), 
 ]
 
 # Anti-rules: (name, function)
