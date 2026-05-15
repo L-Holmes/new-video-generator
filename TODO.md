@@ -1,21 +1,123 @@
 <--->
-BEFORE: It was so valuable that when Alaric the Goth laid siege to Rome in the year 410, his ransom demand to spare the city wasn't just gold and silver.
-AFTER: ['It was so valuable that when', 'Alaric', 'the Goth laid siege to Rome in', 'the year 410,', 'his ransom demand to', "spare the city wasn't just gold and", 'silver.']
--->  any way to detect 'Alaric the Goth' is the whole title? (since the 'G' is capitalised??
---> also split on 'gold' since its a visualisable noun...
-
+BEFORE: This is a story about cathedrals — not the architecture, not the stained glass, but the sound trapped inside them.
+AFTER: ['This is a story about cathedrals —', 'not the architecture, not the stained glass, but', 'the sound trapped inside', 'them.']
+EXPECTED: ['This is a story about cathedrals —', 'not the architecture,','not the stained glass, but', 'the sound trapped inside them.']
+- should have split on the list of noun things...  either at 'the' for each, or after the common, just before 'not'...
+- 'them' should surely have been joined back since its not visualisable.
 <--->
-BEFORE: But for centuries, Arab traders told the Greeks and Romans that cinnamon was gathered by giant, terrifying birds who used the spice to build their nests on sheer, unclimbable cliffs.
-AFTER: ['But for centuries,', 'Arab traders told', 'the Greeks and', 'Romans that', 'cinnamon was gathered by', 'giant,', 'terrifying birds who used the spice to', 'build their nests on', 'sheer,', 'unclimbable cliffs.']
-
-'giant' should not have been split out since its an adjective.
-same for 'sheer'
-
+BEFORE: Because if you walk into a medieval cathedral and clap your hands, the echo you hear isn’t just long — it’s wrong.
+AFTER: ['Because if you walk', 'into a medieval cathedral and', 'clap your hands,', 'the echo you hear isn’t just long —', 'it’s wrong.']
 <--->
-BEFORE: Within fifty years, they had spread across the globe, completely revolutionizing the cuisines of India, China, and Southeast Asia.
-AFTER: ['Within fifty years,', 'they had spread across', 'the globe,', 'completely revolutionizing', 'the cuisines of India,', 'China, and', 'Southeast Asia.']
-EXPECTED: ['Within fifty years,', 'they had spread across', 'the globe,', 'completely revolutionizing', 'the cuisines of','India,', 'China, and', 'Southeast Asia.'] - we split because its a list.. if it wasn't a list (e.g. just 'cuisines of India) we wouldn't split.
+BEFORE: It lingers for nearly ten seconds, smearing every sound into a kind of sonic fog that makes speech almost impossible to understand.
+AFTER: ['It lingers', 'for nearly ten seconds,', 'smearing every sound into', 'a kind of', 'sonic fog', 'that makes speech almost impossible to understand.']
+EXPECTED: ['It lingers for nearly', ten seconds,', 'smearing every sound into', 'a kind of', 'sonic fog', 'that makes speech almost impossible to understand.']
+should split just before the reveal of ten seconds..
 <--->
+BEFORE: And the strange part is that none of this was planned.
+AFTER: ['And the strange part is that', 'none of this was planned.']
+<--->
+BEFORE: Medieval builders didn’t have acoustic modelling software; they barely had consistent units of measurement.
+AFTER: ['Medieval builders didn’t have', 'acoustic modelling software; they barely had', 'consistent units of measurement.']
+<--->
+BEFORE: They built cathedrals the way you might stack stones on a beach: slowly, carefully, and with a lot of guesswork.
+AFTER: ['They built cathedrals the way you might stack stones on', 'a beach: slowly, carefully, and', 'with a lot of guesswork.']
+<--->
+BEFORE: But somehow, through trial, error, and a few lucky accidents, they created some of the most acoustically extreme spaces on Earth.
+AFTER: ['But somehow, through trial,', 'error, and', 'a few lucky accidents, they created', 'some of the most acoustically extreme spaces on', 'Earth.']
+EXPECTED: ['But somehow, through','trial,', 'error, and', 'a few lucky accidents, they created', 'some of the most acoustically extreme spaces on Earth.']
+yet again, we have a list of noun type things and the first doesn't get split on?
+also maybe just hardcode an exceptoin where 'on Earth' specifically doesn't get split...
+<--->
+BEFORE: The problem starts with scale: cathedrals are enormous, and sound behaves badly in enormous rooms.
+AFTER: ['The problem starts with scale:', 'cathedrals are enormous, and', 'sound behaves badly in', 'enormous rooms.']
+<--->
+BEFORE: Every surface — the pillars, the vaults, the carved stone saints — reflects sound in a slightly different direction.
+AFTER: ['Every surface —', 'the pillars,', 'the vaults,', 'the carved stone saints —', 'reflects sound in', 'a slightly different direction.']
+<--->
+BEFORE: So instead of one clean echo, you get thousands of tiny reflections arriving at your ears at slightly different times.
+AFTER: ['So instead of one clean echo, you get', 'thousands of tiny reflections arriving at', 'your ears at', 'slightly different times.']
+<--->
+BEFORE: The result is a kind of auditory soup where consonants dissolve and vowels smear into each other.
+AFTER: ['The result is', 'a kind of auditory soup where', 'consonants dissolve and', 'vowels smear into each other.']
+<--->
+BEFORE: If you tried to give a TED talk in a cathedral, no one would understand a word of it.
+AFTER: ['If you tried to give a TED talk in a cathedral,', 'no one would understand', 'a word of it.']
+<--->
+BEFORE: But medieval worship wasn’t about understanding every word.
+AFTER: ['But medieval worship wasn’t about understanding', 'every word.']
+<--->
+BEFORE: It was about awe.
+AFTER: ['It was about awe.']
+<--->
+BEFORE: And a ten‑second echo turns even a single note into something that feels supernatural.
+AFTER: ['And a ten‑second echo turns', 'even a single note into something', 'that feels supernatural.']
+<--->
+BEFORE: Gregorian chant wasn’t designed for cathedrals — cathedrals shaped Gregorian chant.
+AFTER: ['Gregorian chant wasn’t designed for', 'cathedrals —', 'cathedrals shaped', 'Gregorian chant.']
+<--->
+BEFORE: Long, slow notes survive the echo; fast syllables don’t.
+AFTER: ['Long, slow notes survive the echo;', 'fast syllables don’t.']
+<--->
+BEFORE: So the music adapted to the building, and the building adapted to the music, in a feedback loop that lasted centuries.
+AFTER: ['So the music adapted', 'to the building, and', 'the building adapted', 'to the music, in', 'a feedback loop', 'that lasted centuries.']
+<--->
+BEFORE: But here’s the twist: the echo wasn’t just a side effect.
+AFTER: ['But here’s the twist:', 'the echo wasn’t', 'just a side effect.']
+<--->
+BEFORE: It was a tool.
+AFTER: ['It was a tool.']
+<--->
+BEFORE: Priests realised that if they spoke slowly enough, the echo made their voices sound bigger, deeper, more authoritative.
+AFTER: ['Priests realised that if', 'they spoke slowly enough,', 'the echo made their voices sound', 'bigger, deeper,', 'more authoritative.']
+<--->
+BEFORE: A single voice could fill a space the size of a football pitch without amplification.
+AFTER: ['A single voice could fill a space', 'the size of', 'a football pitch without', 'amplification.']
+<--->
+BEFORE: And in a world without microphones, that was power.
+AFTER: ['And in a world without microphones,', 'that was power.']
+<--->
+BEFORE: But the echo also caused problems.
+AFTER: ['But the echo also caused problems.']
+<--->
+BEFORE: During the Reformation, Protestant reformers complained that cathedrals were acoustically hostile to preaching.
+AFTER: ['During the Reformation,', 'Protestant reformers complained that', 'cathedrals were', 'acoustically hostile to preaching.']
+<--->
+BEFORE: They wanted sermons — long, complicated, theological arguments — and cathedrals simply swallowed them.
+AFTER: ['They wanted sermons —', 'long,', 'complicated, theological arguments —', 'and cathedrals simply', 'swallowed them.']
+<--->
+BEFORE: So new churches were built smaller, with wooden interiors, designed for clarity rather than grandeur.
+AFTER: ['So new churches were built smaller,', 'with wooden interiors,', 'designed for', 'clarity rather than grandeur.']
+<--->
+BEFORE: Meanwhile, the old cathedrals stayed as they were: giant stone echo chambers that refused to modernise.
+AFTER: ['Meanwhile, the old cathedrals stayed as they were:', 'giant stone echo chambers', 'that refused to modernise.']
+<--->
+BEFORE: Today, sound engineers study these buildings because they break all the rules.
+AFTER: ['Today,', 'sound engineers study these buildings because', 'they break all the rules.']
+<--->
+BEFORE: They’re too big, too reflective, too chaotic — and yet they work.
+AFTER: ['They’re too big,', 'too reflective, too chaotic —', 'and yet they work.']
+EXPECTED: ['They’re too big,', 'too reflective, too chaotic —', 'and yet they work.']
+- to be honest, is this our new rule that is keeping these two 'toos' together? if so lets loosen that. I'd rather the list things get split up than 'big, giant birds' not be split up... defo just split.
+<--->
+BEFORE: Not for everything, but for the things they were accidentally optimised for.
+AFTER: ['Not for everything, but for', 'the things they were accidentally optimised for.']
+<--->
+BEFORE: Stand in the centre of a cathedral and sing a single note, and the building sings back.
+AFTER: ['Stand in the centre of', 'a cathedral and', 'sing a single note, and', 'the building sings back.']
+<--->
+BEFORE: It’s like the walls remember every voice that’s ever passed through them.
+AFTER: ['It’s like the walls remember', 'every voice', 'that’s ever passed through', 'them.']
+expected: ['It’s like the walls remember', 'every voice', 'that’s ever passed through them.']
+- why is the non visualisable 'them' by itself?
+<--->
+BEFORE: And maybe that’s the real reason these places still feel sacred, even if you’re not religious.
+AFTER: ['And maybe that’s', 'the real reason', 'these places still feel', 'sacred, even if', 'you’re not religious.']
+<--->
+BEFORE: They don’t just hold history in their stones.
+AFTER: ['They don’t just hold history in their stones.']
+<--->
+BEFORE: They hold it in their sound.
+AFTER: ['They hold it in their sound.']
 
 
 -----

@@ -1842,7 +1842,7 @@ def rule_noun_lists(doc: Doc) -> Set[int]:
 #       → split before each "the"
 # -----------------------------------------------------------------------------
 def rule_bare_noun_lists(doc: Doc, splits: Set[int]) -> Set[int]:
-    DEBUG = True
+    DEBUG = False
     out = set()
     for i in range(1, len(doc) - 1):
         if doc[i].pos_ != "DET":
@@ -2478,6 +2478,54 @@ def rule_numeric_phrase_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
     return out
 
 
+# Add new helper rule
+def rule_numeric_approximator_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    """
+    Splits BEFORE a numeric+noun phrase when preceded by an approximator
+    ADV ("nearly", "almost", "about", "roughly", "approximately", "over",
+    "around", "just", "only") + lead-in.
+
+    Examples:
+      "lingers for nearly | ten seconds"
+      "took almost | a hundred years"
+      "spans over | three continents"
+    """
+    DEBUG = True
+    APPROX_ADV = {"nearly", "almost", "about", "roughly", "approximately",
+                  "around", "over", "just", "only", "barely", "merely"}
+    out = set()
+    for t in doc:
+        if t.lower_ not in APPROX_ADV:
+            continue
+        if t.pos_ not in {"ADV", "ADP"}:
+            continue
+        # Next token must be a numeric (like_num or NUM pos) or DET+NUM
+        j = t.i + 1
+        if j >= len(doc):
+            continue
+        if not (doc[j].like_num or doc[j].pos_ == "NUM"
+                or (doc[j].pos_ == "DET" and j + 1 < len(doc)
+                    and (doc[j + 1].like_num or doc[j + 1].pos_ == "NUM"))):
+            if DEBUG: print(f"  [approx-num] SKIP at idx {t.i}: next not numeric")
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 8:
+            continue
+        # Lead
+        split_at = j
+        if split_at == 0:
+            continue
+        prev = _prev_split(splits | out, split_at)
+        lead = _content_count(doc, prev, split_at)
+        if lead < 1:
+            if DEBUG: print(f"  [approx-num] SKIP at idx {split_at}: lead too short")
+            continue
+        if DEBUG:
+            print(f"  [approx-num] ADD split at idx {split_at}: "
+                  f"'{t.text} {doc[j].text}...'")
+        out.add(split_at)
+    return out
+
 # -----------------------------------------------------------------------------
 # RULE 25 — COMMA LIST EXTENSION
 # Extends RULE 8 to cover three additional comma patterns that the canonical
@@ -2862,7 +2910,7 @@ def rule_post_entity_split(doc: Doc, splits: Set[int]) -> Set[int]:
 # anti-rules H/I downstream).
 # -----------------------------------------------------------------------------
 def rule_long_clause_comma(doc: Doc, splits: Set[int]) -> Set[int]:
-    DEBUG = True
+    DEBUG = False
     out = set()
     for t in doc:
         if t.text != ",":
@@ -2873,17 +2921,41 @@ def rule_long_clause_comma(doc: Doc, splits: Set[int]) -> Set[int]:
         if sent_ntok < 14:
             continue
 
-        # NEW: don't fire when the comma sits between two adjectives
-        # ("giant, terrifying birds" / "sheer, unclimbable cliffs").
-        # These are tight descriptor stacks, not clause boundaries.
+        # ADJ-pair guard — only suppress when the ADJ pair forms a tight
+        # descriptor stack sharing a noun head ahead.  Patterns like
+        # "too X, too Y" or "X, Y" describing an earlier subject DO split.
         if t.i > 0 and t.i + 1 < len(doc):
             prev_tok = doc[t.i - 1]
             next_tok = doc[t.i + 1]
             if prev_tok.pos_ == "ADJ" and next_tok.pos_ == "ADJ":
+                # Check: does the NEXT adj have a NOUN head within ~4 tokens?
+                # If yes → tight descriptor stack ("giant, terrifying birds")
+                # If no → parallel ADJ phrases describing earlier subject
+                #         ("too reflective, too chaotic")
+                has_shared_noun = False
+                for k in range(next_tok.i + 1, min(next_tok.i + 5, len(doc))):
+                    if doc[k].pos_ in {"NOUN", "PROPN"}:
+                        has_shared_noun = True
+                        break
+                    if doc[k].text in HARD_PUNCT:
+                        break
+                # Also check: is the prev ADJ preceded by an intensifier ADV
+                # like "too"/"so"/"very"?  Intensified ADJ pairs are
+                # parallel structures, not stacks.
+                prev_has_intensifier = (prev_tok.i > 0
+                    and doc[prev_tok.i - 1].pos_ == "ADV"
+                    and doc[prev_tok.i - 1].lower_ in
+                    {"too", "so", "very", "really", "extremely",
+                     "incredibly", "totally", "completely"})
+                if has_shared_noun and not prev_has_intensifier:
+                    if DEBUG:
+                        print(f"  [long-comma] SKIP at idx {t.i}: ADJ-pair "
+                              f"'{prev_tok.text}, {next_tok.text}' (shared NP)")
+                    continue
                 if DEBUG:
-                    print(f"  [long-comma] SKIP at idx {t.i}: ADJ-pair "
-                          f"'{prev_tok.text}, {next_tok.text}'")
-                continue
+                    print(f"  [long-comma] ADJ-pair {prev_tok.text}, "
+                          f"{next_tok.text}: shared_noun={has_shared_noun}, "
+                          f"intensifier={prev_has_intensifier} → ALLOW SPLIT")
 
         prev = _prev_split(splits | out, t.i + 1)
         lead_content = _content_count(doc, prev, t.i + 1)
@@ -2962,7 +3034,7 @@ def rule_infinitive_split(doc: Doc, splits: Set[int]) -> Set[int]:
 # still won't fire because the lead threshold blocks them.
 # -----------------------------------------------------------------------------
 def rule_terminal_of_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
-    DEBUG = True
+    DEBUG = False
     out = set()
     for t in doc:
         if t.lower_ != "of" or t.pos_ != "ADP":
@@ -3320,20 +3392,21 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         if t.pos_ != "ADP":
             continue
 
-        # NEW: don't split if next non-DET token after the prep is an ADJ.
-        # ADJ following a prep ("by giant terrifying birds") is part of
-        # the prep's object NP, not a separate reveal — splitting between
-        # them isolates the ADJ which is meaningless on its own.
+        # Don't split if next non-DET token is ADJ — UNLESS the ADJ is
+        # intensified ("by too X"), which makes it a standalone phrase.
         j = t.i + 1
         while j < len(doc) and doc[j].pos_ == "DET":
             j += 1
         if j < len(doc) and doc[j].pos_ == "ADJ":
-            if DEBUG:
-                print(f"  [prep-obj] SKIP at idx {t.i}: prep '{t.text}' "
-                      f"followed by ADJ '{doc[j].text}'")
-            continue
-
-        # ... rest of existing rule unchanged ...
+            # Skip the skip if the ADJ has an intensifier behind it
+            is_intensified = (j > 0 and doc[j - 1].pos_ == "ADV"
+                              and doc[j - 1].lower_ in
+                              {"too", "so", "very", "really", "extremely"})
+            if not is_intensified:
+                if DEBUG:
+                    print(f"  [prep-obj] SKIP at idx {t.i}: prep '{t.text}' "
+                          f"followed by ADJ '{doc[j].text}'")
+                continue
 
         # NEW: skip when this PP qualifies a dobj of a possession verb
         head = t.head
@@ -3364,6 +3437,13 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         
         # TERMINAL NOUN REVEAL LOGIC:
         pobj = next((c for c in t.children if c.dep_ in {"pobj", "obj"}), None)
+        # NEW: skip when pobj is a bare PRON (single-token, no modifiers)
+        if pobj is not None and pobj.pos_ == "PRON":
+            pobj_subtree = list(pobj.subtree)
+            if len(pobj_subtree) == 1:
+                if DEBUG:
+                    print(f"  [prep-obj] SKIP at idx {t.i}: pobj is bare PRON '{pobj.text}'")
+                continue
         if pobj is not None:
             last_noun_i = max((tt.i for tt in t.sent if tt.pos_ in {"NOUN", "PROPN", "NUM"}), default=-1)
             if pobj.i == last_noun_i:
@@ -3403,6 +3483,16 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
                                "QUANTITY", "PERCENT", "MONEY"}
             for x in pobj_subtree
         )
+
+        # Don't fire when pobj is a bare PRON (single-token, no modifiers)
+        # — pronouns aren't visual reveals.
+        if pobj is not None and pobj.pos_ == "PRON":
+            pobj_subtree = list(pobj.subtree)
+            if len(pobj_subtree) == 1:
+                if DEBUG:
+                    print(f"  [prep-obj] SKIP at idx {t.i}: pobj is bare PRON '{pobj.text}'")
+                continue
+
         # Sentence-length gating, tightened:
         #   • Numeric terminal: ≥11 tokens (was 9)
         #   • Default:          ≥12 tokens (was 11)
@@ -3419,6 +3509,7 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         # Don't split if it's a blocked prep like "of"
         if t.lower_ in PROMISCUOUS_PREPS:
             continue
+
 
         # LOCATION ENTITY REVEAL:
         pobj_ent_type = doc[pobj.i].ent_type_
@@ -4375,7 +4466,7 @@ def rule_and_visualisables_split(doc: Doc, splits: Set[int]) -> Set[int]:
 #   "Alaric the Goth and his men..." (no verb immediately following)
 # -----------------------------------------------------------------------------
 def rule_title_appositive_verb_split(doc: Doc, splits: Set[int]) -> Set[int]:
-    DEBUG = True
+    DEBUG = False
     out = set()
     for i in range(len(doc) - 2):
         # Detect PROPN + "the" + Capitalised
@@ -4416,6 +4507,121 @@ def rule_title_appositive_verb_split(doc: Doc, splits: Set[int]) -> Set[int]:
         out.add(j)
     return out
 
+# -----------------------------------------------------------------------------
+# RULE 51 — FIRST LIST ITEM REVEAL
+#
+# Splits BEFORE the first item of a multi-item list so each list item
+# gets its own line (typography-style).
+#
+# Pattern: an NP whose `conj` children are themselves NPs in a
+# comma-separated list, AND the NP follows a "list-introducer" token
+# (preposition, dash, colon, comma, "but", "not").
+#
+# Examples that FIRE:
+#   "cathedrals — | not the architecture, not the stained glass, but..."
+#   "through | trial, error, and a few lucky accidents..."
+#   "Every surface — | the pillars, the vaults, the carved stone saints"
+#     (already split via dash, but reinforces the pattern)
+#
+# Detection:
+#   1. Find a token T that heads an NP (NOUN/PROPN/ADJ, dep != det/amod)
+#   2. T has ≥2 conj children that are also NOUN/PROPN heads
+#   3. Walk back from T's NP start: previous content token is a
+#      preposition, dash, colon, or sentence-initial position
+#   4. Sentence length ≥10
+# -----------------------------------------------------------------------------
+def rule_first_list_item_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    DEBUG = True
+    out = set()
+    for t in doc:
+        if t.pos_ not in {"NOUN", "PROPN", "ADJ", "DET"}:
+            continue
+        # Find the head of the noun chunk that contains this token
+        chunk = _chunk_containing(doc, t.i)
+        if chunk is None:
+            continue
+        head = chunk.root
+        if head.i != t.i and t.i != chunk.start:
+            continue  # only process at chunk start
+
+        # Count conj siblings of the head that look like NP heads
+        n_conj_np = sum(1 for c in head.children
+                        if c.dep_ == "conj" and c.pos_ in {"NOUN", "PROPN"})
+        if n_conj_np < 1:
+            continue
+
+        # Also require a comma somewhere in the conj chain — confirms list
+        chain_has_comma = False
+        for c in head.children:
+            if c.dep_ == "conj":
+                # check tokens between head and this conj
+                for k in range(head.i + 1, c.i):
+                    if doc[k].text == ",":
+                        chain_has_comma = True
+                        break
+        if not chain_has_comma:
+            continue
+
+        split_at = chunk.start
+        if split_at == 0:
+            continue
+
+        # Check left context — what's immediately before the chunk start?
+        prev_tok = doc[split_at - 1]
+        is_list_intro = (
+            prev_tok.pos_ == "ADP"
+            or prev_tok.text in DASH_PUNCT
+            or prev_tok.text in {":", ","}
+            or prev_tok.lower_ in {"but", "and", "or", "not"}
+        )
+        if not is_list_intro:
+            if DEBUG:
+                print(f"  [first-list] SKIP at idx {split_at}: prev "
+                      f"'{prev_tok.text}' (pos={prev_tok.pos_}) not list intro")
+            continue
+
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 10:
+            if DEBUG:
+                print(f"  [first-list] SKIP at idx {split_at}: sent too short ({sent_ntok})")
+            continue
+
+        if DEBUG:
+            print(f"  [first-list] ADD split at idx {split_at}: "
+                  f"first item '{chunk.text}' (after '{prev_tok.text}'), "
+                  f"n_conj={n_conj_np}")
+        out.add(split_at)
+
+
+    # NEW: "not X, not Y, but Z" pattern — repeated negation lists
+    # that spaCy may not parse as conj.  Trigger when we find
+    # consecutive "not <chunk>" patterns separated by commas.
+    for t in doc:
+        if t.lower_ != "not":
+            continue
+        if t.i == 0:
+            continue
+        prev_tok = doc[t.i - 1]
+        # Need: previous token is DASH or COMMA (list-intro context)
+        if prev_tok.text not in (DASH_PUNCT | {","}):
+            continue
+        # And: look ahead for another "not" or "but" within 8 tokens,
+        # confirming this is a "not X, not Y, but Z" list
+        found_continuation = False
+        for k in range(t.i + 1, min(t.i + 12, len(doc))):
+            if doc[k].text in HARD_PUNCT:
+                break
+            if doc[k].lower_ in {"not", "but"} and k > t.i + 1:
+                found_continuation = True
+                break
+        if not found_continuation:
+            continue
+        if DEBUG:
+            print(f"  [first-list] ADD 'not'-list split at idx {t.i}: "
+                  f"'{prev_tok.text} | not ...'")
+        out.add(t.i)
+
+    return out
 
 # =============================================================================
 # ANTI-RULES  —  return indices to *remove* from the splits set.
@@ -4423,7 +4629,26 @@ def rule_title_appositive_verb_split(doc: Doc, splits: Set[int]) -> Set[int]:
 
 # A — never split inside a multi-token named entity ("New York City").
 def anti_rule_compound_ne(doc: Doc, splits: Set[int]) -> Set[int]:
-    return {i for i in splits if _in_compound_ne(doc, i)}
+    """Wipe splits that would slice a multi-token named entity.
+
+    EXCEPTION: approximator + number entities ("nearly ten", "almost a hundred",
+    "about three thousand", "over forty") are tagged as single entities by
+    spaCy, but the approximator + number boundary is a deliberate reveal
+    target — splitting between them is the whole point of rule_numeric_approximator_reveal.
+    """
+    APPROX_LEMMAS = {"nearly", "almost", "about", "roughly", "approximately",
+                     "around", "over", "just", "only", "barely", "merely"}
+    bad = set()
+    for i in splits:
+        if not _in_compound_ne(doc, i):
+            continue
+        # Check: is the LEFT side of the split an approximator ADV/ADP?
+        if i > 0 and doc[i - 1].lower_ in APPROX_LEMMAS \
+                and doc[i - 1].pos_ in {"ADV", "ADP"}:
+            # Preserve the split — this is a numeric-approximator reveal.
+            continue
+        bad.add(i)
+    return bad
 
 
 # B — never split between aux/neg and main verb ("doesn't find", "is going").
@@ -5317,6 +5542,14 @@ def _post_merge_unvisualisable(doc: Doc,
     if len(chunks) <= 1:
         return chunks, chunk_spans
 
+    DEBUG_PMV = True
+    if DEBUG_PMV:
+        print(f"  [post-merge-unvis] INPUT chunks:")
+        for i, (c, (lo, hi)) in enumerate(zip(chunks, chunk_spans)):
+            vis = _has_visualisable_content(doc, lo, hi)
+            print(f"    [{i}] '{c}' span={lo}:{hi} visualisable={vis} "
+                  f"lo_protected={lo in protected} hi_protected={hi in protected}")
+
     for _iter in range(10):
         target_idx: Optional[int] = None
 
@@ -5324,10 +5557,12 @@ def _post_merge_unvisualisable(doc: Doc,
             text = chunks[i].strip()
             if not text:
                 continue
-            if text[-1] in {".", "!", "?"}:
-                continue
             if _has_visualisable_content(doc, lo, hi):
                 continue
+            # Only skip terminal-punct chunks if they ARE visualisable.
+            # A non-visualisable chunk ending in "." (e.g. "them.", "it.")
+            # still needs to fuse backward — the period belongs after the
+            # previous content, not on its own line.
             target_idx = i
             break
 
@@ -5400,6 +5635,11 @@ def _post_merge_unvisualisable(doc: Doc,
         else:
             break
 
+    if DEBUG_PMV:
+        print(f"  [post-merge-unvis] OUTPUT chunks:")
+        for i, c in enumerate(chunks):
+            print(f"    [{i}] '{c}'")
+
     return chunks, chunk_spans
 
 
@@ -5429,6 +5669,15 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
     Returns (chunks, spans) where spans[k] is the (lo, hi) token range that
     produced chunks[k] — needed by _fuse_orphans for structural decisions.
     """
+    DEBUG_MT = True
+    if DEBUG_MT:
+        print(f"  [merge-throwaways] INPUT raw chunks:")
+        for i, (lo, hi) in enumerate(raw):
+            text = doc[lo:hi].text.strip()
+            is_tw = _is_throwaway_span(doc, lo, hi)
+            print(f"    [{i}] '{text}' span={lo}:{hi} is_throwaway={is_tw} "
+                  f"lo_protected={lo in protected} hi_protected={hi in protected}")
+
     if protected is None:
         protected = set()
     out: List[str] = []
@@ -5526,6 +5775,11 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
             out.append(fwd_buf.strip())
             out_spans.append((fwd_lo if fwd_lo is not None else 0, len(doc)))
 
+    if DEBUG_MT:
+        print(f"  [merge-throwaways] OUTPUT chunks:")
+        for i, c in enumerate(out):
+            print(f"    [{i}] '{c}'")
+
     return out, out_spans
 
 # =============================================================================
@@ -5557,6 +5811,7 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_pp_intro_reveal",         rule_pp_intro_reveal,         True),
     ("rule_terminal_of_reveal",      rule_terminal_of_reveal,      True),
     ("rule_noun_lists",              rule_noun_lists,              False),
+    ("rule_first_list_item_split",       rule_first_list_item_split,       True), 
     ("rule_bare_noun_lists",         rule_bare_noun_lists,         True),
     ("rule_list_quantifiers",        rule_list_quantifiers,        False),
     ("rule_entity_reveal",           rule_entity_reveal,           True),
@@ -5569,6 +5824,7 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_terminal_adj_coord",      rule_terminal_adj_coord,      True),
     ("rule_adjective_reveal",        rule_adjective_reveal,        True),
     ("rule_numeric_phrase_reveal",   rule_numeric_phrase_reveal,   True),
+    ("rule_numeric_approximator_reveal", rule_numeric_approximator_reveal, True), 
     ("rule_participle_split",        rule_participle_split,        True),
     ("rule_progressive_split",       rule_progressive_split,       True),
     ("rule_copula_attr_reveal",      rule_copula_attr_reveal,      True),
