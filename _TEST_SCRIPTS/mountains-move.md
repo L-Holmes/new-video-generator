@@ -1,0 +1,31 @@
+
+
+[
+    "This is a story about mountains — specifically, why they refuse to stay where you put them.",
+    "Because for something that weighs several trillion tonnes, a mountain moves more often than your average houseplant.",
+    "And the weird part is: we keep pretending they don’t.",
+    "Every map you’ve ever used is lying to you, because the mountains on it are quietly sliding around like bored toddlers on a polished floor.",
+    "The Alps, for example, are still rising, which means technically they’re teenagers and we should all be worried.",
+    "Meanwhile, the Himalayas are growing so fast that if they were a child, you’d be buying new shoes every three weeks.",
+    "And all of this is happening because the Earth’s crust is basically a giant, badly‑maintained conveyor belt.",
+    "Continents drift, collide, and occasionally throw tantrums, which is how you get mountains in the first place.",
+    "But once a mountain exists, it immediately begins trying to un‑exist itself.",
+    "Rain erodes it, wind shaves it down, glaciers carve it up like a very slow, very angry ice‑cream scoop.",
+    "So the mountain grows, collapses, grows again, collapses again — like a geological yo‑yo with self‑esteem issues.",
+    "And humans, being humans, decided to build roads across them.",
+    "Which is brave, considering mountains are constantly shedding rocks the way cats shed fur.",
+    "Engineers call this ‘slope instability,’ which is a polite way of saying ‘the mountain is trying to kill you.’",
+    "Some roads have so many warning signs that the signs themselves need warning signs.",
+    "But the real comedy starts when you try to measure a mountain.",
+    "Mount Everest, for example, has been measured so many times that it’s basically the world’s tallest yo‑yo.",
+    "One year it’s 8,848 metres, the next it’s 8,849, then someone else says it’s 8,848.86 and everyone pretends that’s normal.",
+    "It’s like arguing about the height of a loaf of bread while it’s still in the oven.",
+    "And yet, despite all this chaos, we treat mountains as symbols of permanence.",
+    "We carve faces into them, build temples on them, and take photos pretending we climbed them when we absolutely did not.",
+    "But the truth is: mountains are temporary.",
+    "Not temporary like a sandcastle — temporary like a very slow‑burning firework.",
+    "Given enough time, every mountain becomes a hill, every hill becomes a bump, and every bump becomes a slightly disappointing field.",
+    "So the next time you look at a mountain and think, ‘That’s solid,’ remember: it’s moving, shrinking, growing, collapsing, and generally having a worse time than you are.",
+    "And yet, somehow, it still looks majestic.",
+    "Which is more than you can say for most things that are constantly falling apart."
+]
