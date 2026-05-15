@@ -224,11 +224,6 @@ test #28) Remove them completely and humans get visually confused v... :: FALSE 
 - expected: ['Geological settling happening over', 'immense stretches of time until eventually you get', 'surfaces so level they become', 'scientifically valuable from orbit.']
  → 25%
 
- test #7) The empire state building is really big. :: FALSE 
-- actual: ['The empire state building is', 'really big.']
-- expected: ['The empire state building is really big.']
- → 0%
-
 ========================================
 ========================================
 ========================================

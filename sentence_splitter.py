@@ -291,6 +291,112 @@ def _nlp() -> "spacy.language.Language":
 # UTILITY HELPERS
 # =============================================================================
 
+def _has_substantial_complement(verb_tok: Token) -> Tuple[bool, Optional[Token]]:
+    """
+    Determine whether a verb has a SUBSTANTIAL complement (dobj or ccomp)
+    suitable for a reveal split, and return the complement head if so.
+
+    Used by Family 4 (perception/cognition).  Differs from
+    _is_substantial_dobj in that it also accepts ccomp clausal
+    complements like "that he was late", "what had to be done".
+
+    Returns:
+        (True, complement_head) if substantial complement exists
+        (False, None)           otherwise
+
+    Substantial means the complement is:
+        • dobj with substantial subtree (per _is_substantial_dobj logic)
+        OR
+        • ccomp clause with ≥3 tokens in subtree
+        OR
+        • xcomp with VERB head (open clausal: "saw him leave")
+
+    Examples:
+        "noticed the strange shape"
+            → dobj 'shape', subtree [the, strange, shape] → True
+        "noticed that he was late"
+            → ccomp 'late' (or 'was'), subtree ≥3 tokens → True
+        "knew what to do"
+            → ccomp 'do' with WH-clause → True
+        "saw him leave"
+            → xcomp 'leave' with VERB → True
+        "saw it"
+            → dobj 'it', PRON subtree, length 1 → False
+        "knows."
+            → no complement → False
+    """
+    # Check dobj first
+    dobj = next((c for c in verb_tok.children if c.dep_ in {"dobj", "obj"}), None)
+    if dobj is not None:
+        subtree = list(dobj.subtree)
+        if len(subtree) >= 3:
+            return (True, dobj)
+        n_adj = sum(1 for x in subtree if x.pos_ == "ADJ")
+        n_nouns = sum(1 for x in subtree if x.pos_ in {"NOUN", "PROPN"})
+        has_relcl = any(c.dep_ in {"acl", "acl:relcl", "relcl"}
+                        for c in dobj.children)
+        has_comp = any(x.lower_ in COMPARATIVE_MARKERS for x in subtree)
+        if n_adj >= 1 or n_nouns >= 2 or has_relcl or has_comp:
+            return (True, dobj)
+
+    # Check ccomp
+    ccomp = next((c for c in verb_tok.children if c.dep_ == "ccomp"), None)
+    if ccomp is not None:
+        subtree_len = len(list(ccomp.subtree))
+        if subtree_len >= 3:
+            return (True, ccomp)
+
+    # Check xcomp with VERB head ("saw him leave", "watched it fall")
+    xcomp = next((c for c in verb_tok.children
+                  if c.dep_ == "xcomp" and c.pos_ == "VERB"), None)
+    if xcomp is not None:
+        return (True, xcomp)
+
+    return (False, None)
+
+def _is_substantial_dobj(verb_tok: Token) -> bool:
+    """
+    Determine whether a verb has a SUBSTANTIAL direct-object reveal payload.
+
+    Used by Family 2 (possession verbs) and Family 3 (creation verbs) to
+    decide whether the dobj NP is worth revealing on its own line.
+    A "substantial" dobj has at least one of:
+
+        • ≥1 ADJ modifier in subtree     ("great cycle paths")
+        • ≥2 NOUN/PROPN tokens in subtree ("calibration tools larger than cities")
+        • a relative-clause child         ("evidence that he was lying")
+        • a comparative marker            ("more sand than ever before")
+        • ≥3 total tokens in subtree      ("a long winding road")
+
+    Returns False when:
+        • verb has no dobj
+        • dobj is a bare pronoun / single short noun ("has it", "owns one")
+
+    Examples:
+        "you have great cycle paths"
+            → dobj 'paths' subtree = [great, cycle, paths] → True (3 tokens)
+        "she had a strange dream"
+            → dobj 'dream' subtree = [a, strange, dream] → True (ADJ modifier)
+        "the cave harbors thousands of bats"
+            → dobj 'thousands' subtree = [thousands, of, bats] → True
+        "I have it"
+            → dobj 'it' subtree = [it] → False
+        "we own three houses"
+            → dobj 'houses' subtree = [three, houses] → True (2+ tokens + NUM)
+    """
+    dobj = next((c for c in verb_tok.children if c.dep_ in {"dobj", "obj"}), None)
+    if dobj is None:
+        return False
+    subtree = list(dobj.subtree)
+    if len(subtree) >= 3:
+        return True
+    n_adj = sum(1 for x in subtree if x.pos_ == "ADJ")
+    n_nouns = sum(1 for x in subtree if x.pos_ in {"NOUN", "PROPN"})
+    has_relcl = any(c.dep_ in {"acl", "acl:relcl", "relcl"}
+                    for c in dobj.children)
+    has_comp = any(x.lower_ in COMPARATIVE_MARKERS for x in subtree)
+    return n_adj >= 1 or n_nouns >= 2 or has_relcl or has_comp
+
 def _prev_split(splits: Set[int], i: int) -> int:
     """Largest split index strictly less than *i*."""
     return max((s for s in splits if s < i), default=0)
@@ -311,6 +417,29 @@ def _in_compound_ne(doc: Doc, i: int) -> bool:
     return (left.ent_iob_ in {"B", "I"}
             and right.ent_iob_ == "I"
             and left.ent_type_ == right.ent_type_)
+
+
+def _is_copular_use(verb_tok: Token) -> bool:
+    """
+    Determine whether a verb token is being used COPULARLY (linking
+    subject to predicate) vs TRANSITIVELY or PREPOSITIONALLY.
+
+    (Full docstring unchanged — see previous version.)
+
+    NEW: also accepts a ccomp child whose ROOT is a participle (VBN/VBG)
+    or adjective.  spaCy's small model sometimes parses "remained
+    convinced that..." with "convinced" as ccomp rather than xcomp;
+    this catches that variant.
+    """
+    for child in verb_tok.children:
+        if child.dep_ in {"acomp", "oprd", "attr"}:
+            return True
+        if child.dep_ == "xcomp" and child.pos_ in {"ADJ", "VERB", "AUX"}:
+            return True
+        if child.dep_ == "ccomp" and (child.tag_ in {"VBN", "VBG"}
+                                       or child.pos_ == "ADJ"):
+            return True
+    return False
 
 
 def _in_hyphen_compound(doc: Doc, i: int) -> bool:
@@ -455,6 +584,333 @@ def _debug_print_stage(name: str, was_applied: bool,
     print(f"==> {name} ({status}){bang}")
     print(f"    {_format_chunks_debug(chunks)}")
 
+# =============================================================================
+# RESULT-CLAUSE INTENSIFIERS  (Family 6 — "so X that Y", "more X than Y")
+#
+# Words that, when paired with a downstream connector ("that", "than",
+# "to"), form a result-clause construction whose downstream payload is
+# the reveal.
+#
+# Patterns gated by these intensifiers:
+#   • "so" + ADJ/ADV + "that"      → split AFTER "that"
+#   • "such" + (DET) + NOUN + "that" → split AFTER "that"
+#   • "more/less/fewer" + ... + "than" → split AFTER "than"
+#   • "too" + ADJ + "to"           → split AFTER "to"
+#   • ADJ + "enough" + "to"        → split AFTER "to"
+#
+# Without an intensifier, the connector is not a result-clause introducer:
+#   "the man that left"   ("that" is WDT relative, not SCONJ)
+#   "I want to leave"     ("to" is plain infinitive, not result)
+#   "the book that I read" (no intensifier upstream)
+# =============================================================================
+
+# Intensifiers that, paired with "that", introduce a result clause.
+RESULT_THAT_INTENSIFIERS = {"so", "such"}
+
+# Intensifiers that, paired with "than", introduce a comparison.
+# (RESULT_THAN comparatives also include JJR/RBR tags — handled
+# structurally, not by this set.)
+RESULT_THAN_INTENSIFIERS = {"more", "less", "fewer"}
+
+# Intensifiers that, paired with "to + VERB", introduce a result.
+RESULT_TO_INTENSIFIERS = {"too", "enough"}
+
+# Combined for fast membership check
+ALL_RESULT_INTENSIFIERS = (RESULT_THAT_INTENSIFIERS
+                            | RESULT_THAN_INTENSIFIERS
+                            | RESULT_TO_INTENSIFIERS)
+
+# Lookback window — how far back to search for an intensifier from the
+# connector token.  6 tokens covers patterns like
+# "so well preserved that..." (3 tokens between "so" and "that").
+RESULT_INTENSIFIER_LOOKBACK = 6
+
+
+# =============================================================================
+# SPATIAL PREPOSITION SETS  (Family 5 — "X moves/sits/extends through Y")
+#
+# Prepositions whose object NP is a visual locative or trajectory reveal.
+# Distinguishes "spatial-reveal" preps from "qualifier" preps:
+#
+#   • SPATIAL preps open into rich locative / directional NPs that paint
+#     a visual ("through heat haze for absurd distances").  These earn
+#     a split AFTER the prep when the subtree is substantial.
+#
+#   • QUALIFIER preps almost always bind tightly to their head NP
+#     ("of India", "with care", "for fun", "as a child") and should NOT
+#     be split after.  These overlap with PROMISCUOUS_PREPS.
+#
+# Notes on tricky members:
+#   • "around" — spatial usually, but also approximative ("around 40 years")
+#     which spaCy tags as a quantmod / advmod, not an ADP.  The ADP-pos
+#     check filters that out.
+#   • "over" — spatial AND temporal AND "about" sense.  We accept all,
+#     since they all open into rich subtrees ("over the years",
+#     "over the hill").
+#   • "before / after / during / since / until" — primarily temporal,
+#     but visually-rich temporal reveals ("during one temporary version
+#     of the map") still benefit from a split.  Included.
+# =============================================================================
+
+# Locative / static-position prepositions.
+SPATIAL_LOCATIVE_PREPS = {
+    "in", "on", "at", "under", "beneath", "below", "above", "over",
+    "behind", "between", "among", "amongst", "amid", "amidst",
+    "around", "near", "beside", "inside", "outside", "within",
+    "throughout", "against", "atop", "upon", "underneath",
+}
+
+# Directional / trajectory prepositions.
+SPATIAL_DIRECTIONAL_PREPS = {
+    "into", "onto", "through", "across", "along", "past",
+    "toward", "towards", "beyond", "off", "via",
+}
+
+# Temporal prepositions — often qualifier-flavored, but accepted when
+# subtree is rich enough.
+SPATIAL_TEMPORAL_PREPS = {
+    "during", "since", "until", "till", "before", "after", "while",
+}
+
+ALL_SPATIAL_PREPS = (SPATIAL_LOCATIVE_PREPS
+                     | SPATIAL_DIRECTIONAL_PREPS
+                     | SPATIAL_TEMPORAL_PREPS)
+
+# Tunables for Family 5
+SPATIAL_PREP_SUBTREE_MIN_NOUNS = 2     # nouns required in subtree
+SPATIAL_PREP_SENT_MIN_TOKENS   = 8    # sentence length floor
+SPATIAL_PREP_LEAD_MIN          = 3     # content tokens before the prep
+
+
+# =============================================================================
+# PERCEPTION / COGNITION LEMMA SETS  (Family 4 — "X sees/finds/knows Y")
+#
+# Verbs whose dobj OR ccomp carries the reveal payload — what was seen,
+# found, realized, claimed, suggested.  Structurally similar to Families
+# 2 and 3 but accepts BOTH dobj-style ("noticed the stain") and
+# ccomp-style ("noticed that he was late") complements.
+#
+# Sub-families grouped by semantic role:
+# =============================================================================
+
+# Perceive — direct sensory perception.
+PERCEPTION_SEE_LEMMAS = {
+    "see", "spot", "notice", "observe", "witness", "glimpse",
+    "perceive", "detect",
+}
+
+# Find — discovery / encounter.
+PERCEPTION_FIND_LEMMAS = {
+    "find", "discover", "uncover", "unearth", "encounter",
+}
+
+# Realize — cognitive arrival.
+PERCEPTION_REALIZE_LEMMAS = {
+    "realize", "realise", "recognize", "recognise",
+    "understand", "grasp", "comprehend",
+}
+
+# Think — opinion / supposition.
+PERCEPTION_THINK_LEMMAS = {
+    "think", "believe", "suspect", "assume", "suppose", "reckon",
+    "imagine", "guess",
+}
+
+# Know / mean / imply — knowledge & signification.
+PERCEPTION_KNOW_LEMMAS = {
+    "know", "mean", "signify", "imply", "indicate", "suggest",
+}
+
+# Reveal — disclosure verbs (often the reveal IS the punchline).
+PERCEPTION_REVEAL_LEMMAS = {
+    "reveal", "show", "demonstrate", "expose", "disclose",
+}
+
+# Say — speech-act introducers.
+PERCEPTION_SAY_LEMMAS = {
+    "say", "claim", "argue", "declare", "announce", "report",
+    "state", "mention", "admit", "confess",
+}
+
+ALL_PERCEPTION_LEMMAS = (PERCEPTION_SEE_LEMMAS
+                         | PERCEPTION_FIND_LEMMAS
+                         | PERCEPTION_REALIZE_LEMMAS
+                         | PERCEPTION_THINK_LEMMAS
+                         | PERCEPTION_KNOW_LEMMAS
+                         | PERCEPTION_REVEAL_LEMMAS
+                         | PERCEPTION_SAY_LEMMAS)
+
+
+# =============================================================================
+# CREATION LEMMA SETS  (Family 3 — "X produced/created/built Y")
+# 
+# Verbs whose direct-object subtree IS the visual reveal — what was made,
+# built, designed, formed, or transformed.  Same structural pattern as
+# Family 2 (possession): verb + substantial dobj → split AFTER verb.
+# 
+# The differentiator from Family 2: creation verbs describe an ACTION
+# that produces the object, where possession verbs describe a STATE of
+# having it.  Structurally, the split logic is identical — both rely on
+# _is_substantial_dobj.  We keep them as separate rules for clarity and
+# so they can be tuned independently if needed.
+# 
+# Excluded by design:
+#   • "make" — too ambiguous: causative ("make him cry"), idiomatic
+#     ("make sense"), and creation ("make a chair") all take dobj-like
+#     structures.  The causative/idiomatic uses dominate by frequency;
+#     adding "make" would over-fire.  If you want to revisit later, the
+#     disambiguator would be: dobj is NOT a PRON, NOT an "oprd"-taking
+#     pattern, AND dobj subtree has ≥1 modifier.
+#   • "grow" — could be cultivation ("grew tomatoes") but also copular
+#     ("grew tired"), already in Family 1's COPULA_BECOMING set.
+#   • "form" — same conflict: "form a circle" (creation) vs "crystals
+#     form quickly" (intransitive becoming).
+#   • "cast" — too ambiguous: cast a vote / cast iron / cast a shadow.
+# =============================================================================
+
+# Production / manufacture.
+CREATION_PRODUCE_LEMMAS = {
+    "produce", "manufacture", "generate", "fabricate", "yield",
+}
+
+# Building / construction.
+CREATION_BUILD_LEMMAS = {
+    "build", "construct", "assemble", "erect", "raise",
+}
+
+# Pure creation (bringing into existence).
+CREATION_CREATE_LEMMAS = {
+    "create", "invent", "conceive", "establish", "found", "launch",
+    "introduce",
+}
+
+# Crafting / shaping (hands-on creation).
+CREATION_CRAFT_LEMMAS = {
+    "craft", "shape", "sculpt", "mold", "mould", "forge",
+}
+
+# Design / development.
+CREATION_DESIGN_LEMMAS = {
+    "design", "develop", "devise", "engineer", "pioneer", "architect",
+}
+
+# Causation / triggering — reveals what was caused or made possible.
+CREATION_CAUSE_LEMMAS = {
+    "cause", "trigger", "spark", "prompt", "drive",
+}
+
+# Enabling — reveals what was made possible.
+CREATION_ENABLE_LEMMAS = {
+    "enable", "allow", "permit", "let",
+}
+
+ALL_CREATION_LEMMAS = (CREATION_PRODUCE_LEMMAS
+                       | CREATION_BUILD_LEMMAS
+                       | CREATION_CREATE_LEMMAS
+                       | CREATION_CRAFT_LEMMAS
+                       | CREATION_DESIGN_LEMMAS
+                       | CREATION_CAUSE_LEMMAS
+                       | CREATION_ENABLE_LEMMAS)
+
+
+# =============================================================================
+# POSSESSION LEMMA SETS  (Family 2 — "X has/owns/contains/lacks Y")
+#
+# Verbs whose direct-object subtree is the reveal payload.  Hardcoded
+# lemma sets (small closed-ish classes), but each verb's "is this a
+# reveal use" decision is fully structural:
+#   • verb has a dobj
+#   • dobj subtree is "substantial" (see _is_substantial_dobj)
+#   • verb's own dep is NOT aux/auxpass (filters perfect-aspect "have")
+#
+# Excluded by design:
+#   • hold, carry, bear — too ambiguous between contain-sense and
+#     transport/grip-sense; both take dobj so structural disambiguation
+#     isn't reliable.
+#   • want — desire-sense vs lack-sense too overlapping.
+# =============================================================================
+
+# Core possession.  "have" is the trickiest because it doubles as perfect-
+# aspect auxiliary; the dep != aux check filters that out.
+POSSESSION_CORE_LEMMAS = {"have", "own", "possess"}
+
+# Containment verbs.
+POSSESSION_CONTAIN_LEMMAS = {
+    "contain", "include", "comprise", "encompass",
+}
+
+# Featuring / providing verbs.
+POSSESSION_FEATURE_LEMMAS = {
+    "feature", "boast", "offer", "provide", "present",
+}
+
+# Negative possession — often a punchline reveal.
+POSSESSION_NEGATIVE_LEMMAS = {
+    "lack", "miss", "need", "require",
+}
+
+# Hidden-containment.
+POSSESSION_HIDDEN_LEMMAS = {
+    "harbor", "harbour", "house",
+}
+
+ALL_POSSESSION_LEMMAS = (POSSESSION_CORE_LEMMAS
+                         | POSSESSION_CONTAIN_LEMMAS
+                         | POSSESSION_FEATURE_LEMMAS
+                         | POSSESSION_NEGATIVE_LEMMAS
+                         | POSSESSION_HIDDEN_LEMMAS)
+
+
+# =============================================================================
+# COPULA LEMMA SETS  (Family 1 — linking verbs / "X is/looks/becomes Y")
+# 
+# Closed sets of linking-verb lemmas grouped by sub-family.  The lemma set
+# is hardcoded because copulas form a CLOSED CLASS — but the per-token
+# decision of "is this copular here?" is fully structural via dep labels
+# (_is_copular_use).  Hardcoded lemma → NLP disambiguator → fire/skip.
+# =============================================================================
+
+# "be" group — the only sub-family that REQUIRES an intensifier or
+# substantial complement to trigger a reveal split.  Bare "is + ADJ"
+# does NOT split — "is happy", "is simple", "is busy" stay whole.
+COPULA_BE_LEMMAS = {"be"}
+
+# Sensory copulas — perception-based linking verbs.  Fire even on a
+# bare ADJ complement because the verb itself carries reveal weight.
+# "looks microscopic" splits at "looks |".
+COPULA_SENSORY_LEMMAS = {
+    "look", "sound", "feel", "taste", "smell", "seem", "appear",
+}
+
+# Becoming copulas — transformation linking verbs.  Disambiguator
+# blocks transitive uses ("got a letter", "turned the wheel").
+COPULA_BECOMING_LEMMAS = {
+    "become", "get", "grow", "turn", "go", "come", "fall", "run",
+}
+
+# Staying copulas — persistence linking verbs.
+COPULA_STAYING_LEMMAS = {
+    "remain", "stay", "keep", "continue",
+}
+
+# Judgment / verdict copulas.
+COPULA_JUDGMENT_LEMMAS = {
+    "prove",
+}
+
+# "Strong" copulas — fire on a bare ADJ complement (no intensifier needed).
+STRONG_COPULA_LEMMAS = (COPULA_SENSORY_LEMMAS
+                        | COPULA_BECOMING_LEMMAS
+                        | COPULA_STAYING_LEMMAS
+                        | COPULA_JUDGMENT_LEMMAS)
+
+# Full union — every lemma the copula rule recognises.
+ALL_COPULA_LEMMAS = COPULA_BE_LEMMAS | STRONG_COPULA_LEMMAS
+
+# Negation tokens — when one immediately follows a copula, the split
+# should land AFTER the negation so the contraction reads as one unit:
+# "isn't | really big"  not  "is | n't really big"
+NEGATION_TOKENS = {"n't", "not", "never"}
 
 # Lemma set for "weak" verbs that shouldn't qualify a chunk as visualisable
 # on their own — copulas and similar functional verbs.  A chunk containing
@@ -506,39 +962,29 @@ WEAK_ADJ_LEMMAS = {
 
 
 def _has_visualisable_content(doc: Doc, lo: int, hi: int) -> bool:
-    """True if the span has at least one tangible/concrete content token.
-
-    A token is "visualisable" when:
-      • it's a NOUN or PROPN (you can see a thing/place/person), OR
-      • it's a NUM (you can see a number), OR
-      • it's an ADJ whose lemma isn't a quantifier-ish weak word
-        ("many", "few", "some", "such", "other"...), OR
-      • it's a VERB whose lemma isn't a copula/auxiliary-like ("is", "be",
-        "have", "do", "get", "seem", "become"…) — these are connectives
-        that don't carry independent visual content.
-
-    Function words alone (DET / PRON / SCONJ / CCONJ / PART / ADP / AUX /
-    interjections / ADV) do NOT make a chunk visualisable.
-
-    Examples:
-      "that many of"     → False (PRON + weak-ADJ + ADP)
-      "It's"             → False (PRON + copula AUX)
-      "which is the"     → False (PRON + copula + DET)
-      "the patient dog"  → True  (NOUN)
-      "ran fast"         → True  (concrete VERB)
-      "was running"      → True  (running is VBG/VERB with lemma "run")
-      "abstract."        → True  (real ADJ)
     """
+    True if the span has at least one tangible/concrete content token,
+    OR the span is long enough (≥4 non-punct tokens) to read as a
+    legitimate line even without concrete content tokens.
+
+    (Existing docstring continues...)
+
+    NEW: clauses ≥4 non-punct tokens are accepted regardless of POS
+    density.  This handles relative/wh-clauses like "what had to be done",
+    "that the boss had quit", which are functionally reveal-worthy even
+    though their POS density is weak (PRON + AUX + AUX + VBN).
+    """
+    # Length-based acceptance for substantial spans
+    ntok = sum(1 for t in doc[lo:hi] if not t.is_punct and not t.is_space)
+    if ntok >= 4:
+        return True
+
     for t in doc[lo:hi]:
         if t.pos_ in {"NOUN", "PROPN", "NUM"}:
             return True
         if t.pos_ == "ADJ" and t.lemma_.lower() not in WEAK_ADJ_LEMMAS:
             return True
         if t.pos_ == "VERB":
-            # Strict: verb counts as visualisable ONLY if its lemma AND its
-            # text are both outside the weak-form sets.  Clitic contractions
-            # like "'re", "'s", "'ve" sometimes have non-canonical lemmas in
-            # spaCy, so the lemma-only check would miss them.
             lemma_weak = t.lemma_.lower() in WEAK_VERB_LEMMAS
             text_weak  = t.text.lower() in WEAK_VERB_FORMS
             if not (lemma_weak or text_weak):
@@ -1226,6 +1672,11 @@ def rule_noun_lists(doc: Doc) -> Set[int]:
     for a, b in zip(chunks[:-1], chunks[1:]):
         between = doc[a.end:b.start]
 
+        # NEW guard goes HERE — first thing in the loop:
+        sent_ntok = sum(1 for x in b.root.sent if not x.is_punct)
+        if sent_ntok <= 9:
+            continue
+
         # 1) verb between → different clauses
         if any(t.pos_ == "VERB" for t in between):
             continue
@@ -1315,17 +1766,25 @@ def rule_bare_noun_lists(doc: Doc, splits: Set[int]) -> Set[int]:
         out.add(i)
     return out
 
-
 # -----------------------------------------------------------------------------
 # RULE 17 — LIST-CLOSING QUANTIFIERS
 # Split BEFORE "all" / "both" / "each" / "every" when they immediately follow
 # a noun — typical of summary-after-list constructions.
+#
+# TIGHTENED: requires sentence ≥ 10 non-punct tokens.  In shorter sentences,
+# "every" / "all" after a noun is usually starting a qualifier NP, not
+# closing a list.  Catches:
+#   "She looks at the sky every evening."   (7 tokens)  → stays whole
+#   "I see them all the time."              (6 tokens)  → stays whole
 # -----------------------------------------------------------------------------
 def rule_list_quantifiers(doc: Doc) -> Set[int]:
     out = set()
     for t in doc:
         if t.lower_ in {"all", "both", "each", "every"} and t.i > 0 \
                 and doc[t.i - 1].pos_ in {"NOUN", "PROPN"}:
+            sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+            if sent_ntok < 10:
+                continue
             out.add(t.i)
     return out
 
@@ -1375,6 +1834,13 @@ def rule_entity_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         # (vi) skip plain-numeric single-tokens — they're usually measurements
         if len(ent) == 1 and ent.label_ in NUMERIC_NO_REVEAL:
             continue
+        # (vi') NEW: skip single-token DATE / TIME / MONEY entities too.
+        # A bare year ("1994"), time ("3pm"), or amount ("$100") at the
+        # end of a sentence is almost always a qualifier, not a reveal.
+        # Multi-token date reveals ("40 million years ago") still fire.
+        if len(ent) == 1 and ent.label_ in {"DATE", "TIME", "MONEY"}:
+            continue
+
         # (iv) compound modifier ("OpenAI carburettor")
         if len(ent) == 1 and doc[ent_start].dep_ == "compound":
             continue
@@ -1399,21 +1865,48 @@ def rule_entity_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         prev_tok = doc[split_at - 1] if split_at > 0 else None
         if len(ent) == 1 and prev_tok is not None and prev_tok.pos_ == "ADP":
             continue
-        # (ii') multi-token numeric/measure entity preceded by ADP
-        # (e.g. "in the 19th century", "for 40 years", "by 1946") — these
-        # are qualifiers, not reveals.  Only blocked in shorter sentences;
-        # longer sentences have enough build-up to justify a reveal.
+
+        # (ii') Multi-token entity preceded by ADP and not in a long
+        # sentence with strong build-up → qualifier PP, not reveal.
+        # Covers DATE/TIME/MONEY/CARDINAL plus generic terminal entities
+        # in short-to-medium sentences.
         sent_ntok_here = sum(1 for x in doc[split_at].sent if not x.is_punct)
-        if (ent.label_ in NUMERIC_QUALIFIER_ENTS
-                and prev_tok is not None and prev_tok.pos_ == "ADP"
-                and sent_ntok_here < 12):
-            # However: if the ADP is preceded by another ADP-PP chain (e.g.
-            # "Built in Manhattan / in the 19th century"), the second PP is
-            # the qualifier — still skip.  This is the default branch.
+        if prev_tok is not None and prev_tok.pos_ == "ADP":
+            # Strict block: numeric/measure entities at any sentence length
+            # under 12 tokens.
+            if ent.label_ in NUMERIC_QUALIFIER_ENTS and sent_ntok_here < 12:
+                continue
+            # Broader block: ANY entity (including LOC/GPE/PERSON) in a
+            # short sentence ≤ 10 tokens — these are terminal qualifiers,
+            # not reveals.  Catches "to the left" if "the left" gets an
+            # entity tag, "every evening", "since 1994", etc.
+            if sent_ntok_here <= 10:
+                continue
+
+        # (ii'') Stronger ADP-precedence guard for short-to-medium sentences.
+        # Any entity preceded by an ADP in a sentence ≤10 non-punct tokens
+        # is a terminal qualifier PP, not a reveal.  Covers:
+        #   "since 1994"     (DATE,    10 tokens)
+        #   "for the worst case"  (entity-tagged "worst case", short sent)
+        #   "to the left"    (LOC-ish entity, short sent)
+        if prev_tok is not None and prev_tok.pos_ == "ADP" and sent_ntok_here <= 11:
             continue
+
         # (v) appositive — preceded by a NOUN/PROPN ("the technician John Ford")
         if prev_tok is not None and prev_tok.pos_ in {"NOUN", "PROPN"}:
             continue
+
+        # (v') Terminal short qualifier PP — if the entity sits at the end
+        # of a short-to-medium sentence (≤10 tokens) and is preceded by an
+        # ADP whose head is a NOUN/VERB earlier in the sentence, treat as
+        # qualifier not reveal.  Catches:
+        #   "She looks at the sky every evening."   ("every evening" = DATE)
+        #   "This dataset contains every transaction since 1994."
+        #   "The plan lacks an exit strategy for the worst case."
+        sent_ntok_here2 = sum(1 for x in doc[split_at].sent if not x.is_punct)
+        if sent_ntok_here2 <= 10 and prev_tok is not None and prev_tok.pos_ == "ADP":
+            continue
+
         # SPECIAL: if preceded by an introducer adverb ("specifically Kerala",
         # "namely Smith", "especially China"), always reveal — these adverbs
         # explicitly signal an upcoming named reveal.
@@ -1452,31 +1945,25 @@ def rule_numeric_intro_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
     out = set()
     for t in doc:
         if not t.like_num:
-            print("1")
             continue
         # don't split mid-entity, UNLESS it's an approximator + number date combo
         if t.ent_iob_ == "I":
             prev_tok = doc[t.i - 1] # ensure prev_tok is defined before this check
             if not (prev_tok.ent_iob_ == "B" and prev_tok.pos_ in {"ADP", "ADV"}):
-                print("1.5")
                 continue
         # must be near sentence start (within first ~5 tokens)
         if t.i - t.sent.start > 5:
-            print("2")
             continue
         # need at least one preceding token in this sentence
         if t.i == t.sent.start:
-            print("3")
             continue
         prev_tok = doc[t.i - 1]
         # previous token should be ADP/ADV (the approximator)
         if prev_tok.pos_ not in {"ADP", "ADV"}:
-            print("5")
             continue
         # sentence must be long enough — avoid splitting short sentences
         sent_ntok = sum(1 for x in t.sent if not x.is_punct)
         if sent_ntok < 12:
-            print("6")
             continue
         # must be inside a sentence-initial adverbial: comma within next
         # ~6 tokens (stop searching at a hard-punct sentence boundary)
@@ -1488,12 +1975,10 @@ def rule_numeric_intro_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
             if doc[k].text in HARD_PUNCT:
                 break
         if not has_following_comma:
-            print("7")
             continue
         # need at least 2 tokens of lead
         prev = _prev_split(splits | out, t.i)
         if t.i - prev < 2:
-            print("k")
             continue
         out.add(t.i)
     return out
@@ -1813,10 +2298,17 @@ def rule_adjective_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
 #   "scattered | 15 meters long"
 # Detection: a clause-ending span of [NUM/QUANTITY] + NOUN preceded by a
 # substantial lead-in ending in a verb/PP.
+#
+# TIGHTENED: requires sentence ≥ 10 non-punct tokens.  Without this guard,
+# short sentences with terminal DATE/TIME entities ("She looks at the sky
+# every evening.") over-split because spaCy tags "every evening" as DATE.
 # -----------------------------------------------------------------------------
 def rule_numeric_phrase_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
     out = set()
     for sent in doc.sents:
+        sent_ntok = sum(1 for x in sent if not x.is_punct)
+        if sent_ntok < 10:
+            continue
         # walk forward to find a NUM at near-end
         for t in sent:
             if not t.like_num and t.ent_type_ not in {"CARDINAL", "QUANTITY", "DATE"}:
@@ -1827,7 +2319,7 @@ def rule_numeric_phrase_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
             tokens_after = sent.end - t.i - 1
             if tokens_after > 6:
                 continue
-                
+
             # Find the true start of this numeric phrase/chunk so we don't
             # split mid-entity (e.g. inside "the 19th century").
             split_at = t.i
@@ -1835,28 +2327,24 @@ def rule_numeric_phrase_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
             if chunk is not None:
                 split_at = chunk.start
             elif t.ent_iob_ in {"B", "I"}:
-                # walk back to entity start
                 k = t.i
                 while k > sent.start and doc[k-1].ent_iob_ == "I" and doc[k-1].ent_type_ == t.ent_type_:
                     k -= 1
                 split_at = k
-                
+
             if split_at == 0 or split_at == sent.start:
                 continue
-                
-            # what's directly before? If it's a NOUN/VERB/ADJ/ADP ending a meaningful
-            # phrase, we split before the numeric phrase.
+
             prev_tok = doc[split_at - 1] if split_at > 0 else None
             if prev_tok is None:
                 continue
             if prev_tok.pos_ not in {"NOUN", "VERB", "ADJ", "PART", "ADP"}:
                 continue
-            # require substantial lead-in
             prev = _prev_split(splits | out, split_at)
             if split_at - prev < 5:
                 continue
             out.add(split_at)
-            break  # one per sentence
+            break
     return out
 
 
@@ -2128,6 +2616,13 @@ def rule_participle_split(doc: Doc, splits: Set[int]) -> Set[int]:
         if t.tag_ not in {"VBG", "VBN"}:
             continue
         if t.pos_ not in {"VERB", "AUX"}:
+            continue
+        # NEW: also skip when the participle is functioning as an adjective
+        # modifier (amod) — even if spaCy tagged it pos=VERB.  These are
+        # not introducing a new visual reveal; they're modifying a noun.
+        # Catches "a strange recurring dream", "a missing piece",
+        # "the burning question", etc.
+        if t.dep_ in {"amod", "compound"}:
             continue
         sent_ntok = sum(1 for x in t.sent if not x.is_punct)
         if sent_ntok < 9:
@@ -2614,6 +3109,16 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
     for t in doc:
         if t.pos_ != "ADP":
             continue
+
+        # NEW: skip when this PP qualifies a dobj of a possession verb
+        head = t.head
+        if head.dep_ in {"dobj", "obj"}:
+            verb_head = head.head
+            if (verb_head.pos_ in {"VERB", "AUX"}
+                    and verb_head.lemma_.lower() in ALL_POSSESSION_LEMMAS
+                    and verb_head.dep_ not in {"aux", "auxpass"}):
+                continue
+
             
         # COMPARATIVE REVEAL:
         # If the ADP is "than" and its head is an ADJ/ADV, split AFTER "than"
@@ -2667,9 +3172,24 @@ def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
         # EXCEPTION: Allow terminal numeric/temporal reveals even in short sentences
         # e.g. "Built in Manhattan in the 19th century."
         pobj_subtree = list(pobj.subtree)
-        has_numeric = any(x.like_num or x.ent_type_ in {"DATE", "TIME", "CARDINAL", "QUANTITY", "PERCENT", "MONEY"} for x in pobj_subtree)
-        if sent_ntok <= 8 and not (is_terminal_pp and has_numeric):
-            continue
+        has_numeric = any(
+            x.like_num
+            or x.ent_type_ in {"DATE", "TIME", "CARDINAL",
+                               "QUANTITY", "PERCENT", "MONEY"}
+            for x in pobj_subtree
+        )
+        # Sentence-length gating, tightened:
+        #   • Numeric terminal: ≥11 tokens (was 9)
+        #   • Default:          ≥12 tokens (was 11)
+        # Keeps medium-short sentences from over-splitting on terminal
+        # qualifier PPs like "from at least four species", "for the
+        # worst case", "since 1994", "to the left".
+        if is_terminal_pp and has_numeric:
+            if sent_ntok < 11:
+                continue
+        else:
+            if sent_ntok < 12:
+                continue
             
         # Don't split if it's a blocked prep like "of"
         if t.lower_ in PROMISCUOUS_PREPS:
@@ -2757,6 +3277,641 @@ def rule_sconj_hang(doc: Doc, splits: Set[int]) -> Set[int]:
     return out
 
 
+# -----------------------------------------------------------------------------
+# RULE 42 — COPULA REVEAL  (Family 1: "X is/looks/becomes Y" disclosure split)
+#
+# Splits at a copular/linking verb when the right side carries a substantive
+# REVEAL.  Eight patterns total (split position depends on which fires):
+#
+#   (a)  is + DET + NOUN         → "is | the quiet just before sunrise"
+#   (a') is + NOUN/PROPN         → "became | a doctor"        (non-be only)
+#   (b)  is + WH + clause        → "is | how calm everyone seems"
+#   (c)  is + PRON + VERB        → "is | we never had a plan"
+#   (d)  is + VBG                → "is | remaining focused"
+#   (e)  is + (ADV+) + ADJ       → "is really | big"          (be needs ADV)
+#                                   "looks | microscopic"     (non-be doesn't)
+#   (f)  is + JJR | + ADJ + than → "is | better than expected"  (be only)
+#   (g)  is + SCONJ "that"       → "is | that we never planned"
+#
+# NEW — (h)  is + [complement] + "that"/WH + clause
+#       Splits BEFORE the post-complement clause-introducer.  Triggered when
+#       a copula is followed by an ADJ / NOUN / PROPN / VBN / VBG complement
+#       and then a clause-introducing SCONJ "that" or WH-word.  Takes
+#       PRIORITY over (a-g) — if (h) fires, the post-copula split is
+#       suppressed so we don't fragment the complement.
+#       Examples:
+#         "It became obvious | that he was right"
+#         "It became clear | what had to be done"
+#         "She remained convinced | that the answer was wrong"
+#         "It became known | that the boss had quit"  (VBN complement)
+#         "The point is obvious | that no one is listening"  (be variant)
+#
+# NEGATION:
+#   "isn't really big" → split AFTER "n't":
+#     "The empire state building isn't | really big."
+#
+# Skipped when:
+#   • verb has dep aux/auxpass — progressive, perfect, passive
+#   • non-be copula in non-copular use (transitive / perceptive)
+#   • bare 'be + ADJ' with no intensifier / comparative ("is simple")
+#   • lead-in has zero content tokens
+# -----------------------------------------------------------------------------
+def rule_copula_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        lemma = t.lemma_.lower()
+        if lemma not in ALL_COPULA_LEMMAS:
+            continue
+        if t.pos_ not in {"AUX", "VERB"}:
+            continue
+        if t.dep_ in {"aux", "auxpass"}:
+            continue
+
+        # Need at least 1 token of lead-in (even just a PRON subject)
+        if t.i == t.sent.start:
+            continue
+
+        if t.i + 1 >= len(doc):
+            continue
+        nxt = doc[t.i + 1]
+        if nxt.is_punct:
+            continue
+
+        # Walk past ADV chain + negation to the trigger token.
+        k = t.i + 1
+        adv_chain_len = 0
+        neg_offset = 0
+        while k < len(doc):
+            tk = doc[k]
+            if tk.pos_ == "ADV":
+                adv_chain_len += 1
+                k += 1
+            elif tk.dep_ == "neg" or tk.lower_ in NEGATION_TOKENS:
+                neg_offset += 1
+                k += 1
+            else:
+                break
+        if k >= len(doc) or doc[k].is_punct:
+            continue
+        trigger = doc[k]
+
+        # --- PATTERN (h) PRIORITY CHECK ----------------------------------
+        # Runs BEFORE _is_copular_use because the pattern itself is the
+        # disambiguator: copula-lemma + complement + "that"/WH-clause is
+        # overwhelmingly copular regardless of how spaCy parses the dep.
+        # Catches "She remained convinced that..." even when spaCy parses
+        # "convinced" with a non-standard dep label.
+        post_complement_split = None
+        complement_eligible = (trigger.pos_ in {"ADJ", "NOUN", "PROPN"}
+                               or trigger.tag_ in {"VBN", "VBG"})
+        if complement_eligible:
+            j = k + 1
+            while j < len(doc) and (
+                doc[j].pos_ in {"ADJ", "ADV", "NOUN", "PROPN", "DET"}
+                or doc[j].tag_ in {"VBN", "VBG"}
+            ):
+                j += 1
+            if j < len(doc) and not doc[j].is_punct:
+                tk = doc[j]
+                is_that_clause = (tk.pos_ == "SCONJ" and tk.lower_ == "that")
+                is_wh_clause = (tk.tag_ in WH_TAGS)
+                if is_that_clause or is_wh_clause:
+                    if _content_count(doc, t.i, j) >= 1:
+                        post_complement_split = j
+
+        if post_complement_split is not None:
+            # Split AFTER "that" / WH-word so the connector clings backward
+            # as a cliffhanger.  Consistent with rule_clause_starters' SCONJ
+            # handling and your style guide.
+            out.add(post_complement_split + 1)
+            continue
+
+        # For non-be copulas in patterns (a-g), require copular use.
+        is_be = (lemma == "be")
+        if not is_be and not _is_copular_use(t):
+            continue
+
+        # Patterns (a-g) require full content lead-in.
+        prev = _prev_split(splits | out, t.i)
+        lead_content = _content_count(doc, prev, t.i)
+        if lead_content < 1:
+            continue
+
+        should_split = False
+
+        if trigger.tag_ in WH_TAGS:
+            should_split = True
+        elif trigger.pos_ == "SCONJ" and trigger.lower_ == "that":
+            should_split = True
+        elif trigger.pos_ == "DET":
+            for j in range(k + 1, min(k + 7, len(doc))):
+                if doc[j].pos_ in {"NOUN", "PROPN"}:
+                    should_split = True
+                    break
+                if doc[j].text in HARD_PUNCT:
+                    break
+        elif trigger.pos_ == "PRON":
+            for j in range(k + 1, min(k + 5, len(doc))):
+                if doc[j].pos_ in {"VERB", "AUX"}:
+                    should_split = True
+                    break
+                if doc[j].text in HARD_PUNCT:
+                    break
+        elif trigger.tag_ == "VBG":
+            should_split = True
+        elif trigger.pos_ == "ADJ":
+            if is_be:
+                if adv_chain_len >= 1:
+                    should_split = True
+                else:
+                    is_comp = (trigger.tag_ == "JJR")
+                    if not is_comp:
+                        for j in range(k + 1, min(k + 6, len(doc))):
+                            if doc[j].lower_ == "than":
+                                is_comp = True
+                                break
+                            if doc[j].text in HARD_PUNCT:
+                                break
+                    if is_comp:
+                        should_split = True
+            else:
+                should_split = True
+        elif trigger.pos_ in {"NOUN", "PROPN"} and not is_be:
+            should_split = True
+
+        if should_split:
+            out.add(t.i + 1 + neg_offset)
+
+    return out
+
+
+
+# -----------------------------------------------------------------------------
+# RULE 43 — POSSESSION REVEAL  (Family 2: "X has/owns/contains Y" split)
+#
+# Splits AFTER a possession / containment / featuring / lacking verb when
+# the dobj carries a substantial reveal payload.  The dobj subtree IS the
+# reveal — what's owned, contained, featured, lacked, harbored.
+#
+# Covered sub-families:
+#   • CORE:        have, own, possess
+#   • CONTAINMENT: contain, include, comprise, encompass
+#   • FEATURING:   feature, boast, offer, provide, present
+#   • NEGATIVE:    lack, miss, need, require
+#   • HIDDEN:      harbor, harbour, house
+#
+# DISAMBIGUATION (NLP-driven):
+#   • "have" filtered when dep == aux (perfect aspect: "has walked")
+#   • "have/has/had to" infinitive filtered structurally
+#   • Verb must have a substantial dobj (_is_substantial_dobj)
+#   • Sentence must be ≥7 non-punct tokens — keeps tiny sentences whole
+#     ("I have a cat." = 4 tokens, stays one line)
+#
+# NEGATION HANDLING:
+#   Split lands AFTER negation:
+#     "doesn't have | the kind of network..."
+#     "lacks | a real exit strategy"  (no neg, but "lacks" itself is the reveal verb)
+#
+# Examples that FIRE:
+#   "Let's assume you have | great cycle paths and missing trains..."
+#   "She had | a strange recurring dream."
+#   "We own | three houses near the coast."
+#   "The cave harbors | thousands of bats."
+#   "The plan lacks | a real exit strategy."
+#   "Most cities are missing | the kind of dense bike network Amsterdam has."
+#   "The new policy provides | small teams with faster shipping cycles."
+#
+# Examples that DON'T FIRE:
+#   "I have walked for hours."          (have = perfect-aspect aux)
+#   "She has to leave by noon."         ("has to" infinitive)
+#   "I have it."                        (bare-pronoun dobj, not substantial)
+#   "The room has a chair."             (short sentence, < 7 tokens)
+# -----------------------------------------------------------------------------
+def rule_possession_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        lemma = t.lemma_.lower()
+        if lemma not in ALL_POSSESSION_LEMMAS:
+            continue
+        if t.pos_ not in {"VERB", "AUX"}:
+            continue
+        # Filter perfect-aspect / passive auxiliary uses
+        if t.dep_ in {"aux", "auxpass"}:
+            continue
+        # Filter "have/has/had to" infinitive (FROZEN_BIGRAMS handles the
+        # join elsewhere, but explicitly skip here too)
+        if t.i + 1 < len(doc) and doc[t.i + 1].lower_ == "to":
+            continue
+        # Must have a substantive direct-object reveal payload
+        if not _is_substantial_dobj(t):
+            continue
+        # Sentence must be long enough for the reveal to be visually useful
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 7:
+            continue
+        # Need at least 1 content token of lead-in
+        # — same logic as pattern (h) in rule_copula_reveal_split.
+        if t.i == t.sent.start:
+            continue
+        # Handle negation — split lands AFTER negation particles
+        neg_offset = 0
+        k = t.i + 1
+        while k < len(doc) and (doc[k].dep_ == "neg"
+                                or doc[k].lower_ in NEGATION_TOKENS):
+            neg_offset += 1
+            k += 1
+        split_pos = t.i + 1 + neg_offset
+        if split_pos >= len(doc):
+            continue
+        out.add(split_pos)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 44 — CREATION REVEAL  (Family 3: "X produced/built/created Y" split)
+# 
+# Splits AFTER a creation / production / transformation verb when its
+# direct-object subtree carries a substantial reveal.  The dobj IS the
+# reveal — what was produced, built, created, designed, caused.
+# 
+# Covered sub-families:
+#   • PRODUCE: produce, manufacture, generate, fabricate, yield
+#   • BUILD:   build, construct, assemble, erect, raise
+#   • CREATE:  create, invent, conceive, establish, found, launch, introduce
+#   • CRAFT:   craft, shape, sculpt, mold, forge
+#   • DESIGN:  design, develop, devise, engineer, pioneer, architect
+#   • CAUSE:   cause, trigger, spark, prompt, drive
+#   • ENABLE:  enable, allow, permit, let
+# 
+# DISAMBIGUATION:
+#   • Verb must be VERB pos (not auxiliary use)
+#   • Verb must NOT be in passive context (auxpass on a child)
+#   • Verb must have a substantial dobj (_is_substantial_dobj)
+#   • Sentence must be ≥8 non-punct tokens
+# 
+# Examples that FIRE:
+#   "Nature accidentally produced | calibration tools larger than cities."
+#   "Edison created | the first practical lightbulb in 1879."
+#   "The new policy enables | small teams to ship faster."
+#   "The collapse triggered | a chain reaction across three continents."
+#   "She designed | a deceptively simple interface."
+#   "They built | a fence around the property."
+#   "He invented | a device that detects pollution from satellites."
+# 
+# Examples that DON'T FIRE:
+#   "He produced a list."           (single-token dobj, not substantial)
+#   "The factory produces cars."    (5 tokens, < 8 sentence threshold)
+#   "I built it."                   (PRON dobj, not substantial)
+#   "She designed her own dress."   (short subtree without ADJ/multi-noun)
+# -----------------------------------------------------------------------------
+def rule_creation_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        lemma = t.lemma_.lower()
+        if lemma not in ALL_CREATION_LEMMAS:
+            continue
+        if t.pos_ != "VERB":
+            continue
+        # Filter aux uses (defensive — creation verbs rarely act as aux)
+        if t.dep_ in {"aux", "auxpass"}:
+            continue
+        # Filter passive constructions — in "was produced by X", the
+        # passive subject is the thing produced, not a substantial dobj.
+        # Detect by presence of auxpass among children OR dep == ROOT
+        # with no dobj but a nsubjpass.
+        has_auxpass = any(c.dep_ == "auxpass" for c in t.children)
+        if has_auxpass:
+            continue
+        # Must have a substantive direct-object reveal payload
+        if not _is_substantial_dobj(t):
+            continue
+        # Sentence must be long enough
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 8:
+            continue
+        # Need at least 1 token of lead-in (even just a PRON subject)
+        if t.i == t.sent.start:
+            continue
+        # Handle negation — split lands AFTER negation particles
+        neg_offset = 0
+        k = t.i + 1
+        while k < len(doc) and (doc[k].dep_ == "neg"
+                                or doc[k].lower_ in NEGATION_TOKENS):
+            neg_offset += 1
+            k += 1
+        split_pos = t.i + 1 + neg_offset
+        if split_pos >= len(doc):
+            continue
+        out.add(split_pos)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 45 — PERCEPTION REVEAL  (Family 4: "X saw/found/knew Y" split)
+#
+# Splits AFTER a perception / cognition / discovery / saying verb when
+# its complement carries a substantial reveal.  Accepts BOTH dobj-style
+# complements ("noticed the strange shape") and ccomp/xcomp clausal
+# complements ("noticed that he was late", "saw him leave").
+#
+# Covered sub-families:
+#   • SEE:     see, spot, notice, observe, witness, glimpse, perceive, detect
+#   • FIND:    find, discover, uncover, unearth, encounter
+#   • REALIZE: realize/realise, recognize/recognise, understand, grasp, comprehend
+#   • THINK:   think, believe, suspect, assume, suppose, reckon, imagine, guess
+#   • KNOW:    know, mean, signify, imply, indicate, suggest
+#   • REVEAL:  reveal, show, demonstrate, expose, disclose
+#   • SAY:     say, claim, argue, declare, announce, report, state,
+#              mention, admit, confess
+#
+# DISAMBIGUATION:
+#   • Verb must be VERB pos (not auxiliary use)
+#   • Verb must NOT be in passive context (auxpass child)
+#   • Verb must have a substantial complement (_has_substantial_complement)
+#   • Sentence must be ≥8 non-punct tokens
+#
+# NEGATION HANDLING:
+#   Split lands AFTER any negation particle, matching Families 2/3.
+#
+# CLAUSAL COMPLEMENT HANDLING:
+#   For ccomp complements introduced by "that"/WH (e.g. "noticed that...",
+#   "saw what..."), the split lands AFTER the introducer to match
+#   Pattern (h) in rule_copula_reveal_split — "that"/"what" clings
+#   backward as a cliffhanger.
+#
+# Examples that FIRE:
+#   "She noticed | the strange shape pressed into the snow."
+#   "He realized that | the answer had been there all along."
+#   "Scientists discovered | a previously unknown species deep in the cave."
+#   "The report claims that | the entire dataset is corrupted."
+#   "I suspect | something is wrong with the calibration."
+#   "She admitted | she'd never actually read the book."
+#   "They observed | thousands of stars across the southern sky."
+#   "He demonstrated how | the technique could be used in surgery."
+#
+# Examples that DON'T FIRE:
+#   "She saw it."                         (PRON dobj)
+#   "I know."                             (no complement)
+#   "He noticed the dog."                 (short sentence)
+#   "Birds were spotted in the garden."   (passive)
+#   "I think so."                         (so = ADV, no substantial complement)
+# -----------------------------------------------------------------------------
+def rule_perception_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        lemma = t.lemma_.lower()
+        if lemma not in ALL_PERCEPTION_LEMMAS:
+            continue
+        if t.pos_ != "VERB":
+            continue
+        if t.dep_ in {"aux", "auxpass"}:
+            continue
+        # Filter passive constructions
+        has_auxpass = any(c.dep_ == "auxpass" for c in t.children)
+        if has_auxpass:
+            continue
+        # Must have a substantial complement (dobj OR ccomp OR xcomp)
+        has_comp, comp_head = _has_substantial_complement(t)
+        if not has_comp:
+            continue
+        # Sentence must be long enough
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 8:
+            continue
+        # Need at least 1 token of lead-in
+        if t.i == t.sent.start:
+            continue
+        # Handle negation
+        neg_offset = 0
+        k = t.i + 1
+        while k < len(doc) and (doc[k].dep_ == "neg"
+                                or doc[k].lower_ in NEGATION_TOKENS):
+            neg_offset += 1
+            k += 1
+        # Determine split position.  For ccomp introduced by "that"/WH,
+        # split AFTER the introducer (cliffhanger pattern, matches
+        # Pattern (h) in rule_copula_reveal_split).  Otherwise split
+        # immediately after the verb (+ negation).
+        default_pos = t.i + 1 + neg_offset
+        split_pos = default_pos
+        if comp_head is not None and comp_head.dep_ == "ccomp":
+            # Walk from default_pos forward looking for "that" / WH-word
+            # introducing the ccomp.  Allow up to 2 tokens of slack.
+            for j in range(default_pos, min(default_pos + 3, len(doc))):
+                tk = doc[j]
+                if tk.pos_ == "SCONJ" and tk.lower_ == "that":
+                    split_pos = j + 1
+                    break
+                if tk.tag_ in WH_TAGS:
+                    split_pos = j + 1
+                    break
+        if split_pos >= len(doc):
+            continue
+        out.add(split_pos)
+    return out
+
+# -----------------------------------------------------------------------------
+# RULE 46 — SPATIAL PREP REVEAL  (Family 5: "X happens through/into/across Y")
+#
+# Splits AFTER a spatial / directional / temporal preposition whose object
+# subtree carries a substantive locative or trajectory reveal.  The "what
+# happens where" pattern that runs through descriptive prose.
+#
+# Covered preposition classes:
+#   • LOCATIVE:    in, on, at, under, over, above, behind, between, among,
+#                  around, near, inside, outside, within, throughout, against,
+#                  atop, upon, beneath, underneath
+#   • DIRECTIONAL: into, onto, through, across, along, past, toward(s),
+#                  beyond, off, via
+#   • TEMPORAL:    during, since, until, till, before, after, while
+#
+# Stay-out set (handled by other rules):
+#   of, with, for, about, as, like, than, per (PROMISCUOUS_PREPS / tight binders)
+#
+# DISAMBIGUATION (NLP-driven):
+#   • Token must be POS=ADP (filters approximator uses of "around")
+#   • Subtree must contain ≥ SPATIAL_PREP_SUBTREE_MIN_NOUNS nouns
+#   • Subtree must NOT contain a finite verb/aux (filters preposition-led
+#     relative clauses — those are handled by other rules)
+#   • Sentence must be ≥ SPATIAL_PREP_SENT_MIN_TOKENS tokens
+#   • Lead-in to prep must have ≥ SPATIAL_PREP_LEAD_MIN content tokens
+#   • Lead-in must contain at least one VERB/AUX (so we don't split
+#     mid-NP: "the cat in the box | on the table" — there's no VERB
+#     between, so the second "on" doesn't qualify as a reveal)
+#
+# Overlap with existing rules:
+#   This rule has overlap with rule_long_preps and rule_pp_intro_reveal.
+#   Both of those use generic subtree-size heuristics; this rule uses
+#   a curated whitelist + tighter structural gating, so it fires more
+#   precisely on intended spatial reveals.  When all three rules agree
+#   on a split position, the result is the same (deduplicated by set).
+#
+# Examples that FIRE:
+#   "Straight roads vanishing into | heat haze for absurd distances."
+#   "Marine fossils scattered through | regions of brutal aridity."
+#   "She traced her finger along | the spine of the old manuscript."
+#   "The bridge collapsed across | a ravine nearly four hundred feet deep."
+#   "Migration routes shift over | thousands of square miles of tundra."
+#   "Construction halted during | one of the worst storms in a century."
+#
+# Examples that DON'T FIRE:
+#   "He looked at the sky."             (short sentence)
+#   "She stood in the garden."          (short sentence, single-noun subtree)
+#   "Books about world history."        (about is tight binder, excluded)
+#   "Made of premium leather."          ("of" excluded)
+#   "Scattered through regions that are now brutally dry."
+#                                        (subtree contains verb 'are' — let
+#                                         rule_terminal_descriptor reveal
+#                                         "brutally dry" instead)
+# -----------------------------------------------------------------------------
+def rule_spatial_prep_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.pos_ != "ADP":
+            continue
+        if t.lower_ not in ALL_SPATIAL_PREPS:
+            continue
+        # Sentence-length gate
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < SPATIAL_PREP_SENT_MIN_TOKENS:
+            continue
+        # Subtree analysis: enough nouns, no finite verb/aux
+        subtree = list(t.subtree)
+        n_nouns = sum(1 for x in subtree if x.pos_ in {"NOUN", "PROPN"})
+        if n_nouns < SPATIAL_PREP_SUBTREE_MIN_NOUNS:
+            continue
+        if any(x.pos_ in {"VERB", "AUX"} for x in subtree):
+            continue
+        # Lead-in must have substantial content + at least one verb
+        prev = _prev_split(splits | out, t.i + 1)
+        lead = doc[prev:t.i + 1]
+        lead_content = sum(1 for x in lead
+                           if x.pos_ in {"NOUN", "PROPN", "VERB",
+                                         "ADJ", "ADV", "NUM"})
+        if lead_content < SPATIAL_PREP_LEAD_MIN:
+            continue
+        if not any(x.pos_ in {"VERB", "AUX"} for x in lead):
+            continue
+        # No HARD_PUNCT in lead
+        if any(x.text in HARD_PUNCT for x in lead):
+            continue
+        # Split AFTER the preposition
+        out.add(t.i + 1)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 47 — RESULT CLAUSE REVEAL  (Family 6: "so/such/more X that/than Y")
+#
+# Splits AFTER a result-clause connector ("that", "than", "to") when
+# preceded by an intensifier ("so", "such", "more", "less", "fewer",
+# "too", "enough") within RESULT_INTENSIFIER_LOOKBACK tokens.  The
+# result clause downstream is the reveal payload.
+#
+# Patterns:
+#   (a) "so X that Y"      → split AFTER "that"
+#       "Some skeletons are so well preserved that | you can clearly trace..."
+#   (b) "such X that Y"    → split AFTER "that"
+#       "Such an obvious answer that | nobody thought to check it."
+#   (c) "more/less/fewer X than Y" → split AFTER "than"
+#       "The Antarctic is colder than | most people realize."
+#       "Calibration tools larger than | cities."
+#       (also fires on comparative JJR/RBR adjacency, no explicit intensifier)
+#   (d) "too X to Y"       → split AFTER "to"
+#       "The fog was too thick to | see your hand in front of you."
+#   (e) "X enough to Y"    → split AFTER "to"
+#       "He was tired enough to | sleep through the alarm."
+#
+# DISAMBIGUATION:
+#   • "that" → SCONJ tag check filters relative-pronoun "that" (WDT)
+#   • "than" → ADP/SCONJ check; intensifier or JJR adjacency required
+#   • "to"   → must be aux to a VERB infinitive
+#   • Intensifier must appear within RESULT_INTENSIFIER_LOOKBACK tokens
+#     before the connector, in the SAME sentence (no crossing punctuation)
+#   • Sentence must be ≥9 non-punct tokens
+#
+# Examples that FIRE:
+#   "Some skeletons are so well preserved that | you can trace..."
+#   "The fog was so thick that | you couldn't see your hand."
+#   "Nature produced calibration tools larger than | cities."
+#   "The Antarctic is colder than | most people realize."
+#   "Such an obvious answer that | nobody thought to check it."
+#   "He was tired enough to | sleep through three alarms."
+#   "The river was too wide to | cross without a bridge."
+#
+# Examples that DON'T FIRE:
+#   "The man that left was tall."           (no intensifier)
+#   "I want to leave."                       (no intensifier)
+#   "She said that it would rain."           (no intensifier — Family 4 ccomp)
+#   "Better than nothing."                   (short sentence)
+#   "Books that I love stay on the shelf."   (no intensifier, relative clause)
+# -----------------------------------------------------------------------------
+def rule_result_clause_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        lt = t.lower_
+        if lt not in {"that", "than", "to"}:
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 9:
+            continue
+        # Look back for an intensifier within the lookback window,
+        # within the same sentence, and not across hard punct.
+        intensifier_found: Optional[str] = None
+        lookback_start = max(t.sent.start, t.i - RESULT_INTENSIFIER_LOOKBACK)
+        for j in range(t.i - 1, lookback_start - 1, -1):
+            jt = doc[j]
+            if jt.text in HARD_PUNCT:
+                break
+            if jt.lower_ in ALL_RESULT_INTENSIFIERS:
+                intensifier_found = jt.lower_
+                break
+            # Comparative adjacency: a JJR/RBR-tagged ADJ/ADV upstream
+            # of "than" counts as an implicit intensifier
+            # ("colder than", "faster than", "larger than").
+            if lt == "than" and jt.tag_ in {"JJR", "RBR"}:
+                intensifier_found = "<comparative>"
+                break
+
+        if intensifier_found is None:
+            continue
+
+        # Pattern-specific validation
+        if lt == "that":
+            # Must be SCONJ (filters WDT relative-pronoun "that")
+            if t.pos_ != "SCONJ":
+                continue
+            # Only fires with "so"/"such" intensifier (not "more"/"too")
+            if intensifier_found not in RESULT_THAT_INTENSIFIERS:
+                continue
+
+        elif lt == "than":
+            # Must be ADP or SCONJ (functional comparison)
+            if t.pos_ not in {"ADP", "SCONJ"}:
+                continue
+            # Only fires with comparative or "more/less/fewer" intensifier
+            if (intensifier_found != "<comparative>"
+                    and intensifier_found not in RESULT_THAN_INTENSIFIERS):
+                continue
+
+        elif lt == "to":
+            # Must be aux to an infinitive VERB
+            if t.dep_ != "aux":
+                continue
+            if t.i + 1 >= len(doc) or doc[t.i + 1].pos_ != "VERB":
+                continue
+            # Only fires with "too"/"enough" intensifier
+            if intensifier_found not in RESULT_TO_INTENSIFIERS:
+                continue
+
+        # Split AFTER the connector — connector clings backward as
+        # cliffhanger (consistent with Family 1 Pattern (h) and Family 4
+        # ccomp handling).
+        out.add(t.i + 1)
+
+    return out
+
+
 # =============================================================================
 # ANTI-RULES  —  return indices to *remove* from the splits set.
 # =============================================================================
@@ -2773,14 +3928,29 @@ def anti_rule_aux_main_verb(doc: Doc, splits: Set[int]) -> Set[int]:
         if i <= 0 or i >= len(doc):
             continue
         left, right = doc[i - 1], doc[i]
+
         if left.dep_ in AUX_LIKE_DEPS and right.pos_ in {"VERB", "AUX"}:
             # NEVER merge infinitives! "to calibrate" must stay split.
             if left.lower_ == "to" and left.dep_ == "aux":
                 continue
             bad.add(i)
+
+
+
+
+
         if left.pos_ == "AUX" and right.pos_ in {"VERB", "AUX"}:
+            # EXCEPTION: any copular (non-aux) lemma before a VBG is a
+            # gerund-predicate reveal, not a progressive aspect.
+            # e.g. "His goal is | remaining focused", "feels | calming"
+            if (left.lemma_.lower() in ALL_COPULA_LEMMAS
+                    and left.dep_ not in {"aux", "auxpass"}
+                    and right.tag_ == "VBG"):
+                continue
             bad.add(i)
     return bad
+
+
 
 
 # C — never split inside a hyphenated compound ("self-driving", "hyper-arid").
@@ -2917,19 +4087,31 @@ def anti_rule_to_infinitive(doc: Doc, splits: Set[int]) -> Set[int]:
             continue
         left, right = doc[i - 1], doc[i]
         if left.lower_ == "to" and left.dep_ == "aux" and right.pos_ == "VERB":
-            # Check if this is a long-sentence visual reveal split
+            # Existing: long-sentence visual reveal exception
             sent_ntok = sum(1 for x in left.sent if not x.is_punct)
             if sent_ntok >= INFINITIVE_SPLIT_SENT_MIN:
                 prev = _prev_split(splits, left.i)
                 lead_content = _content_count(doc, prev, left.i)
-                # Check tail content
                 sent_end = left.sent.end
                 tail_end = left.i
                 while tail_end < sent_end and doc[tail_end].text not in HARD_PUNCT:
                     tail_end += 1
                 tail_content = _content_count(doc, left.i, tail_end)
                 if lead_content >= INFINITIVE_SPLIT_LEAD_MIN and tail_content >= INFINITIVE_SPLIT_TAIL_MIN:
-                    continue # Allow this split!
+                    continue
+            # NEW: result-clause "too X to" / "enough to" exception
+            lookback_start = max(left.sent.start,
+                                  left.i - RESULT_INTENSIFIER_LOOKBACK)
+            has_too_enough = False
+            for j in range(left.i - 1, lookback_start - 1, -1):
+                jt = doc[j]
+                if jt.text in HARD_PUNCT:
+                    break
+                if jt.lower_ in RESULT_TO_INTENSIFIERS:
+                    has_too_enough = True
+                    break
+            if has_too_enough:
+                continue
             bad.add(i)
     return bad
 
@@ -3140,6 +4322,14 @@ def anti_rule_verb_to_verb(doc: Doc, splits: Set[int]) -> Set[int]:
             # likely a participial adjective ("missing people", "calibrated tools").
             if right.i + 1 < len(doc) and doc[right.i + 1].pos_ in {"NOUN", "PROPN"}:
                 continue
+
+            # EXCEPTION: any copular (non-aux) lemma before VBG — gerund-
+            # predicate reveal.  Covers "remains | inspiring",
+            # "feels | calming", "stays | running", etc.
+            if (left.lemma_.lower() in ALL_COPULA_LEMMAS
+                    and left.dep_ not in {"aux", "auxpass"}
+                    and right.tag_ == "VBG"):
+                continue
             bad.add(i)
     return bad
 
@@ -3154,8 +4344,19 @@ def anti_rule_verb_to_dem_pron(doc: Doc, splits: Set[int]) -> Set[int]:
             continue
         left, right = doc[i - 1], doc[i]
         # all PRON/DET dependents of the verb stay glued
+
         if left.pos_ in {"VERB", "AUX"} and right.pos_ in {"PRON", "DET"} \
                 and right.head == left:
+            # EXCEPTION: possession + creation + perception family verbs
+            # with substantial dobj — the dobj-starting DET/PRON belongs
+            # to the reveal NP, not the verb.
+            ALL_REVEAL_VERB_LEMMAS = (ALL_POSSESSION_LEMMAS
+                                       | ALL_CREATION_LEMMAS
+                                       | ALL_PERCEPTION_LEMMAS)
+            if (left.lemma_.lower() in ALL_REVEAL_VERB_LEMMAS
+                    and left.dep_ not in {"aux", "auxpass"}
+                    and _is_substantial_dobj(left)):
+                continue
             bad.add(i)
         # additional: explicit demonstrative tag DT/WDT after a verb, but
         # only if the DET actually modifies the verb (right.head == left).
@@ -3231,29 +4432,16 @@ def anti_rule_content_starved(doc: Doc, splits: Set[int]) -> Set[int]:
     for k in range(len(idx) - 1):
         lo, hi = idx[k], idx[k + 1]
         span = doc[lo:hi]
-        # word count — cap at 6 (was 4) so longer connective phrases
-        # like "but it's how it" also get re-merged.
         text = span.text.strip()
         if not text:
             continue
         if len(text.split()) > 6:
             continue
-        # Use the strict visualisability check (NOUN/PROPN/NUM/ADJ/
-        # concrete-VERB) — excludes copulas and AUX.
         if _has_visualisable_content(doc, lo, hi):
             continue
-        # NEVER remove a split that is punctuation-driven on EITHER boundary.
-        # The chunk in question may be light on content but if it's flanked
-        # by big punctuation (ellipsis, dash, quote, bracket, hard-punct)
-        # the writer marked an intentional break.  Fixes the bug where
-        # "Which..." was being merged with "sounds familiar." because the
-        # chunk had no content POS.
+        # Big-punct protection on either boundary
         if _is_big_punct_split(doc, lo) or _is_big_punct_split(doc, hi):
             continue
-        # If the chunk ends in a HARD_PUNCT (sentence-final), it's a
-        # deliberate sentence break — don't wipe.  This is also caught by
-        # the protect-big-punct check above (HARD_PUNCT ∈ big punct), but
-        # double-guard for clarity.
         last_nonspace = None
         for t in reversed(list(span)):
             if not t.is_space:
@@ -3262,33 +4450,44 @@ def anti_rule_content_starved(doc: Doc, splits: Set[int]) -> Set[int]:
         if last_nonspace is not None and last_nonspace.text in HARD_PUNCT:
             continue
 
-        # Remove the LEFT boundary so this chunk glues backward into the
-        # previous chunk as a cliffhanger, matching _post_merge_unvisualisable.
-        # Exception: if lo is 0 (start of doc), remove hi instead.
+        # NEW: preserve split if the NEXT chunk is a substantial reveal
+        # (≥3 content tokens).  Allows "She had | a strange recurring
+        # dream..." to keep the boundary even though "She had" is weak.
+        # The weak lead is justified by the strong reveal payload.
+        if k + 1 < len(idx) - 0:
+            next_lo = idx[k + 1]
+            next_hi = idx[k + 2] if k + 2 < len(idx) else len(doc)
+            if _content_count(doc, next_lo, next_hi) >= 3:
+                continue
+
         if lo > 0:
             bad.add(lo)
         elif hi < len(doc):
             bad.add(hi)
     return bad
 
-
 # Y — never split immediately BEFORE an SCONJ mid-sentence.
 # SCONJs like "because", "if", "while" should cling to the previous line
 # as a cliffhanger. This anti-rule removes splits right before SCONJs,
 # allowing rule_clause_starters to place the split AFTER the SCONJ instead.
+#
+# EXCEPTION: pattern (h) of rule_copula_reveal_split intentionally splits
+# BEFORE "that" / WH-clauses when preceded by a copular complement chain
+# ("remained convinced that...", "became clear what..."). Detect that
+# pattern and preserve the split.
 def anti_rule_split_before_sconj(doc: Doc, splits: Set[int]) -> Set[int]:
     bad = set()
     for i in splits:
         if i >= len(doc):
             continue
         tok = doc[i]
-        if tok.pos_ == "SCONJ":
-            # Don't remove if it's at the start of a sentence (after hard punct)
-            if i > 0 and doc[i-1].text in HARD_PUNCT:
-                continue
-            bad.add(i)
+        if tok.pos_ != "SCONJ":
+            continue
+        # Don't remove if at start of sentence (after hard punct)
+        if i > 0 and doc[i-1].text in HARD_PUNCT:
+            continue
+        bad.add(i)
     return bad
-
 
 # =============================================================================
 # CHUNK BUILDING & SMART MERGE LOGIC
@@ -3812,7 +5011,7 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_bare_noun_lists",         rule_bare_noun_lists,         True),
     ("rule_list_quantifiers",        rule_list_quantifiers,        False),
     ("rule_entity_reveal",           rule_entity_reveal,           True),
-    ("rule_numeric_intro_reveal",    rule_numeric_intro_reveal,    True),  # NEW
+    ("rule_numeric_intro_reveal",    rule_numeric_intro_reveal,    True),  
     ("rule_post_entity_split",       rule_post_entity_split,       True),
     ("rule_currency_reveal",         rule_currency_reveal,         True),
     ("rule_imperative_start",        rule_imperative_start,        False),
@@ -3831,6 +5030,12 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_prep_object_reveal",      rule_prep_object_reveal,      True),  
     ("rule_transition_adverb",       rule_transition_adverb,       True),
     ("rule_sconj_hang",             rule_sconj_hang,             True),
+    ("rule_copula_reveal_split",       rule_copula_reveal_split,       True), 
+    ("rule_possession_reveal_split",   rule_possession_reveal_split,   True),  
+    ("rule_creation_reveal_split",     rule_creation_reveal_split,     True), 
+    ("rule_perception_reveal_split",   rule_perception_reveal_split,   True), 
+    ("rule_spatial_prep_reveal_split",   rule_spatial_prep_reveal_split,   True),
+    ("rule_result_clause_reveal_split",  rule_result_clause_reveal_split,  True),
 ]
 
 # Anti-rules: (name, function)
