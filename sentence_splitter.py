@@ -291,6 +291,44 @@ def _nlp() -> "spacy.language.Language":
 # UTILITY HELPERS
 # =============================================================================
 
+def _is_equation_use(verb_tok: Token) -> bool:
+    """
+    Check whether an equation-family verb is in its equation sense.
+
+    For non-phrasal verbs (mean, represent, signify, equal, denote,
+    symbolize, imply, indicate, suggest), any transitive use with a
+    dobj or ccomp qualifies.
+
+    For phrasal verbs (stand for, refer to, amount to, boil down to,
+    come down to, translate to/into), the specific particle/prep must
+    appear as a child (or in the immediate forward context).
+
+    Examples:
+        "X means Y"               → True
+        "X stands for Y"          → True (particle "for" present)
+        "X stands tall"           → False (no "for" particle)
+        "X refers to Y"           → True ("to" prep present)
+        "X refers back to Y"      → True ("to" prep present)
+        "X refers a case"         → False (no "to" prep)
+    """
+    lemma = verb_tok.lemma_.lower()
+    if lemma not in EQUATION_PHRASAL_PARTICLES:
+        return True  # non-phrasal equation verb, always counts
+    required_parts = EQUATION_PHRASAL_PARTICLES[lemma]
+    # Look in immediate children for prep/particle matching
+    for child in verb_tok.children:
+        if child.lower_ in required_parts and child.pos_ in {"ADP", "PART"}:
+            return True
+    # Also scan up to 3 tokens ahead for the particle (spaCy may attach
+    # it elsewhere in the tree, e.g. as a separate ADP token)
+    doc = verb_tok.doc
+    for j in range(verb_tok.i + 1, min(verb_tok.i + 4, len(doc))):
+        if doc[j].lower_ in required_parts:
+            return True
+        if doc[j].text in HARD_PUNCT:
+            break
+    return False
+
 def _has_substantial_complement(verb_tok: Token) -> Tuple[bool, Optional[Token]]:
     """
     Determine whether a verb has a SUBSTANTIAL complement (dobj or ccomp)
@@ -583,6 +621,60 @@ def _debug_print_stage(name: str, was_applied: bool,
         chunks = doc_or_chunks
     print(f"==> {name} ({status}){bang}")
     print(f"    {_format_chunks_debug(chunks)}")
+
+# =============================================================================
+# EQUATION / DEFINITION LEMMA SETS  (Family 7 — "X means/equals/represents Y")
+#
+# Verbs whose complement defines, equates, or signifies the subject.
+# Structurally similar to Family 4 (perception) but semantically narrower:
+# the verb explicitly links a concept to its definition / equivalent /
+# meaning.
+#
+# These verbs often appear in short definitional sentences ("X means Y."),
+# so the sentence-length threshold is slightly lower than Families 2-4.
+# =============================================================================
+
+# Direct equation.
+EQUATION_EQUAL_LEMMAS = {
+    "equal", "represent", "signify", "symbolize", "symbolise",
+    "denote", "stand",  # "stands for X"
+}
+
+# Definition / explanation.
+EQUATION_MEAN_LEMMAS = {
+    "mean", "imply", "indicate", "suggest", "translate",  # "translates to/into"
+}
+
+# Refer / amount to.
+EQUATION_REFER_LEMMAS = {
+    "refer",  # "refers to"
+    "amount",  # "amounts to"
+    "boil",    # "boils down to"
+    "come",    # "comes down to"
+}
+
+ALL_EQUATION_LEMMAS = (EQUATION_EQUAL_LEMMAS
+                       | EQUATION_MEAN_LEMMAS
+                       | EQUATION_REFER_LEMMAS)
+
+# Some equation verbs are phrasal — they need a specific particle/prep
+# to be in the equation sense.  Without the particle, they're something
+# else entirely:
+#   • "stand" alone = stand up.  "stand for X" = represent.
+#   • "refer" alone = make a reference.  "refer to X" = mean.
+#   • "amount" alone = (rare).  "amount to X" = equal.
+#   • "boil" alone = cook.  "boil down to X" = equal in essence.
+#   • "come" alone = arrive.  "come down to X" = equal in essence.
+#   • "translate" alone = render.  "translate to/into X" = equate.
+# These require the specific particle for the rule to fire.
+EQUATION_PHRASAL_PARTICLES = {
+    "stand": {"for"},
+    "refer": {"to"},
+    "amount": {"to"},
+    "boil": {"to"},          # "boil down to" — "to" is the key prep
+    "come": {"to"},          # "comes down to" — "to" is the key prep
+    "translate": {"to", "into"},
+}
 
 # =============================================================================
 # RESULT-CLAUSE INTENSIFIERS  (Family 6 — "so X that Y", "more X than Y")
@@ -2175,34 +2267,40 @@ def rule_terminal_descriptor(doc: Doc, splits: Set[int]) -> Set[int]:
         sent_ntok = sum(1 for x in sent if not x.is_punct)
 
         # Pattern A: final ADJ/ADV with preceding intensifier ADV.
-        # GUARD: only fires when sentence has substantial build-up
-        # (≥ 8 content tokens).  Otherwise short copular sentences like
-        # "The empire state building is really big." would over-split.
-        #
-        # Walk-back rule: step BACK over any ADV/ADJ chain UNTIL we hit
-        # either (a) a token whose head is a VERB/AUX (clause boundary) or
-        # (b) a token whose POS is not ADV/ADJ.  This lets us correctly
-        # land the split BEFORE the FIRST element of the descriptor chain:
-        #   #28  "visually confused very fast"  →  before "visually"
-        #   #56  "are now brutally dry"         →  before "brutally"
-        #   #41  "packed together unusually densely" → before "together"
         if last.pos_ in {"ADJ", "ADV"} and last.i > sent.start + 1:
             prev_tok = doc[last.i - 1]
             if prev_tok.pos_ == "ADV":
                 if sent_ntok < 8:
                     continue
                 start = prev_tok.i
-                # Walk back through ADV/ADJ tokens whose head is in this
-                # tail descriptor chain — stop when head is a finite VERB/AUX
-                # that is NOT itself in the trailing descriptor span.
+                # NEW: only walk back through ADV/ADJ tokens that are
+                # clearly DESCRIPTIVE modifiers (their head is the
+                # terminal ADJ/ADV).  Stop walking back at adverbs whose
+                # head is the predicate verb — those are temporal/sentence
+                # adverbs ("now", "then", "always"), not descriptive
+                # intensifiers ("brutally", "deeply", "scientifically").
                 while start > sent.start and doc[start - 1].pos_ in {"ADV", "ADJ"}:
                     candidate = doc[start - 1]
-                    # never cross a punct boundary
                     if candidate.is_punct:
+                        break
+                    # is candidate's head the terminal descriptor itself
+                    # (or another descriptor in the chain)?
+                    if candidate.head.i < start - 1 or candidate.head.i > last.i:
                         break
                     start -= 1
                 prev_split = _prev_split(splits | out, start)
-                if start - prev_split >= MIN_LEAD_FOR_DESCRIPTOR:
+                lead_len = start - prev_split
+                # Standard threshold OR shorter threshold for copular
+                # lead-in (verb/AUX + ADV chain before descriptor).
+                # Allows "are now | brutally dry" to fire even when the
+                # lead-in from previous split is small.
+                lead_has_copula = any(
+                    doc[k].pos_ in {"VERB", "AUX"}
+                    and doc[k].lemma_.lower() in ALL_COPULA_LEMMAS
+                    for k in range(prev_split, start)
+                )
+                threshold = 2 if lead_has_copula else MIN_LEAD_FOR_DESCRIPTOR
+                if lead_len >= threshold:
                     out.add(start)
                 continue
 
@@ -3417,7 +3515,9 @@ def rule_copula_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
                     break
                 if doc[j].text in HARD_PUNCT:
                     break
-        elif trigger.tag_ == "VBG":
+        elif trigger.tag_ in {"VBG", "VBN"}:
+            # VBG = gerund-predicate ("is remaining focused")
+            # VBN = past-participle predicate ("get confused", "remained convinced")
             should_split = True
         elif trigger.pos_ == "ADJ":
             if is_be:
@@ -3912,6 +4012,140 @@ def rule_result_clause_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
     return out
 
 
+# -----------------------------------------------------------------------------
+# RULE 48 — EQUATION REVEAL  (Family 7: "X means/equals/represents Y")
+#
+# Splits AFTER an equation / definition verb (plus any phrasal particle)
+# when the complement carries a substantial reveal.  The complement
+# defines, equates, or signifies the subject.
+#
+# Covered sub-families:
+#   • EQUAL:  equal, represent, signify, symbolize/symbolise, denote,
+#             stand (for)
+#   • MEAN:   mean, imply, indicate, suggest, translate (to/into)
+#   • REFER:  refer (to), amount (to), boil (down to), come (down to)
+#
+# DISAMBIGUATION:
+#   • Verb must be VERB pos
+#   • For phrasal verbs, required particle must be present
+#     (_is_equation_use)
+#   • Verb must have a substantial complement (dobj OR ccomp OR pobj
+#     of the phrasal particle)
+#   • Sentence must be ≥6 non-punct tokens (lower than Families 2-4
+#     because definitional sentences are often short)
+#
+# SPLIT POSITION:
+#   • Non-phrasal: split AFTER the verb (+ negation)
+#   • Phrasal:     split AFTER the particle so it clings backward
+#                  ("stands for | X", "boils down to | X")
+#
+# Examples that FIRE:
+#   "Photosynthesis means | plants converting sunlight into energy."
+#   "The acronym ROI stands for | return on investment."
+#   "What this represents is | a complete shift in approach."
+#   "The decision essentially boils down to | timing and budget."
+#   "These symbols denote | the various phases of the experiment."
+#   "The discovery signifies | a turning point in the field."
+#   "An IOU amounts to | a written promise to pay."
+#   "His silence implied | that he agreed with the plan."
+#
+# Examples that DON'T FIRE:
+#   "I mean it."                            (PRON dobj)
+#   "X equals Y."                           (short sentence)
+#   "She stands tall."                      ("stand" without "for" particle)
+#   "He refers a case to the lawyer."       (no "to" prep in equation sense —
+#                                            actually does have "to", so might fire;
+#                                            watch this one)
+# -----------------------------------------------------------------------------
+def rule_equation_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        lemma = t.lemma_.lower()
+        if lemma not in ALL_EQUATION_LEMMAS:
+            continue
+        if t.pos_ != "VERB":
+            continue
+        if t.dep_ in {"aux", "auxpass"}:
+            continue
+        has_auxpass = any(c.dep_ == "auxpass" for c in t.children)
+        if has_auxpass:
+            continue
+        # Phrasal-verb particle check
+        if not _is_equation_use(t):
+            continue
+        # Must have a substantial complement (dobj, ccomp, or — for
+        # phrasal verbs — pobj of the particle)
+        has_comp, comp_head = _has_substantial_complement(t)
+        if not has_comp:
+            # For phrasal verbs, the "object" may be the pobj of the
+            # phrasal particle.  Walk children to find prep + pobj.
+            # In rule_equation_reveal_split — in the phrasal fallback block, replace:
+            if lemma in EQUATION_PHRASAL_PARTICLES:
+                required = EQUATION_PHRASAL_PARTICLES[lemma]
+                for child in t.children:
+                    # Direct child match
+                    if (child.pos_ in {"ADP", "PART"}
+                            and child.lower_ in required):
+                        pobj = next((g for g in child.children
+                                     if g.dep_ in {"pobj", "obj"}), None)
+                        if pobj is not None:
+                            subtree_len = len(list(pobj.subtree))
+                            if subtree_len >= 2:
+                                has_comp = True
+                                comp_head = pobj
+                                break
+                    # NEW: grandchild match (e.g. "boil" → "down" → "to" → pobj)
+                    for grand in child.children:
+                        if (grand.pos_ in {"ADP", "PART"}
+                                and grand.lower_ in required):
+                            pobj = next((g for g in grand.children
+                                         if g.dep_ in {"pobj", "obj"}), None)
+                            if pobj is not None:
+                                subtree_len = len(list(pobj.subtree))
+                                if subtree_len >= 2:
+                                    has_comp = True
+                                    comp_head = pobj
+                                    break
+                    if has_comp:
+                        break
+            if not has_comp:
+                continue
+        # Sentence-length floor (lower than Families 2-4)
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < 6:
+            continue
+        # Need a lead-in token
+        if t.i == t.sent.start:
+            continue
+        # Determine split position
+        # For phrasal verbs, walk forward through any particle/prep so
+        # the particle clings backward with the verb.
+        split_pos = t.i + 1
+        if lemma in EQUATION_PHRASAL_PARTICLES:
+            required = EQUATION_PHRASAL_PARTICLES[lemma]
+            k = t.i + 1
+            # Walk past ADV ("down" in "boils down to") and the particle itself
+            while k < len(doc) and (doc[k].pos_ == "ADV"
+                                     or (doc[k].pos_ in {"ADP", "PART"}
+                                         and doc[k].lower_ in required)):
+                k += 1
+            split_pos = k
+        # Handle negation (for non-phrasal verbs only — phrasal verbs
+        # with negation are rare and odd)
+        if lemma not in EQUATION_PHRASAL_PARTICLES:
+            neg_offset = 0
+            k = t.i + 1
+            while k < len(doc) and (doc[k].dep_ == "neg"
+                                    or doc[k].lower_ in NEGATION_TOKENS):
+                neg_offset += 1
+                k += 1
+            split_pos = t.i + 1 + neg_offset
+        if split_pos >= len(doc):
+            continue
+        out.add(split_pos)
+    return out
+
+
 # =============================================================================
 # ANTI-RULES  —  return indices to *remove* from the splits set.
 # =============================================================================
@@ -4112,6 +4346,22 @@ def anti_rule_to_infinitive(doc: Doc, splits: Set[int]) -> Set[int]:
                     break
             if has_too_enough:
                 continue
+
+            # NEW: equation phrasal verb "translates to VERB" etc.
+            # If the verb upstream within 3 tokens is an equation phrasal
+            # verb whose required particle is "to", the "to + VERB" here
+            # is part of the equation phrase, not a plain infinitive.
+            equation_phrasal = False
+            for j in range(max(left.sent.start, left.i - 3), left.i):
+                jt = doc[j]
+                if (jt.pos_ == "VERB"
+                        and jt.lemma_.lower() in EQUATION_PHRASAL_PARTICLES
+                        and "to" in EQUATION_PHRASAL_PARTICLES[jt.lemma_.lower()]):
+                    equation_phrasal = True
+                    break
+            if equation_phrasal:
+                continue
+
             bad.add(i)
     return bad
 
@@ -4352,7 +4602,8 @@ def anti_rule_verb_to_dem_pron(doc: Doc, splits: Set[int]) -> Set[int]:
             # to the reveal NP, not the verb.
             ALL_REVEAL_VERB_LEMMAS = (ALL_POSSESSION_LEMMAS
                                        | ALL_CREATION_LEMMAS
-                                       | ALL_PERCEPTION_LEMMAS)
+                                       | ALL_PERCEPTION_LEMMAS
+                                       | ALL_EQUATION_LEMMAS)
             if (left.lemma_.lower() in ALL_REVEAL_VERB_LEMMAS
                     and left.dep_ not in {"aux", "auxpass"}
                     and _is_substantial_dobj(left)):
@@ -4924,7 +5175,20 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
             left_protected  = lo in protected
             right_protected = hi in protected
             if left_protected and right_protected:
-                # both sides inviolate — keep this chunk as-is even if tiny
+                # Both sides inviolate — normally we keep the chunk
+                # standalone.  EXCEPTION: pure-punctuation chunks
+                # (closing quotes, trailing dashes, lone ellipses) glue
+                # backward onto the previous chunk because they carry no
+                # content and reading them alone makes no sense.
+                # Fixes 'X."' / '"' becoming '"' on its own line.
+                is_pure_punct = all(c in (HARD_PUNCT | ANY_QUOTE | DASH_PUNCT
+                                           | OPEN_BRACKETS | CLOSE_BRACKETS
+                                           | {","})
+                                    for c in text)
+                if is_pure_punct and out:
+                    out[-1] = (out[-1] + text).strip()
+                    out_spans[-1] = (out_spans[-1][0], hi)
+                    continue
                 out.append((fwd_buf + text).strip())
                 start_lo = fwd_lo if fwd_lo is not None else lo
                 out_spans.append((start_lo, hi))
@@ -4933,9 +5197,23 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
                 continue
 
             direction = _throwaway_direction(doc, lo, hi)
+
             # don't glue across sentence boundaries — go forward instead
             if direction == "bwd" and out and out[-1] and out[-1][-1] in HARD_PUNCT:
-                direction = "fwd"
+                # EXCEPTION: pure-punctuation orphans (closing quotes,
+                # trailing punctuation) glue BACKWARD even if previous
+                # chunk ends in HARD_PUNCT — they belong attached to
+                # the sentence-final punctuation, not on their own line.
+                # Fixes 'X.' / '"' becoming one chunk: 'X."'
+                is_pure_punct = all(c in (HARD_PUNCT | ANY_QUOTE | DASH_PUNCT
+                                           | OPEN_BRACKETS | CLOSE_BRACKETS
+                                           | {","})
+                                    for c in text)
+                if not is_pure_punct:
+                    direction = "fwd"
+
+
+
             # NEW: if the right boundary is protected, can't go forward
             if direction == "fwd" and right_protected:
                 direction = "bwd" if out else "keep"
@@ -5036,6 +5314,7 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_perception_reveal_split",   rule_perception_reveal_split,   True), 
     ("rule_spatial_prep_reveal_split",   rule_spatial_prep_reveal_split,   True),
     ("rule_result_clause_reveal_split",  rule_result_clause_reveal_split,  True),
+    ("rule_equation_reveal_split",       rule_equation_reveal_split,       True), 
 ]
 
 # Anti-rules: (name, function)

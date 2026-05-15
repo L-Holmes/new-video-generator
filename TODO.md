@@ -1,6 +1,39 @@
 
 
 
+
+
+<--->
+BEFORE: So now the choice isn’t “drive or not.”
+AFTER: ['So now the choice isn’t', '“drive or not.', '”']  --> it shouldn't leave the " by itself... --> it should be seperate in the first place... and even then it should be identified as loner without visualisable and so joined back on to the end of the previous...
+EXPECTED: ['So now the choice isn’t', '“drive or not."']  
+<--->
+<--->
+BEFORE: And marine fossils scattered through regions that are now brutally dry.
+AFTER: ['And marine fossils scattered', 'through regions', 'that are now brutally dry.']
+EXPECTED: ['And marine fossils scattered', 'through regions that are now', 'brutally dry.']
+<--->
+BEFORE: Some skeletons at Wadi Al-Hitan are so well preserved that you can clearly trace the shape of the spine through the desert surface.
+AFTER: ['Some skeletons at', 'Wadi Al-Hitan are so well preserved that', 'you can clearly trace the shape of the spine through', 'the desert surface.']
+EXPECTED: ['Some skeletons at', 'Wadi Al-Hitan are so well preserved that', 'you can clearly trace the', 'shape of the spine through', 'the desert surface.']
+<--->
+<--->
+BEFORE: People crossing empty landscapes suddenly noticing shapes in rock that turn out to be ancient vertebrae or skull fragments. - 'that turn out to be' is non visualisable- should have been joined to end of previous...
+AFTER: ['People crossing', 'empty landscapes suddenly noticing', 'shapes in rock', 'that turn out to be', 'ancient vertebrae or', 'skull fragments.']
+EXPECTED: ['People crossing', 'empty landscapes suddenly noticing', 'shapes in rock', 'that turn out to be', 'ancient vertebrae or', 'skull fragments.']
+<--->
+BEFORE: Remove them completely and humans get visually confused very fast. - we are revealing what they get... although i appreciate this may not be possible since get is a bit tough to work with given multiple meanings... 
+AFTER: ['Remove them completely and', 'humans get visually confused very fast.']
+AFTER: ['Remove them completely and', 'humans get', 'visually confused very fast.']
+<--->
+<--->
+<--->
+<--->
+main@main:~/code/easyStockGenerators/MY-VID-GENERATOR$
+
+
+
+
 TODO:
 @1:51pm
 - run the most recent one, report back to claude. (ask to move onto 7 if fine...)

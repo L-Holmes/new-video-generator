@@ -73,26 +73,11 @@ if __name__ == "__main__":
         # ]
 
     other_inputs = [
-            # Family 6 — should FIRE
-            "Some skeletons are so well preserved that you can clearly trace them.",
-            "The fog was so thick that you couldn't see your hand.",
-            "Nature produced calibration tools larger than cities.",
-            "The Antarctic is colder than most people realize.",
-            "It was such an obvious answer that nobody thought to check it.",
-            "He was tired enough to sleep through three alarms in a row.",
-            "The river was too wide to cross without a proper bridge.",
-            "She was so determined that nothing could stop her.",
-            "More work goes into the design than anyone actually sees.",
-            "The cave was so dark that flashlights barely helped at all.",
-
-            # Family 6 — should NOT FIRE
-            "The man that left was tall.",                            # no intensifier, relative
-            "I want to leave.",                                        # no intensifier
-            "She said that it would rain on Tuesday.",                # no intensifier, ccomp
-            "Books that I love stay on my shelf for years.",          # no intensifier, relative
-            "Better than nothing.",                                    # short sentence
-            "He decided to leave before dinner.",                      # plain infinitive
-            "They claim that the system is broken.",                  # no intensifier (Family 4 handles)
+    "So now the choice isn’t “drive or not.”",
+    "And marine fossils scattered through regions that are now brutally dry.",
+    "Some skeletons at Wadi Al-Hitan are so well preserved that you can clearly trace the shape of the spine through the desert surface.",
+    "People crossing empty landscapes suddenly noticing shapes in rock that turn out to be ancient vertebrae or skull fragments.",
+    "Remove them completely and humans get visually confused very fast.",
         ]
 
 
