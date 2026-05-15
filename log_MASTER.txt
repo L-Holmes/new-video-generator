@@ -120,12 +120,6 @@ test #39) You are holding the remnants of global monopolies, the fa... :: FALSE
  → 20%
 nutmeg_map → 12/39 passed
 
-=== romans_map (214 tests) ===
-(DONE)
-
-
-
-
 
 
 # rule: split on every part of a list...
@@ -151,78 +145,6 @@ test #79) People crossing empty landscapes suddenly noticing shapes... :: FALSE 
 
 
 TODO:
-
-!!!!!!!!!!!
-
-do i maybe ask ai if we can get a lit of the 'reveal' words without necessarily hardcoding them all?
-is there like an nlp way to do it?
-or will we need to hardcode them all??!?!?
-
-!!!!!!!!!!!
-
-# rule split after the reveal...
-
- *BE REALLY CAREFUL OF REVEAL WORDS THAT CAN BE USED IN DIFFERENT WAYS /  HAVE MULTIPLE MEANINGS!!!*
-
-test #142) So now the choice isn’t “drive or not.” :: FALSE - we are revealing the choice... --> the key thing here is "ISNT"- its like "IS"... its sort of a reveal word... I mean it should spli
-- actual: ['So now the choice isn’t “drive or not.”']
-- expected: ['So now the choice isn’t', '“drive or not.”']
-- expected: ['So now the choice isn’t', '“drive or', ' not.”']
- → 0%
-
-test #123) Let's assume you have great cycle paths and missing train... :: FALSE - again we are revealing cycle paths.. its the obvoius split on the noun --> the key word is "HAVE", after have you are revealing what the thing before has.. same with 'has' etc. Please consider are 'reveal' type of words like this, and all the different forms and tenses they come in...
-- actual: ["Let's assume you have great cycle paths and", 'missing trains is an afterthought.']
-- actual: ["Let's assume you have,", "great cycle paths and", 'missing trains is an afterthought.']
- → 0%
-
-
- test #56) And marine fossils scattered through regions that are now... :: FALSE - again split on brutally dry... the reveal --> 'THROUGH' and 'ARE' are the key 'reveal' words... 
-- actual: ['And marine fossils scattered through', 'regions that are now brutally dry.']
-- expected: ['And marine fossils scattered through', 'regions that are now', 'brutally dry.']
- → 0%
-
- test #69) Some skeletons at Wadi Al-Hitan are so well preserved tha... :: FALSE - revealing the shape of ... at least split ' --> ooooh now this is one to be  careful of.. because i think 'that' is the the reveal... (I guess its 'so x that' which makes it key? what things other than 'so' would work there?).. the reason its tricky is becuase i feal 'that' isn't always a reveal word...
-- actual: ['Some skeletons at', 'Wadi Al-Hitan are so well preserved', 'that you can clearly trace the shape of the spine through', 'the desert surface.']
-- expected: ['Some skeletons at', 'Wadi Al-Hitan are so well preserved that you can clearly trace the shape of', 'the spine through','the desert surface.']
- → 25%
-
- test #82) Nature accidentally produced calibration tools larger tha... :: FALSE - reveal what was accientally produced - 'PRODUCED' is the 'reveal' word... we are revealing what they produced...
-- actual: ['Nature accidentally produced calibration tools larger than', 'cities.']
-- expected: ['Nature accidentally produced', 'calibration tools larger than cities.']
- → 0%
-
-
- up to here...
-
-test #79) People crossing empty landscapes suddenly noticing shapes... :: FALSE - you are revealing what they are crossing (I guess aftre the verb is it? then a noun?), and again split on the list items.. (ancient vertebrae) which is also a noun!)
-- actual: ['People crossing empty landscapes suddenly noticing', 'shapes in rock', 'that turn out to be ancient vertebrae or', 'skull fragments.']
-- expected: ['People crossing', 'empty landscapes suddenly noticing', 'shapes in rock that turn out to be', 'ancient vertebrae or', 'skull fragments.']
-
-test #28) Remove them completely and humans get visually confused v... :: FALSE - split on the reveal of what they get... and on the adverb + verb(?) visually confused...
-- actual: ['Remove them completely and humans get visually confused', 'very fast.']
-- expected: ['Remove them completely and humans get', 'visually confused very fast.']
- → 0%
-
- test #37) Straight roads vanishing into heat haze for absurd distan... :: FALSE
-- actual: ['Straight roads vanishing into heat haze for absurd distances.']
-- expected: ['Straight roads vanishing into', 'heat haze for absurd distances.']
- → 0%
-
- test #59) Which is probably why these landscapes feel simultaneousl... :: FALSE - reveal what they simultanseosyly feel... + a list...
-- actual: ['Which is probably why these landscapes feel simultaneously calming and alien.']
-- expected: ['Which is probably why these landscapes feel simultaneously', 'calming', 'and alien.']
- → 0%
-
- test #61) A single vehicle crossing Salar de Uyuni looks microscopic. :: FALSE - revealing how ti looks..
-- actual: ['A single vehicle crossing', 'Salar de Uyuni looks microscopic.']
-- expected: ['A single vehicle crossing', 'Salar de Uyuni looks',' microscopic.']
- → 0%
-
-
- test #87) Geological settling happening over immense stretches of t... :: FALSE - revealing what you get... and what they become... 
-- actual: ['Geological settling happening over', 'immense stretches of time', 'until eventually you get surfaces so level they become scientifically valuable from orbit.']
-- expected: ['Geological settling happening over', 'immense stretches of time until eventually you get', 'surfaces so level they become', 'scientifically valuable from orbit.']
- → 25%
 
 ========================================
 ========================================

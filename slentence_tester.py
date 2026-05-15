@@ -52,33 +52,20 @@ if __name__ == "__main__":
 
     print("---------------")
 
-    # other_inputs = [
-            # "A single vehicle crossing Salar de Uyuni looks microscopic.",
-            # "The water slowly turned a strange shade of green.",
-            # "Despite the noise, the room stayed eerily calm.",
-            # "After all those years, the message remained painfully clear.",
-            # "Her plan proved surprisingly effective.",
-            # "It became obvious what had to be done.",
-            # "He grew quieter as the night went on.",
-            # "The milk went bad after three days.",
-            # # DON'T fire (transitive uses):
-            # "She got a letter from her mother.",
-            # "She looks at the sky every evening.",
-            # "He turned the wheel slowly to the left.",
-            # "They kept the door closed all afternoon.",
-            # # DON'T fire (motion/non-copular):
-            # "She went home before sunset.",
-            # "The bus came around the corner quickly.",
-# 
-        # ]
-
     other_inputs = [
-    "So now the choice isn’t “drive or not.”",
-    "And marine fossils scattered through regions that are now brutally dry.",
-    "Some skeletons at Wadi Al-Hitan are so well preserved that you can clearly trace the shape of the spine through the desert surface.",
+    "It was so valuable that when Alaric the Goth laid siege to Rome in the year 410, his ransom demand to spare the city wasn't just gold and silver.",
+    "But for centuries, Arab traders told the Greeks and Romans that cinnamon was gathered by giant, terrifying birds who used the spice to build their nests on sheer, unclimbable cliffs.",
+    "The traders claimed they had to leave heavy chunks of meat out for the birds, who would carry the meat to their nests, collapsing them, and sending the cinnamon tumbling down.",
+    "By the late 1400s, European powers were sick of paying these markups.",
+    "So, they started sailing west, looking for a backdoor to India.",
+    "Which brings us to Christopher Columbus.",
+    "But he does find a completely unrelated, violently spicy red fruit native to Mesoamerica.",
+    "And unlike the fussy black pepper vines of India, these new \"chili peppers\" grew almost anywhere.",
+    "Within fifty years, they had spread across the globe, completely revolutionizing the cuisines of India, China, and Southeast Asia.",
+    "So the next time you season your food, look at what you’re holding.",
+    "You are holding the remnants of global monopolies, the fall of empires, and the reason the map of the world looks the way it does today.",
     "People crossing empty landscapes suddenly noticing shapes in rock that turn out to be ancient vertebrae or skull fragments.",
-    "Remove them completely and humans get visually confused very fast.",
-        ]
+    ]
 
 
     for other_in in other_inputs:

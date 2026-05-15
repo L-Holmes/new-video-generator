@@ -1,35 +1,51 @@
+<--->
+BEFORE: It was so valuable that when Alaric the Goth laid siege to Rome in the year 410, his ransom demand to spare the city wasn't just gold and silver.
+AFTER: ['It was so valuable that when', 'Alaric', 'the Goth laid siege to Rome in', 'the year 410,', 'his ransom demand to', "spare the city wasn't just gold and", 'silver.']
+-->  any way to detect 'Alaric the Goth' is the whole title? (since the 'G' is capitalised??
+--> also split on 'gold' since its a visualisable noun...
 
 
 
+<--->
+BEFORE: But for centuries, Arab traders told the Greeks and Romans that cinnamon was gathered by giant, terrifying birds who used the spice to build their nests on sheer, unclimbable cliffs.
+AFTER: ['But for centuries,', 'Arab traders told', 'the Greeks and', 'Romans that', 'cinnamon was gathered by', 'giant,', 'terrifying birds who used the spice to', 'build their nests on', 'sheer,', 'unclimbable cliffs.']
 
+'giant' should not have been split out since its an adjective.
+same for 'sheer'
+
+jump (up to here)
 
 <--->
-BEFORE: So now the choice isn’t “drive or not.”
-AFTER: ['So now the choice isn’t', '“drive or not.', '”']  --> it shouldn't leave the " by itself... --> it should be seperate in the first place... and even then it should be identified as loner without visualisable and so joined back on to the end of the previous...
-EXPECTED: ['So now the choice isn’t', '“drive or not."']  
+BEFORE: The traders claimed they had to leave heavy chunks of meat out for the birds, who would carry the meat to their nests, collapsing them, and sending the cinnamon tumbling down.
+AFTER: ['The traders claimed', 'they had to leave heavy chunks of meat out for', 'the birds,', 'who would carry the meat', 'to their nests,', 'collapsing them, and sending', 'the cinnamon tumbling down.']
 <--->
+BEFORE: By the late 1400s, European powers were sick of paying these markups.
+AFTER: ['By the late 1400s,', 'European powers were sick of paying', 'these markups.']
 <--->
-BEFORE: And marine fossils scattered through regions that are now brutally dry.
-AFTER: ['And marine fossils scattered', 'through regions', 'that are now brutally dry.']
-EXPECTED: ['And marine fossils scattered', 'through regions that are now', 'brutally dry.']
+BEFORE: So, they started sailing west, looking for a backdoor to India.
+AFTER: ['So, they started sailing', 'west,', 'looking for', 'a backdoor to India.']
 <--->
-BEFORE: Some skeletons at Wadi Al-Hitan are so well preserved that you can clearly trace the shape of the spine through the desert surface.
-AFTER: ['Some skeletons at', 'Wadi Al-Hitan are so well preserved that', 'you can clearly trace the shape of the spine through', 'the desert surface.']
-EXPECTED: ['Some skeletons at', 'Wadi Al-Hitan are so well preserved that', 'you can clearly trace the', 'shape of the spine through', 'the desert surface.']
+BEFORE: Which brings us to Christopher Columbus.
+AFTER: ['Which brings us to Christopher Columbus.']
 <--->
+BEFORE: But he does find a completely unrelated, violently spicy red fruit native to Mesoamerica.
+AFTER: ['But he does find', 'a completely unrelated,', 'violently spicy red fruit native to', 'Mesoamerica.']
 <--->
-BEFORE: People crossing empty landscapes suddenly noticing shapes in rock that turn out to be ancient vertebrae or skull fragments. - 'that turn out to be' is non visualisable- should have been joined to end of previous...
+BEFORE: And unlike the fussy black pepper vines of India, these new "chili peppers" grew almost anywhere.
+AFTER: ['And unlike the fussy black pepper vines of India,', 'these new"', 'chili peppers"', 'grew almost anywhere.']
+<--->
+BEFORE: Within fifty years, they had spread across the globe, completely revolutionizing the cuisines of India, China, and Southeast Asia.
+AFTER: ['Within fifty years,', 'they had spread across', 'the globe,', 'completely revolutionizing', 'the cuisines of India,', 'China, and', 'Southeast Asia.']
+EXPECTED: ['Within fifty years,', 'they had spread across', 'the globe,', 'completely revolutionizing', 'the cuisines of','India,', 'China, and', 'Southeast Asia.'] - we split because its a list.. if it wasn't a list (e.g. just 'cuisines of India) we wouldn't split.
+<--->
+BEFORE: So the next time you season your food, look at what you’re holding.
+AFTER: ['So the next time you season your food, look at', 'what you’re holding.']
+<--->
+BEFORE: You are holding the remnants of global monopolies, the fall of empires, and the reason the map of the world looks the way it does today.
+AFTER: ['You are holding', 'the remnants of global monopolies,', 'the fall of', 'empires,', 'and the reason', 'the map of the world looks', 'the way it does today.']
+<--->
+BEFORE: People crossing empty landscapes suddenly noticing shapes in rock that turn out to be ancient vertebrae or skull fragments.
 AFTER: ['People crossing', 'empty landscapes suddenly noticing', 'shapes in rock', 'that turn out to be', 'ancient vertebrae or', 'skull fragments.']
-EXPECTED: ['People crossing', 'empty landscapes suddenly noticing', 'shapes in rock', 'that turn out to be', 'ancient vertebrae or', 'skull fragments.']
-<--->
-BEFORE: Remove them completely and humans get visually confused very fast. - we are revealing what they get... although i appreciate this may not be possible since get is a bit tough to work with given multiple meanings... 
-AFTER: ['Remove them completely and', 'humans get visually confused very fast.']
-AFTER: ['Remove them completely and', 'humans get', 'visually confused very fast.']
-<--->
-<--->
-<--->
-<--->
-main@main:~/code/easyStockGenerators/MY-VID-GENERATOR$
 
 
 

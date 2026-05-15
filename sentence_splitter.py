@@ -2592,9 +2592,14 @@ def rule_terminal_adj_coord(doc: Doc, splits: Set[int]) -> Set[int]:
             break
         if last is None:
             continue
-        # last must be ADJ or VBG/VBN-tagged verb (adj-like)
-        is_adj_like = (last.pos_ == "ADJ" or last.tag_ in {"VBG", "VBN"})
-        if not is_adj_like:
+        # Accept ADJ, participle-adjective (VBG/VBN), OR NOUN as the
+        # terminal descriptor.  spaCy small model often misparses
+        # adjectives as NOUN ("alien", "panic", "scary") — if it sits
+        # in coordinator position after an ADJ/VBN/VBG, treat it as
+        # the adjective it almost certainly is.
+        is_descriptor_like = (last.pos_ in {"ADJ", "NOUN"}
+                               or last.tag_ in {"VBG", "VBN"})
+        if not is_descriptor_like:
             continue
         # walk back: expect CCONJ before last
         if last.i - 1 < sent.start:
@@ -2606,8 +2611,9 @@ def rule_terminal_adj_coord(doc: Doc, splits: Set[int]) -> Set[int]:
         if cconj.i - 1 < sent.start:
             continue
         first_adj = doc[cconj.i - 1]
-        first_adj_is_adj = (first_adj.pos_ == "ADJ" or first_adj.tag_ in {"VBG", "VBN"})
-        if not first_adj_is_adj:
+        first_adj_is_descriptor = (first_adj.pos_ in {"ADJ", "NOUN"}
+                                    or first_adj.tag_ in {"VBG", "VBN"})
+        if not first_adj_is_descriptor:
             continue
         # before first_adj: at least one ADV
         if first_adj.i - 1 < sent.start:
@@ -2629,7 +2635,7 @@ def rule_terminal_adj_coord(doc: Doc, splits: Set[int]) -> Set[int]:
         prev1 = _prev_split(splits | out, first_adj.i)
         if first_adj.i - prev1 >= 2:
             out.add(first_adj.i)
-        out.add(cconj.i)
+        out.add(cconj.i + 1)
     return out
 
 
@@ -4146,6 +4152,85 @@ def rule_equation_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
     return out
 
 
+# -----------------------------------------------------------------------------
+# RULE 49 — AGGRESSIVE "AND" / "OR" BETWEEN VISUALISABLES
+#
+# Splits BEFORE "and"/"or" whenever:
+#   • the token to its LEFT is a visualisable content token
+#     (NOUN/PROPN/ADJ/VERB/NUM, excluding weak copulas)
+#   • the token to its RIGHT is also a visualisable content token
+#     (looking through optional DET/ADV)
+#   • lead-in ≥ 2 content tokens
+#
+# This is the deliberately-aggressive variant of rule_and_or_clause.
+# rule_and_or_clause has tight guards (≥12 tokens, ≥5 lead) that miss
+# valid coordinations in medium sentences.  This rule fills the gap.
+#
+# Examples that FIRE:
+#   "calming | and alien"            (ADJ + AND + ADJ)
+#   "dust | and rock"                (NOUN + AND + NOUN)
+#   "John | and Mary"                (PROPN + AND + PROPN)
+#   "ran | and jumped"               (VERB + AND + VERB) — when lead allows
+#   "scientifically valuable | and crucial"  (ADJ + AND + ADJ)
+#
+# Examples that DON'T FIRE:
+#   "is and was"                     (weak copulas — skipped)
+#   "I and he"                       (PRON, not visualisable)
+#   "and the rest"                   (no lead)
+# -----------------------------------------------------------------------------
+def rule_and_visualisables_split(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    DEBUG = False  # flip to True for inspection
+    for t in doc:
+        if t.pos_ != "CCONJ" or t.lower_ not in {"and", "or"}:
+            continue
+        if DEBUG:
+            print(f"  [and-vis] examining '{t.text}' at idx {t.i}")
+        if t.i == 0 or t.i + 1 >= len(doc):
+            if DEBUG: print(f"    SKIP: at sentence boundary")
+            continue
+
+        # Check LEFT neighbour is visualisable
+        left = doc[t.i - 1]
+        left_visualisable = _has_visualisable_content(doc, t.i - 1, t.i)
+        if DEBUG:
+            print(f"    left='{left.text}' (pos={left.pos_}) visualisable={left_visualisable}")
+        if not left_visualisable:
+            continue
+
+        # Check RIGHT neighbour (through DET/ADV) is visualisable
+        j = t.i + 1
+        while j < len(doc) and doc[j].pos_ in {"DET", "ADV"}:
+            j += 1
+        if j >= len(doc):
+            if DEBUG: print(f"    SKIP: walked off end")
+            continue
+        right_visualisable = _has_visualisable_content(doc, j, j + 1)
+        if DEBUG:
+            print(f"    right='{doc[j].text}' (pos={doc[j].pos_}) visualisable={right_visualisable}")
+        if not right_visualisable:
+            continue
+
+        # Lead-in ≥ 1 content token (relaxed)
+        prev = _prev_split(splits | out, t.i)
+        lead_content = _content_count(doc, prev, t.i)
+        if DEBUG:
+            print(f"    lead=[{prev}:{t.i}] content_count={lead_content}")
+        if lead_content < 1:
+            if DEBUG: print(f"    SKIP: insufficient lead content")
+            continue
+
+        # No HARD_PUNCT in lead
+        if any(doc[k].text in HARD_PUNCT for k in range(prev, t.i)):
+            if DEBUG: print(f"    SKIP: hard punct in lead")
+            continue
+
+        if DEBUG:
+            print(f"    -> ADD split at {t.i + 1} (after '{t.text}')")
+        out.add(t.i + 1)
+    return out
+
+
 # =============================================================================
 # ANTI-RULES  —  return indices to *remove* from the splits set.
 # =============================================================================
@@ -5315,6 +5400,7 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_spatial_prep_reveal_split",   rule_spatial_prep_reveal_split,   True),
     ("rule_result_clause_reveal_split",  rule_result_clause_reveal_split,  True),
     ("rule_equation_reveal_split",       rule_equation_reveal_split,       True), 
+    ("rule_and_visualisables_split",   rule_and_visualisables_split,   True), 
 ]
 
 # Anti-rules: (name, function)
