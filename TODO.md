@@ -29,6 +29,21 @@ then in future again, just tackle issues one by one...
 
 -----------------
 
+consider:
+- just simple things like:
+    - overlaying text on the stock footage to keep things easy
+    - adding blank background and then my text coming on the screen as i say it..
+    - adding sound effects...?
+
+Then:
+- maybe just for like lists (e.g. with like 'and'), add the thing to show three things one by one on a shared background...
+--> perhaps for now just manually tag the lists? not sure how i'd do this!
+    -> type=stock (default)
+    -> type=row(3)::1 (first element of a row three) -> validatoin ensures that there are three of these in a row...
+
+
+------
+
 
 - Optimise and improve my sentence splitter.
 - Add as many labled sections as possible, with comments that mention exmaples of their uses
