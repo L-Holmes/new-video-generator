@@ -170,6 +170,87 @@ JOINT_LAYOUT_POSITIONS = {
     ],
 }
 
+
+# ===========================================================================
+# DOWNLOAD CONCURRENCY + PROGRESS TRACKING
+# ===========================================================================
+import threading
+
+DOWNLOAD_WORKERS: int = 12
+# Parallel HTTP workers. 12 is a good default for residential broadband.
+# Bump to 16-20 if you're on fast fibre; drop to 4-6 if Pexels starts
+# rate-limiting (you'd see 429 errors).
+
+# Shared HTTP session — reuses TCP/TLS connections across requests.
+# This is half the speedup; opening a fresh TLS connection per download
+# is what makes the sequential version slow.
+_http_session = requests.Session()
+_http_adapter = requests.adapters.HTTPAdapter(
+    pool_connections=DOWNLOAD_WORKERS,
+    pool_maxsize=DOWNLOAD_WORKERS,
+    max_retries=2,
+)
+_http_session.mount("https://", _http_adapter)
+_http_session.mount("http://", _http_adapter)
+
+# Guards history.json mutations from worker threads.
+_history_lock = threading.Lock()
+
+
+class ProgressTracker:
+    """Thread-safe text progress indicator.
+
+    Usage:
+        tracker = ProgressTracker(total=100, label="DOWNLOADING")
+        # ... do work ...
+        tracker.tick()           # called from any thread
+        tracker.finish()         # optional, forces a final newline
+    """
+
+    def __init__(self, total: int, label: str = "PROGRESS",
+                 bar_width: int = 30):
+        self.total = max(1, total)
+        self.label = label
+        self.bar_width = bar_width
+        self.done = 0
+        self.start = time.time()
+        self._lock = threading.Lock()
+        self._render()
+
+    def tick(self, n: int = 1) -> None:
+        with self._lock:
+            self.done += n
+            self._render()
+
+    def finish(self) -> None:
+        with self._lock:
+            if self.done < self.total:
+                self.done = self.total
+            self._render()
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+
+    def _render(self) -> None:
+        elapsed = time.time() - self.start
+        frac = self.done / self.total
+
+        # ETA only stabilises after a couple of completions
+        if self.done >= 2 and elapsed > 0.2:
+            rate = self.done / elapsed
+            remaining_s = max(0.0, (self.total - self.done) / rate) if rate else 0
+            mins, secs = divmod(int(remaining_s), 60)
+            eta = f"{mins}m {secs}s"
+        else:
+            eta = "calculating..."
+
+        filled = int(self.bar_width * frac)
+        bar = ">" * filled + "-" * (self.bar_width - filled)
+
+        msg = (f"{self.label} [{self.done:>4}/{self.total}]  "
+               f"TIME REMAINING {bar} {eta}      ")
+        sys.stdout.write("\r" + msg)
+        sys.stdout.flush()
+
 # ===========================================================================
 # STEP 1  –  SCRIPTS
 # ===========================================================================
@@ -421,6 +502,35 @@ def _get_video_metadata(search_term: str, max_results: int = 10, page: int = 1) 
     print(f"  [video meta] '{search_term}' p{page} → {len(results)} results")
     return results
 
+def _get_image_metadata(search_term: str, max_results: int = 5,
+                       page: int = 1) -> list[str]:
+    """
+    Hit Pexels Images API, return URLs only — NO downloading.
+    e.g. ["https://images.pexels.com/photos/xxx/pexels-photo.jpeg", ...]
+    """
+    try:
+        resp = _http_session.get(
+            "https://api.pexels.com/v1/search",
+            headers={"Authorization": PEXELS_API_KEY},
+            params={"query": search_term, "per_page": max_results,
+                    "orientation": "landscape", "page": page},
+            timeout=8,
+        )
+    except Exception as exc:
+        print(f"  [image meta] API error: {exc}")
+        return []
+
+    if resp.status_code != 200:
+        print(f"  [image meta] API error {resp.status_code} for '{search_term}'")
+        return []
+
+    urls: list[str] = []
+    for p in resp.json().get("photos", []) or []:
+        url = (p.get("src") or {}).get("large2x") or (p.get("src") or {}).get("large")
+        if url:
+            urls.append(url)
+    return urls
+
 
 def _download_clip(url: str) -> str | None:
     """
@@ -494,6 +604,71 @@ def _download_image(url: str) -> str | None:
     history[url] = str(dest)
     _save_history(history)
     print(f"  [download img] done → {dest.name}")
+    return str(dest)
+
+
+def _download_clip_parallel(url: str) -> str | None:
+    """Thread-safe, silent version of _download_clip using the shared session."""
+    with _history_lock:
+        history = _load_history()
+        if url in history and Path(history[url]).exists():
+            return history[url]
+
+    url_hash = hashlib.md5(url.encode()).hexdigest()[:12]
+    filename = f"pexels-{url_hash}.mp4"
+    STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    dest = STOCK_FOOTAGE_CACHE_DIR / filename
+
+    try:
+        vid_resp = _http_session.get(url, stream=True, timeout=30)
+        if vid_resp.status_code != 200:
+            return None
+        with open(dest, "wb") as f:
+            for chunk in vid_resp.iter_content(chunk_size=65536):
+                f.write(chunk)
+    except Exception:
+        return None
+
+    with _history_lock:
+        history = _load_history()
+        history[url] = str(dest)
+        _save_history(history)
+
+    return str(dest)
+
+
+def _download_image_parallel(url: str) -> str | None:
+    """Thread-safe, silent version of _download_image using the shared session."""
+    with _history_lock:
+        history = _load_history()
+        if url in history and Path(history[url]).exists():
+            return history[url]
+
+    url_hash = hashlib.md5(url.encode()).hexdigest()[:12]
+    ext = ".jpg"
+    for cand_ext in (".jpg", ".jpeg", ".png", ".webp"):
+        if cand_ext in url.lower().split("?")[0]:
+            ext = cand_ext
+            break
+    filename = f"pexels-img-{url_hash}{ext}"
+    STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    dest = STOCK_FOOTAGE_CACHE_DIR / filename
+
+    try:
+        img_resp = _http_session.get(url, stream=True, timeout=15)
+        if img_resp.status_code != 200:
+            return None
+        with open(dest, "wb") as f:
+            for chunk in img_resp.iter_content(chunk_size=65536):
+                f.write(chunk)
+    except Exception:
+        return None
+
+    with _history_lock:
+        history = _load_history()
+        history[url] = str(dest)
+        _save_history(history)
+
     return str(dest)
 
 
@@ -915,41 +1090,103 @@ def _add_joint_paths_to_history(joint_footage_map: dict[str, list[dict]]) -> Non
 
 def load_stock_footage(all_scenes: dict) -> list[dict]:
     """
-    Build the candidates list (2 videos + 3 images per scene) the review GUI
-    will display.
+    Parallel implementation. Two phases:
 
-    Returns
-    -------
-    list[dict]   e.g.::
-        [
-            {
-              "script_text": "The Empire State Building is really big.",
-              "candidates": {
-                "videos": [{url: trim}, {url: trim}],
-                "images": [{url: trim}, {url: trim}, {url: trim}],
-              },
-              "num_clips_needed": 1,
-              "max_runtime_per_clip_seconds": 4.8,
-            },
-            ...
-        ]
+    Phase A — gather all metadata (~3 API calls per scene, done in
+              parallel across scenes; no downloads yet).
+    Phase B — download every candidate file in parallel with a single
+              progress bar.
+
+    Returns the same shape as before:
+        [{"script_text", "candidates": {"videos": [...], "images": [...]},
+          "num_clips_needed", "max_runtime_per_clip_seconds"}, ...]
     """
-    out: list[dict] = []
-    for script_text, scene_data in all_scenes.items():
-        search_term = scene_data["search_term"]
+    scene_items = list(all_scenes.items())
+    print(f"\n[fetch] Phase A: gathering metadata for {len(scene_items)} scene(s) "
+          f"in parallel...")
 
+    # ── Phase A: parallel metadata fetch ──────────────────────────────
+    def fetch_meta_for_scene(idx_and_scene):
+        idx, (script_text, scene_data) = idx_and_scene
+        search_term = scene_data["search_term"]
         num_clips, max_runtime = _get_num_stock_images(script_text)
 
-        print(f"\n[fetch] '{script_text}'")
-        print(f"        search='{search_term}' clips={num_clips} max_runtime={max_runtime:.2f}s")
+        # Up to 2 unique videos (walking pages if needed)
+        video_meta: list[tuple[str, float]] = []
+        seen: set[str] = set()
+        for page in range(1, 4):
+            if len(video_meta) >= 2:
+                break
+            for url, dur in _get_video_metadata(search_term, max_results=10, page=page):
+                if url in seen or dur <= 0:
+                    continue
+                seen.add(url)
+                video_meta.append((url, dur))
+                if len(video_meta) >= 2:
+                    break
 
-        candidates = _fetch_stock_footage_candidates(search_term, max_runtime)
-        out.append({
-            "script_text":                    script_text,
-            "candidates":                     candidates,
-            "num_clips_needed":               num_clips,
-            "max_runtime_per_clip_seconds":   max_runtime,
-        })
+        # Up to 3 unique images
+        image_urls: list[str] = []
+        seen_img: set[str] = set()
+        for url in _get_image_metadata(search_term, max_results=5, page=1):
+            if url in seen_img:
+                continue
+            seen_img.add(url)
+            image_urls.append(url)
+            if len(image_urls) >= 3:
+                break
+
+        return idx, script_text, num_clips, max_runtime, video_meta, image_urls
+
+    out: list[dict] = [None] * len(scene_items)  # type: ignore[list-item]
+    all_tasks: list[tuple[int, str, str, float]] = []
+    # task = (scene_idx, kind, url, trim_seconds)
+
+    with ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as ex:
+        for result in ex.map(fetch_meta_for_scene, enumerate(scene_items)):
+            idx, script_text, num_clips, max_runtime, video_meta, image_urls = result
+
+            out[idx] = {
+                "script_text":                  script_text,
+                "candidates":                   {"videos": [], "images": []},
+                "num_clips_needed":             num_clips,
+                "max_runtime_per_clip_seconds": max_runtime,
+            }
+
+            for url, dur in video_meta:
+                trim = min(dur, max_runtime)
+                all_tasks.append((idx, "videos", url, round(trim, 2)))
+
+            for url in image_urls:
+                all_tasks.append((idx, "images", url, round(float(max_runtime), 2)))
+
+    print(f"[fetch] Phase A done — {len(all_tasks)} files queued.")
+
+    if not all_tasks:
+        return out
+
+    # ── Phase B: parallel download with progress bar ──────────────────
+    print(f"[fetch] Phase B: downloading {len(all_tasks)} files "
+          f"with {DOWNLOAD_WORKERS} workers...")
+    tracker = ProgressTracker(total=len(all_tasks), label="DOWNLOADING")
+
+    def download_one(task):
+        scene_idx, kind, url, trim = task
+        if kind == "videos":
+            local = _download_clip_parallel(url)
+        else:
+            local = _download_image_parallel(url)
+        tracker.tick()
+        return scene_idx, kind, url, trim, local
+
+    with ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as ex:
+        for scene_idx, kind, url, trim, local in ex.map(download_one, all_tasks):
+            if local is None:
+                continue  # failed downloads silently dropped
+            out[scene_idx]["candidates"][kind].append({url: trim})
+
+    tracker.finish()
+    print(f"[fetch] Phase B done.")
     return out
 
 

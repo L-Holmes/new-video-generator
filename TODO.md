@@ -11,7 +11,11 @@ TODO:
 any way we can speed up the downloading of images?
 like using the usual computing tricks? I'm on debian 13... on ryzen pro 7 thinkpad... don't know if its possible really...
 
-can we also add a sort of 'TIME REMAINING >>>>>>>>>>>>>>>>>>> x m y s' (where 'x' is minutes and 'y' is estimated seconds remaining)
+can we also add a sort of 'TIME REMAINING >>>>>>>>>>>>>>>>>>> x m y s' (where 'x' is minutes and 'y' is estimated seconds remaining) 
+(just for the downloading of the images for now.. 
+ and maybe stitching together of images.. but seperately)
+
+if not, just say not possible. 
 
 
 
