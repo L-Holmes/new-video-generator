@@ -53,13 +53,21 @@ if __name__ == "__main__":
     print("---------------")
 
     other_inputs = [
-            "It lingers for nearly ten seconds, smearing every sound into a kind of sonic fog that makes speech almost impossible to understand.",
-    "It's like the walls remember every voice that's ever passed through them."
+    "I hate the word several",
+    "She was disgusted by the thought of the giant panda",
+    "I can’t stand the texture of wet cardboard",
+    "She was oddly comforted by the smell of old library books",
+    "He felt uneasy about the idea of underwater escalators",
+    "They were delighted by the sight of tiny, perfectly round pebbles",
+    "My friend hates the sound of people chewing gum loudly",
+    "The teacher was amused by the chaos of a dropped box of ping‑pong balls",
+    "I felt strangely inspired by the glow of a vending machine at night",
+    "Her brother was disgusted by the thought of lukewarm scrambled eggs"
     ]
 
 
     for other_in in other_inputs:
-        resultnext = split_text_into_sections(other_in, debug=True)
+        resultnext = split_text_into_sections(other_in, debug=False)
         print("<--->")
         print("BEFORE:", other_in)
         print("AFTER:", resultnext)
