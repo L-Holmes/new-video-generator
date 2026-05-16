@@ -1,11 +1,52 @@
 
 
+---
+TODO:
+- the script is missing part of what is in the actual script... like 'x' meant.. then straight onto manhatten...
 
+
+---
+
+
+any way we can speed up the downloading of images?
+like using the usual computing tricks? I'm on debian 13... on ryzen pro 7 thinkpad... don't know if its possible really...
+
+can we also add a sort of 'TIME REMAINING >>>>>>>>>>>>>>>>>>> x m y s' (where 'x' is minutes and 'y' is estimated seconds remaining)
+
+
+
+---------
+
+
+
+task:
 right, now i need to work out how i'm going to integrate these things into the final scene stitcher
 -> first, will want to identify the scenes which are now joint scenes with multiple parts.
 -> then, I'll need to know the length of the transition, and the length of the next vid so that we know how long to show each scene for...
     -> that may be quite tough.. potentially we'll need to know how long the scenes are before generating the joint scenes? so that we can adjust the transition to be at least as long as the scene length, and then if the scene is shorter than the minimum then instead of doinga transition we just do no transitions...
 
+or potentially we need to update whatever map the sentence splitter reads from such that instead of pointing at the original footage it points at the new joint generated scenes instead?
+but obviously with the joint scenes there are two vids per section of text... rather than just one how the stock footage is.. since there is the initial transition and then the bit after that...  
+e.g. 
+for our initial example;
+/050 󰈫  stage_01_of_03.mp4
+/049 󰈫  stage_01_of_03_loop.mp4
+/047 󰈫  stage_02_of_03.mp4
+/051 󰈫  stage_02_of_03_loop.mp4
+/046 󰈫  stage_03_of_03.mp4
+/048 󰈫  stage_03_of_03_loop.mp4
+
+in this, we have:
+/050 󰈫  stage_01_of_03.mp4
+/049 󰈫  stage_01_of_03_loop.mp4
+
+now again, i don't know the length of the clips but it will of course make a difference..
+
+
+
+--------
+
+and here is my main file code: 
 
 
 

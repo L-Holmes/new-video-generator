@@ -1,29 +1,55 @@
 [
     {
-        "script_text": "If you open your kitchen cupboard right now, you probably have a jar of nutmeg.",
+        "script_text": "If you open your kitchen cupboard right now,",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/36983577/15667855_3840_2160_25fps.mp4": 5.28
+                    "https://videos.pexels.com/video-files/32320840/13786036_2562_1440_60fps.mp4": 3.1
                 },
                 {
-                    "https://videos.pexels.com/video-files/8580859/8580859-hd_1920_1080_30fps.mp4": 5.28
+                    "https://videos.pexels.com/video-files/8889750/8889750-uhd_4096_2160_24fps.mp4": 3.1
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/4778354/pexels-photo-4778354.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.28
+                    "https://images.pexels.com/photos/4778354/pexels-photo-4778354.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.1
                 },
                 {
-                    "https://images.pexels.com/photos/7236723/pexels-photo-7236723.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.28
+                    "https://images.pexels.com/photos/7236622/pexels-photo-7236622.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.1
                 },
                 {
-                    "https://images.pexels.com/photos/36058915/pexels-photo-36058915.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.28
+                    "https://images.pexels.com/photos/7303850/pexels-photo-7303850.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.1
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 5.28
+        "max_runtime_per_clip_seconds": 3.1
+    },
+    {
+        "script_text": "you probably have a jar of nutmeg.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/36983577/15667855_3840_2160_25fps.mp4": 2.18
+                },
+                {
+                    "https://videos.pexels.com/video-files/8580859/8580859-hd_1920_1080_30fps.mp4": 2.18
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/4778354/pexels-photo-4778354.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
+                },
+                {
+                    "https://images.pexels.com/photos/7236723/pexels-photo-7236723.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
+                },
+                {
+                    "https://images.pexels.com/photos/36058915/pexels-photo-36058915.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.18
     },
     {
         "script_text": "It costs about two dollars.",
@@ -41,7 +67,7 @@
                     "https://images.pexels.com/photos/6694574/pexels-photo-6694574.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
                 },
                 {
-                    "https://images.pexels.com/photos/6694576/pexels-photo-6694576.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
+                    "https://images.pexels.com/photos/4691478/pexels-photo-4691478.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
                 },
                 {
                     "https://images.pexels.com/photos/35471718/pexels-photo-35471718.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
@@ -82,7 +108,7 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/8369980/8369980-hd_1920_1080_30fps.mp4": 2.28
+                    "https://videos.pexels.com/video-files/8733007/8733007-uhd_3840_2160_30fps.mp4": 2.28
                 },
                 {
                     "https://videos.pexels.com/video-files/33903113/14387913_1920_1080_24fps.mp4": 2.28
@@ -116,10 +142,10 @@
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/9494906/pexels-photo-9494906.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.22
+                    "https://images.pexels.com/photos/30550489/pexels-photo-30550489.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.22
                 },
                 {
-                    "https://images.pexels.com/photos/30550489/pexels-photo-30550489.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.22
+                    "https://images.pexels.com/photos/9494906/pexels-photo-9494906.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.22
                 },
                 {
                     "https://images.pexels.com/photos/20409628/pexels-photo-20409628.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.22
@@ -134,10 +160,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/35753264/15156880_3840_2160_60fps.mp4": 5.38
+                    "https://videos.pexels.com/video-files/31974302/13624646_1920_1080_30fps.mp4": 5.38
                 },
                 {
-                    "https://videos.pexels.com/video-files/5046216/5046216-hd_1920_1080_24fps.mp4": 5.38
+                    "https://videos.pexels.com/video-files/35753264/15156880_3840_2160_60fps.mp4": 5.38
                 }
             ],
             "images": [
@@ -163,7 +189,7 @@
                     "https://videos.pexels.com/video-files/33752857/14329542_1920_1080_25fps.mp4": 2.94
                 },
                 {
-                    "https://videos.pexels.com/video-files/31099425/13288222_3840_2160_60fps.mp4": 2.94
+                    "https://videos.pexels.com/video-files/37496476/15885350_1920_1080_25fps.mp4": 2.94
                 }
             ],
             "images": [
@@ -212,10 +238,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/28409851/12377619_3840_2160_30fps.mp4": 0.9
+                    "https://videos.pexels.com/video-files/35389223/14994604_1920_1080_25fps.mp4": 0.9
                 },
                 {
-                    "https://videos.pexels.com/video-files/31820458/13557048_3840_2160_30fps.mp4": 0.9
+                    "https://videos.pexels.com/video-files/4571529/4571529-hd_1920_1080_25fps.mp4": 0.9
                 }
             ],
             "images": [
@@ -223,10 +249,10 @@
                     "https://images.pexels.com/photos/28830024/pexels-photo-28830024.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.9
                 },
                 {
-                    "https://images.pexels.com/photos/12404091/pexels-photo-12404091.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.9
+                    "https://images.pexels.com/photos/13757260/pexels-photo-13757260.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.9
                 },
                 {
-                    "https://images.pexels.com/photos/12404084/pexels-photo-12404084.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.9
+                    "https://images.pexels.com/photos/12404091/pexels-photo-12404091.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.9
                 }
             ]
         },
@@ -238,52 +264,52 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/9837708/9837708-hd_1920_1080_30fps.mp4": 0.34
+                    "https://videos.pexels.com/video-files/10391101/10391101-hd_3840_2160_24fps.mp4": 0.84
                 },
                 {
-                    "https://videos.pexels.com/video-files/16714568/16714568-hd_1920_1080_60fps.mp4": 0.34
+                    "https://videos.pexels.com/video-files/19595468/19595468-uhd_3840_2160_24fps.mp4": 0.84
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/9570297/pexels-photo-9570297.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.34
+                    "https://images.pexels.com/photos/9570297/pexels-photo-9570297.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.84
                 },
                 {
-                    "https://images.pexels.com/photos/3660228/pexels-photo-3660228.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.34
+                    "https://images.pexels.com/photos/3660228/pexels-photo-3660228.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.84
                 },
                 {
-                    "https://images.pexels.com/photos/28297306/pexels-photo-28297306.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.34
+                    "https://images.pexels.com/photos/28297306/pexels-photo-28297306.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.84
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 0.34
+        "max_runtime_per_clip_seconds": 0.84
     },
     {
         "script_text": "shipwrecks.",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/10194440/10194440-hd_1920_1080_30fps.mp4": 1.08
+                    "https://videos.pexels.com/video-files/10194440/10194440-hd_1920_1080_30fps.mp4": 0.58
                 },
                 {
-                    "https://videos.pexels.com/video-files/10194441/10194441-hd_3840_2160_24fps.mp4": 1.08
+                    "https://videos.pexels.com/video-files/33836596/14360024_3840_2160_60fps.mp4": 0.58
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/36253411/pexels-photo-36253411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.08
+                    "https://images.pexels.com/photos/36253410/pexels-photo-36253410.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.58
                 },
                 {
-                    "https://images.pexels.com/photos/9713892/pexels-photo-9713892.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.08
+                    "https://images.pexels.com/photos/36253411/pexels-photo-36253411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.58
                 },
                 {
-                    "https://images.pexels.com/photos/8130520/pexels-photo-8130520.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.08
+                    "https://images.pexels.com/photos/9713892/pexels-photo-9713892.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.58
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 1.08
+        "max_runtime_per_clip_seconds": 0.58
     },
     {
         "script_text": "But if you made it back with a single ship full of nutmeg, you were set for life.",
@@ -293,7 +319,7 @@
                     "https://videos.pexels.com/video-files/5703392/5703392-uhd_3840_2160_30fps.mp4": 4.5
                 },
                 {
-                    "https://videos.pexels.com/video-files/34411043/14577528_3840_2160_30fps.mp4": 4.5
+                    "https://videos.pexels.com/video-files/36590435/15513526_3840_2160_30fps.mp4": 4.5
                 }
             ],
             "images": [
@@ -304,7 +330,7 @@
                     "https://images.pexels.com/photos/36140348/pexels-photo-36140348.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.5
                 },
                 {
-                    "https://images.pexels.com/photos/31950021/pexels-photo-31950021.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.5
+                    "https://images.pexels.com/photos/33183562/pexels-photo-33183562.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.5
                 }
             ]
         },
@@ -319,7 +345,7 @@
                     "https://videos.pexels.com/video-files/36096869/15308294_3840_2160_24fps.mp4": 4.22
                 },
                 {
-                    "https://videos.pexels.com/video-files/7117256/7117256-uhd_4096_2160_25fps.mp4": 4.22
+                    "https://videos.pexels.com/video-files/29352443/12649365_3840_2160_60fps.mp4": 4.22
                 }
             ],
             "images": [
@@ -338,56 +364,56 @@
         "max_runtime_per_clip_seconds": 4.22
     },
     {
-        "script_text": "In fact, to secure a monopoly on nutmeg, the Dutch formally traded a different island they owned to the British.",
+        "script_text": "In fact, to secure a monopoly on nutmeg, the Dutch formally traded a different island they owned to the British. That island was ",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/7977624/7977624-hd_1920_1080_30fps.mp4": 6.04
+                    "https://videos.pexels.com/video-files/7977620/7977620-hd_1920_1080_30fps.mp4": 6.94
                 },
                 {
-                    "https://videos.pexels.com/video-files/7492690/7492690-hd_1920_1080_24fps.mp4": 6.04
+                    "https://videos.pexels.com/video-files/7492690/7492690-hd_1920_1080_24fps.mp4": 6.94
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/9801351/pexels-photo-9801351.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.04
+                    "https://images.pexels.com/photos/9801351/pexels-photo-9801351.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.94
                 },
                 {
-                    "https://images.pexels.com/photos/8957697/pexels-photo-8957697.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.04
+                    "https://images.pexels.com/photos/8957697/pexels-photo-8957697.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.94
                 },
                 {
-                    "https://images.pexels.com/photos/7386039/pexels-photo-7386039.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.04
+                    "https://images.pexels.com/photos/7386039/pexels-photo-7386039.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.94
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 6.04
+        "max_runtime_per_clip_seconds": 6.94
     },
     {
-        "script_text": "That island was Manhattan. Yep... New York City was traded for nutmeg.",
+        "script_text": "Manhattan. Yep... New York City was traded for nutmeg.",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/28855592/12496322_3840_2160_60fps.mp4": 4.9
+                    "https://videos.pexels.com/video-files/28855592/12496322_3840_2160_60fps.mp4": 4.0
                 },
                 {
-                    "https://videos.pexels.com/video-files/7850311/7850311-uhd_4000_2160_25fps.mp4": 4.9
+                    "https://videos.pexels.com/video-files/7850311/7850311-uhd_4000_2160_25fps.mp4": 4.0
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/33620033/pexels-photo-33620033.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.9
+                    "https://images.pexels.com/photos/33620033/pexels-photo-33620033.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.0
                 },
                 {
-                    "https://images.pexels.com/photos/35074876/pexels-photo-35074876.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.9
+                    "https://images.pexels.com/photos/35074876/pexels-photo-35074876.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.0
                 },
                 {
-                    "https://images.pexels.com/photos/36398474/pexels-photo-36398474.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.9
+                    "https://images.pexels.com/photos/36398474/pexels-photo-36398474.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.0
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 4.9
+        "max_runtime_per_clip_seconds": 4.0
     },
     {
         "script_text": "The entire map of the modern world was quite literally drawn by people desperately looking for a cheaper way to flavor their dinner.",
@@ -472,10 +498,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/5101165/5101165-uhd_3840_2160_25fps.mp4": 2.26
+                    "https://videos.pexels.com/video-files/32710164/13944500_1920_1080_25fps.mp4": 2.26
                 },
                 {
-                    "https://videos.pexels.com/video-files/32710164/13944500_1920_1080_25fps.mp4": 2.26
+                    "https://videos.pexels.com/video-files/36581800/15509913_3840_2160_60fps.mp4": 2.26
                 }
             ],
             "images": [
@@ -486,7 +512,7 @@
                     "https://images.pexels.com/photos/7140277/pexels-photo-7140277.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.26
                 },
                 {
-                    "https://images.pexels.com/photos/33897441/pexels-photo-33897441.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.26
+                    "https://images.pexels.com/photos/32931410/pexels-photo-32931410.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.26
                 }
             ]
         },
@@ -524,10 +550,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/34863449/14774906_2560_1440_30fps.mp4": 6.16
+                    "https://videos.pexels.com/video-files/36134691/15324117_2560_1440_25fps.mp4": 6.16
                 },
                 {
-                    "https://videos.pexels.com/video-files/36134691/15324117_2560_1440_25fps.mp4": 6.16
+                    "https://videos.pexels.com/video-files/34863442/14774902_2560_1440_30fps.mp4": 6.0
                 }
             ],
             "images": [
@@ -564,7 +590,7 @@
                     "https://images.pexels.com/photos/36808241/pexels-photo-36808241.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.18
                 },
                 {
-                    "https://images.pexels.com/photos/29708626/pexels-photo-29708626.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.18
+                    "https://images.pexels.com/photos/29630081/pexels-photo-29630081.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.18
                 }
             ]
         },
@@ -576,10 +602,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/8369975/8369975-hd_1920_1080_30fps.mp4": 4.76
+                    "https://videos.pexels.com/video-files/8369977/8369977-hd_1920_1080_30fps.mp4": 4.76
                 },
                 {
-                    "https://videos.pexels.com/video-files/8369977/8369977-hd_1920_1080_30fps.mp4": 4.76
+                    "https://videos.pexels.com/video-files/8369980/8369980-hd_1920_1080_30fps.mp4": 4.76
                 }
             ],
             "images": [
@@ -602,10 +628,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/7791634/7791634-hd_1920_1080_25fps.mp4": 4.7
+                    "https://videos.pexels.com/video-files/7332191/7332191-hd_1920_1080_25fps.mp4": 4.7
                 },
                 {
-                    "https://videos.pexels.com/video-files/7332191/7332191-hd_1920_1080_25fps.mp4": 4.7
+                    "https://videos.pexels.com/video-files/15533293/15533293-hd_1920_1080_24fps.mp4": 4.7
                 }
             ],
             "images": [
@@ -616,7 +642,7 @@
                     "https://images.pexels.com/photos/5244105/pexels-photo-5244105.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.7
                 },
                 {
-                    "https://images.pexels.com/photos/3930019/pexels-photo-3930019.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.7
+                    "https://images.pexels.com/photos/27679768/pexels-photo-27679768.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.7
                 }
             ]
         },
@@ -628,21 +654,21 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/6257869/6257869-uhd_3840_2160_25fps.mp4": 4.55
+                    "https://videos.pexels.com/video-files/27384797/12131718_3840_2160_50fps.mp4": 4.55
                 },
                 {
-                    "https://videos.pexels.com/video-files/7431509/7431509-uhd_4096_2160_30fps.mp4": 4.55
+                    "https://videos.pexels.com/video-files/7235865/7235865-hd_1920_1080_30fps.mp4": 4.55
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/35829362/pexels-photo-35829362.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.55
+                    "https://images.pexels.com/photos/269790/pexels-photo-269790.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.55
+                },
+                {
+                    "https://images.pexels.com/photos/4611591/pexels-photo-4611591.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.55
                 },
                 {
                     "https://images.pexels.com/photos/4278035/pexels-photo-4278035.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.55
-                },
-                {
-                    "https://images.pexels.com/photos/7412013/pexels-photo-7412013.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.55
                 }
             ]
         },
@@ -654,7 +680,7 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/32804207/13984051_2560_1440_60fps.mp4": 3.5
+                    "https://videos.pexels.com/video-files/9903225/9903225-hd_1920_1080_25fps.mp4": 3.5
                 },
                 {
                     "https://videos.pexels.com/video-files/36059135/15291757_1920_1080_60fps.mp4": 3.5
@@ -665,10 +691,10 @@
                     "https://images.pexels.com/photos/36847092/pexels-photo-36847092.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.5
                 },
                 {
-                    "https://images.pexels.com/photos/34086126/pexels-photo-34086126.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.5
+                    "https://images.pexels.com/photos/36873022/pexels-photo-36873022.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.5
                 },
                 {
-                    "https://images.pexels.com/photos/36873022/pexels-photo-36873022.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.5
+                    "https://images.pexels.com/photos/34086126/pexels-photo-34086126.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.5
                 }
             ]
         },
@@ -688,7 +714,7 @@
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/14347895/pexels-photo-14347895.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.51
+                    "https://images.pexels.com/photos/34955124/pexels-photo-34955124.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.51
                 },
                 {
                     "https://images.pexels.com/photos/26050836/pexels-photo-26050836.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.51
@@ -709,7 +735,7 @@
                     "https://videos.pexels.com/video-files/31856449/13571174_3840_2160_25fps.mp4": 4.96
                 },
                 {
-                    "https://videos.pexels.com/video-files/4994456/4994456-hd_1920_1080_30fps.mp4": 4.96
+                    "https://videos.pexels.com/video-files/5604689/5604689-uhd_3840_2160_24fps.mp4": 4.96
                 }
             ],
             "images": [
@@ -720,7 +746,7 @@
                     "https://images.pexels.com/photos/8250368/pexels-photo-8250368.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.96
                 },
                 {
-                    "https://images.pexels.com/photos/31126181/pexels-photo-31126181.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.96
+                    "https://images.pexels.com/photos/8112380/pexels-photo-8112380.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.96
                 }
             ]
         },
@@ -732,10 +758,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/6956366/6956366-hd_1920_1080_25fps.mp4": 4.86
+                    "https://videos.pexels.com/video-files/19428462/19428462-hd_1920_1080_24fps.mp4": 4.86
                 },
                 {
-                    "https://videos.pexels.com/video-files/5703203/5703203-uhd_4096_2160_30fps.mp4": 4.86
+                    "https://videos.pexels.com/video-files/19428467/19428467-hd_1920_1080_24fps.mp4": 4.86
                 }
             ],
             "images": [
@@ -761,7 +787,7 @@
                     "https://videos.pexels.com/video-files/36279165/15384250_1920_1080_24fps.mp4": 1.66
                 },
                 {
-                    "https://videos.pexels.com/video-files/7977620/7977620-hd_1920_1080_30fps.mp4": 1.66
+                    "https://videos.pexels.com/video-files/7977631/7977631-hd_1920_1080_30fps.mp4": 1.66
                 }
             ],
             "images": [
@@ -784,10 +810,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/5902051/5902051-hd_1920_1080_30fps.mp4": 5.5
+                    "https://videos.pexels.com/video-files/17137152/17137152-hd_1920_1080_60fps.mp4": 5.5
                 },
                 {
-                    "https://videos.pexels.com/video-files/10612770/10612770-hd_1920_1080_25fps.mp4": 5.5
+                    "https://videos.pexels.com/video-files/5902051/5902051-hd_1920_1080_30fps.mp4": 5.5
                 }
             ],
             "images": [
@@ -813,7 +839,7 @@
                     "https://videos.pexels.com/video-files/8771658/8771658-hd_1920_1080_24fps.mp4": 4.48
                 },
                 {
-                    "https://videos.pexels.com/video-files/28512396/12404204_1920_1080_30fps.mp4": 4.48
+                    "https://videos.pexels.com/video-files/19061404/19061404-uhd_3840_2160_30fps.mp4": 4.48
                 }
             ],
             "images": [
@@ -836,21 +862,21 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/28409851/12377619_3840_2160_30fps.mp4": 3.72
+                    "https://videos.pexels.com/video-files/9380498/9380498-uhd_3840_2160_24fps.mp4": 3.72
                 },
                 {
-                    "https://videos.pexels.com/video-files/5703392/5703392-uhd_3840_2160_30fps.mp4": 3.72
+                    "https://videos.pexels.com/video-files/28409851/12377619_3840_2160_30fps.mp4": 3.72
                 }
             ],
             "images": [
+                {
+                    "https://images.pexels.com/photos/8453208/pexels-photo-8453208.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
+                },
                 {
                     "https://images.pexels.com/photos/37730/sunset-boat-sea-ship-37730.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
                 },
                 {
                     "https://images.pexels.com/photos/7113306/pexels-photo-7113306.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
-                },
-                {
-                    "https://images.pexels.com/photos/8453208/pexels-photo-8453208.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
                 }
             ]
         },
@@ -862,10 +888,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/18016882/18016882-uhd_3840_2160_30fps.mp4": 1.96
+                    "https://videos.pexels.com/video-files/6020096/6020096-hd_1920_1080_24fps.mp4": 1.96
                 },
                 {
-                    "https://videos.pexels.com/video-files/6020096/6020096-hd_1920_1080_24fps.mp4": 1.96
+                    "https://videos.pexels.com/video-files/1191566/1191566-hd_1920_1080_25fps.mp4": 1.96
                 }
             ],
             "images": [
@@ -873,10 +899,10 @@
                     "https://images.pexels.com/photos/37175018/pexels-photo-37175018.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.96
                 },
                 {
-                    "https://images.pexels.com/photos/37351470/pexels-photo-37351470.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.96
+                    "https://images.pexels.com/photos/6458045/pexels-photo-6458045.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.96
                 },
                 {
-                    "https://images.pexels.com/photos/34998137/pexels-photo-34998137.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.96
+                    "https://images.pexels.com/photos/15429576/pexels-photo-15429576.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.96
                 }
             ]
         },
@@ -896,7 +922,7 @@
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/29189291/pexels-photo-29189291.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.76
+                    "https://images.pexels.com/photos/37428518/pexels-photo-37428518.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.76
                 },
                 {
                     "https://images.pexels.com/photos/37175018/pexels-photo-37175018.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.76
@@ -928,7 +954,7 @@
                     "https://images.pexels.com/photos/30550489/pexels-photo-30550489.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.18
                 },
                 {
-                    "https://images.pexels.com/photos/9494910/pexels-photo-9494910.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.18
+                    "https://images.pexels.com/photos/1098526/pexels-photo-1098526.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.18
                 }
             ]
         },
@@ -966,10 +992,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/4586959/4586959-uhd_3840_2160_25fps.mp4": 1.3
+                    "https://videos.pexels.com/video-files/7327405/7327405-uhd_3840_2160_25fps.mp4": 1.3
                 },
                 {
-                    "https://videos.pexels.com/video-files/10149185/10149185-uhd_3840_2160_24fps.mp4": 1.3
+                    "https://videos.pexels.com/video-files/11099870/11099870-hd_1920_1080_24fps.mp4": 1.3
                 }
             ],
             "images": [
@@ -992,10 +1018,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/10039764/10039764-hd_1920_1080_24fps.mp4": 6.14
+                    "https://videos.pexels.com/video-files/34774758/14742546_3840_2160_30fps.mp4": 6.14
                 },
                 {
-                    "https://videos.pexels.com/video-files/34774758/14742546_3840_2160_30fps.mp4": 6.14
+                    "https://videos.pexels.com/video-files/3026280/3026280-uhd_3840_2160_25fps.mp4": 6.14
                 }
             ],
             "images": [
@@ -1006,7 +1032,7 @@
                     "https://images.pexels.com/photos/12695564/pexels-photo-12695564.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.14
                 },
                 {
-                    "https://images.pexels.com/photos/5968219/pexels-photo-5968219.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.14
+                    "https://images.pexels.com/photos/11318049/pexels-photo-11318049.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.14
                 }
             ]
         },
@@ -1021,7 +1047,7 @@
                     "https://videos.pexels.com/video-files/34774758/14742546_3840_2160_30fps.mp4": 3.66
                 },
                 {
-                    "https://videos.pexels.com/video-files/10039764/10039764-hd_1920_1080_24fps.mp4": 3.66
+                    "https://videos.pexels.com/video-files/4832009/4832009-uhd_3840_2160_25fps.mp4": 3.66
                 }
             ],
             "images": [
@@ -1032,7 +1058,7 @@
                     "https://images.pexels.com/photos/36703922/pexels-photo-36703922.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.66
                 },
                 {
-                    "https://images.pexels.com/photos/39390/chili-pepper-red-spicy-drying-39390.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.66
+                    "https://images.pexels.com/photos/6902055/pexels-photo-6902055.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.66
                 }
             ]
         },
@@ -1047,7 +1073,7 @@
                     "https://videos.pexels.com/video-files/4175185/4175185-hd_2048_996_30fps.mp4": 5.48
                 },
                 {
-                    "https://videos.pexels.com/video-files/4768418/4768418-hd_1920_1080_25fps.mp4": 5.48
+                    "https://videos.pexels.com/video-files/34879110/14778426_1920_1080_60fps.mp4": 5.48
                 }
             ],
             "images": [
@@ -1110,7 +1136,7 @@
                     "https://images.pexels.com/photos/10508207/pexels-photo-10508207.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.48
                 },
                 {
-                    "https://images.pexels.com/photos/10672908/pexels-photo-10672908.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.48
+                    "https://images.pexels.com/photos/35532828/pexels-photo-35532828.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.48
                 }
             ]
         },
@@ -1130,13 +1156,13 @@
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/37099423/pexels-photo-37099423.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
+                    "https://images.pexels.com/photos/17359804/pexels-photo-17359804.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
                 },
                 {
                     "https://images.pexels.com/photos/11719604/pexels-photo-11719604.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
                 },
                 {
-                    "https://images.pexels.com/photos/17359804/pexels-photo-17359804.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
+                    "https://images.pexels.com/photos/37099423/pexels-photo-37099423.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.18
                 }
             ]
         },
@@ -1203,7 +1229,7 @@
                     "https://videos.pexels.com/video-files/7593623/7593623-uhd_4096_1974_30fps.mp4": 2.26
                 },
                 {
-                    "https://videos.pexels.com/video-files/8899929/8899929-hd_1920_1080_25fps.mp4": 2.26
+                    "https://videos.pexels.com/video-files/9494941/9494941-hd_1920_1080_25fps.mp4": 2.26
                 }
             ],
             "images": [
@@ -1252,10 +1278,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/7429967/7429967-uhd_4096_2160_30fps.mp4": 4.34
+                    "https://videos.pexels.com/video-files/6257869/6257869-uhd_3840_2160_25fps.mp4": 4.34
                 },
                 {
-                    "https://videos.pexels.com/video-files/6257869/6257869-uhd_3840_2160_25fps.mp4": 4.34
+                    "https://videos.pexels.com/video-files/7431508/7431508-uhd_4096_2160_30fps.mp4": 4.34
                 }
             ],
             "images": [

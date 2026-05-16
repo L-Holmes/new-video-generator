@@ -119,6 +119,7 @@ GIF_EXTENSION: str = ".gif"
 LETTERBOX_COLOR: Tuple[int, int, int] = (0, 0, 0)
 
 
+
 # ---------------------------------------------------------------------------
 # Transition name constants  (single source of truth)
 # ---------------------------------------------------------------------------
@@ -219,6 +220,7 @@ def is_gif_file(path: str) -> bool:
 def is_animated(path: str) -> bool:
     """True if `path` is a video or gif (anything with frames over time)."""
     return is_video_file(path) or is_gif_file(path)
+
 
 
 # ---------------------------------------------------------------------------

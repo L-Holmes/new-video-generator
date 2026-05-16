@@ -114,6 +114,29 @@ Path(_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 # ===========================================================================
+# JOINT SCENE INTEGRATION
+# ===========================================================================
+# These mirror constants in JOINT_IMAGE_CREATOR.compositor so we can compute
+# timing without importing private helpers.
+#
+# TRANSITION_DURATION (0.6) + INTRO_TAIL_PADDING (0.05) — total length of the
+# stage_NN_of_NN.mp4 "intro" file emitted by the compositor when the newest
+# overlay animates in.
+JOINT_INTRO_DURATION_SEC: float = 0.65
+
+# If a scene is shorter than this, skip the transition entirely and just
+# use the _loop.mp4 file for the whole scene. Below ~1s there isn't time
+# for the animation to read clearly anyway.
+JOINT_MIN_SCENE_DURATION_FOR_TRANSITION_SEC: float = 1.0
+
+# Floor for the duration we pass to create_joint_scene. The compositor will
+# emit a _loop.mp4 of at least this length per stage; the stitcher trims
+# each stage's loop down to its actual per-stage need.
+JOINT_BASE_DURATION_FALLBACK_SEC: float = 3.0
+
+
+
+# ===========================================================================
 # SEARCH TERM TYPES
 # ===========================================================================
 
@@ -685,6 +708,211 @@ def _fetch_stock_footage_candidates(search_term: str,
 
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Joint scene timing helpers
+# ---------------------------------------------------------------------------
+
+def _load_scene_timings() -> dict[str, float]:
+    """Return {script_text → runtime_seconds} from the audio-sync output."""
+    p = Path(SYNCHRONIZED_SCRIPT_OUTPUT_FILE)
+    print(f"\n[joint:timings] loading scene timings from {p}")
+    if not p.exists():
+        print(f"[joint:timings] FATAL: timings file missing: {p}")
+        print( "[joint:timings]   (did run_audio_script_synchronizer run?)")
+        sys.exit(1)
+    timings = {k: float(v) for k, v in json.loads(p.read_text()).items()}
+    print(f"[joint:timings] loaded {len(timings)} timing entries")
+    return timings
+
+
+def _compute_joint_stage_timing(
+    script_text: str,
+    scene_timings: dict[str, float],
+) -> dict:
+    """
+    Decide how to split a single joint stage's runtime between the intro
+    (transition) file and the loop (resting) file.
+
+    Returns::
+        {
+          "script_text":    str,
+          "total_duration": float,   # full scene runtime from audio sync
+          "use_transition": bool,    # False for very short scenes
+          "intro_duration": float,   # 0 if no transition else ~0.65
+          "loop_duration":  float,   # remainder; can be 0
+        }
+    """
+    if script_text not in scene_timings:
+        available = "\n".join(f"    - {k}" for k in scene_timings)
+        print(f"[joint:timings] FATAL: no timing for joint stage:")
+        print(f"   '{script_text}'")
+        print(f"   Available timings:\n{available}")
+        sys.exit(1)
+
+    total = scene_timings[script_text]
+    use_transition = total >= JOINT_MIN_SCENE_DURATION_FOR_TRANSITION_SEC
+    intro = JOINT_INTRO_DURATION_SEC if use_transition else 0.0
+    loop  = max(0.0, total - intro)
+
+    print(f"[joint:timings] '{script_text[:70]}'")
+    print(f"[joint:timings]   total={total:.3f}s  use_transition={use_transition}")
+    print(f"[joint:timings]   intro={intro:.3f}s  loop={loop:.3f}s")
+
+    return {
+        "script_text":    script_text,
+        "total_duration": total,
+        "use_transition": use_transition,
+        "intro_duration": intro,
+        "loop_duration":  loop,
+    }
+
+
+def _stage_file_paths(
+    group_output_folder: Path,
+    stage_index: int,
+    num_stages: int,
+) -> tuple[Path, Path]:
+    """Return (intro_path, loop_path) for one stage of a joint group."""
+    intro = group_output_folder / f"stage_{stage_index + 1:02d}_of_{num_stages:02d}.mp4"
+    loop  = group_output_folder / f"stage_{stage_index + 1:02d}_of_{num_stages:02d}_loop.mp4"
+    return intro, loop
+
+
+def _build_footage_entries_for_stage(
+    group_output_folder: Path,
+    stage_index: int,
+    num_stages: int,
+    timing: dict,
+) -> list[dict]:
+    """
+    Build the {path: trim_secs} entries the stitcher plays back-to-back for
+    a single joint stage.
+
+    Layout when use_transition is True:
+        [intro_file: intro_duration, loop_file: loop_duration]
+
+    Layout when use_transition is False (very short scene):
+        [loop_file: total_duration]
+    """
+    intro_path, loop_path = _stage_file_paths(
+        group_output_folder, stage_index, num_stages,
+    )
+
+    print(f"\n[joint:footage] stage {stage_index + 1}/{num_stages}")
+    print(f"[joint:footage]   intro: {intro_path}  exists={intro_path.exists()}")
+    print(f"[joint:footage]   loop:  {loop_path}   exists={loop_path.exists()}")
+    print(f"[joint:footage]   timing: {timing}")
+
+    if not intro_path.exists():
+        print(f"[joint:footage] FATAL: expected intro file missing: {intro_path}")
+        sys.exit(1)
+
+    entries: list[dict] = []
+
+    if timing["use_transition"]:
+        if not loop_path.exists():
+            print(f"[joint:footage] FATAL: transition stage missing loop file: {loop_path}")
+            sys.exit(1)
+
+        entries.append({str(intro_path): round(timing["intro_duration"], 3)})
+        print(f"[joint:footage]   → intro entry: {intro_path.name}  "
+              f"trim={timing['intro_duration']:.3f}s")
+
+        if timing["loop_duration"] > 0.01:
+            entries.append({str(loop_path): round(timing["loop_duration"], 3)})
+            print(f"[joint:footage]   → loop  entry: {loop_path.name}  "
+                  f"trim={timing['loop_duration']:.3f}s")
+        else:
+            print(f"[joint:footage]   (loop omitted — duration <= 0.01s)")
+    else:
+        # Short scene: skip the transition, use the resting composition
+        # (loop file) for the full scene duration. The loop file always
+        # exists because the newest overlay is always TRANSITION_RANDOM
+        # in composite_flag mode — but guard anyway.
+        use_path = loop_path if loop_path.exists() else intro_path
+        entries.append({str(use_path): round(timing["total_duration"], 3)})
+        print(f"[joint:footage]   → static entry: {use_path.name}  "
+              f"trim={timing['total_duration']:.3f}s  (no transition: scene too short)")
+
+    print(f"[joint:footage]   total entries for this stage: {len(entries)}")
+    return entries
+
+
+# ---------------------------------------------------------------------------
+# Joint scene → final_data integration
+# ---------------------------------------------------------------------------
+
+def _merge_joint_scenes_into_final_data(
+    final_data: list[dict],
+    joint_footage_map: dict[str, list[dict]],
+) -> list[dict]:
+    """
+    Replace the `footage` list in `final_data` for any script_text that the
+    joint generator produced output for. Joint stages that weren't already
+    in final_data are appended at the end.
+    """
+    print("\n" + "=" * 70)
+    print(f"[joint:merge] merging {len(joint_footage_map)} joint stage(s) into final_data")
+    print(f"[joint:merge] final_data currently has {len(final_data)} entry(ies)")
+    print("=" * 70)
+
+    by_script = {entry["script_text"]: i for i, entry in enumerate(final_data)}
+
+    replaced = 0
+    appended = 0
+
+    for script_text, entries in joint_footage_map.items():
+        if script_text in by_script:
+            idx = by_script[script_text]
+            old_count = len(final_data[idx].get("footage", []))
+            final_data[idx]["footage"] = entries
+            replaced += 1
+            print(f"[joint:merge] REPLACED '{script_text[:60]}...'  "
+                  f"(was {old_count} entry(ies), now {len(entries)})")
+            for e in entries:
+                for path, trim in e.items():
+                    print(f"[joint:merge]     {Path(path).name}  trim={trim}s")
+        else:
+            final_data.append({"script_text": script_text, "footage": entries})
+            appended += 1
+            print(f"[joint:merge] APPENDED '{script_text[:60]}...'  "
+                  f"({len(entries)} entry(ies))")
+            for e in entries:
+                for path, trim in e.items():
+                    print(f"[joint:merge]     {Path(path).name}  trim={trim}s")
+
+    print(f"\n[joint:merge] done — replaced={replaced}, appended={appended}, "
+          f"final_data size now {len(final_data)}")
+    return final_data
+
+
+def _add_joint_paths_to_history(joint_footage_map: dict[str, list[dict]]) -> None:
+    """
+    The stitcher's history.json maps {url → local_path}. For our newly
+    generated joint files we add identity entries (path → path) so the
+    same lookup mechanism resolves them with no stitcher changes.
+    """
+    history = _load_history()
+    print(f"\n[joint:history] augmenting history.json "
+          f"(currently {len(history)} entries)")
+
+    added = 0
+    skipped = 0
+    for entries in joint_footage_map.values():
+        for entry in entries:
+            for path in entry:
+                if path in history:
+                    skipped += 1
+                    continue
+                history[path] = path
+                added += 1
+                print(f"[joint:history]   + identity entry for {Path(path).name}")
+
+    _save_history(history)
+    print(f"[joint:history] done — added={added}, already_present={skipped}, "
+          f"history now has {len(history)} entries")
+
+
 def load_stock_footage(all_scenes: dict) -> list[dict]:
     """
     Build the candidates list (2 videos + 3 images per scene) the review GUI
@@ -727,85 +955,73 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
 
 # ----------------------------
 
-def generate_joint_scenes( script_to_search_term: dict[str, SearchTermData], candidates_data: list[dict],) -> None:
+def generate_joint_scenes( script_to_search_term: dict[str, SearchTermData], candidates_data: list[dict],) -> dict[str, list[dict]]:
+    """
+    Build joint composite scenes for any scene flagged MediaType.JOINT, and
+    return a stitcher-ready map of:
 
-    print("\n" + "="*70)
+        { script_text: [ {local_path: trim_seconds}, ... ], ... }
+
+    Each joint stage typically contributes TWO entries:
+      1. an intro file (~0.65s, plays the transition)
+      2. a loop file (covers the rest of the scene)
+
+    Very short scenes (< JOINT_MIN_SCENE_DURATION_FOR_TRANSITION_SEC) get
+    just one entry — the loop file alone.
+    """
+
+    print("\n" + "=" * 70)
     print("[joint scenes] STARTING generate_joint_scenes")
     print(f"[joint scenes] script_to_search_term has {len(script_to_search_term)} entries")
     print(f"[joint scenes] candidates_data has {len(candidates_data)} entries")
-    print("="*70)
+    print("=" * 70)
+
+    # Load timings up front so we can size each group's loops correctly.
+    scene_timings = _load_scene_timings()
 
     # ── Build lookup dicts for reliable matching ──────────────────────
-    candidates_by_text: dict[str, dict] = {}
-    for c in candidates_data:
-        candidates_by_text[c["script_text"]] = c
-
-    # Also index by stripped text for fuzzy matching
-    candidates_by_stripped: dict[str, dict] = {}
-    for c in candidates_data:
-        candidates_by_stripped[c["script_text"].strip()] = c
-
+    candidates_by_text: dict[str, dict] = {c["script_text"]: c for c in candidates_data}
+    candidates_by_stripped: dict[str, dict] = {c["script_text"].strip(): c for c in candidates_data}
     print(f"[joint scenes] candidates lookup built with {len(candidates_by_text)} entries")
 
-    # 1) locate all of the scenes that have a type of 'joint'.
-
+    # 1) Locate all scenes flagged as 'joint'.
     joint_scenes: list[tuple[str, SearchTermData]] = []
-
     for script_text, scene_data in script_to_search_term.items():
         print(f"[joint scenes] checking scene: type={scene_data.get('search_type')}, "
               f"variant={scene_data.get('variant')}, pos={scene_data.get('position')}, "
               f"script='{script_text[:60]}...'")
-
         if scene_data["search_type"] != MediaType.JOINT:
             print(f"[joint scenes]   → SKIPPED (not JOINT)")
             continue
-
         joint_scenes.append((script_text, scene_data))
         print(f"[joint scenes]   → KEPT as joint scene")
 
     print(f"\n[joint scenes] found {len(joint_scenes)} joint scene(s) before sorting")
+    if not joint_scenes:
+        print("[joint scenes] no joint scenes — returning empty map")
+        return {}
 
-    joint_scenes.sort(
-        key=lambda scene: int(scene[1]["position"])
-    )
-
+    joint_scenes.sort(key=lambda scene: int(scene[1]["position"]))
     for i, (txt, data) in enumerate(joint_scenes):
         print(f"[joint scenes]   sorted[{i}]: pos={data['position']}, script='{txt[:60]}...'")
 
-    # 2) determine group of joints
-    # (determined by ones that have the same type, variant,
-    # and have a position that comes after the previous)
-
+    # 2) Group consecutive joints by (type, variant, contiguous position).
     grouped_joint_scenes: list[list[tuple[str, SearchTermData]]] = []
-
-    current_group = []
-
+    current_group: list[tuple[str, SearchTermData]] = []
     previous_scene_data = None
 
     for script_text, scene_data in joint_scenes:
-
         if not previous_scene_data:
             current_group.append((script_text, scene_data))
             previous_scene_data = scene_data
             print(f"[joint scenes] grouping: started first group with pos={scene_data['position']}")
             continue
 
-        same_type = (
-            scene_data["search_type"]
-            == previous_scene_data["search_type"]
-        )
+        same_type     = scene_data["search_type"] == previous_scene_data["search_type"]
+        same_variant  = scene_data["variant"]     == previous_scene_data["variant"]
+        next_position = int(scene_data["position"]) == int(previous_scene_data["position"]) + 1
 
-        same_variant = (
-            scene_data["variant"]
-            == previous_scene_data["variant"]
-        )
-
-        next_position = (
-            int(scene_data["position"])
-            == int(previous_scene_data["position"]) + 1
-        )
-
-        print(f"[joint scenes] grouping: comparing pos={scene_data['position']} to prev pos={previous_scene_data['position']}")
+        print(f"[joint scenes] grouping: pos={scene_data['position']} vs prev={previous_scene_data['position']}")
         print(f"[joint scenes]   same_type={same_type}, same_variant={same_variant}, next_position={next_position}")
 
         if same_type and same_variant and next_position:
@@ -813,7 +1029,7 @@ def generate_joint_scenes( script_to_search_term: dict[str, SearchTermData], can
             print(f"[joint scenes]   → ADDED to current group (now size {len(current_group)})")
         else:
             grouped_joint_scenes.append(current_group)
-            print(f"[joint scenes]   → BREAK: ending group of size {len(current_group)}, starting new group")
+            print(f"[joint scenes]   → BREAK: ending group of size {len(current_group)}, starting new")
             current_group = [(script_text, scene_data)]
 
         previous_scene_data = scene_data
@@ -825,63 +1041,73 @@ def generate_joint_scenes( script_to_search_term: dict[str, SearchTermData], can
     print(f"\n[joint scenes] formed {len(grouped_joint_scenes)} group(s):")
     for gi, grp in enumerate(grouped_joint_scenes):
         positions = [s[1]["position"] for s in grp]
-        variant = grp[0][1]["variant"]
+        variant   = grp[0][1]["variant"]
         print(f"[joint scenes]   group {gi}: variant={variant}, positions={positions}, "
               f"size={len(grp)}")
 
-    #3) for each group, generate the joint scenes...
-    for group_index, group in enumerate(grouped_joint_scenes):
+    # 3) Generate each group + collect footage entries.
+    script_text_to_footage_entries: dict[str, list[dict]] = {}
 
+    for group_index, group in enumerate(grouped_joint_scenes):
         variant = group[0][1]["variant"]
         print(f"\n[joint scenes] processing group {group_index}: variant={variant}, size={len(group)}")
 
         match variant:
-
             case MediaVariant.THREE_ROW:
                 print("[joint scenes]   → matched THREE_ROW layout")
-
-                layout_positions = [
-                    [25, 50],
-                    [50, 50],
-                    [75, 50],
-                ]
-
+                layout_positions = [[25, 50], [50, 50], [75, 50]]
                 scale_percentage = 30
-                transition = TRANSITION_RANDOM
-                background_path = "_BACKGROUNDS/bg_crumpled_card.mp4"
-                duration = 3.0
+                transition       = TRANSITION_RANDOM
+                background_path  = "_BACKGROUNDS/bg_crumpled_card.mp4"
+                base_duration    = JOINT_BASE_DURATION_FALLBACK_SEC
 
                 print(f"[joint scenes]   layout_positions={layout_positions}")
                 print(f"[joint scenes]   scale_percentage={scale_percentage}")
                 print(f"[joint scenes]   transition={transition}")
                 print(f"[joint scenes]   background_path={background_path}")
-                print(f"[joint scenes]   duration={duration}")
-
-            # case MediaVariant.GRID:
-            #
-            #     layout_positions = [...]
-            #     scale_percentage = 20
-            #     transition = TRANSITION_FADE
-            #     background_path = "_BACKGROUNDS/grid_bg.jpg"
-            #     duration = 4.0
+                print(f"[joint scenes]   base_duration={base_duration}s (fallback)")
 
             case _:
                 print(f"[joint scenes] FATAL: unsupported variant: {variant}")
                 sys.exit(1)
 
+        # ── Compute per-stage timing ─────────────────────────────────
+        print(f"\n[joint scenes:timing] computing timing for {len(group)} stage(s)")
+        stage_timings = [
+            _compute_joint_stage_timing(script_text, scene_timings)
+            for script_text, _ in group
+        ]
+
+        # We pass a single `duration` to create_joint_scene that controls
+        # the LOOP file's length (and the intro is auto-trimmed to 0.65s
+        # when there's an animation). We want the loop file to be at
+        # LEAST as long as the longest per-stage requirement so the
+        # stitcher can trim each stage down to its own need.
+        max_loop_duration = max(
+            (t["loop_duration"] for t in stage_timings if t["use_transition"]),
+            default=0.0,
+        )
+        max_static_duration = max(
+            (t["total_duration"] for t in stage_timings if not t["use_transition"]),
+            default=0.0,
+        )
+        composite_duration = max(max_loop_duration, max_static_duration, base_duration)
+        print(f"[joint scenes:timing] max_loop_duration  = {max_loop_duration:.3f}s")
+        print(f"[joint scenes:timing] max_static_duration= {max_static_duration:.3f}s")
+        print(f"[joint scenes:timing] base_duration      = {base_duration:.3f}s")
+        print(f"[joint scenes:timing] → composite_duration = {composite_duration:.3f}s "
+              f"(passed to create_joint_scene)")
+
+        # ── Build the items list for the compositor ──────────────────
         items = []
-
         for item_index, (script_text, _) in enumerate(group):
-
             print(f"\n[joint scenes]   item {item_index}: script='{script_text[:80]}'")
 
             if item_index >= len(layout_positions):
                 print(f"[joint scenes] FATAL: item_index {item_index} >= layout length {len(layout_positions)}")
                 sys.exit(1)
 
-            # ── Match candidate: exact first, then stripped ───────────
             matching_candidate = candidates_by_text.get(script_text)
-
             if not matching_candidate:
                 print(f"[joint scenes]     exact match failed, trying stripped match...")
                 matching_candidate = candidates_by_stripped.get(script_text.strip())
@@ -899,99 +1125,99 @@ def generate_joint_scenes( script_to_search_term: dict[str, SearchTermData], can
 
             print(f"[joint scenes]     found matching candidate ✓")
 
-            image_candidates = (
-                matching_candidate
-                .get("candidates", {})
-                .get("images", [])
-            )
-
+            image_candidates = matching_candidate.get("candidates", {}).get("images", [])
             print(f"[joint scenes]     image_candidates count: {len(image_candidates)}")
-
             if not image_candidates:
                 print(f"[joint scenes] FATAL: no image candidates for script: '{script_text}'")
                 sys.exit(1)
 
             first_image = image_candidates[0]
             print(f"[joint scenes]     first_image dict: {first_image}")
-
-            image_url = ""
-
-            for candidate_url in first_image:
-                image_url = candidate_url
-                break
-
-            print(f"[joint scenes]     extracted image_url: '{image_url[:80]}...' " if len(image_url) > 80 else f"[joint scenes]     extracted image_url: '{image_url}'")
-
+            image_url = next(iter(first_image), "")
             if not image_url:
                 print(f"[joint scenes] FATAL: no image_url extracted from candidate")
                 sys.exit(1)
 
-            # ── Resolve local path: check history, download if missing ─
+            print(f"[joint scenes]     extracted image_url: '{image_url[:80]}...'"
+                  if len(image_url) > 80 else
+                  f"[joint scenes]     extracted image_url: '{image_url}'")
+
             history = _load_history()
             local_path = history.get(image_url)
-
             if local_path and Path(local_path).exists():
                 print(f"[joint scenes]     cache hit: {local_path}")
             else:
                 if local_path:
-                    print(f"[joint scenes]     history has path but file missing on disk: {local_path}")
+                    print(f"[joint scenes]     history has path but file missing: {local_path}")
                 else:
                     print(f"[joint scenes]     URL not in download history")
-
                 print(f"[joint scenes]     downloading image on-the-fly...")
                 local_path = _download_image(image_url)
-
                 if not local_path:
                     print(f"[joint scenes] FATAL: failed to download image: {image_url}")
                     sys.exit(1)
-
                 print(f"[joint scenes]     downloaded to: {local_path}")
 
             items.append({
-                "path": local_path,
-                "position": layout_positions[item_index],
+                "path":                         local_path,
+                "position":                     layout_positions[item_index],
                 "scale-page-height-percentage": scale_percentage,
-                "transition": transition,
+                "transition":                   transition,
             })
-
             print(f"[joint scenes]     → ADDED item: path={local_path}, "
                   f"position={layout_positions[item_index]}, scale={scale_percentage}%")
 
         print(f"\n[joint scenes]   total items built for group {group_index}: {len(items)}")
-
         if not items:
             print(f"[joint scenes] FATAL: no items to composite for group {group_index}")
             sys.exit(1)
 
-        output_folder = (
-            Path(_CACHE_DIR)
-            / "joint_scenes"
-            / f"group_{group_index}"
-        )
-
+        output_folder = Path(_CACHE_DIR) / "joint_scenes" / f"group_{group_index}"
         output_folder.mkdir(parents=True, exist_ok=True)
         print(f"[joint scenes]   output_folder: {output_folder}")
 
         print(f"[joint scenes]   calling create_joint_scene with:")
-        print(f"[joint scenes]     items={items}")
-        print(f"[joint scenes]     output_folder={str(output_folder)}")
-        print(f"[joint scenes]     composite_flag=True")
-        print(f"[joint scenes]     background_path={background_path}")
-        print(f"[joint scenes]     duration={duration}")
+        print(f"[joint scenes]     items count = {len(items)}")
+        print(f"[joint scenes]     output_folder = {str(output_folder)}")
+        print(f"[joint scenes]     composite_flag = True")
+        print(f"[joint scenes]     background_path = {background_path}")
+        print(f"[joint scenes]     duration = {composite_duration:.3f}s")
 
         create_joint_scene(
             items=items,
             output_folder=str(output_folder),
             composite_flag=True,
             background_path=background_path,
-            duration=duration,
+            duration=composite_duration,
         )
-
         print(f"[joint scenes] ✓ generated group {group_index}")
 
-    print("\n" + "="*70)
-    print("[joint scenes] DONE — all groups processed")
-    print("="*70)
+        # ── Build footage entries for each stage in this group ───────
+        num_stages = len(group)
+        print(f"\n[joint scenes]   building stitcher footage entries for "
+              f"{num_stages} stage(s) in group {group_index}")
+        for stage_index, (script_text, _) in enumerate(group):
+            timing = stage_timings[stage_index]
+            entries = _build_footage_entries_for_stage(
+                group_output_folder=output_folder,
+                stage_index=stage_index,
+                num_stages=num_stages,
+                timing=timing,
+            )
+            script_text_to_footage_entries[script_text] = entries
+
+    # ── Summary ─────────────────────────────────────────────────────────
+    print("\n" + "=" * 70)
+    print(f"[joint scenes] DONE — produced footage entries for "
+          f"{len(script_text_to_footage_entries)} stage(s):")
+    for script_text, entries in script_text_to_footage_entries.items():
+        print(f"  '{script_text[:60]}...':")
+        for entry in entries:
+            for path, trim in entry.items():
+                print(f"    - {Path(path).name}  trim={trim}s")
+    print("=" * 70)
+
+    return script_text_to_footage_entries
 
 # ===================================
 
@@ -1172,22 +1398,41 @@ def main() -> None:
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     additional_steps_save_for_later()
 
-    generate_joint_scenes(
+    # 2.6) Generate joint composite scenes (if any) and integrate them
+    #      back into final_data so the stitcher uses the new local files
+    #      instead of the original pexels picks for those stages.
+    joint_footage_map = generate_joint_scenes(
         script_to_search_term=scriptTextToPexelSearch,
         candidates_data=candidates_data,
     )
 
-    print("done")
+    if joint_footage_map:
+        print("\n[main] joint scenes produced — integrating into final_data")
+        final_data = _merge_joint_scenes_into_final_data(final_data, joint_footage_map)
+        _add_joint_paths_to_history(joint_footage_map)
 
-    exit()
+        # Persist the updated mapping so the stitcher reads the new state.
+        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
+        print(f"💾 Updated final_data with joint scenes → {FINAL_SCRIPT_AND_CLIPS}")
 
-    # 3)
-    # Stitch together into initial video
-    # - maybe option to add the voice track? no probs not.
+        print("\n=== FINAL SCRIPT → MEDIA (POST-JOINT-MERGE) ===")
+        for entry in final_data:
+            print(f"\nSCRIPT: {entry['script_text']}")
+            for item in entry["footage"]:
+                for path_or_url, trim in item.items():
+                    label = Path(path_or_url).name if "/" in path_or_url else path_or_url
+                    print(f"  ✓ {label}  (trim: {trim}s)")
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    else:
+        print("\n[main] no joint scenes to merge; final_data unchanged")
+
+    additional_steps_save_for_later()
+
+    # 3) Stitch together into the initial video.
     print("====================================================================")
-    stitch_together_video(FINAL_SCRIPT_AND_CLIPS, TIMESTAMPS_ABSOLUTE_FILE, HISTORY_FILE, SCRIPT_AUDIO_FILE, OUTPUT_FILE)
-
-    # et.log(DEBUG, f"Pipeline complete.  Final video: '{final_video}'")
+    print("Stitching final video...")
+    stitch_together_video( FINAL_SCRIPT_AND_CLIPS, TIMESTAMPS_ABSOLUTE_FILE, HISTORY_FILE, SCRIPT_AUDIO_FILE, OUTPUT_FILE,)
+    print("done")
 
 
 # ===========================================================================
