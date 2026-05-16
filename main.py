@@ -1055,17 +1055,25 @@ def generate_joint_scenes( script_to_search_term: dict[str, SearchTermData], can
         match variant:
             case MediaVariant.THREE_ROW:
                 print("[joint scenes]   → matched THREE_ROW layout")
-                layout_positions = [[25, 50], [50, 50], [75, 50]]
-                scale_percentage = 30
+
+                layout_positions = [
+                    [25, 50],
+                    [50, 50],
+                    [75, 50],
+                ]
+
+                box_percentage   = 28              # was scale_percentage = 30
                 transition       = TRANSITION_RANDOM
                 background_path  = "_BACKGROUNDS/bg_crumpled_card.mp4"
                 base_duration    = JOINT_BASE_DURATION_FALLBACK_SEC
+                remove_bg        = True            # NEW
 
                 print(f"[joint scenes]   layout_positions={layout_positions}")
-                print(f"[joint scenes]   scale_percentage={scale_percentage}")
+                print(f"[joint scenes]   box_percentage={box_percentage}")
                 print(f"[joint scenes]   transition={transition}")
                 print(f"[joint scenes]   background_path={background_path}")
                 print(f"[joint scenes]   base_duration={base_duration}s (fallback)")
+                print(f"[joint scenes]   remove_bg={remove_bg}")
 
             case _:
                 print(f"[joint scenes] FATAL: unsupported variant: {variant}")
@@ -1159,13 +1167,16 @@ def generate_joint_scenes( script_to_search_term: dict[str, SearchTermData], can
                 print(f"[joint scenes]     downloaded to: {local_path}")
 
             items.append({
-                "path":                         local_path,
-                "position":                     layout_positions[item_index],
-                "scale-page-height-percentage": scale_percentage,
-                "transition":                   transition,
+                "path":                       local_path,
+                "position":                   layout_positions[item_index],
+                "scale-fit-box-percentage":   box_percentage,   # was scale-page-height-percentage
+                "transition":                 transition,
+                "removeBG":                   remove_bg,        # NEW
             })
+
             print(f"[joint scenes]     → ADDED item: path={local_path}, "
-                  f"position={layout_positions[item_index]}, scale={scale_percentage}%")
+                  f"position={layout_positions[item_index]}, "
+                  f"box={box_percentage}%, removeBG={remove_bg}")
 
         print(f"\n[joint scenes]   total items built for group {group_index}: {len(items)}")
         if not items:

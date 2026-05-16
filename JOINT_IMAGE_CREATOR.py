@@ -162,6 +162,10 @@ KEY_TEXT: str = "text"
 KEY_POSITION: str = "position"
 KEY_REMOVE_BG: str = "removeBG"
 KEY_SCALE_PCT: str = "scale-page-height-percentage"
+KEY_SCALE_BOX_PCT: str = "scale-fit-box-percentage"
+# Like KEY_SCALE_PCT, but caps the LONGEST side at X% of canvas height
+# so the image fits inside an X%-by-X% square. Use this for row/grid
+# layouts where wide images would otherwise overlap their neighbours.
 KEY_TRANSITION: str = "transition"
 KEY_SHADOW: str = "shadow"
 KEY_ROTATION: str = "rotation"
@@ -428,6 +432,43 @@ def scale_image_by_height_percent(
 
     ratio = target_h / pil_image.height
     target_w = max(1, int(round(pil_image.width * ratio)))
+    return pil_image.resize((target_w, target_h), Image.LANCZOS)
+
+
+def scale_image_to_fit_box(
+    pil_image: Image.Image,
+    box_pct: Any,
+    canvas_h: int = CANVAS_HEIGHT,
+) -> Image.Image:
+    """Resize so the image's LONGEST side equals `box_pct`% of canvas height,
+    preserving aspect ratio. Use for predictable row/grid layouts where
+    wide images would otherwise overlap their neighbours.
+
+    Returns the image unchanged for "none", None, "", or invalid values.
+    """
+    if box_pct in (None, "none", "None", "", False):
+        return pil_image
+
+    try:
+        pct = float(box_pct)
+    except (TypeError, ValueError):
+        log.warning("Invalid %s value: %r — leaving size unchanged",
+                    KEY_SCALE_BOX_PCT, box_pct)
+        return pil_image
+
+    if pct <= 0:
+        return pil_image
+
+    box_size = max(1, int(round((pct / 100.0) * canvas_h)))
+    longest = max(pil_image.width, pil_image.height)
+    if longest == box_size:
+        return pil_image
+
+    ratio = box_size / longest
+    target_w = max(1, int(round(pil_image.width * ratio)))
+    target_h = max(1, int(round(pil_image.height * ratio)))
+    log.debug("box-fit %dx%d → %dx%d (box=%dpx)",
+              pil_image.width, pil_image.height, target_w, target_h, box_size)
     return pil_image.resize((target_w, target_h), Image.LANCZOS)
 
 
@@ -715,9 +756,16 @@ def _prepare_image_overlay(item: Dict[str, Any], path: str,
         log.debug("Running rembg on %s", path)
         pil_image = remove_background_with_rembg(pil_image)
 
-    pil_image = scale_image_by_height_percent(
-        pil_image, item.get(KEY_SCALE_PCT, "none"),
-    )
+    # Box-fit takes precedence over height-only scaling — it's strictly
+    # more constrained, so doing both doesn't make sense.
+    if item.get(KEY_SCALE_BOX_PCT) not in (None, "none", "None", "", False):
+        pil_image = scale_image_to_fit_box(
+            pil_image, item.get(KEY_SCALE_BOX_PCT),
+        )
+    else:
+        pil_image = scale_image_by_height_percent(
+            pil_image, item.get(KEY_SCALE_PCT, "none"),
+        )
 
     rotation_degrees = float(item.get(KEY_ROTATION, 0))
     pil_image = rotate_rgba(pil_image, rotation_degrees)
@@ -753,8 +801,26 @@ def _prepare_animated_overlay(item: Dict[str, Any], path: str,
     log.debug("Loading animated overlay %s", path)
     clip = VideoFileClip(path, has_mask=is_gif_file(path))
 
+
+
+    box_pct = item.get(KEY_SCALE_BOX_PCT)
     scale_pct = item.get(KEY_SCALE_PCT, "none")
-    if scale_pct not in (None, "none", "None", "", False):
+
+    if box_pct not in (None, "none", "None", "", False):
+        try:
+            box_size = int((float(box_pct) / 100.0) * CANVAS_HEIGHT)
+            if box_size > 0:
+                # Cap whichever side is longer — same idea as the still-image version
+                if clip.w >= clip.h:
+                    clip = clip.resized(width=box_size)
+                else:
+                    clip = clip.resized(height=box_size)
+                log.debug("box-fit animated overlay → %dx%d (box=%dpx)",
+                          clip.w, clip.h, box_size)
+        except (TypeError, ValueError):
+            log.warning("Invalid %s value %r on %s — ignoring",
+                        KEY_SCALE_BOX_PCT, box_pct, path)
+    elif scale_pct not in (None, "none", "None", "", False):
         try:
             target_h = int((float(scale_pct) / 100.0) * CANVAS_HEIGHT)
             if target_h > 0:
@@ -762,6 +828,9 @@ def _prepare_animated_overlay(item: Dict[str, Any], path: str,
         except (TypeError, ValueError):
             log.warning("Invalid %s value %r on %s — ignoring",
                         KEY_SCALE_PCT, scale_pct, path)
+
+
+
 
     if item.get(KEY_REMOVE_BG, False):
         log.warning("removeBG ignored for animated overlay: %s", path)
