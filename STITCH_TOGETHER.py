@@ -9,7 +9,7 @@ from pathlib import Path
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
 # THIS IS IMPORTANT
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
- USE_VAAPI: bool = False
+USE_VAAPI: bool = False
 # Toggle to True to use AMD's hardware H.264 encoder (much faster, but
 # produces ~20-40% larger files than libx264 at similar visual quality).
 # Test on one job first, compare file sizes, decide.
