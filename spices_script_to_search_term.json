@@ -8,9 +8,9 @@
   "The Banda Islands. A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.": "Banda Islands Indonesia aerial volcanic",
   "If you were a European merchant, getting it meant": "old European merchant ship painting",
   "sailing for months, surviving": "tall ship sailing ocean storm",
-  "scurvy,": "scurvy sailor historical painting",
-  "pirates,": "pirate flag jolly roger",
-  "and shipwrecks.": "shipwreck ocean rocks",
+  "scurvy,": "scurvy sailor historical painting :: joint-a-1",
+  "pirates and,": "pirate flag jolly roger :: joint-a-2",
+  "shipwrecks.": "shipwreck ocean rocks :: joint-a-3",
   "But if you made it back with a single ship full of nutmeg, you were set for life.": "single tall ship ocean treasure",
   "The Dutch and the British fought bloody, brutal wars over these tiny islands.": "Anglo Dutch naval battle painting",
   "In fact, to secure a monopoly on nutmeg, the Dutch formally traded a different island they owned to the British. That island was ": "antique treaty parchment signing",
@@ -50,3 +50,6 @@
   "the fall of empires,": "ancient empire ruins",
   "and the reason the map of the world looks the way it does today.": "modern world political map"
 }
+
+
+

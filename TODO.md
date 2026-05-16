@@ -1,4 +1,45 @@
 
+input_line:{
+    "search-term":"blackbeard the pirate, wide shot"
+    "type":"stock"
+    "variant":"default"
+    "position":"1"
+}
+
+
+TODO:
+- update this example map to use the above format.
+    - for now, just set everything to type stock and variant default
+- update the lines:
+  "scurvy,": 
+  "pirates,": 
+  "and shipwrecks.": 
+    to have the type 'joint', variant '3 row', and position '1', '2', and '3' respectively.
+- update the existing code, to instead of just getting the search term by key, get the search term by key and then ['search-term'].
+    - except use an enum for the search term. (create enums for type and variant as well...
+- then: 
+    - after fetching and reviewing the stock (for now): 
+        - generate the joint images. 
+            --> have some defaults for the '3 row' layout etc, well as a map from the enum '3 row' to then the positions that we'd need to pass into that new function.
+            --> TODO need to determine where I'm saving the images etc...
+        - then:
+            - update the thing that stitches the video together
+            --> for each line, have an additional check of the type. Anything that is just stock, treat as usual. but if the value is say '3 row'... then it will know to use the generated images instead
+
+
+
+
+
+
+
+
+try and get the multi image linked up...
+
+
+--------
+
+Go back to the claude thing- solving the word several splitting issue...
+
 
 [I/someone][feels/felt some way towards][x]
 e.g. 
@@ -15,21 +56,8 @@ then watch through the video- think what i want to add next...
 
 -----
 
-
-continue just tackling one sentence splitter issue at once...
-then processing with this:
-uv run test_ss_against_real_before_after.py -v > log_test_9.txt
-sed -nE '/^test #(175|164|141|117|53|79|59|1|142|123|56|69|28|37|49|61|82|87|4|7|8|113|9|25|41|145|18|23|116|19|63|64|68|6|62|67|191|81|112|178|42|43)\)/,+3p' log_test_8.txt
-
-then get to a decent level...
-then in future again, just tackle issues one by one...
-
--------
-
 - get some sound effects added...
 - link up wikipedia etc...
-
-
 
 -----------------
 

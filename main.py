@@ -791,7 +791,8 @@ def main() -> None:
     run_audio_script_synchronizer(SCRIPT_AUDIO_FILE, LINE_INDEX_TO_SEARCH_TERM_FILE,
                                   SYNCHRONIZED_SCRIPT_OUTPUT_FILE, TIMESTAMPS_ABSOLUTE_FILE,
                                   AUDIO_START_DELAY_SECONDS)
-    # ---------------------
+
+
 
     # 2) fetch CANDIDATES (2 videos + 3 images per scene)
     print("====================================================================")
