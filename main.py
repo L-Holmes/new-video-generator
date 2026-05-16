@@ -13,6 +13,8 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+from enum import Enum
+from typing import TypedDict
 from pathlib import Path
 
 import nltk
@@ -29,6 +31,7 @@ import spacy
 from AUDIO_SCRIPT_SYNCHRONIZER import run as run_audio_script_synchronizer
 from STOCK_FOOTAGE_REVIEW import run_media_review
 from STITCH_TOGETHER import stitch_together_video
+from JOINT_IMAGE_CREATOR import composite as create_joint_scene, TRANSITION_RANDOM, TRANSITION_FADE
 
 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 print("running main")
@@ -111,6 +114,40 @@ Path(_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 # ===========================================================================
+# SEARCH TERM TYPES
+# ===========================================================================
+
+class MediaType(Enum):
+    STOCK = "stock"
+    JOINT = "joint"
+
+
+class MediaVariant(Enum):
+    DEFAULT = "default"
+    THREE_ROW = "3 row"
+
+
+class SearchTermData(TypedDict):
+    search_term: str
+    search_type: MediaType
+    variant: MediaVariant
+    position: str
+
+
+# ===========================================================================
+# JOINT SCENE LAYOUTS
+# ===========================================================================
+# TODO - consider moving this to the JOINT_IMAGE_CREATOR file
+
+JOINT_LAYOUT_POSITIONS = {
+    MediaVariant.THREE_ROW: [
+        [25, 50],
+        [50, 50],
+        [75, 50],
+    ],
+}
+
+# ===========================================================================
 # STEP 1  –  SCRIPTS
 # ===========================================================================
 
@@ -154,7 +191,7 @@ def load_json(file_path: str) -> dict:
 
 # ---------------------------------------------------------------------------
 
-def get_script_text_to_stock_footage_search(scene_lines: list[str]) -> dict[str, str]:
+def get_script_text_to_stock_footage_search(scene_lines: list[str]) -> dict[str, SearchTermData]:
     """
     Returns
     -------
@@ -670,10 +707,14 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
         ]
     """
     out: list[dict] = []
-    for script_text, search_term in all_scenes.items():
+    for script_text, scene_data in all_scenes.items():
+        search_term = scene_data["search_term"]
+
         num_clips, max_runtime = _get_num_stock_images(script_text)
+
         print(f"\n[fetch] '{script_text}'")
         print(f"        search='{search_term}' clips={num_clips} max_runtime={max_runtime:.2f}s")
+
         candidates = _fetch_stock_footage_candidates(search_term, max_runtime)
         out.append({
             "script_text":                    script_text,
@@ -683,6 +724,274 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
         })
     return out
 
+
+# ----------------------------
+
+def generate_joint_scenes( script_to_search_term: dict[str, SearchTermData], candidates_data: list[dict],) -> None:
+
+    print("\n" + "="*70)
+    print("[joint scenes] STARTING generate_joint_scenes")
+    print(f"[joint scenes] script_to_search_term has {len(script_to_search_term)} entries")
+    print(f"[joint scenes] candidates_data has {len(candidates_data)} entries")
+    print("="*70)
+
+    # ── Build lookup dicts for reliable matching ──────────────────────
+    candidates_by_text: dict[str, dict] = {}
+    for c in candidates_data:
+        candidates_by_text[c["script_text"]] = c
+
+    # Also index by stripped text for fuzzy matching
+    candidates_by_stripped: dict[str, dict] = {}
+    for c in candidates_data:
+        candidates_by_stripped[c["script_text"].strip()] = c
+
+    print(f"[joint scenes] candidates lookup built with {len(candidates_by_text)} entries")
+
+    # 1) locate all of the scenes that have a type of 'joint'.
+
+    joint_scenes: list[tuple[str, SearchTermData]] = []
+
+    for script_text, scene_data in script_to_search_term.items():
+        print(f"[joint scenes] checking scene: type={scene_data.get('search_type')}, "
+              f"variant={scene_data.get('variant')}, pos={scene_data.get('position')}, "
+              f"script='{script_text[:60]}...'")
+
+        if scene_data["search_type"] != MediaType.JOINT:
+            print(f"[joint scenes]   → SKIPPED (not JOINT)")
+            continue
+
+        joint_scenes.append((script_text, scene_data))
+        print(f"[joint scenes]   → KEPT as joint scene")
+
+    print(f"\n[joint scenes] found {len(joint_scenes)} joint scene(s) before sorting")
+
+    joint_scenes.sort(
+        key=lambda scene: int(scene[1]["position"])
+    )
+
+    for i, (txt, data) in enumerate(joint_scenes):
+        print(f"[joint scenes]   sorted[{i}]: pos={data['position']}, script='{txt[:60]}...'")
+
+    # 2) determine group of joints
+    # (determined by ones that have the same type, variant,
+    # and have a position that comes after the previous)
+
+    grouped_joint_scenes: list[list[tuple[str, SearchTermData]]] = []
+
+    current_group = []
+
+    previous_scene_data = None
+
+    for script_text, scene_data in joint_scenes:
+
+        if not previous_scene_data:
+            current_group.append((script_text, scene_data))
+            previous_scene_data = scene_data
+            print(f"[joint scenes] grouping: started first group with pos={scene_data['position']}")
+            continue
+
+        same_type = (
+            scene_data["search_type"]
+            == previous_scene_data["search_type"]
+        )
+
+        same_variant = (
+            scene_data["variant"]
+            == previous_scene_data["variant"]
+        )
+
+        next_position = (
+            int(scene_data["position"])
+            == int(previous_scene_data["position"]) + 1
+        )
+
+        print(f"[joint scenes] grouping: comparing pos={scene_data['position']} to prev pos={previous_scene_data['position']}")
+        print(f"[joint scenes]   same_type={same_type}, same_variant={same_variant}, next_position={next_position}")
+
+        if same_type and same_variant and next_position:
+            current_group.append((script_text, scene_data))
+            print(f"[joint scenes]   → ADDED to current group (now size {len(current_group)})")
+        else:
+            grouped_joint_scenes.append(current_group)
+            print(f"[joint scenes]   → BREAK: ending group of size {len(current_group)}, starting new group")
+            current_group = [(script_text, scene_data)]
+
+        previous_scene_data = scene_data
+
+    if current_group:
+        grouped_joint_scenes.append(current_group)
+        print(f"[joint scenes] appended final group of size {len(current_group)}")
+
+    print(f"\n[joint scenes] formed {len(grouped_joint_scenes)} group(s):")
+    for gi, grp in enumerate(grouped_joint_scenes):
+        positions = [s[1]["position"] for s in grp]
+        variant = grp[0][1]["variant"]
+        print(f"[joint scenes]   group {gi}: variant={variant}, positions={positions}, "
+              f"size={len(grp)}")
+
+    #3) for each group, generate the joint scenes...
+    for group_index, group in enumerate(grouped_joint_scenes):
+
+        variant = group[0][1]["variant"]
+        print(f"\n[joint scenes] processing group {group_index}: variant={variant}, size={len(group)}")
+
+        match variant:
+
+            case MediaVariant.THREE_ROW:
+                print("[joint scenes]   → matched THREE_ROW layout")
+
+                layout_positions = [
+                    [25, 50],
+                    [50, 50],
+                    [75, 50],
+                ]
+
+                scale_percentage = 30
+                transition = TRANSITION_RANDOM
+                background_path = "_BACKGROUNDS/bg_crumpled_card.mp4"
+                duration = 3.0
+
+                print(f"[joint scenes]   layout_positions={layout_positions}")
+                print(f"[joint scenes]   scale_percentage={scale_percentage}")
+                print(f"[joint scenes]   transition={transition}")
+                print(f"[joint scenes]   background_path={background_path}")
+                print(f"[joint scenes]   duration={duration}")
+
+            # case MediaVariant.GRID:
+            #
+            #     layout_positions = [...]
+            #     scale_percentage = 20
+            #     transition = TRANSITION_FADE
+            #     background_path = "_BACKGROUNDS/grid_bg.jpg"
+            #     duration = 4.0
+
+            case _:
+                print(f"[joint scenes] FATAL: unsupported variant: {variant}")
+                sys.exit(1)
+
+        items = []
+
+        for item_index, (script_text, _) in enumerate(group):
+
+            print(f"\n[joint scenes]   item {item_index}: script='{script_text[:80]}'")
+
+            if item_index >= len(layout_positions):
+                print(f"[joint scenes] FATAL: item_index {item_index} >= layout length {len(layout_positions)}")
+                sys.exit(1)
+
+            # ── Match candidate: exact first, then stripped ───────────
+            matching_candidate = candidates_by_text.get(script_text)
+
+            if not matching_candidate:
+                print(f"[joint scenes]     exact match failed, trying stripped match...")
+                matching_candidate = candidates_by_stripped.get(script_text.strip())
+
+            if not matching_candidate:
+                print(f"[joint scenes] FATAL: no matching candidate for script_text:")
+                print(f"            '{script_text}'")
+                print(f"  Available candidates in cache:")
+                for key in candidates_by_text:
+                    print(f"    - '{key}'")
+                print(f"\n  HINT: Your candidates cache ({CANDIDATES_CACHE_FILE}) may be stale.")
+                print(f"        Delete it and re-run to refresh:")
+                print(f"        rm {CANDIDATES_CACHE_FILE}")
+                sys.exit(1)
+
+            print(f"[joint scenes]     found matching candidate ✓")
+
+            image_candidates = (
+                matching_candidate
+                .get("candidates", {})
+                .get("images", [])
+            )
+
+            print(f"[joint scenes]     image_candidates count: {len(image_candidates)}")
+
+            if not image_candidates:
+                print(f"[joint scenes] FATAL: no image candidates for script: '{script_text}'")
+                sys.exit(1)
+
+            first_image = image_candidates[0]
+            print(f"[joint scenes]     first_image dict: {first_image}")
+
+            image_url = ""
+
+            for candidate_url in first_image:
+                image_url = candidate_url
+                break
+
+            print(f"[joint scenes]     extracted image_url: '{image_url[:80]}...' " if len(image_url) > 80 else f"[joint scenes]     extracted image_url: '{image_url}'")
+
+            if not image_url:
+                print(f"[joint scenes] FATAL: no image_url extracted from candidate")
+                sys.exit(1)
+
+            # ── Resolve local path: check history, download if missing ─
+            history = _load_history()
+            local_path = history.get(image_url)
+
+            if local_path and Path(local_path).exists():
+                print(f"[joint scenes]     cache hit: {local_path}")
+            else:
+                if local_path:
+                    print(f"[joint scenes]     history has path but file missing on disk: {local_path}")
+                else:
+                    print(f"[joint scenes]     URL not in download history")
+
+                print(f"[joint scenes]     downloading image on-the-fly...")
+                local_path = _download_image(image_url)
+
+                if not local_path:
+                    print(f"[joint scenes] FATAL: failed to download image: {image_url}")
+                    sys.exit(1)
+
+                print(f"[joint scenes]     downloaded to: {local_path}")
+
+            items.append({
+                "path": local_path,
+                "position": layout_positions[item_index],
+                "scale-page-height-percentage": scale_percentage,
+                "transition": transition,
+            })
+
+            print(f"[joint scenes]     → ADDED item: path={local_path}, "
+                  f"position={layout_positions[item_index]}, scale={scale_percentage}%")
+
+        print(f"\n[joint scenes]   total items built for group {group_index}: {len(items)}")
+
+        if not items:
+            print(f"[joint scenes] FATAL: no items to composite for group {group_index}")
+            sys.exit(1)
+
+        output_folder = (
+            Path(_CACHE_DIR)
+            / "joint_scenes"
+            / f"group_{group_index}"
+        )
+
+        output_folder.mkdir(parents=True, exist_ok=True)
+        print(f"[joint scenes]   output_folder: {output_folder}")
+
+        print(f"[joint scenes]   calling create_joint_scene with:")
+        print(f"[joint scenes]     items={items}")
+        print(f"[joint scenes]     output_folder={str(output_folder)}")
+        print(f"[joint scenes]     composite_flag=True")
+        print(f"[joint scenes]     background_path={background_path}")
+        print(f"[joint scenes]     duration={duration}")
+
+        create_joint_scene(
+            items=items,
+            output_folder=str(output_folder),
+            composite_flag=True,
+            background_path=background_path,
+            duration=duration,
+        )
+
+        print(f"[joint scenes] ✓ generated group {group_index}")
+
+    print("\n" + "="*70)
+    print("[joint scenes] DONE — all groups processed")
+    print("="*70)
 
 # ===================================
 
@@ -778,7 +1087,11 @@ def main() -> None:
 
     print("====================================================================")
     print("Breaking into scenes...")
-    scriptTextToPexelSearch: dict[str, str] = load_json(LINE_INDEX_TO_SEARCH_TERM_FILE)
+    scriptTextToPexelSearch: dict[str, SearchTermData] = load_json(LINE_INDEX_TO_SEARCH_TERM_FILE)
+    # convert types as needed.
+    for key, value in scriptTextToPexelSearch.items():
+        value["search_type"] = MediaType(value["search_type"])
+        value["variant"] = MediaVariant(value["variant"])
     print("!!!!!!script text to pexel search:")
     print(scriptTextToPexelSearch)
     # e.g. scriptTextToPexelSearch = 
@@ -823,9 +1136,7 @@ def main() -> None:
         for item in cands.get("images", []):
             for url, trim in item.items():
                 print(f"    - {url}  (trim: {trim}s)")
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-    additional_steps_save_for_later()
 
     # 2.5) review the candidates
     print("====================================================================")
@@ -857,6 +1168,18 @@ def main() -> None:
             for url, trim in item.items():
                 print(f"  ✓ {url}  (trim: {trim}s)")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    additional_steps_save_for_later()
+
+    generate_joint_scenes(
+        script_to_search_term=scriptTextToPexelSearch,
+        candidates_data=candidates_data,
+    )
+
+    print("done")
+
+    exit()
 
     # 3)
     # Stitch together into initial video

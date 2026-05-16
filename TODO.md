@@ -1,4 +1,19 @@
 
+
+
+right, now i need to work out how i'm going to integrate these things into the final scene stitcher
+-> first, will want to identify the scenes which are now joint scenes with multiple parts.
+-> then, I'll need to know the length of the transition, and the length of the next vid so that we know how long to show each scene for...
+    -> that may be quite tough.. potentially we'll need to know how long the scenes are before generating the joint scenes? so that we can adjust the transition to be at least as long as the scene length, and then if the scene is shorter than the minimum then instead of doinga transition we just do no transitions...
+
+
+
+
+
+-----------------
+
+
+
 input_line:{
     "search-term":"blackbeard the pirate, wide shot"
     "type":"stock"
@@ -8,15 +23,6 @@ input_line:{
 
 
 TODO:
-- update this example map to use the above format.
-    - for now, just set everything to type stock and variant default
-- update the lines:
-  "scurvy,": 
-  "pirates,": 
-  "and shipwrecks.": 
-    to have the type 'joint', variant '3 row', and position '1', '2', and '3' respectively.
-- update the existing code, to instead of just getting the search term by key, get the search term by key and then ['search-term'].
-    - except use an enum for the search term. (create enums for type and variant as well...
 - then: 
     - after fetching and reviewing the stock (for now): 
         - generate the joint images. 

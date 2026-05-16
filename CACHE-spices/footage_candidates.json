@@ -234,7 +234,7 @@
         "max_runtime_per_clip_seconds": 0.9
     },
     {
-        "script_text": "pirates,",
+        "script_text": "pirates and",
         "candidates": {
             "videos": [
                 {
@@ -260,7 +260,7 @@
         "max_runtime_per_clip_seconds": 0.34
     },
     {
-        "script_text": "and shipwrecks.",
+        "script_text": "shipwrecks.",
         "candidates": {
             "videos": [
                 {

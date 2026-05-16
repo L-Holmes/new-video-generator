@@ -1,4 +1,12 @@
 
+running:
+
+uv run main.py --name spices
+
+
+
+In order to reset:
+rm -rf CACHE-spices/ && rm -rf 
 
 
 
