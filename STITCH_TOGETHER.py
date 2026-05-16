@@ -130,6 +130,138 @@ def _audio_duration(path: str) -> float:
     )
     return float(r.stdout.strip())
 
+
+
+def _resolve_audio_events(
+    audio_events_map: dict,
+    clips_data: list[dict],
+    abs_ts: dict,
+    total_duration: float,
+    sfx_volume: float,
+    music_volume: float,
+) -> list[dict]:
+    """
+    Convert the per-scene events into a flat list with absolute start times.
+
+    Volumes are injected from constants here (not from the events map),
+    based on the event's "type" field.
+
+    Returns events like:
+        {"path": str, "start_seconds": float, "duration": float|None,
+         "volume": float, "fade_out": float, "_debug": str}
+    """
+    print("\n" + "=" * 70)
+    print("[audio resolve] RESOLVING audio events to absolute timings")
+    print(f"[audio resolve] scenes with events: {len(audio_events_map)}")
+    print(f"[audio resolve] total video duration: {total_duration:.3f}s")
+    print(f"[audio resolve] sfx_volume={sfx_volume}, music_volume={music_volume}")
+    print("=" * 70)
+
+    sorted_anchors = sorted(abs_ts.items(), key=lambda x: float(x[1]))
+    print(f"[audio resolve] {len(sorted_anchors)} timestamp anchors loaded")
+
+    text_to_start = {txt: float(t) for txt, t in sorted_anchors}
+
+    # For computing where loop_start lands: scene_start + first_clip_duration
+    text_to_first_clip_dur = {}
+    text_to_num_clips = {}
+    for entry in clips_data:
+        footage = entry.get("footage", [])
+        text_to_num_clips[entry["script_text"]] = len(footage)
+        if footage:
+            first_trim = list(footage[0].values())[0]
+            text_to_first_clip_dur[entry["script_text"]] = float(first_trim)
+
+    resolved: list[dict] = []
+
+    for script_text, events in audio_events_map.items():
+        print(f"\n[audio resolve] scene: '{script_text[:60]}...'")
+
+        if script_text not in text_to_start:
+            print(f"[audio resolve]   ⚠️  no timestamp for this scene — SKIPPING all its events")
+            continue
+
+        scene_start = text_to_start[script_text]
+        num_clips   = text_to_num_clips.get(script_text, 1)
+        first_dur   = text_to_first_clip_dur.get(script_text, 0.0)
+        print(f"[audio resolve]   scene_start={scene_start:.3f}s, "
+              f"num_clips={num_clips}, first_clip_dur={first_dur:.3f}s")
+
+        for ev in events:
+            timing = ev.get("timing", "scene_start")
+            path   = ev["path"]
+            ev_type = ev.get("type", "sfx")
+
+            if timing == "scene_start":
+                start = scene_start
+                print(f"[audio resolve]   '{timing}' resolved: {start:.3f}s")
+            elif timing == "loop_start":
+                if num_clips > 1:
+                    start = scene_start + first_dur
+                    print(f"[audio resolve]   '{timing}' resolved past intro: "
+                          f"{scene_start:.3f} + {first_dur:.3f} = {start:.3f}s")
+                else:
+                    start = scene_start
+                    print(f"[audio resolve]   '{timing}' fallback (no intro): {start:.3f}s")
+            else:
+                print(f"[audio resolve]   ⚠️  unknown timing '{timing}' — using scene_start")
+                start = scene_start
+
+            if not Path(path).exists():
+                print(f"[audio resolve]   ❌ MISSING audio file: {path} — SKIPPING")
+                continue
+
+            # Volume comes from the hardcoded constants based on event type
+            volume = music_volume if ev_type == "music" else sfx_volume
+
+            resolved_ev = {
+                "path":          path,
+                "start_seconds": start,
+                "duration":      ev.get("duration"),     # None = full
+                "volume":        volume,
+                "fade_out":      float(ev.get("fade_out", 0.0)),
+                "_debug":        ev.get("_debug", ""),
+            }
+            resolved.append(resolved_ev)
+            print(f"[audio resolve]   ✓ [{ev_type:5}] {Path(path).name}  "
+                  f"start={start:.3f}s  dur={resolved_ev['duration']}  "
+                  f"vol={volume}  fade={resolved_ev['fade_out']}s")
+
+    print(f"\n[audio resolve] DONE — {len(resolved)} event(s) resolved")
+    print("=" * 70)
+    return resolved
+
+
+def _build_audio_filter_chain(ev: dict, input_idx: int, output_label: str) -> str:
+    """Build one filter_complex chain for a single audio event."""
+    parts = []
+
+    # 1. Trim source if duration set
+    if ev.get("duration") is not None and ev["duration"] > 0:
+        parts.append(f"atrim=0:{ev['duration']:.3f}")
+        parts.append("asetpts=PTS-STARTPTS")
+
+    # 2. Fade out relative to start of (trimmed) source
+    fade = ev.get("fade_out", 0.0)
+    dur  = ev.get("duration")
+    if fade > 0 and dur is not None and dur > fade + 0.1:
+        fade_start = dur - fade
+        parts.append(f"afade=t=out:st={fade_start:.3f}:d={fade:.3f}")
+
+    # 3. Volume
+    vol = ev.get("volume", 1.0)
+    if abs(vol - 1.0) > 0.001:
+        parts.append(f"volume={vol:.3f}")
+
+    # 4. Delay (push into the timeline — must be last)
+    delay_ms = max(0, int(round(ev["start_seconds"] * 1000)))
+    if delay_ms > 0:
+        parts.append(f"adelay={delay_ms}|{delay_ms}")
+
+    filter_str = ",".join(parts) if parts else "anull"
+    return f"[{input_idx}:a]{filter_str}[{output_label}]"
+
+
 _VF_BASE = (
     f"scale={TARGET_WIDTH}:{TARGET_HEIGHT}:force_original_aspect_ratio=decrease,"
     f"pad={TARGET_WIDTH}:{TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2,setsar=1"
@@ -183,9 +315,12 @@ def _generate_clip(src: str, frames: int, out: str, quiet: bool = False) -> None
 def stitch_together_video(
     final_script_and_clips: str = "CACHE-spices/final_script_to_clips.json",
     absolute_timestamps:    str = "spices_timestamps_absolute.json",
-    history_file:           str = "history.json", # Update path if needed
+    history_file:           str = "history.json",
     script_audio_file:      str = "script.wav",
     output_file:            str = "spices-OUTPUT/output.mp4",
+    audio_events_file:      str | None = None,   # ← NEW
+    sfx_volume:             float = 1.0,         # ← NEW
+    music_volume:           float = 0.3,         # ← NEW
 ) -> None:
     # 1. Load Data
     clips_data = _load_json(final_script_and_clips)
@@ -303,20 +438,94 @@ def stitch_together_video(
         silent_video = os.path.join(tmp, "silent_final.ts")
         _run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list, "-c", "copy", silent_video])
 
-        # Final Mux with Audio
+        # Final Mux with Audio — possibly with SFX/music
         print("\nAdding audio and finalizing MP4...")
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-        _run([
-            "ffmpeg", "-y",
-            "-i", silent_video,
-            "-i", script_audio_file,
-            "-map", "0:v:0",
-            "-map", "1:a:0",
-            "-c:v", "copy",
-            "-c:a", "aac", "-b:a", "192k",
-            "-shortest",
-            output_file
-        ])
+
+        resolved_events = []
+        if audio_events_file and Path(audio_events_file).exists():
+            print(f"[mux] loading audio events from {audio_events_file}")
+            audio_events_map = _load_json(audio_events_file) or {}
+            resolved_events = _resolve_audio_events(
+                audio_events_map=audio_events_map,
+                clips_data=clips_data,
+                abs_ts=abs_ts,
+                total_duration=audio_len,
+                sfx_volume=sfx_volume,
+                music_volume=music_volume,
+            )
+        else:
+            print(f"[mux] no audio events file — narration-only mux")
+
+        if not resolved_events:
+            print("[mux] using SIMPLE mux path (no SFX/music)")
+            _run([
+                "ffmpeg", "-y",
+                "-i", silent_video,
+                "-i", script_audio_file,
+                "-map", "0:v:0",
+                "-map", "1:a:0",
+                "-c:v", "copy",
+                "-c:a", "aac", "-b:a", "192k",
+                "-shortest",
+                output_file,
+            ])
+        else:
+            print(f"[mux] using MIX path with {len(resolved_events)} audio event(s)")
+
+            # Dedupe paths so the same file isn't loaded twice
+            path_to_input_idx: dict[str, int] = {}
+            unique_paths: list[str] = []
+            for ev in resolved_events:
+                if ev["path"] not in path_to_input_idx:
+                    path_to_input_idx[ev["path"]] = 2 + len(unique_paths)
+                    unique_paths.append(ev["path"])
+
+            print(f"[mux] unique audio files to load: {len(unique_paths)}")
+            for p, idx in path_to_input_idx.items():
+                print(f"[mux]   input[{idx}] = {Path(p).name}")
+
+            # Build the filter graph
+            chains = []
+            labels = []
+            for i, ev in enumerate(resolved_events):
+                idx = path_to_input_idx[ev["path"]]
+                label = f"ev{i}"
+                chain = _build_audio_filter_chain(ev, idx, label)
+                chains.append(chain)
+                labels.append(label)
+                print(f"[mux]   chain[{i}]: {chain}")
+
+            mix_inputs = "[1:a]" + "".join(f"[{l}]" for l in labels)
+            n = 1 + len(labels)
+            mix_chain = (
+                f"{mix_inputs}amix=inputs={n}:duration=first:"
+                f"dropout_transition=0:normalize=0[aout]"
+            )
+            chains.append(mix_chain)
+            print(f"[mux]   mix:      {mix_chain}")
+
+            filter_complex = ";".join(chains)
+            print(f"\n[mux] full filter_complex ({len(filter_complex)} chars):")
+            print(f"[mux]   {filter_complex}\n")
+
+            cmd = [
+                "ffmpeg", "-y",
+                "-i", silent_video,
+                "-i", script_audio_file,
+            ]
+            for p in unique_paths:
+                cmd += ["-i", p]
+            cmd += [
+                "-filter_complex", filter_complex,
+                "-map", "0:v:0",
+                "-map", "[aout]",
+                "-c:v", "copy",
+                "-c:a", "aac", "-b:a", "192k",
+                "-shortest",
+                output_file,
+            ]
+            _run(cmd)
 
         # 4. Final Verify
         actual_dur = _audio_duration(output_file)

@@ -1,6 +1,43 @@
 
 
+todo - update the map, then re-run
+TODO - I assume that it will get the pop-in timing wrong? 
+     - ooh do i ask the claude to make it so that for the pop transitions are added or maynbe its just easier if i add them myself... yeah
+
 ---
+
+I have this sound effect:
+_SOUND_EFFECTS/se-pop.mp3
+In the future, I'll add more sound effects.
+
+Aim:
+- i want a generified system for when i add more sound effects in the future.
+- but for the first implementation, I want the 'se-pop.mp3' to play ever time we switch to the video (i.e. after the transition, if there is one, or just when the loop shows).
+    - would that be possible? I guess we could calculate it if we know the 
+--> but I'd like this to be potentially another option that is passed in?
+    - like:
+        - the sound effect name (or none)
+        - when it plays (default is when loop shows, for now just have that one because most if not all will use this)
+        - dont know how this will work for like if we have 3 that are all being made into the same thing.. like will we be able to do that? please use your intelligence best you can.
+            - maybe an option for like end of clip? so then it tries to fit on the sound effect onto th eend...
+
+
+
+maybe a way for adding just music that starts when a particular line starts (e.g. for the stock footagae / regular ones as well)
+    --> and then a setting to clip it to a certain length (e.g. like 2, 3, 5, 10 or 20 seconds trim)
+
+--> so we perhaps need to add a new section to the script_to_search_term.json map (if you tell me, I'll update it for you), to add an optional clip (can be like none)
+e.g. so I've added this one: _SOUND_EFFECTS/build-intrigue.mp3, which I'll add myself to one of the entries in the new json that you think of. Of course as just  build-intrigue.mp3 as the code will know where to look for it.
+--> that clip is 24 seconds, but we want to make sure the code works regardless of the length (it may be shorter or longer or whatever)...
+
+Again, add lots of debug print statements that I'll remove mself later when I've confirmed that everything works.
+
+
+
+--------------------------
+
+
+
 TODO:
 - the script is missing part of what is in the actual script... like 'x' meant.. then straight onto manhatten...
 

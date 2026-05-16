@@ -135,6 +135,27 @@ JOINT_MIN_SCENE_DURATION_FOR_TRANSITION_SEC: float = 1.0
 JOINT_BASE_DURATION_FALLBACK_SEC: float = 3.0
 
 
+# ===========================================================================
+# SOUND EFFECTS / MUSIC
+# ===========================================================================
+
+SOUND_EFFECTS_DIR = Path("_SOUND_EFFECTS")
+AUDIO_EVENTS_FILE = f"{_CACHE_DIR}/audio_events.json"
+
+# Hardcoded volumes — applied to all SFX and music respectively.
+SFX_VOLUME:   float = 1.0
+MUSIC_VOLUME: float = 0.3   # ducked under narration
+
+# Per-variant auto-injected SFX for joint scenes. Played at "loop_start"
+# (right after the transition animation finishes) on every joint stage.
+# User can still override per-scene by setting `"sfx"` in the JSON.
+JOINT_VARIANT_SFX_MAP: dict = {
+    MediaVariant.THREE_ROW: {
+        "path":   "se-pop.mp3",
+        "timing": "loop_start",
+    },
+}
+
 
 # ===========================================================================
 # SEARCH TERM TYPES
@@ -1485,6 +1506,130 @@ def additional_steps_save_for_later():
 
 
 
+
+# ============================
+
+
+def build_audio_events_map( script_to_search_term: dict[str, SearchTermData],) -> dict[str, list[dict]]:
+    """
+    Resolve per-scene audio events from the JSON.
+
+    Every scene entry MUST include the audio fields (sfx, sfx_timing,
+    music, music_trim_seconds, music_fade_out). Setting a string field
+    to "none" or a numeric field to 0 disables that part / falls back
+    to its sensible default.
+
+    Priority for SFX:
+      1. Per-scene `sfx` field if not "none"
+      2. Joint variant default from JOINT_VARIANT_SFX_MAP
+      3. Nothing
+    """
+    print("\n" + "=" * 70)
+    print("[audio events] BUILDING audio events map")
+    print(f"[audio events] {len(script_to_search_term)} scene(s) to process")
+    print(f"[audio events] hardcoded SFX_VOLUME={SFX_VOLUME}, "
+          f"MUSIC_VOLUME={MUSIC_VOLUME}")
+    print("=" * 70)
+
+    out: dict[str, list[dict]] = {}
+
+    def _is_none(value) -> bool:
+        """Treat "none", "None", "", or actual None as 'not set'."""
+        return value in (None, "none", "None", "")
+
+    for script_text, scene_data in script_to_search_term.items():
+        events: list[dict] = []
+        short = script_text[:60]
+        print(f"\n[audio events] scene: '{short}{'...' if len(script_text) > 60 else ''}'")
+        print(f"[audio events]   search_type={scene_data.get('search_type')}, "
+              f"variant={scene_data.get('variant')}")
+
+        # ── SFX resolution ──────────────────────────────────────────
+        user_sfx = scene_data.get("sfx", "none")
+        print(f"[audio events]   raw sfx field = {user_sfx!r}")
+
+        if not _is_none(user_sfx):
+            # User explicitly set an sfx
+            timing = scene_data.get("sfx_timing", "loop_start")
+
+            sfx_path = str(SOUND_EFFECTS_DIR / user_sfx)
+            events.append({
+                "type":   "sfx",
+                "path":   sfx_path,
+                "timing": timing,
+                "_debug": f"user-defined sfx '{user_sfx}'",
+            })
+            print(f"[audio events]   + SFX (user): {user_sfx} @ {timing}")
+        else:
+            # No user SFX — check joint variant default
+            variant = scene_data.get("variant")
+            is_joint = scene_data.get("search_type") == MediaType.JOINT
+            print(f"[audio events]   no user sfx; is_joint={is_joint}, variant={variant}")
+
+            if is_joint and variant in JOINT_VARIANT_SFX_MAP:
+                default = JOINT_VARIANT_SFX_MAP[variant]
+                sfx_path = str(SOUND_EFFECTS_DIR / default["path"])
+                events.append({
+                    "type":   "sfx",
+                    "path":   sfx_path,
+                    "timing": default["timing"],
+                    "_debug": f"auto-injected for variant {variant.value}",
+                })
+                print(f"[audio events]   + SFX (auto for {variant.value}): "
+                      f"{default['path']} @ {default['timing']}")
+            else:
+                print(f"[audio events]   (no SFX for this scene)")
+
+        # ── Music resolution ────────────────────────────────────────
+        user_music = scene_data.get("music", "none")
+        print(f"[audio events]   raw music field = {user_music!r}")
+
+        if not _is_none(user_music):
+            trim_raw = float(scene_data.get("music_trim_seconds", 0))
+            trim = None if trim_raw == 0 else trim_raw
+
+            fade_raw = float(scene_data.get("music_fade_out", 0))
+            fade = fade_raw  # 0 already means "no fade"
+
+            music_path = str(SOUND_EFFECTS_DIR / user_music)
+            events.append({
+                "type":     "music",
+                "path":     music_path,
+                "timing":   "scene_start",
+                "duration": trim,
+                "fade_out": fade,
+                "_debug":   (f"user-defined music '{user_music}' "
+                             f"(trim_raw={trim_raw} → {trim}, "
+                             f"fade_raw={fade_raw} → {fade})"),
+            })
+            print(f"[audio events]   + MUSIC: {user_music} trim={trim} fade={fade}s")
+        else:
+            print(f"[audio events]   (no music for this scene)")
+
+        if events:
+            out[script_text] = events
+            print(f"[audio events]   → {len(events)} event(s) recorded")
+        else:
+            print(f"[audio events]   → no events")
+
+    print("\n" + "=" * 70)
+    print(f"[audio events] DONE — {len(out)} scene(s) have audio events:")
+    total_events = sum(len(v) for v in out.values())
+    print(f"[audio events] total events across all scenes: {total_events}")
+    for script_text, events in out.items():
+        print(f"  '{script_text[:50]}...': {len(events)} event(s)")
+        for ev in events:
+            label = Path(ev['path']).name
+            extras = f"timing={ev.get('timing')}"
+            if ev["type"] == "music":
+                extras += f" dur={ev.get('duration')} fade={ev.get('fade_out')}"
+            print(f"    - [{ev['type']:5}] {label}  {extras}  ({ev['_debug']})")
+    print("=" * 70)
+
+    return out
+
+
+
 # ===========================================================================
 # MAIN  –  STEP 3 - STITCH TOGETHER
 # ===========================================================================
@@ -1674,12 +1819,21 @@ def main() -> None:
     else:
         print("\n[main] no joint scenes to merge; final_data unchanged")
 
+
+    # 2.7) Build audio events (SFX + music) and persist for the stitcher
+    print("====================================================================")
+    print("Building audio events map...")
+    audio_events_map = build_audio_events_map(scriptTextToPexelSearch)
+    Path(AUDIO_EVENTS_FILE).write_text(json.dumps(audio_events_map, indent=2))
+    print(f"💾 Audio events written to {AUDIO_EVENTS_FILE}")
+
     additional_steps_save_for_later()
 
     # 3) Stitch together into the initial video.
     print("====================================================================")
     print("Stitching final video...")
-    stitch_together_video( FINAL_SCRIPT_AND_CLIPS, TIMESTAMPS_ABSOLUTE_FILE, HISTORY_FILE, SCRIPT_AUDIO_FILE, OUTPUT_FILE,)
+    stitch_together_video( FINAL_SCRIPT_AND_CLIPS, TIMESTAMPS_ABSOLUTE_FILE, HISTORY_FILE, SCRIPT_AUDIO_FILE, OUTPUT_FILE, AUDIO_EVENTS_FILE,        SFX_VOLUME,               MUSIC_VOLUME,             )
+
     print("done")
 
 
