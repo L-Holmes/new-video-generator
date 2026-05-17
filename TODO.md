@@ -1,143 +1,17 @@
 
-
-
-
 todo:
-- run + test the adding of the sound effects
 - try out the ai video generation process... https://fal.ai/dashboard/keys... see what we get back...
-
-
-
----------
-
-
-todo - update the map, then re-run
-TODO - I assume that it will get the pop-in timing wrong? 
-     - ooh do i ask the claude to make it so that for the pop transitions are added or maynbe its just easier if i add them myself... yeah
-
----
-
-I have this sound effect:
-_SOUND_EFFECTS/se-pop.mp3
-In the future, I'll add more sound effects.
-
-Aim:
-- i want a generified system for when i add more sound effects in the future.
-- but for the first implementation, I want the 'se-pop.mp3' to play ever time we switch to the video (i.e. after the transition, if there is one, or just when the loop shows).
-    - would that be possible? I guess we could calculate it if we know the 
---> but I'd like this to be potentially another option that is passed in?
-    - like:
-        - the sound effect name (or none)
-        - when it plays (default is when loop shows, for now just have that one because most if not all will use this)
-        - dont know how this will work for like if we have 3 that are all being made into the same thing.. like will we be able to do that? please use your intelligence best you can.
-            - maybe an option for like end of clip? so then it tries to fit on the sound effect onto th eend...
-
-
-
-maybe a way for adding just music that starts when a particular line starts (e.g. for the stock footagae / regular ones as well)
-    --> and then a setting to clip it to a certain length (e.g. like 2, 3, 5, 10 or 20 seconds trim)
-
---> so we perhaps need to add a new section to the script_to_search_term.json map (if you tell me, I'll update it for you), to add an optional clip (can be like none)
-e.g. so I've added this one: _SOUND_EFFECTS/build-intrigue.mp3, which I'll add myself to one of the entries in the new json that you think of. Of course as just  build-intrigue.mp3 as the code will know where to look for it.
---> that clip is 24 seconds, but we want to make sure the code works regardless of the length (it may be shorter or longer or whatever)...
-
-Again, add lots of debug print statements that I'll remove mself later when I've confirmed that everything works.
-
-
 
 --------------------------
 
-
-
-TODO:
-- the script is missing part of what is in the actual script... like 'x' meant.. then straight onto manhatten...
-
-
----
-
-
-any way we can speed up the downloading of images?
-like using the usual computing tricks? I'm on debian 13... on ryzen pro 7 thinkpad... don't know if its possible really...
-
-can we also add a sort of 'TIME REMAINING >>>>>>>>>>>>>>>>>>> x m y s' (where 'x' is minutes and 'y' is estimated seconds remaining) 
-(just for the downloading of the images for now.. 
- and maybe stitching together of images.. but seperately)
-
-if not, just say not possible. 
-
-
-
 ---------
 
 
-
-task:
-right, now i need to work out how i'm going to integrate these things into the final scene stitcher
--> first, will want to identify the scenes which are now joint scenes with multiple parts.
--> then, I'll need to know the length of the transition, and the length of the next vid so that we know how long to show each scene for...
-    -> that may be quite tough.. potentially we'll need to know how long the scenes are before generating the joint scenes? so that we can adjust the transition to be at least as long as the scene length, and then if the scene is shorter than the minimum then instead of doinga transition we just do no transitions...
-
-or potentially we need to update whatever map the sentence splitter reads from such that instead of pointing at the original footage it points at the new joint generated scenes instead?
-but obviously with the joint scenes there are two vids per section of text... rather than just one how the stock footage is.. since there is the initial transition and then the bit after that...  
-e.g. 
-for our initial example;
-/050 󰈫  stage_01_of_03.mp4
-/049 󰈫  stage_01_of_03_loop.mp4
-/047 󰈫  stage_02_of_03.mp4
-/051 󰈫  stage_02_of_03_loop.mp4
-/046 󰈫  stage_03_of_03.mp4
-/048 󰈫  stage_03_of_03_loop.mp4
-
-in this, we have:
-/050 󰈫  stage_01_of_03.mp4
-/049 󰈫  stage_01_of_03_loop.mp4
-
-now again, i don't know the length of the clips but it will of course make a difference..
-
-
-
 --------
 
-and here is my main file code: 
+then todo:
 
-
-
-
------------------
-
-
-
-input_line:{
-    "search-term":"blackbeard the pirate, wide shot"
-    "type":"stock"
-    "variant":"default"
-    "position":"1"
-}
-
-
-TODO:
-- then: 
-    - after fetching and reviewing the stock (for now): 
-        - generate the joint images. 
-            --> have some defaults for the '3 row' layout etc, well as a map from the enum '3 row' to then the positions that we'd need to pass into that new function.
-            --> TODO need to determine where I'm saving the images etc...
-        - then:
-            - update the thing that stitches the video together
-            --> for each line, have an additional check of the type. Anything that is just stock, treat as usual. but if the value is say '3 row'... then it will know to use the generated images instead
-
-
-
-
-
-
-
-
-try and get the multi image linked up...
-
-
---------
-
-Go back to the claude thing- solving the word several splitting issue...
+Go back to the claude thing- solving 'i hate the word several' splitting issue...
 
 
 [I/someone][feels/felt some way towards][x]
@@ -154,11 +28,6 @@ She was disgusted by the thought of the giant panda
 then watch through the video- think what i want to add next...
 
 -----
-
-- get some sound effects added...
-- link up wikipedia etc...
-
------------------
 
 consider:
 - just simple things like:
