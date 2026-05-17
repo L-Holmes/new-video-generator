@@ -317,6 +317,17 @@ class _MediaReviewer:
         videos = candidates.get("videos", []) or []
         images = candidates.get("images", []) or []
 
+        # Wikipedia / image-only scenes: no videos, possibly up to 5 images.
+        # Promote extra images into the empty video slots so the user can
+        # actually pick them. Slots 1+2 hold the first two; slots 3+4+5
+        # hold images 3, 4, 5.
+        is_image_only = len(videos) == 0 and len(images) > 3
+        if is_image_only:
+            print(f"[review] image-only scene with {len(images)} image(s) — "
+                  f"promoting first 2 into video slots")
+            videos = images[:2]
+            images = images[2:5]
+
         self._slot_to_choice = {}
 
         # Top: video slots (1, 2)

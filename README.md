@@ -1,4 +1,8 @@
 
+
+
+
+
 running:
 
 uv run main.py --name spices

@@ -1,0 +1,44 @@
+{
+  "you probably have a jar of nutmeg.": [
+    {
+      "type": "sfx",
+      "path": "_SOUND_EFFECTS/se-pop.mp3",
+      "timing": "loop_start",
+      "_debug": "user-defined sfx 'se-pop.mp3'"
+    }
+  ],
+  "But in the 1600s, this little wrinkled seed was the single most contested resource on the planet.": [
+    {
+      "type": "music",
+      "path": "_SOUND_EFFECTS/build-intrigue.mp3",
+      "timing": "scene_start",
+      "duration": null,
+      "fade_out": 15.0,
+      "_debug": "user-defined music 'build-intrigue.mp3' (trim_raw=0.0 \u2192 None, fade_raw=15.0 \u2192 15.0)"
+    }
+  ],
+  "scurvy,": [
+    {
+      "type": "sfx",
+      "path": "_SOUND_EFFECTS/se-pop.mp3",
+      "timing": "loop_start",
+      "_debug": "auto-injected for variant 3 row"
+    }
+  ],
+  "pirates and": [
+    {
+      "type": "sfx",
+      "path": "_SOUND_EFFECTS/se-pop.mp3",
+      "timing": "loop_start",
+      "_debug": "auto-injected for variant 3 row"
+    }
+  ],
+  "shipwrecks.": [
+    {
+      "type": "sfx",
+      "path": "_SOUND_EFFECTS/se-pop.mp3",
+      "timing": "loop_start",
+      "_debug": "auto-injected for variant 3 row"
+    }
+  ]
+}

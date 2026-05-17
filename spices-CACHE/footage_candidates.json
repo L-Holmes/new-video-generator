@@ -574,23 +574,22 @@
     {
         "script_text": "It was so valuable that when Alaric the Goth laid siege to Rome in the year 410,",
         "candidates": {
-            "videos": [
-                {
-                    "https://videos.pexels.com/video-files/19153890/19153890-uhd_3840_2160_24fps.mp4": 7.18
-                },
-                {
-                    "https://videos.pexels.com/video-files/7686722/7686722-uhd_3840_2160_24fps.mp4": 7.18
-                }
-            ],
+            "videos": [],
             "images": [
                 {
-                    "https://images.pexels.com/photos/29827599/pexels-photo-29827599.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.18
+                    "https://upload.wikimedia.org/wikipedia/commons/1/1e/Alaric_entering_Athens.jpg": 7.18
                 },
                 {
-                    "https://images.pexels.com/photos/36808241/pexels-photo-36808241.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.18
+                    "https://upload.wikimedia.org/wikipedia/commons/1/11/Alarich_steel_engraving.jpg": 7.18
                 },
                 {
-                    "https://images.pexels.com/photos/29630081/pexels-photo-29630081.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 7.18
+                    "https://upload.wikimedia.org/wikipedia/commons/f/f2/Corona_de_%2829049230050%29.jpg": 7.18
+                },
+                {
+                    "https://upload.wikimedia.org/wikipedia/commons/5/5d/Death_of_Alaric.jpg": 7.18
+                },
+                {
+                    "https://upload.wikimedia.org/wikipedia/commons/c/c7/Ludwig_Thiersch_-_Alarich_in_Athen_-_10346_-_Bavarian_State_Painting_Collections.jpg": 7.18
                 }
             ]
         },

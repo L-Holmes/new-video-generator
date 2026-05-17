@@ -23,6 +23,7 @@ import requests
 from PIL import Image
 from rake_nltk import Rake
 import spacy
+from GET_FROM_WIKIPEDIA import get_from_wikipedia
 
 # ===========================================================================
 # IMPORTS - LOCAL
@@ -58,7 +59,7 @@ _arg_parser.add_argument("--name", default="")
 _known_args, _ = _arg_parser.parse_known_args()
 _NAME = _known_args.name.strip()
 
-_CACHE_DIR   = f"CACHE-{_NAME}"  if _NAME else "CACHE"
+_CACHE_DIR   = f"{_NAME}-CACHE"  if _NAME else "CACHE"
 _OUTPUT_DIR  = f"{_NAME}-OUTPUT" if _NAME else "OUTPUT"
 _SCRIPT_STEM = f"script-{_NAME}" if _NAME else "script"
 
@@ -135,6 +136,30 @@ JOINT_MIN_SCENE_DURATION_FOR_TRANSITION_SEC: float = 1.0
 JOINT_BASE_DURATION_FALLBACK_SEC: float = 3.0
 
 
+
+# ===========================================================================
+# SEARCH TERM TYPES
+# ===========================================================================
+
+class MediaType(Enum):
+    STOCK = "stock"
+    JOINT = "joint"
+
+
+class MediaVariant(Enum):
+    # stock
+    DEFAULT = "default"
+    WIKIPEDIA = "wikipedia"
+    # joint
+    THREE_ROW = "3 row"
+
+
+class SearchTermData(TypedDict):
+    search_term: str
+    search_type: MediaType
+    variant: MediaVariant
+    position: str
+
 # ===========================================================================
 # SOUND EFFECTS / MUSIC
 # ===========================================================================
@@ -143,8 +168,8 @@ SOUND_EFFECTS_DIR = Path("_SOUND_EFFECTS")
 AUDIO_EVENTS_FILE = f"{_CACHE_DIR}/audio_events.json"
 
 # Hardcoded volumes — applied to all SFX and music respectively.
-SFX_VOLUME:   float = 1.0
-MUSIC_VOLUME: float = 0.3   # ducked under narration
+SFX_VOLUME:   float = 0.3
+MUSIC_VOLUME: float = 0.01   # ducked under narration
 
 # Per-variant auto-injected SFX for joint scenes. Played at "loop_start"
 # (right after the transition animation finishes) on every joint stage.
@@ -157,25 +182,6 @@ JOINT_VARIANT_SFX_MAP: dict = {
 }
 
 
-# ===========================================================================
-# SEARCH TERM TYPES
-# ===========================================================================
-
-class MediaType(Enum):
-    STOCK = "stock"
-    JOINT = "joint"
-
-
-class MediaVariant(Enum):
-    DEFAULT = "default"
-    THREE_ROW = "3 row"
-
-
-class SearchTermData(TypedDict):
-    search_term: str
-    search_type: MediaType
-    variant: MediaVariant
-    position: str
 
 
 # ===========================================================================
@@ -693,6 +699,58 @@ def _download_image_parallel(url: str) -> str | None:
     return str(dest)
 
 
+def _download_wikipedia_image_parallel(url: str) -> str | None:
+    """
+    Thread-safe Wikipedia image downloader. Same pattern as
+    _download_image_parallel but handles the slightly different URL
+    structure (no query strings, extension already in the path).
+    """
+    with _history_lock:
+        history = _load_history()
+        if url in history and Path(history[url]).exists():
+            return history[url]
+
+    url_hash = hashlib.md5(url.encode()).hexdigest()[:12]
+
+    # Try to use the original filename's extension
+    ext = ".jpg"
+    lower = url.lower()
+    for cand_ext in (".jpg", ".jpeg", ".png", ".webp", ".gif"):
+        if lower.endswith(cand_ext):
+            ext = cand_ext
+            break
+
+    filename = f"wiki-img-{url_hash}{ext}"
+    STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    dest = STOCK_FOOTAGE_CACHE_DIR / filename
+
+    try:
+        # Wikipedia REQUIRES a descriptive User-Agent — use the shared session
+        # but override the header just for this call to be polite.
+        resp = _http_session.get(
+            url,
+            stream=True,
+            timeout=20,
+            headers={"User-Agent": "VideoGenerationPipeline/1.0 (local)"},
+        )
+        if resp.status_code != 200:
+            print(f"  [wiki download] FAILED {resp.status_code} for {url}")
+            return None
+        with open(dest, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=65536):
+                f.write(chunk)
+    except Exception as exc:
+        print(f"  [wiki download] FAILED: {exc}")
+        return None
+
+    with _history_lock:
+        history = _load_history()
+        history[url] = str(dest)
+        _save_history(history)
+
+    return str(dest)
+
+
 def _fetch_stock_footage(search_term: str, num_clips: int, max_runtime_per_clip_seconds: float) -> list[dict]:
     """
     [LEGACY — kept for backwards-compat / debugging.]
@@ -1113,12 +1171,14 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
     """
     Parallel implementation. Two phases:
 
-    Phase A — gather all metadata (~3 API calls per scene, done in
-              parallel across scenes; no downloads yet).
+    Phase A — gather all metadata in parallel across scenes.
+              For variant=WIKIPEDIA scenes, this fetches up to 5 image URLs
+              from Wikipedia. For everything else, it fetches up to 2 videos
+              + 3 images from Pexels (the existing behaviour).
     Phase B — download every candidate file in parallel with a single
               progress bar.
 
-    Returns the same shape as before:
+    Returns:
         [{"script_text", "candidates": {"videos": [...], "images": [...]},
           "num_clips_needed", "max_runtime_per_clip_seconds"}, ...]
     """
@@ -1126,13 +1186,30 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
     print(f"\n[fetch] Phase A: gathering metadata for {len(scene_items)} scene(s) "
           f"in parallel...")
 
-    # ── Phase A: parallel metadata fetch ──────────────────────────────
     def fetch_meta_for_scene(idx_and_scene):
         idx, (script_text, scene_data) = idx_and_scene
         search_term = scene_data["search_term"]
+        variant     = scene_data.get("variant")
         num_clips, max_runtime = _get_num_stock_images(script_text)
 
-        # Up to 2 unique videos (walking pages if needed)
+        print(f"\n[fetch:meta] scene[{idx}] '{script_text[:50]}...'")
+        print(f"[fetch:meta]   search='{search_term}', variant={variant}")
+
+        # ── WIKIPEDIA path ───────────────────────────────────────────
+        if variant == MediaVariant.WIKIPEDIA:
+            print(f"[fetch:meta]   → using WIKIPEDIA source")
+            wiki_urls = get_from_wikipedia(search_term, max_images=5)
+            print(f"[fetch:meta]   wikipedia returned {len(wiki_urls)} URL(s)")
+            # No videos for wiki scenes; all 5 slots are images
+            return (idx, script_text, num_clips, max_runtime,
+                    [],         # video_meta
+                    [],         # pexels image urls
+                    wiki_urls)  # wikipedia image urls
+
+        # ── PEXELS path (existing behaviour) ─────────────────────────
+        print(f"[fetch:meta]   → using PEXELS source")
+
+        # Up to 2 unique videos
         video_meta: list[tuple[str, float]] = []
         seen: set[str] = set()
         for page in range(1, 4):
@@ -1157,15 +1234,18 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
             if len(image_urls) >= 3:
                 break
 
-        return idx, script_text, num_clips, max_runtime, video_meta, image_urls
+        return (idx, script_text, num_clips, max_runtime,
+                video_meta, image_urls, [])  # no wiki urls
 
     out: list[dict] = [None] * len(scene_items)  # type: ignore[list-item]
-    all_tasks: list[tuple[int, str, str, float]] = []
+    all_tasks: list[tuple] = []
     # task = (scene_idx, kind, url, trim_seconds)
+    # kind is one of: "videos", "images", "wiki_images"
 
     with ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as ex:
         for result in ex.map(fetch_meta_for_scene, enumerate(scene_items)):
-            idx, script_text, num_clips, max_runtime, video_meta, image_urls = result
+            (idx, script_text, num_clips, max_runtime,
+             video_meta, pexels_img_urls, wiki_img_urls) = result
 
             out[idx] = {
                 "script_text":                  script_text,
@@ -1178,8 +1258,12 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
                 trim = min(dur, max_runtime)
                 all_tasks.append((idx, "videos", url, round(trim, 2)))
 
-            for url in image_urls:
+            for url in pexels_img_urls:
                 all_tasks.append((idx, "images", url, round(float(max_runtime), 2)))
+
+            for url in wiki_img_urls:
+                all_tasks.append((idx, "wiki_images", url,
+                                  round(float(max_runtime), 2)))
 
     print(f"[fetch] Phase A done — {len(all_tasks)} files queued.")
 
@@ -1195,6 +1279,8 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
         scene_idx, kind, url, trim = task
         if kind == "videos":
             local = _download_clip_parallel(url)
+        elif kind == "wiki_images":
+            local = _download_wikipedia_image_parallel(url)
         else:
             local = _download_image_parallel(url)
         tracker.tick()
@@ -1203,8 +1289,11 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
     with ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as ex:
         for scene_idx, kind, url, trim, local in ex.map(download_one, all_tasks):
             if local is None:
-                continue  # failed downloads silently dropped
-            out[scene_idx]["candidates"][kind].append({url: trim})
+                continue
+            # Wiki images go into the "images" bucket — that's where the
+            # review GUI looks for non-video candidates
+            bucket = "videos" if kind == "videos" else "images"
+            out[scene_idx]["candidates"][bucket].append({url: trim})
 
     tracker.finish()
     print(f"[fetch] Phase B done.")

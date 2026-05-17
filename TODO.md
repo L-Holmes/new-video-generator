@@ -1,5 +1,16 @@
 
 
+
+
+todo:
+- run + test the adding of the sound effects
+- try out the ai video generation process... https://fal.ai/dashboard/keys... see what we get back...
+
+
+
+---------
+
+
 todo - update the map, then re-run
 TODO - I assume that it will get the pop-in timing wrong? 
      - ooh do i ask the claude to make it so that for the pop transitions are added or maynbe its just easier if i add them myself... yeah

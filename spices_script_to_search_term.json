@@ -15,7 +15,7 @@
     "search_type": "stock",
     "variant": "default",
     "position": "1",
-    "sfx": "none",
+    "sfx": "se-pop.mp3",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
@@ -39,9 +39,9 @@
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
-    "music": "none",
+    "music": "build-intrigue.mp3",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 15
   },
   "It was worth more than its weight in gold.": {
     "search_term": "gold bars stacked",
@@ -242,9 +242,9 @@
     "music_fade_out": 0
   },
   "It was so valuable that when Alaric the Goth laid siege to Rome in the year 410,": {
-    "search_term": "Alaric the Goth painting",
+    "search_term": "Alaric the Goth",
     "search_type": "stock",
-    "variant": "default",
+    "variant": "wikipedia",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",

@@ -246,7 +246,8 @@ def _build_audio_filter_chain(ev: dict, input_idx: int, output_label: str) -> st
     dur  = ev.get("duration")
     if fade > 0 and dur is not None and dur > fade + 0.1:
         fade_start = dur - fade
-        parts.append(f"afade=t=out:st={fade_start:.3f}:d={fade:.3f}")
+        # parts.append(f"afade=t=out:st={fade_start:.3f}:d={fade:.3f}")
+        parts.append( f"afade=t=out:st={fade_start:.3f}:d={fade:.3f}:curve=log")
 
     # 3. Volume
     vol = ev.get("volume", 1.0)
@@ -498,10 +499,18 @@ def stitch_together_video(
 
             mix_inputs = "[1:a]" + "".join(f"[{l}]" for l in labels)
             n = 1 + len(labels)
+            # mix_chain = (
+                # f"{mix_inputs}amix=inputs={n}:duration=first:"
+                # f"dropout_transition=0:normalize=0[aout]"
+            # )
             mix_chain = (
-                f"{mix_inputs}amix=inputs={n}:duration=first:"
-                f"dropout_transition=0:normalize=0[aout]"
+                f"{mix_inputs}"
+                f"amix=inputs={n}:duration=first:dropout_transition=0:normalize=0,"
+                f"dynaudnorm,"
+                f"alimiter=limit=0.95[aout]"
             )
+
+
             chains.append(mix_chain)
             print(f"[mux]   mix:      {mix_chain}")
 
