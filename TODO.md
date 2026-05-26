@@ -1,6 +1,18 @@
 
 todo:
 - try out the ai video generation process... https://fal.ai/dashboard/keys... see what we get back...
+    - I believe I was trying to use AI to generate paint type videos... 
+    - specifically open source, and then replacing similar colours to make monotone...
+    - with flux I think... either flux-2-dev or something else...
+
+    there are two main files that deal with that:
+
+    /019 󰌠  ai_generate_stickman_images.py
+        --> the main file
+        --> generates all of the images from the ai_prompts.json
+
+    /003 󰌠  ai_edit.py
+        --> used afterwards, for generating the 'follow on' images...
 
 --------------------------
 
@@ -34,6 +46,7 @@ consider:
     - overlaying text on the stock footage to keep things easy
     - adding blank background and then my text coming on the screen as i say it..
     - adding sound effects...?
+    - things like just presets - like adding question mark over existing picture for question... etc.
 
 Then:
 - maybe just for like lists (e.g. with like 'and'), add the thing to show three things one by one on a shared background...
