@@ -7,6 +7,12 @@ running:
 
 uv run main.py --name spices
 
+## Side things:
+uv run WORDS_ON_SCREEN.py
+uv run ai_generate_stickman_images.py
+uv run edit.py output/012.png "add a small parrot on his shoulder" -o output/012_parrot.png
+uv run slentence_tester.py
+
 
 
 In order to reset:

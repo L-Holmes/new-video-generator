@@ -1,10 +1,4 @@
 
-
-
-re-run the whole thing again.
-see if the word synchronizer thing is working...
-
-
 -------
 
 

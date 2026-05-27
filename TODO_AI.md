@@ -1,5 +1,23 @@
 
 
+Direction:
+- I think stick with the paint stickman approach, it seems to be doing well at that...
+- next steps:   
+    - integrate with main-- create a test that asks for 100% stickman stuff...
+    - Add in things like the joint scenes--> where it will take the full scene and then add one thing by one.
+        -> Maybe I'll want to use the image edit on that? to say get the full image first, and then 'remove "x"' a few times generating different images?
+        -> Or I could do the thing where I just generate all elements seperately and then combine into a single scene...
+- could possibly then integrate actual stock footage in the same way cgp grey does the stock footage on the whiteboard...
+
+
+
+k
+generate me, with a minimal, clean line look as if drawn on microsoft paint with low pixel density: 
+
+
+------
+
+
 not really sure what to do...
 this stickman thing isn't really getting anywhere... even though it, at the same time, seems very close...
 

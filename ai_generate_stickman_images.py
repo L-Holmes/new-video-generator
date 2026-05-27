@@ -58,8 +58,10 @@ import fal_client
 from PIL import Image
 from ai__postprocess import deai_postprocess, save_clean
 
-REF_IMAGES = ["_AI_REFERENCE_IMAGES/character-a.png", "_AI_REFERENCE_IMAGES/character-b.png", "_AI_REFERENCE_IMAGES/character-c.png"]
-# REF_IMAGES = ["_AI_REFERENCE_IMAGES/character-a.png"]
+# REF_IMAGES = ["_AI_REFERENCE_IMAGES/character1.png", "_AI_REFERENCE_IMAGES/character2.png", "_AI_REFERENCE_IMAGES/character3.png", "_AI_REFERENCE_IMAGES/character4.jpg"]
+# REF_IMAGES = ["_AI_REFERENCE_IMAGES/character-a.png", "_AI_REFERENCE_IMAGES/character-b.png", "_AI_REFERENCE_IMAGES/character-c.png"]
+REF_IMAGES = ["_AI_REFERENCE_IMAGES/stick1.jpg", "_AI_REFERENCE_IMAGES/stick2.jpg", "_AI_REFERENCE_IMAGES/stick3.jpg"]
+ 
 PROMPTS_FILE = "ai_prompts.json"
 OUT_DIR = pathlib.Path("ai_output")
 MODEL = "fal-ai/flux-2-max/edit"   # ← accepts image_urls
@@ -70,9 +72,12 @@ MODEL = "fal-ai/flux-2-max/edit"   # ← accepts image_urls
 CONCURRENCY = 8
 PROCESS_TYPE = "stickman"
 POSTPROCESS = True
-STYLE_PREFIX = ("Reference image character but ")
-STYLE_SUFFIX = ("in hand drawn ms paint style, minimal, white background")
+# STYLE_PREFIX = ("Reference image character but ")
+# STYLE_SUFFIX = ("in hand drawn ms paint style, minimal, white background")
+STYLE_PREFIX = ("generate me, with a minimal, clean line look as if drawn on microsoft paint with low pixel density: ")
+STYLE_SUFFIX = (". Again, in hand drawn ms paint style, minimal, white background")
   
+ 
 
 async def generate(sem, narration, entry, ref_urls):
     """
