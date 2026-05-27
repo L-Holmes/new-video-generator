@@ -26,6 +26,9 @@
     - inspect the output video... if there's something wrong, fix it...
 
 
+- look at channels like 'adam something'... think what they do, and how i want to achieve that...
+
+
 -------
 
 
