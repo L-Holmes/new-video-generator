@@ -1,6 +1,6 @@
 {
   "If you open your kitchen cupboard right now,": {
-    "search_term": "stickman opens a tall kitchen cupboard door, peering inside curiously, side view",
+    "search_term": "with a pirate hat on a pirate ship",
     "search_type": "stickman",
     "variant": "default",
     "position": "1",
@@ -11,7 +11,7 @@
     "music_fade_out": 0
   },
   "you will find a small jar of dried plants": {
-    "search_term": "stickman holds up a small glass spice jar in one hand, examining it",
+    "search_term": "with a pirate hat on a pirate ship",
     "search_type": "stickman",
     "variant": "default",
     "position": "2",
@@ -22,7 +22,7 @@
     "music_fade_out": 0
   },
   "that, a few hundred years ago, was worth more than gold.": {
-    "search_term": "stickman holds a balance scale, a tiny spice jar on the left pan and a pile of gold coins on the right pan, the jar side hanging lower",
+    "search_term": "holding a balance scale, a tiny spice jar on the left pan and a pile of gold coins on the right pan, the jar side hanging lower",
     "search_type": "stickman",
     "variant": "default",
     "position": "3",
@@ -33,7 +33,7 @@
     "music_fade_out": 0
   },
   "Specifically — this.": {
-    "search_term": "stickman points dramatically at a single large peppercorn sitting on the ground in front of him",
+    "search_term": "pointing dramatically at a single large peppercorn sitting on the ground in front of him in hand drawn ms paint style, minimal, white background",
     "search_type": "stickman",
     "variant": "default",
     "position": "4",
@@ -44,7 +44,7 @@
     "music_fade_out": 0
   },
   "Pepper. Black pepper. The most boring thing in your kitchen.": {
-    "search_term": "stickman shrugs with both arms out, an unimpressed face, a pepper grinder floating beside his head",
+    "search_term": "pepper grinder ",
     "search_type": "stickman",
     "variant": "default",
     "position": "5",
@@ -54,44 +54,11 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0
   },
-  "Once started actual wars.": {
-    "search_term": "two stickmen sword-fighting, swords clashing in mid-air with a small spark between them",
+  "Pepper. Black pepper. The most boring thing in your kitchen.": {
+    "search_term": "pepper grinder in hand drawn ms paint style, minimal, white background",
     "search_type": "stickman",
     "variant": "default",
-    "position": "6",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "Sent men around the world,": {
-    "search_term": "stickman stands on a tiny sailboat with one big triangular sail, rolling wave underneath, looking forward with a telescope",
-    "search_type": "stickman",
-    "variant": "default",
-    "position": "7",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "to die horribly of scurvy,": {
-    "search_term": "stickman lying flat on the ground, X-eyes, a small wilted lemon next to him",
-    "search_type": "stickman",
-    "variant": "default",
-    "position": "8",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "for the privilege of putting this on a steak.": {
-    "search_term": "stickman cheerfully grinds a pepper mill over a steak on a plate, little dots of pepper falling onto the meat",
-    "search_type": "stickman",
-    "variant": "default",
-    "position": "9",
+    "position": "5",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",

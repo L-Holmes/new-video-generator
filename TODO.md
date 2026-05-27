@@ -1,45 +1,14 @@
 
-todo:
-- try out the ai video generation process... https://fal.ai/dashboard/keys... see what we get back...
-    - I believe I was trying to use AI to generate paint type videos... 
-    - specifically open source, and then replacing similar colours to make monotone...
-    - with flux I think... either flux-2-dev or something else...
-
-    there are two main files that deal with that:
-
-    /019 󰌠  ai_generate_stickman_images.py
-        --> the main file
-        --> generates all of the images from the ai_prompts.json
-
-    /003 󰌠  ai_edit.py
-        --> used afterwards, for generating the 'follow on' images...
-
---------------------------
-
----------
 
 
---------
-
-then todo:
-
-Go back to the claude thing- solving 'i hate the word several' splitting issue...
+re-run the whole thing again.
+see if the word synchronizer thing is working...
 
 
-[I/someone][feels/felt some way towards][x]
-e.g. 
-I hate the word several
-She was disgusted by the thought of the giant panda
-
-- actually link up the multi thing
---> for like that india, china and ... just as an example.
-    - think how to represent, then how to parse, etc...
+-------
 
 
 
-then watch through the video- think what i want to add next...
-
------
 
 consider:
 - just simple things like:

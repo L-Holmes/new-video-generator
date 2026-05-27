@@ -4507,6 +4507,8 @@ def rule_title_appositive_verb_split(doc: Doc, splits: Set[int]) -> Set[int]:
         out.add(j)
     return out
 
+
+
 # -----------------------------------------------------------------------------
 # RULE 51 — FIRST LIST ITEM REVEAL
 #
@@ -4621,6 +4623,78 @@ def rule_first_list_item_split(doc: Doc, splits: Set[int]) -> Set[int]:
                   f"'{prev_tok.text} | not ...'")
         out.add(t.i)
 
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 52 — TERMINAL SPECIFIER REVEAL
+#
+# Splits BEFORE a sentence-terminal specifier/appositive that attaches to
+# a preceding dobj NP head.  The "reveal what X is" pattern.
+#
+# Pattern: VERB + ... + DET? + NOUN_DOBJ_HEAD + SPECIFIER.
+#
+# Generic over all verbs (not restricted to emotion/perception families).
+# The disambiguator is purely structural:
+#   • last token is sentence-terminal content (NOUN/PROPN/ADJ/NUM)
+#   • token immediately before it is a NOUN/PROPN
+#   • that NOUN/PROPN is the dobj/obj of an earlier VERB in the sentence
+#   • the specifier's syntactic head IS that NOUN/PROPN
+#     (this filters out adverbials like "today" whose head is the verb,
+#      not the dobj)
+#
+# Examples that FIRE:
+#   "I hate the word several"     → "I hate the word | several"
+#   "I love the song Yesterday"   → "I love the song | Yesterday"
+#   "She read the book Dune"      → "She read the book | Dune"
+#   "I prefer the color red"      → "I prefer the color | red"
+#
+# Examples that DON'T FIRE:
+#   "I love red wine"             — prev is ADJ, not NOUN-dobj head
+#   "I drove the red car"         — last IS the dobj head, no specifier
+#   "I met John Smith"            — Smith is compound of John, not dobj
+#   "I love the music industry"   — industry IS the dobj head
+#   "I read the book today"       — today's head is read, not book
+# -----------------------------------------------------------------------------
+def rule_terminal_specifier_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for sent in doc.sents:
+        sent_ntok = sum(1 for x in sent if not x.is_punct)
+        if sent_ntok < 4:
+            continue
+        # find last content token in the sentence
+        last = None
+        for t in reversed(list(sent)):
+            if t.is_punct or t.is_space:
+                continue
+            last = t
+            break
+        if last is None or last.i <= sent.start:
+            continue
+        # last must be a content word that could be a specifier
+        if last.pos_ not in {"NOUN", "PROPN", "ADJ", "NUM"}:
+            continue
+        # the token immediately before it must be a NOUN/PROPN
+        prev = doc[last.i - 1]
+        if prev.pos_ not in {"NOUN", "PROPN"}:
+            continue
+        # prev must be the dobj of an earlier VERB
+        if prev.dep_ not in {"dobj", "obj"}:
+            continue
+        head_verb = prev.head
+        if head_verb.pos_ != "VERB":
+            continue
+        if head_verb.i >= prev.i:
+            continue
+        # specifier must attach structurally to the dobj head
+        # (filters out adverbial modifiers like "today" whose head is the verb)
+        if last.head != prev:
+            continue
+        # need substantial lead-in (verb + det + noun → at least 3 tokens)
+        prev_split = _prev_split(splits | out, last.i)
+        if last.i - prev_split < 3:
+            continue
+        out.add(last.i)
     return out
 
 # =============================================================================
@@ -5844,6 +5918,7 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_equation_reveal_split",       rule_equation_reveal_split,       True), 
     ("rule_and_visualisables_split",   rule_and_visualisables_split,   True), 
     ("rule_title_appositive_verb_split", rule_title_appositive_verb_split, True), 
+    ("rule_terminal_specifier_reveal", rule_terminal_specifier_reveal, True), 
 ]
 
 # Anti-rules: (name, function)
@@ -5912,6 +5987,7 @@ def split_text_into_sections(text: str, debug: bool = False) -> List[str]:
     PROTECTED_RULE_NAMES = {
         "rule_hard_punct", "rule_dashes", "rule_ellipsis",
         "rule_quotes", "rule_brackets",
+        "rule_terminal_specifier_reveal", 
     }
     protected: Set[int] = set()
 

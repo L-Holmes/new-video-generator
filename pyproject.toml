@@ -19,6 +19,7 @@ dependencies = [
     "rembg",
     "numpy",
     "pytest>=9.0.3",
+    "fal-client>=1.0.0",
 ]
 
 [dependency-groups]
