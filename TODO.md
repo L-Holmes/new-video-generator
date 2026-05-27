@@ -1,7 +1,32 @@
 
+
+- maybe integrate the word thing into the video maker?
+    --> so if the type is 'read out', it will use that code to read out those words on screen...
+    --> will of course need to update the code to take everything as parameters... i.e. the constants it uses and what not...
+- think how to optimise the start of the video..
+    - then add those changes... Think what I would want, then code it! 
+- work out how to process the audio 
+    - getting that effect of constant speaking that that other youtuber does
+- work out how to automate the process of generating the code that says how to generate scenes... (that input json...)
+    -> I guess this will be AI choosing from a few preset options?
+
+
+- get stock stuff   
+    - will need sound effects, and when to use them.
+        --> look for a youtube starter package with the beeps and bops and what not...
+        --> (could maybe get music later on)
+    - may want to pay for like the stock footage things once just to get all of the explainer backgrounds like crinkled paper, slow black static, grid background, etc. that i want...
+--> will then need to make a list of scenarios and when i want them..
+    - e.g. always wikipedia for named things...
+    - e.g. always use 'bops' on the rule of three thing...
+
+- start generating actual videos...
+    - use the actual sentence splitter... 
+        - if there are issues... fix one by one...
+    - inspect the output video... if there's something wrong, fix it...
+
+
 -------
-
-
 
 
 consider:
