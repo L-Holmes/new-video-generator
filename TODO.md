@@ -1,5 +1,5 @@
 
-
+TODO:
 - maybe integrate the word thing into the video maker?
     --> so if the type is 'read out', it will use that code to read out those words on screen...
     --> will of course need to update the code to take everything as parameters... i.e. the constants it uses and what not...
