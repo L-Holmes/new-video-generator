@@ -1,8 +1,7 @@
 {
   "If you open your kitchen cupboard right now,": {
     "search_term": "kitchen cupboard opening",
-    "search_type": "stock",
-    "variant": "default",
+    "search_type": "read_out",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -13,7 +12,6 @@
   "you probably have a jar of nutmeg.": {
     "search_term": "nutmeg jar kitchen cupboard",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "se-pop.mp3",
     "sfx_timing": "loop_start",
@@ -24,7 +22,6 @@
   "It costs about two dollars.": {
     "search_term": "two dollar bill",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -35,7 +32,6 @@
   "But in the 1600s, this little wrinkled seed was the single most contested resource on the planet.": {
     "search_term": "whole nutmeg seeds wrinkled",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -46,7 +42,6 @@
   "It was worth more than its weight in gold.": {
     "search_term": "gold bars stacked",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -57,7 +52,6 @@
   "Nutmeg only grew in one place on Earth:": {
     "search_term": "antique world map",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -68,7 +62,6 @@
   "The Banda Islands. A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.": {
     "search_term": "Banda Islands Indonesia aerial volcanic",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -78,8 +71,7 @@
   },
   "If you were a European merchant, getting it meant": {
     "search_term": "old European merchant ship painting",
-    "search_type": "stock",
-    "variant": "default",
+    "search_type": "read_out",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -90,7 +82,6 @@
   "sailing for months, surviving": {
     "search_term": "tall ship sailing ocean storm",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -100,8 +91,7 @@
   },
   "scurvy,": {
     "search_term": "scurvy sailor historical painting",
-    "search_type": "joint",
-    "variant": "3 row",
+    "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -111,8 +101,7 @@
   },
   "pirates and": {
     "search_term": "pirate flag jolly roger",
-    "search_type": "joint",
-    "variant": "3 row",
+    "search_type": "joint_3_row",
     "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -122,8 +111,7 @@
   },
   "shipwrecks.": {
     "search_term": "shipwreck ocean rocks",
-    "search_type": "joint",
-    "variant": "3 row",
+    "search_type": "joint_3_row",
     "position": "3",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -134,7 +122,6 @@
   "But if you made it back with a single ship full of nutmeg, you were set for life.": {
     "search_term": "single tall ship ocean treasure",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -145,7 +132,6 @@
   "The Dutch and the British fought bloody, brutal wars over these tiny islands.": {
     "search_term": "Anglo Dutch naval battle painting",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -156,7 +142,6 @@
   "In fact, to secure a monopoly on nutmeg, the Dutch formally traded a different island they owned to the British. That island was ": {
     "search_term": "antique treaty parchment signing",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -167,7 +152,6 @@
   "Manhattan. Yep... New York City was traded for nutmeg.": {
     "search_term": "Manhattan New York City skyline",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -178,7 +162,6 @@
   "The entire map of the modern world was quite literally drawn by people desperately looking for a cheaper way to flavor their dinner.": {
     "search_term": "antique world map exploration",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -189,7 +172,6 @@
   "Because before global shipping, geography dictated your diet.": {
     "search_term": "vintage globe",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -200,7 +182,6 @@
   "Take black pepper.": {
     "search_term": "black peppercorns close up",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -211,7 +192,6 @@
   "Today, it's on every restaurant table in the world.": {
     "search_term": "pepper shaker restaurant table",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -222,7 +202,6 @@
   "But originally, the black pepper vine was entirely native to the Malabar Coast of India, specifically Kerala.": {
     "search_term": "Malabar Coast Kerala India pepper vine",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -233,7 +212,6 @@
   "To get to Europe, it had to pass through dozens of middlemen—Arab traders, Venetian merchants—each jacking up the price.": {
     "search_term": "Arab spice market trader Venice historical",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -243,8 +221,7 @@
   },
   "It was so valuable that when Alaric the Goth laid siege to Rome in the year 410,": {
     "search_term": "Alaric the Goth",
-    "search_type": "stock",
-    "variant": "wikipedia",
+    "search_type": "wikipedia",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -255,7 +232,6 @@
   "his ransom demand to spare the city wasn't just gold and silver.": {
     "search_term": "ancient Roman gold silver coins",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -266,7 +242,6 @@
   "He demanded—and received—three thousand pounds of black pepper.": {
     "search_term": "mountain of black peppercorns",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -277,7 +252,6 @@
   "And because Europe was so entirely disconnected from where these spices actually grew, the merchants who controlled the trade simply made things up to keep the prices high.": {
     "search_term": "medieval Europe map merchants",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -288,7 +262,6 @@
   "Cinnamon comes from the inner bark of a specific tree native to Sri Lanka.": {
     "search_term": "cinnamon bark Sri Lanka tree",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -299,7 +272,6 @@
   "But for centuries, Arab traders told the Greeks and Romans that cinnamon was gathered by giant, terrifying birds who used the spice to build their nests on sheer, unclimbable cliffs.": {
     "search_term": "giant mythological bird cliff medieval illustration",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -310,7 +282,6 @@
   "The traders claimed they had to leave heavy chunks of meat out for the birds,": {
     "search_term": "raw meat chunks",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -321,7 +292,6 @@
   "who would carry the meat to their nests, collapsing them, and sending the cinnamon tumbling down.": {
     "search_term": "cinnamon sticks falling",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -332,7 +302,6 @@
   "It was complete nonsense.": {
     "search_term": "medieval bestiary false myth",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -343,7 +312,6 @@
   "But the Europeans believed it, and happily paid the monster-bird premium.": {
     "search_term": "medieval European marketplace painting",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -354,7 +322,6 @@
   "By the late 1400s,European powers were sick of paying these markups.": {
     "search_term": "European royal court 1400s painting",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -365,7 +332,6 @@
   "So, they started sailing west, looking for a backdoor to India.": {
     "search_term": "sailing ship sunset ocean exploration",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -376,7 +342,6 @@
   "Which brings us to Christopher Columbus.": {
     "search_term": "Christopher Columbus portrait",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -387,7 +352,6 @@
   "Columbus lands in the Americas,": {
     "search_term": "Columbus landing Americas painting 1492",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -398,7 +362,6 @@
   "thinks he's in India,": {
     "search_term": "antique map of India",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -409,7 +372,6 @@
   "and is desperately looking for black pepper to justify the cost of his voyage.": {
     "search_term": "black peppercorns macro",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -420,7 +382,6 @@
   "He doesn't find it.": {
     "search_term": "empty hands disappointed",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -431,7 +392,6 @@
   "But he does find a completely unrelated, violently spicy red fruit native to Mesoamerica.": {
     "search_term": "red chili peppers vibrant",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -442,7 +402,6 @@
   "He calls them \"peppers\" to make his investors happy.": {
     "search_term": "red chili peppers pile",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -453,7 +412,6 @@
   "And unlike the fussy black pepper vines of India, these new \"chili peppers\" grew almost anywhere.": {
     "search_term": "chili pepper plant growing garden",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -464,7 +422,6 @@
   "Within fifty years, they had spread across the globe,": {
     "search_term": "spinning globe earth",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -475,7 +432,6 @@
   "completely revolutionizing the cuisines of India, China, and Southeast Asia.": {
     "search_term": "spicy Indian curry Sichuan Asian food",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -486,7 +442,6 @@
   "So the next time you season your food,": {
     "search_term": "hand seasoning food cooking",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -497,7 +452,6 @@
   "look at what you're holding.": {
     "search_term": "holding spice jar kitchen",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -508,7 +462,6 @@
   "You aren't just holding dried bark and seeds.": {
     "search_term": "assorted spices wooden spoons",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -519,7 +472,6 @@
   "You are holding the remnants of global monopolies,": {
     "search_term": "antique spice trade route map",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -530,7 +482,6 @@
   "the fall of empires,": {
     "search_term": "ancient empire ruins",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -541,7 +492,6 @@
   "and the reason the map of the world looks the way it does today.": {
     "search_term": "modern world political map",
     "search_type": "stock",
-    "variant": "default",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",

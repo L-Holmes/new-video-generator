@@ -2,6 +2,18 @@
 
 
 
+# rules for types
+- stock -> wikipedia
+    - Any named person or place etc. (pronouns?)
+    - Things that require capital letters always...
+- read_out
+    - sentences that don't have any visualisable thing associated 
+        - e.g. "and that is not the only thing"
+        - e.g. 
+- 
+
+
+
 
 running:
 

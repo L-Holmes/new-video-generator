@@ -1,31 +1,5 @@
 [
     {
-        "script_text": "If you open your kitchen cupboard right now,",
-        "candidates": {
-            "videos": [
-                {
-                    "https://videos.pexels.com/video-files/8889750/8889750-uhd_4096_2160_24fps.mp4": 3.1
-                },
-                {
-                    "https://videos.pexels.com/video-files/32320840/13786036_2562_1440_60fps.mp4": 3.1
-                }
-            ],
-            "images": [
-                {
-                    "https://images.pexels.com/photos/7303850/pexels-photo-7303850.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.1
-                },
-                {
-                    "https://images.pexels.com/photos/4778354/pexels-photo-4778354.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.1
-                },
-                {
-                    "https://images.pexels.com/photos/10117730/pexels-photo-10117730.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.1
-                }
-            ]
-        },
-        "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 3.1
-    },
-    {
         "script_text": "you probably have a jar of nutmeg.",
         "candidates": {
             "videos": [
@@ -180,32 +154,6 @@
         },
         "num_clips_needed": 1,
         "max_runtime_per_clip_seconds": 5.38
-    },
-    {
-        "script_text": "If you were a European merchant, getting it meant",
-        "candidates": {
-            "videos": [
-                {
-                    "https://videos.pexels.com/video-files/36061048/15293099_2560_1440_30fps.mp4": 2.94
-                },
-                {
-                    "https://videos.pexels.com/video-files/36229324/15364136_1920_1080_30fps.mp4": 2.94
-                }
-            ],
-            "images": [
-                {
-                    "https://images.pexels.com/photos/35531243/pexels-photo-35531243.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.94
-                },
-                {
-                    "https://images.pexels.com/photos/9328777/pexels-photo-9328777.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.94
-                },
-                {
-                    "https://images.pexels.com/photos/6199455/pexels-photo-6199455.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.94
-                }
-            ]
-        },
-        "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 2.94
     },
     {
         "script_text": "sailing for months, surviving",
@@ -581,6 +529,9 @@
                 },
                 {
                     "https://upload.wikimedia.org/wikipedia/commons/1/11/Alarich_steel_engraving.jpg": 7.18
+                },
+                {
+                    "https://upload.wikimedia.org/wikipedia/commons/f/f2/Corona_de_%2829049230050%29.jpg": 7.18
                 },
                 {
                     "https://upload.wikimedia.org/wikipedia/commons/5/5d/Death_of_Alaric.jpg": 7.18
@@ -1091,9 +1042,6 @@
         "script_text": "Within fifty years, they had spread across the globe,",
         "candidates": {
             "videos": [
-                {
-                    "https://videos.pexels.com/video-files/29838682/12814047_3840_2160_24fps.mp4": 4.82
-                },
                 {
                     "https://videos.pexels.com/video-files/7601118/7601118-hd_1920_1080_25fps.mp4": 4.82
                 }

@@ -1,6 +1,4 @@
 
-
-
 # create me a dropshipping website...
 - astro static generating frontend in rust... w/htmx
 - htmx w/rust backend...
@@ -100,3 +98,4 @@ don't need:
 - pan. moving around using click and drag should be default.. (use the most to zoom in and out).. only if you click on a particular image does it select it... for then moving that around or resizing... 
 
 - loads of differnet brushes. just have a pencil. 
+
