@@ -1,29 +1,10 @@
 
-I want to update it so that for all static images (just stock, that isn't video, but static),
-it adds an editting affect to the image. 
-Lets have a data structure, that has the possible edit types, and then the probability of it being chosen.
-then when encountering an image, it will apply that affect (I assume turning it into an mp4 or whatever?)-- of course ensure that any of the cached tihngs are updated as needed... 
 
-i.e. lets use these values and effects;
-(these are the effect and the probability of it being chosen)
-
-| Technique Name | Probability | Why it is safe and effective for automation |
-| --- | --- | --- |
-| **1. Centered Slow Zoom In (The Subtle Push-In)** | **0.28** | The absolute king of automated editing. It mimics a slow camera dolly move. Because it scales evenly toward the true center, it will never accidentally crop out a vital subject on the margins of an unknown image. |
-| **2. Centered Slow Zoom Out (The Subtle Pull-Out)** | **0.22** | The inverse of the push-in. It starts slightly tighter and slowly opens up the frame. It is entirely risk-free as long as your minimum scale value doesn't drop below the container's boundaries. |
-| **3. Horizontal Pan: Left to Right** | **0.14** | Mimics Western reading order, making it feel incredibly natural to the viewer. Ideal for landscape or wide group shots. Your program just slides the X-axis smoothly across the pre-padded canvas. |
-| **4. Horizontal Pan: Right to Left** | **0.12** | Slightly lower probability than left-to-right because it fights natural reading order, which makes it feel more deliberate, moody, or investigative. Mechanically identical and 100% safe. |
-| **5. Vertical Tilt: Bottom to Top (Tilt Up)** | **0.06** | Mimics a camera crane rising. It works beautifully to establish a sense of height, scale, or grandeur. Lower probability overall because vertical movement is less universally optimal on standard landscape video frames. |
-| **6. Vertical Tilt: Top to Bottom (Tilt Down)** | **0.05** | A gentle downward scan of the Y-axis. It mimics a human eye looking down from a sky or ceiling. Perfectly safe, but reserved mostly for images where the top of the frame holds less vital context than the bottom. |
-| **7. Compound: Zoom In + Pan Left-to-Right** | **0.04** | A highly cinematic combined move (scaling up while shifting the X-axis right). Because it moves along a slight arc, it looks deeply sophisticated, but requires a strict, tiny limit on the X-axis shift to prevent clipping. |
-| **8. Compound: Zoom In + Pan Right-to-Left** | **0.04** | The same dual-axis movement as above, just shifting the camera left as it scales inward. It creates a beautiful parallax illusion natively without requiring any actual layer separation. |
-| **9. Compound: Zoom Out + Pan Left-to-Right** | **0.03** | Shifting the X-axis right while slowly scaling down to reveal a wider view. It feels highly narrative, like a camera backing away from a scene while tracking past it. |
-| **10. Compound: Zoom Out + Pan Right-to-Left** | **0.02** | The final variation of the compound moves. It is sophisticated and completely safe for your automation script, but holds the lowest probability simply because it is the most specialized mood of the group. |
-
-To ensure these look professional, hardcode these three mathematical constraints into your rendering logic:
-1. **Linear Interpolation (or Smooth Ease-In/Out):** Never let the camera "snap" to a stop. Use a very gentle ease curve at the first and last 10% of the clip duration.
-2. **The 0.5% Rule:** Keep the actual offset movement microscopic. If a clip is 5 seconds long, the X or Y coordinates should not shift by more than 3% to 5% of the total image width/height.
-3. **No Over-Rotation:** Avoid any Z-axis rotation (rolling the camera). While humans do this slightly, automated rotation looks instantly synthetic and tacky. Keep your axes perfectly locked.
+hmmmm...
+- maybe zoom in, reveal the cuboard, and then in the next scene the same cupboard but with a jar of nutmeg on the side...
+    - or maybe it spins around and reveals that it is nutmeg...
+- then for two dollars...
+    - one dollar coin comes on screen, and then another one, and then the equals sign to the jar of nutmeg...
 
 
 -------------------------
