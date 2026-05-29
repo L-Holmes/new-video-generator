@@ -10,8 +10,8 @@
     "music_fade_out": 0
   },
   "you probably have a jar of nutmeg.": {
-    "search_term": "nutmeg jar kitchen cupboard",
-    "search_type": "stickman",
+    "search_term": "add jar of nutmeg into the cupboard",
+    "search_type": "ai_edit",
     "position": "1",
     "sfx": "se-pop.mp3",
     "sfx_timing": "loop_start",

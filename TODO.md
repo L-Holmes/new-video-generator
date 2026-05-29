@@ -1,5 +1,66 @@
 
 
+current task:
+
+
+=======
+
+nice.
+
+two new things:
+
+* the black bars- can we remove them? should all have white background... or else just generate in the right dimensions in the first place may be a better idea... lets do both.
+* also, lets have a new type... ai_edit...:
+AI_EDIT   = "ai_edit"   
+
+If that is present, it will call the ai_edit.py file, and pass the search term as how to edit the first file. 
+
+e.g. like this in the script to search term json;
+
+  "If you open your kitchen cupboard right now,": {
+    "search_term": "kitchen cupboard opening",
+    "search_type": "stickman",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "you probably have a jar of nutmeg.": {
+    "search_term": "add jar of nutmeg into the cupboard",
+    "search_type": "ai_edit",
+    "position": "1",
+    "sfx": "se-pop.mp3",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+
+
+To note:
+obviously, this will rely on the prevoius picture already being chosen, if there are multiple (e.g. 2) ai images being fetched..
+
+So, what i propose:
+- we have 2 review stages... 
+First one occurs just for all of the non-edit related things, as usual..
+then, when that's done, it will feed in the chosen images to all of the ai edit things (using the preceeding image, if there is one --> i.e. the preceeding ai image- either stick or an  ai edit itself, but nothing else... not stock or anything... if there is no preceeding ai or stickman... just generate a new image using the stickman generator thing we setup first...)
+then there will be a second stage of review, but for these edit images... 
+
+=======
+
+
+
+
+------
+
+
+lets also now integrate the 3_row thing, but for stickmen/ai...
+--> so if its stickmen_3_row, it will fetch the ai image(s) as usual... 
+then it will treat them like a regular 3 row and add them side by side...
+(using basically the same logic if that's possible...)
+
 
 
 
@@ -28,6 +89,17 @@ other other:
 plus:
 - defo mix in some real stock footage at some point... with my professor dude... or on like a cinema screen...
     - have a few things that are reused between videos for consistency.
+
+
+
+also stop ai detection:
+- make all similar colours the same
+- overlay noise (i.e. like 'image noise' as they call it to confuse their thing)
+- whatever else would be useful...
+
+
+later:
+- for stock footage, apply same edits to all-- like a subtle film grain or whatever...
 
 -------
 then integrate with joint...
