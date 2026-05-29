@@ -1,57 +1,5 @@
 
 
-current task:
-
-
-=======
-
-nice.
-
-two new things:
-
-* the black bars- can we remove them? should all have white background... or else just generate in the right dimensions in the first place may be a better idea... lets do both.
-* also, lets have a new type... ai_edit...:
-AI_EDIT   = "ai_edit"   
-
-If that is present, it will call the ai_edit.py file, and pass the search term as how to edit the first file. 
-
-e.g. like this in the script to search term json;
-
-  "If you open your kitchen cupboard right now,": {
-    "search_term": "kitchen cupboard opening",
-    "search_type": "stickman",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "you probably have a jar of nutmeg.": {
-    "search_term": "add jar of nutmeg into the cupboard",
-    "search_type": "ai_edit",
-    "position": "1",
-    "sfx": "se-pop.mp3",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-
-
-To note:
-obviously, this will rely on the prevoius picture already being chosen, if there are multiple (e.g. 2) ai images being fetched..
-
-So, what i propose:
-- we have 2 review stages... 
-First one occurs just for all of the non-edit related things, as usual..
-then, when that's done, it will feed in the chosen images to all of the ai edit things (using the preceeding image, if there is one --> i.e. the preceeding ai image- either stick or an  ai edit itself, but nothing else... not stock or anything... if there is no preceeding ai or stickman... just generate a new image using the stickman generator thing we setup first...)
-then there will be a second stage of review, but for these edit images... 
-
-=======
-
-
-
 
 ------
 
@@ -62,34 +10,29 @@ then it will treat them like a regular 3 row and add them side by side...
 (using basically the same logic if that's possible...)
 
 
-
-
 --------
-
-
-integrate the ai generator into the main flow
---> so if type is stickman, it will run the generator, and generate 2 possible images, using the same prompt. 
-(we then reuse the selector thing, but only give two options rather than the usual 5...)
-then it will just stitch together the rest as usual...
-
-
-
-
 
 current issues:
 - whatever fades the music doesn't work. it accidentally fades the main voiceovre audio instead.
-- for the ai images, they need to be put on a white background, not with just black bars at the side (white bars!)
-- 
-
 
 other other:
-- will need a way to have joint scenes / editting the scenes instead... (but perhaps extending my edittor to also have the context of the other things.. but then the text is like 'same scene, but...'
+- update the ai_edit.py.
+    - we don't currently pass in the reference images...
     -> and then maybe mixing in some just basic edits as well, like to spruce up a scene midw way through (like raising the sword of alaric the goth...)
 
 plus:
 - defo mix in some real stock footage at some point... with my professor dude... or on like a cinema screen...
     - have a few things that are reused between videos for consistency.
-
+    - i.e.:
+        - wikipedia for named things (especially obscure named things...)
+            - e.g. 'Tutankamun'
+            - e.g. 'Alaric the goth'
+            - e.g. 'accona desert'
+        - maps from [google or open street map or something?], with a dot on, for when a place is named...
+        - stock footage from pexels for things that work well with stock footage;   
+            - e.g. specific places / mountains..
+                - e.g. 'the banda islands' or 'manhatten' or 'the great pyramid'
+                - e.g. sahara desert
 
 
 also stop ai detection:

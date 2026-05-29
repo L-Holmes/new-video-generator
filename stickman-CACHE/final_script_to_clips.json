@@ -8,14 +8,6 @@
         ]
     },
     {
-        "script_text": "you probably have a jar of nutmeg.",
-        "footage": [
-            {
-                "stickman-CACHE/stickman_scenes/you_probably_have_a_jar_of_nutmeg_09589fbb_0.png": 2.18
-            }
-        ]
-    },
-    {
         "script_text": "It costs about two dollars.",
         "footage": [
             {
@@ -396,6 +388,14 @@
         "footage": [
             {
                 "stickman-CACHE/stickman_scenes/and_the_reason_the_map_of_the_world_look_1c75ee1e_0.png": 4.34
+            }
+        ]
+    },
+    {
+        "script_text": "you probably have a jar of nutmeg.",
+        "footage": [
+            {
+                "stickman-CACHE/ai_edit_scenes/you_probably_have_a_jar_of_nutmeg_09589fbb_0.png": 2.18
             }
         ]
     }

@@ -156,28 +156,6 @@ READ_OUT_ENABLE: bool = True
 
 
 # ===========================================================================
-# STICKMAN (AI-GENERATED) INTEGRATION
-# ===========================================================================
-# Stickman scenes are AI-generated locally (via fal) BEFORE the review GUI, so
-# they slot into the candidate flow exactly like Pexels/Wikipedia stills: we
-# generate STICKMAN_NUM_VARIANTS images per scene (same prompt) and let the
-# same review GUI pick one. After selection they flow through the normal image
-# pipeline (incl. Ken Burns) and into the stitcher with no special handling.
-
-# How many candidate images to generate per stickman scene — i.e. the "2
-# options" the reviewer chooses between (vs ~5 for Pexels).
-STICKMAN_NUM_VARIANTS: int = 1
-# STICKMAN_NUM_VARIANTS: int = 2 # TODO change back to 2 once finished testing...
-
-# The generator reads the same search-term JSON the rest of the pipeline uses;
-# it just filters rows whose search_type == "stickman".
-STICKMAN_PROMPTS_FILE: str = LINE_INDEX_TO_SEARCH_TERM_FILE
-
-# Where generated PNGs are written (cache-scoped, like joint/read-out output).
-STICKMAN_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_scenes")
-
-
-# ===========================================================================
 # SEARCH TERM TYPES   (FLAT SCHEMA — every "(type, variant)" is its own enum)
 # ===========================================================================
 #
@@ -199,6 +177,7 @@ class MediaType(Enum):
     JOINT_3_ROW = "joint_3_row"    # 3-image collage composited locally
     READ_OUT    = "read_out"       # Kinetic typography (script text on screen)
     STICKMAN    = "stickman"       # AI-generated stickman; 2 variants → review GUI
+    AI_EDIT     = "ai_edit"        # Edit the preceding AI image; N variants -> 2nd review
 
 
 class SearchTermData(TypedDict):
@@ -223,6 +202,41 @@ JOINT_TYPES: set[MediaType] = {MediaType.JOINT_3_ROW}
 # Which MediaTypes pull their candidates from Wikipedia instead of Pexels.
 # Everything else in NEEDS_EXTERNAL_CANDIDATES goes via Pexels.
 WIKIPEDIA_TYPES: set[MediaType] = {MediaType.WIKIPEDIA}
+
+
+# ===========================================================================
+# STICKMAN (AI-GENERATED) INTEGRATION
+# ===========================================================================
+# Stickman scenes are AI-generated locally (via fal) BEFORE the review GUI, so
+# they slot into the candidate flow exactly like Pexels/Wikipedia stills: we
+# generate STICKMAN_NUM_VARIANTS images per scene (same prompt) and let the
+# same review GUI pick one. After selection they flow through the normal image
+# pipeline (incl. Ken Burns) and into the stitcher with no special handling.
+
+# How many candidate images to generate per stickman scene — i.e. the "2
+# options" the reviewer chooses between (vs ~5 for Pexels).
+STICKMAN_NUM_VARIANTS: int = 1
+# STICKMAN_NUM_VARIANTS: int = 2 # TODO change back to 2 once finished testing...
+
+# The generator reads the same search-term JSON the rest of the pipeline uses;
+# it just filters rows whose search_type == "stickman".
+STICKMAN_PROMPTS_FILE: str = LINE_INDEX_TO_SEARCH_TERM_FILE
+
+# Where generated PNGs are written (cache-scoped, like joint/read-out output).
+STICKMAN_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_scenes")
+
+
+# AI edit scenes are generated AFTER stage-1 review (they need the chosen
+# preceding image), then reviewed in a SECOND stage with its own state file.
+AI_EDIT_NUM_VARIANTS: int   = 1
+AI_EDIT_OUTPUT_DIR:   Path  = Path(f"{_CACHE_DIR}/ai_edit_scenes")
+EDIT_CANDIDATES_CACHE_FILE  = f"{_CACHE_DIR}/edit_candidates.json"
+REVIEW_EDITS_OUTPUT_FILE    = f"{_CACHE_DIR}/stock_footage/review_accepting_edits.json"
+
+# Which MediaTypes count as a valid base for an ai_edit (walk-back eligibility).
+AI_BASE_TYPES: set[MediaType] = {MediaType.STICKMAN, MediaType.AI_EDIT}
+
+
 
 
 # ===========================================================================
@@ -1097,6 +1111,81 @@ def generate_stickman_candidates(
     print(f"[stickman] DONE — {len(bundles)} candidate bundle(s)")
     return bundles
 
+
+
+def build_ai_edit_candidates(
+    script_to_search_term: dict[str, SearchTermData],
+    stage1_final_data: list[dict],
+) -> list[dict]:
+    """
+    After stage-1 review, generate ai_edit images and return candidate bundles
+    in the SAME shape as load_stock_footage(), for a 2nd review stage.
+    Returns [] if there are no ai_edit scenes.
+    """
+    has_edits = any(
+        d["search_type"] == MediaType.AI_EDIT
+        for d in script_to_search_term.values()
+    )
+    if not has_edits:
+        print("[ai_edit] no ai_edit scenes - skipping stage 2")
+        return []
+
+    from ai_edit import generate_ai_edits
+
+    # Stage-1 chosen image per scene (first footage entry's path/url -> local).
+    chosen_by_text: dict[str, str | None] = {}
+    for entry in stage1_final_data:
+        footage = entry.get("footage") or []
+        if not footage:
+            chosen_by_text[entry["script_text"]] = None
+            continue
+        key = next(iter(footage[0]), None)  # url or local path
+        local = _resolve_to_local_path(key) if key else None
+        chosen_by_text[entry["script_text"]] = local
+
+    # Ordered scene descriptors for the resolver (script order = dict order).
+    ordered_scenes = []
+    for text, data in script_to_search_term.items():
+        st = data["search_type"]
+        ordered_scenes.append({
+            "script_text": text,
+            "is_edit":     st == MediaType.AI_EDIT,
+            "is_ai_base":  st in AI_BASE_TYPES,
+            "instruction": data["search_term"],
+            "chosen_image": chosen_by_text.get(text),
+        })
+
+    generated = generate_ai_edits(
+        ordered_scenes, out_dir=AI_EDIT_OUTPUT_DIR,
+        num_variants=AI_EDIT_NUM_VARIANTS,
+    )  # { edit_text: [path, ...] }
+
+    scene_timings = _load_scene_timings()
+    bundles: list[dict] = []
+    history = _load_history()
+    for text, data in script_to_search_term.items():
+        if data["search_type"] != MediaType.AI_EDIT:
+            continue
+        paths = [p for p in generated.get(text, []) if Path(p).exists()]
+        if not paths:
+            print(f"[ai_edit] WARNING: no images for '{text[:50]}'")
+            continue
+        if text not in scene_timings:
+            print(f"[ai_edit] FATAL: no timing for '{text[:50]}'")
+            sys.exit(1)
+        dur = round(float(scene_timings[text]), 3)
+        bundles.append({
+            "script_text": text,
+            "candidates": {"videos": [], "images": [{p: dur} for p in paths]},
+            "num_clips_needed": 1,
+            "max_runtime_per_clip_seconds": dur,
+        })
+        for p in paths:                 # identity entries so lookups resolve
+            history.setdefault(p, p)
+    _save_history(history)
+
+    print(f"[ai_edit] built {len(bundles)} edit candidate bundle(s)")
+    return bundles
 
 
 # ===========================================================================
@@ -2038,20 +2127,51 @@ def main() -> None:
             for url, trim in item.items():
                 print(f"    - {url}  (trim: {trim}s)")
 
-    # 2.5) Review the candidates
+    # 2.5) STAGE 1 review — everything EXCEPT ai_edit
     print("====================================================================")
-    print("Launching media review GUI...")
+    print("Launching media review GUI (stage 1: stock / wiki / joint / stickman)...")
+    non_edit_candidates = [
+        c for c in candidates_data
+        if scriptTextToPexelSearch.get(c["script_text"], {}).get("search_type")
+           != MediaType.AI_EDIT
+    ]
     final_data, has_manual = run_media_review(
-        candidates_data=candidates_data,
+        candidates_data=non_edit_candidates,
         history_file=str(HISTORY_FILE),
         review_state_file=REVIEW_STOCK_FOOTAGE_OUTPUT_FILE,
         cache_dir=_CACHE_DIR,
     )
-
     if has_manual:
         print("\n[main] Exiting so you can perform the manual fixes above.")
-        print("       Re-run when done — already-decided scenes will be skipped.")
         sys.exit(0)
+
+    # 2.55) Generate ai_edit images from stage-1 picks, then STAGE 2 review
+    edit_candidates = load_from_cache(EDIT_CANDIDATES_CACHE_FILE)
+    if edit_candidates:
+        print(f"✅ Loaded {len(edit_candidates)} edit candidate bundle(s) from cache.")
+    else:
+        edit_candidates = build_ai_edit_candidates(scriptTextToPexelSearch, final_data)
+        save_to_cache(edit_candidates, EDIT_CANDIDATES_CACHE_FILE)
+
+    if edit_candidates:
+        print("============================================================")
+        print("Launching media review GUI (stage 2: ai_edit)...")
+        edit_final_data, has_manual2 = run_media_review(
+            candidates_data=edit_candidates,
+            history_file=str(HISTORY_FILE),
+            review_state_file=REVIEW_EDITS_OUTPUT_FILE,
+            cache_dir=_CACHE_DIR,
+        )
+        if has_manual2:
+            print("\n[main] Exiting for manual fixes (stage 2).")
+            sys.exit(0)
+        # Merge stage-2 picks in. by_script keeps script order from stage 1.
+        by_script = {e["script_text"]: i for i, e in enumerate(final_data)}
+        for e in edit_final_data:
+            if e["script_text"] in by_script:
+                final_data[by_script[e["script_text"]]]["footage"] = e["footage"]
+            else:
+                final_data.append(e)
 
     save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
     print(f"💾 Final script→clips map written to {FINAL_SCRIPT_AND_CLIPS}.")

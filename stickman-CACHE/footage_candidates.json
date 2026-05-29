@@ -13,19 +13,6 @@
         "max_runtime_per_clip_seconds": 3.1
     },
     {
-        "script_text": "you probably have a jar of nutmeg.",
-        "candidates": {
-            "videos": [],
-            "images": [
-                {
-                    "stickman-CACHE/stickman_scenes/you_probably_have_a_jar_of_nutmeg_09589fbb_0.png": 2.18
-                }
-            ]
-        },
-        "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 2.18
-    },
-    {
         "script_text": "It costs about two dollars.",
         "candidates": {
             "videos": [],
