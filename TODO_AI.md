@@ -10,10 +10,9 @@ Direction:
 - could possibly then integrate actual stock footage in the same way cgp grey does the stock footage on the whiteboard...
 
 
+------
 
-k
-generate me, with a minimal, clean line look as if drawn on microsoft paint with low pixel density: 
-
+get my bike kit.. out of my bike...
 
 ------
 

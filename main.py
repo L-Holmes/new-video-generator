@@ -5,6 +5,7 @@ import argparse
 import json
 import math
 import os
+import gc
 import random
 import re
 import shutil
@@ -80,7 +81,7 @@ OPTIMAL_CLIP_LENGTH_SEC = 4.8
 MAX_CLIP_LENGTH_SEC = 8.0
 MIN_CLIP_LENGTH_SEC = 1.8
 
-APPLY_KEN_BURNS_AFFECT = True
+APPLY_KEN_BURNS_AFFECT = False
 
 PEXELS_API_KEY: str = "PewOP3u4JK8nTBe0kkazrBgXPSwfeh0tWS1kE9y4eS26TzTEG0wmuGK8"
 
@@ -155,6 +156,28 @@ READ_OUT_ENABLE: bool = True
 
 
 # ===========================================================================
+# STICKMAN (AI-GENERATED) INTEGRATION
+# ===========================================================================
+# Stickman scenes are AI-generated locally (via fal) BEFORE the review GUI, so
+# they slot into the candidate flow exactly like Pexels/Wikipedia stills: we
+# generate STICKMAN_NUM_VARIANTS images per scene (same prompt) and let the
+# same review GUI pick one. After selection they flow through the normal image
+# pipeline (incl. Ken Burns) and into the stitcher with no special handling.
+
+# How many candidate images to generate per stickman scene — i.e. the "2
+# options" the reviewer chooses between (vs ~5 for Pexels).
+STICKMAN_NUM_VARIANTS: int = 1
+# STICKMAN_NUM_VARIANTS: int = 2 # TODO change back to 2 once finished testing...
+
+# The generator reads the same search-term JSON the rest of the pipeline uses;
+# it just filters rows whose search_type == "stickman".
+STICKMAN_PROMPTS_FILE: str = LINE_INDEX_TO_SEARCH_TERM_FILE
+
+# Where generated PNGs are written (cache-scoped, like joint/read-out output).
+STICKMAN_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_scenes")
+
+
+# ===========================================================================
 # SEARCH TERM TYPES   (FLAT SCHEMA — every "(type, variant)" is its own enum)
 # ===========================================================================
 #
@@ -175,6 +198,7 @@ class MediaType(Enum):
     WIKIPEDIA   = "wikipedia"      # Wikipedia images, picked via review GUI
     JOINT_3_ROW = "joint_3_row"    # 3-image collage composited locally
     READ_OUT    = "read_out"       # Kinetic typography (script text on screen)
+    STICKMAN    = "stickman"       # AI-generated stickman; 2 variants → review GUI
 
 
 class SearchTermData(TypedDict):
@@ -968,6 +992,111 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
     tracker.finish()
     print(f"[fetch] Phase B done.")
     return out
+
+
+
+
+# ===========================================================================
+# STICKMAN CANDIDATE GENERATION (AI-generated, reviewed like stock stills)
+# ===========================================================================
+
+def generate_stickman_candidates(
+    script_to_search_term: dict[str, SearchTermData],
+) -> list[dict]:
+    """
+    For every scene with search_type == MediaType.STICKMAN, generate
+    STICKMAN_NUM_VARIANTS AI images (same prompt) and return candidate bundles
+    in the SAME shape load_stock_footage() returns, so they can be appended to
+    candidates_data and reviewed by the same GUI (which will show N options).
+
+    Generated PNGs are keyed in the candidates dict by their local path, and an
+    identity entry (path -> path) is added to history.json so the review GUI
+    and the stitcher resolve them exactly like downloaded media.
+
+    Returns [] (and does no work) if there are no stickman scenes.
+    """
+    stickman_scenes = {
+        txt: data for txt, data in script_to_search_term.items()
+        if data["search_type"] == MediaType.STICKMAN
+    }
+
+    print("\n" + "=" * 70)
+    print(f"[stickman] {len(stickman_scenes)} stickman scene(s) found")
+    print("=" * 70)
+
+    if not stickman_scenes:
+        print("[stickman] nothing to generate — skipping")
+        return []
+
+    # Lazy import keeps the fal / dotenv dependency out of pipeline runs that
+    # don't use stickman scenes.
+    from ai_generate_stickman_images import generate_stickman_images
+
+    print(f"[stickman] generating {STICKMAN_NUM_VARIANTS} variant(s) per scene "
+          f"→ {STICKMAN_OUTPUT_DIR}")
+    generated = generate_stickman_images(
+        prompts_file=STICKMAN_PROMPTS_FILE,
+        out_dir=STICKMAN_OUTPUT_DIR,
+        num_variants=STICKMAN_NUM_VARIANTS,
+    )
+    # generated: { script_text: [path, path, ...] }
+    print(f"[stickman] generator returned images for {len(generated)} scene(s)")
+
+    scene_timings = _load_scene_timings()
+
+    bundles: list[dict] = []
+    for script_text in stickman_scenes:
+        image_paths = generated.get(script_text)
+        if not image_paths:  # stripped-key fallback, mirroring the joint path
+            for k, v in generated.items():
+                if k.strip() == script_text.strip():
+                    image_paths = v
+                    break
+
+        if not image_paths:
+            print(f"[stickman] WARNING: no images for '{script_text[:60]}' — "
+                  f"the review GUI will have no options for this scene")
+            continue
+
+        image_paths = [p for p in image_paths if Path(p).exists()]
+        if not image_paths:
+            print(f"[stickman] WARNING: generated paths missing on disk for "
+                  f"'{script_text[:60]}' — skipping")
+            continue
+
+        if script_text not in scene_timings:
+            print(f"[stickman] FATAL: no timing for '{script_text[:60]}'")
+            sys.exit(1)
+        duration = round(float(scene_timings[script_text]), 3)
+
+        # One stickman image fills the whole scene; offer every variant as a
+        # choice. num_clips_needed = 1 — the reviewer picks a single image.
+        image_candidates = [{p: duration} for p in image_paths]
+
+        bundles.append({
+            "script_text":                  script_text,
+            "candidates":                   {"videos": [], "images": image_candidates},
+            "num_clips_needed":             1,
+            "max_runtime_per_clip_seconds": duration,
+        })
+        print(f"[stickman]   '{script_text[:50]}' → {len(image_candidates)} "
+              f"option(s), {duration:.2f}s each")
+
+    # Register identity entries so the url→local lookup resolves these PNGs.
+    history = _load_history()
+    added = 0
+    for bundle in bundles:
+        for cand in bundle["candidates"]["images"]:
+            for path in cand:
+                if path not in history:
+                    history[path] = path
+                    added += 1
+    _save_history(history)
+    print(f"[stickman] added {added} identity entry(ies) to history.json")
+
+    print(f"[stickman] DONE — {len(bundles)} candidate bundle(s)")
+    return bundles
+
 
 
 # ===========================================================================
@@ -1868,7 +1997,28 @@ def main() -> None:
         print(f"✅ Loaded {len(candidates_data)} candidate bundle(s) from cache.")
     else:
         print("🔍 Cache miss. Fetching candidates...")
+
+        # External candidates (Pexels videos+images / Wikipedia stills).
         candidates_data = load_stock_footage(scriptTextToPexelSearch)
+
+        # AI-generated stickman candidates (STICKMAN_NUM_VARIANTS images each),
+        # reviewed by the SAME GUI alongside the stock candidates.
+        stickman_candidates = generate_stickman_candidates(scriptTextToPexelSearch)
+        if stickman_candidates:
+            candidates_data.extend(stickman_candidates)
+            print(f"[main] added {len(stickman_candidates)} stickman candidate "
+                  f"bundle(s) to the review set")
+
+        # Stickman bundles are appended, so re-sort the review list into SCRIPT
+        # order. We use each scene's position in the search-term file (its dict
+        # insertion order) rather than the `position` FIELD — that field isn't
+        # reliably unique/correct, whereas the file is written top-to-bottom in
+        # script order. Safe: the review GUI keys its state by script_text.
+        _script_order = {txt: i for i, txt in enumerate(scriptTextToPexelSearch)}
+        candidates_data.sort(
+            key=lambda b: _script_order.get(b["script_text"], 1_000_000)
+        )
+
         save_to_cache(candidates_data, CANDIDATES_CACHE_FILE)
         print(f"💾 Cached {len(candidates_data)} candidate bundle(s) to {CANDIDATES_CACHE_FILE}.")
 
@@ -1976,6 +2126,7 @@ def main() -> None:
     # 3) Stitch together into the final video.
     print("====================================================================")
     print("Stitching final video...")
+    gc.collect()
     stitch_together_video(
         FINAL_SCRIPT_AND_CLIPS,
         TIMESTAMPS_ABSOLUTE_FILE,

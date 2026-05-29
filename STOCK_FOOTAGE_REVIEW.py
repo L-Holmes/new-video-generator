@@ -86,6 +86,7 @@ VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 
 
 import os
+import gc
 
 
 # ── JSON / FILE HELPERS ───────────────────────────────────────────────────────
@@ -550,13 +551,39 @@ class _MediaReviewer:
     def _save_state(self):
         _save_json(self.review_state, self.state_file)
 
-    def _on_close(self):
+    def _purge_tk(self):
+        """
+        Tear the Tk interpreter down COMPLETELY, on the calling (main) thread.
+
+        Every ImageTk.PhotoImage we created holds a Tcl-backed resource whose
+        __del__ calls into the Tcl interpreter. If those objects are instead
+        finalized later by a garbage-collection pass that happens to run on a
+        WORKER thread (e.g. the stitcher's 8-way ThreadPoolExecutor), Tcl kills
+        the process with:
+            Tcl_AsyncDelete: async handler deleted by the wrong thread
+        Dropping every PhotoImage reference and destroying root HERE forces all
+        that finalization to happen now, on the main thread.
+        """
         self._stop_all_videos()
+        for slot in (*getattr(self, "video_slots", []),
+                     *getattr(self, "image_slots", [])):
+            try:
+                slot.media_label._img_ref = None
+                slot.media_label.config(image="")
+            except Exception:
+                pass
+        if self.root is not None:
+            try:
+                self.root.destroy()
+            except tk.TclError:
+                pass
+            self.root = None
+
+    def _on_close(self):
+        if self.root is None:
+            return
         self._save_state()
-        try:
-            self.root.destroy()
-        except tk.TclError:
-            pass
+        self._purge_tk()
 
 
 # ── CLEANUP ───────────────────────────────────────────────────────────────────
@@ -802,7 +829,19 @@ def run_media_review(
     if pending:
         print(f"[review] {len(pending)} item(s) need review "
               f"({len(review_state)} already decided). Launching GUI…")
-        _MediaReviewer(pending, history_map, review_state_file, review_state)
+        reviewer = _MediaReviewer(pending, history_map, review_state_file, review_state)
+        # Tk teardown MUST finish on this (main) thread. If a later GC pass on a
+        # worker thread (the stitcher's ThreadPoolExecutor) finalizes any
+        # lingering Tcl-backed objects, the process dies with
+        #   "Tcl_AsyncDelete: async handler deleted by the wrong thread".
+        # Purge + del + collect forces that finalization here, before any
+        # threads are spawned downstream.
+        try:
+            reviewer._purge_tk()
+        except Exception:
+            pass
+        del reviewer
+        gc.collect()
         # GUI persists state; reload from disk to pick up final saved version
         review_state = _load_json_safe(review_state_file, {}) or {}
     else:

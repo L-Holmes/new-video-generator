@@ -1,0 +1,652 @@
+[
+    {
+        "script_text": "If you open your kitchen cupboard right now,",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/If_you_open_your_kitchen_cupboard_right__a2d9ba82_0.png": 3.1
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 3.1
+    },
+    {
+        "script_text": "you probably have a jar of nutmeg.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/you_probably_have_a_jar_of_nutmeg_09589fbb_0.png": 2.18
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.18
+    },
+    {
+        "script_text": "It costs about two dollars.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/It_costs_about_two_dollars_e8030d43_0.png": 1.26
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.26
+    },
+    {
+        "script_text": "But in the 1600s, this little wrinkled seed was the single most contested resource on the planet.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/But_in_the_1600s_this_little_wrinkled_se_c469ba9e_0.png": 5.86
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.86
+    },
+    {
+        "script_text": "It was worth more than its weight in gold.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/It_was_worth_more_than_its_weight_in_gol_fbb88afd_0.png": 2.28
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.28
+    },
+    {
+        "script_text": "Nutmeg only grew in one place on Earth:",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/Nutmeg_only_grew_in_one_place_on_Earth_4c4caf26_0.png": 2.22
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.22
+    },
+    {
+        "script_text": "The Banda Islands. A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/The_Banda_Islands_A_tiny_incredibly_remo_e5f8723b_0.png": 5.38
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.38
+    },
+    {
+        "script_text": "If you were a European merchant, getting it meant",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/If_you_were_a_European_merchant_getting__cdb8f58b_0.png": 2.94
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.94
+    },
+    {
+        "script_text": "sailing for months, surviving",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/sailing_for_months_surviving_25508570_0.png": 1.62
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.62
+    },
+    {
+        "script_text": "scurvy,",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/scurvy_fe1e3862_0.png": 0.9
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.9
+    },
+    {
+        "script_text": "pirates and",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/pirates_and_af957ef8_0.png": 0.84
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.84
+    },
+    {
+        "script_text": "shipwrecks.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/shipwrecks_9fb3819e_0.png": 0.58
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.58
+    },
+    {
+        "script_text": "But if you made it back with a single ship full of nutmeg, you were set for life.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/But_if_you_made_it_back_with_a_single_sh_e549e059_0.png": 4.5
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.5
+    },
+    {
+        "script_text": "The Dutch and the British fought bloody, brutal wars over these tiny islands.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/The_Dutch_and_the_British_fought_bloody__94318276_0.png": 4.22
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.22
+    },
+    {
+        "script_text": "In fact, to secure a monopoly on nutmeg, the Dutch formally traded a different island they owned to the British. That island was ",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/In_fact_to_secure_a_monopoly_on_nutmeg_t_5ed929a6_0.png": 6.94
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 6.94
+    },
+    {
+        "script_text": "Manhattan. Yep... New York City was traded for nutmeg.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/Manhattan_Yep_New_York_City_was_traded_f_46b2cbda_0.png": 4.0
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.0
+    },
+    {
+        "script_text": "The entire map of the modern world was quite literally drawn by people desperately looking for a cheaper way to flavor their dinner.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/The_entire_map_of_the_modern_world_was_q_2a17ef40_0.png": 7.16
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 7.16
+    },
+    {
+        "script_text": "Because before global shipping, geography dictated your diet.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/Because_before_global_shipping_geography_ece9b369_0.png": 4.86
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.86
+    },
+    {
+        "script_text": "Take black pepper.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/Take_black_pepper_f19605e2_0.png": 0.96
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.96
+    },
+    {
+        "script_text": "Today, it's on every restaurant table in the world.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/Today_it_s_on_every_restaurant_table_in__01ff39e9_0.png": 2.26
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.26
+    },
+    {
+        "script_text": "But originally, the black pepper vine was entirely native to the Malabar Coast of India, specifically Kerala.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/But_originally_the_black_pepper_vine_was_616e0792_0.png": 7.76
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 7.76
+    },
+    {
+        "script_text": "To get to Europe, it had to pass through dozens of middlemen\u2014Arab traders, Venetian merchants\u2014each jacking up the price.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/To_get_to_Europe_it_had_to_pass_through__9fe35cce_0.png": 6.16
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 6.16
+    },
+    {
+        "script_text": "It was so valuable that when Alaric the Goth laid siege to Rome in the year 410,",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/It_was_so_valuable_that_when_Alaric_the__2b5980df_0.png": 7.18
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 7.18
+    },
+    {
+        "script_text": "his ransom demand to spare the city wasn't just gold and silver.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/his_ransom_demand_to_spare_the_city_wasn_80ca5bba_0.png": 4.76
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.76
+    },
+    {
+        "script_text": "He demanded\u2014and received\u2014three thousand pounds of black pepper.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/He_demanded_and_received_three_thousand__ce4ba536_0.png": 4.7
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.7
+    },
+    {
+        "script_text": "And because Europe was so entirely disconnected from where these spices actually grew, the merchants who controlled the trade simply made things up to keep the prices high.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/And_because_Europe_was_so_entirely_disco_a0df8edd_0.png": 9.1
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 9.1
+    },
+    {
+        "script_text": "Cinnamon comes from the inner bark of a specific tree native to Sri Lanka.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/Cinnamon_comes_from_the_inner_bark_of_a__eb34fec4_0.png": 3.5
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 3.5
+    },
+    {
+        "script_text": "But for centuries, Arab traders told the Greeks and Romans that cinnamon was gathered by giant, terrifying birds who used the spice to build their nests on sheer, unclimbable cliffs.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/But_for_centuries_Arab_traders_told_the__8f596335_0.png": 11.02
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 11.02
+    },
+    {
+        "script_text": "The traders claimed they had to leave heavy chunks of meat out for the birds,",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/The_traders_claimed_they_had_to_leave_he_f10a7be1_0.png": 4.96
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.96
+    },
+    {
+        "script_text": "who would carry the meat to their nests, collapsing them, and sending the cinnamon tumbling down.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/who_would_carry_the_meat_to_their_nests__2b2d1645_0.png": 4.86
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.86
+    },
+    {
+        "script_text": "It was complete nonsense.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/It_was_complete_nonsense_2e88023c_0.png": 1.66
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.66
+    },
+    {
+        "script_text": "But the Europeans believed it, and happily paid the monster-bird premium.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/But_the_Europeans_believed_it_and_happil_0bf8dc8d_0.png": 5.5
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.5
+    },
+    {
+        "script_text": "By the late 1400s,European powers were sick of paying these markups.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/By_the_late_1400s_European_powers_were_s_a987824e_0.png": 4.48
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.48
+    },
+    {
+        "script_text": "So, they started sailing west, looking for a backdoor to India.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/So_they_started_sailing_west_looking_for_ca8969d2_0.png": 3.72
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 3.72
+    },
+    {
+        "script_text": "Which brings us to Christopher Columbus.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/Which_brings_us_to_Christopher_Columbus_af5c1722_0.png": 1.96
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.96
+    },
+    {
+        "script_text": "Columbus lands in the Americas,",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/Columbus_lands_in_the_Americas_54f9fed7_0.png": 1.76
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.76
+    },
+    {
+        "script_text": "thinks he's in India,",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/thinks_he_s_in_India_4d1deff8_0.png": 1.18
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.18
+    },
+    {
+        "script_text": "and is desperately looking for black pepper to justify the cost of his voyage.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/and_is_desperately_looking_for_black_pep_95ad87a8_0.png": 3.74
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 3.74
+    },
+    {
+        "script_text": "He doesn't find it.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/He_doesn_t_find_it_3322ba97_0.png": 1.3
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.3
+    },
+    {
+        "script_text": "But he does find a completely unrelated, violently spicy red fruit native to Mesoamerica.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/But_he_does_find_a_completely_unrelated__4778cfd6_0.png": 6.14
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 6.14
+    },
+    {
+        "script_text": "He calls them \"peppers\" to make his investors happy.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/He_calls_them_peppers_to_make_his_invest_f97c4703_0.png": 3.66
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 3.66
+    },
+    {
+        "script_text": "And unlike the fussy black pepper vines of India, these new \"chili peppers\" grew almost anywhere.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/And_unlike_the_fussy_black_pepper_vines__a00f3171_0.png": 5.48
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.48
+    },
+    {
+        "script_text": "Within fifty years, they had spread across the globe,",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/Within_fifty_years_they_had_spread_acros_ec1b43bf_0.png": 4.82
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.82
+    },
+    {
+        "script_text": "completely revolutionizing the cuisines of India, China, and Southeast Asia.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/completely_revolutionizing_the_cuisines__afde64c4_0.png": 5.48
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 5.48
+    },
+    {
+        "script_text": "So the next time you season your food,",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/So_the_next_time_you_season_your_food_8b4922ee_0.png": 2.18
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.18
+    },
+    {
+        "script_text": "look at what you're holding.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/look_at_what_you_re_holding_7f53d08f_0.png": 1.22
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.22
+    },
+    {
+        "script_text": "You aren't just holding dried bark and seeds.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/You_aren_t_just_holding_dried_bark_and_s_6cd96a5f_0.png": 2.8
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.8
+    },
+    {
+        "script_text": "You are holding the remnants of global monopolies,",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/You_are_holding_the_remnants_of_global_m_2249a85c_0.png": 2.26
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.26
+    },
+    {
+        "script_text": "the fall of empires,",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/the_fall_of_empires_7eefbd9f_0.png": 1.24
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.24
+    },
+    {
+        "script_text": "and the reason the map of the world looks the way it does today.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/stickman_scenes/and_the_reason_the_map_of_the_world_look_1c75ee1e_0.png": 4.34
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 4.34
+    }
+]

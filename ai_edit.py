@@ -6,6 +6,8 @@ example usage:
 uv run edit.py output/004.png "raise the pirate's right arm above his head, sword pointing up"
 uv run edit.py output/012.png "add a small parrot on his shoulder" -o output/012_parrot.png
 
+
+uv run ai_edit.py ai_output/005.png "raise the sword hand" -o ai_output/005-hand-raised.png
 """
 
 import argparse, io, pathlib, requests
@@ -14,11 +16,11 @@ load_dotenv()
 
 import fal_client
 from PIL import Image
-from postprocess import deai_postprocess, save_clean
+from ai__postprocess import deai_postprocess, save_clean
 
 MODEL = "fal-ai/flux-2/edit"
 
-def edit(image_path: str, prompt: str, out_path: str, postprocess: bool = True):
+def edit(image_path: str, prompt: str, out_path: str, postprocess: bool = False):
     print(f"Uploading {image_path}…")
     src_url = fal_client.upload_file(image_path)
 

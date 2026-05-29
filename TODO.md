@@ -1,5 +1,41 @@
 
 
+
+
+
+--------
+
+
+integrate the ai generator into the main flow
+--> so if type is stickman, it will run the generator, and generate 2 possible images, using the same prompt. 
+(we then reuse the selector thing, but only give two options rather than the usual 5...)
+then it will just stitch together the rest as usual...
+
+
+
+
+
+current issues:
+- whatever fades the music doesn't work. it accidentally fades the main voiceovre audio instead.
+- for the ai images, they need to be put on a white background, not with just black bars at the side (white bars!)
+- 
+
+
+other other:
+- will need a way to have joint scenes / editting the scenes instead... (but perhaps extending my edittor to also have the context of the other things.. but then the text is like 'same scene, but...'
+    -> and then maybe mixing in some just basic edits as well, like to spruce up a scene midw way through (like raising the sword of alaric the goth...)
+
+plus:
+- defo mix in some real stock footage at some point... with my professor dude... or on like a cinema screen...
+    - have a few things that are reused between videos for consistency.
+
+-------
+then integrate with joint...
+e.g. 'stickman-joint-3'??? will i need stickman-joint-3??? 
+and then handle in the same way we do regular joint things with the positions etc...
+
+--------
+
 hmmmm...
 - maybe zoom in, reveal the cuboard, and then in the next scene the same cupboard but with a jar of nutmeg on the side...
     - or maybe it spins around and reveals that it is nutmeg...

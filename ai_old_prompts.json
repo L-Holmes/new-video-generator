@@ -1,7 +1,6 @@
-
 {
   "If you open your kitchen cupboard right now,": {
-    "search_term": "kitchen cupboard open",
+    "search_term": "with a pirate hat on a pirate ship",
     "search_type": "stickman",
     "variant": "default",
     "position": "1",
@@ -12,7 +11,7 @@
     "music_fade_out": 0
   },
   "you will find a small jar of dried plants": {
-    "search_term": "kitchen cupboard open, with jar of nutmeg on centre shelf",
+    "search_term": "with a pirate hat on a pirate ship",
     "search_type": "stickman",
     "variant": "default",
     "position": "2",
@@ -23,7 +22,7 @@
     "music_fade_out": 0
   },
   "that, a few hundred years ago, was worth more than gold.": {
-    "search_term": "weighing scale, at left, jar of nutmeg, at right, gold",
+    "search_term": "holding a balance scale, a tiny spice jar on the left pan and a pile of gold coins on the right pan, the jar side hanging lower",
     "search_type": "stickman",
     "variant": "default",
     "position": "3",
@@ -34,7 +33,7 @@
     "music_fade_out": 0
   },
   "Specifically — this.": {
-    "search_term": "peppercorn",
+    "search_term": "pointing dramatically at a single large peppercorn sitting on the ground in front of him in hand drawn ms paint style, minimal, white background",
     "search_type": "stickman",
     "variant": "default",
     "position": "4",
@@ -56,18 +55,7 @@
     "music_fade_out": 0
   },
   "Pepper. Black pepper. The most boring thing in your kitchen.": {
-    "search_term": "pepper grinder on kitchen worktop",
-    "search_type": "stickman",
-    "variant": "default",
-    "position": "5",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "alaric": {
-    "search_term": "alaric the goth",
+    "search_term": "pepper grinder in hand drawn ms paint style, minimal, white background",
     "search_type": "stickman",
     "variant": "default",
     "position": "5",
@@ -78,4 +66,3 @@
     "music_fade_out": 0
   }
 }
-
