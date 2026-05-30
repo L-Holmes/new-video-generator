@@ -1,17 +1,13 @@
 
-- fix the audio fade out issue
-- make the text on screen output match the new pixellated look (optionally);
-    - have an optional flag, (set to true, hardcoded?) that makes the generated text on screen instead have a pixellated look, and set on a white background with black text. 
-        - (i may have to download a font that looks pixelated- im happy to do that... on my debian 13, xfce device!)
-- Add feature for some fireship style text on screen.
-    -> basically, overlay some text, slightly rotated onto a scene...
-        --> will need a new setting for this.. perhaps like 'stickman_text_overlay'
-        - which basically gets the previous image, chooses from one of 6 possible positions; (either top left quadrant or top right quadrant, or centre, and then for each either slightly rotated anticlockwise or slightly rotated clockwise)
-        - it will then generate the text, with some sort of contrasting background (e.g. like a dark red), and then use the text from the 'search term' from the json to know what text to put there.
-        - it then generates that image and uses that in the final thing...
 
 TODO:
-- make the changes suggested by claude>...
+ask claude to fix the most current issue after 10:10pm...
+
+
+TODO:
+next update: for WORDS_ON_SCREEN.py
+- have a flag on the words thing, that, instead of doing the words as a sentence, it just shows one word at once.
+    - lets have this turned on as 'true' by default.
 
 
 TODO:
@@ -25,67 +21,6 @@ TODO:
 TODO:
 - do i get some 8 bit music in the same style as mario etc, in order to fit the theme???
 
------ 
-
-
-In the script_to_search_term.json, I currently have two types for 'stock' type images/videos.
-either stock or wikipedia, as seen in this map in main.py:
-
-class MediaType(Enum):
-    STOCK       = "stock"          # Pexels videos+images, picked via review GUI
-    WIKIPEDIA   = "wikipedia"      # Wikipedia images, picked via review GUI
-    JOINT_3_ROW = "joint_3_row"    # 3-image collage composited locally
-    READ_OUT    = "read_out"       # Kinetic typography (script text on screen)
-    STICKMAN    = "stickman"       # AI-generated stickman; 2 variants → review GUI
-    AI_EDIT     = "ai_edit"        # Edit the preceding AI image; N variants -> 2nd review
-
-I want to add two more options.
-- stickman_explain_stock (integrates stock footage on top of an existing base image)
-- stickman_explain_wikipedia (integrates the wikipedia footage on top of an existing base image...)
-
-obviously code already exists to get the stock / the wikipedia..
-but then after all of the review stages, and some time before the final stitch together, I want to generate these stickman explain things...
-    - OOH! actually its more intensive, but we theoretically could do it before the review stages... but that would of course mean wasted processing for the images that weren't picked...
-    so yeah. Ideally, afterwards. 
-
-If you want may be useful to have a standalone 'make_explainer_img.py' which just takes a random image/mp4 from spices-CACHE/stock_footage, and then uses that in a test, and puts the output in temp/explainer_image_test_output.[mp4/png/etc]
-
-I have two base images, which each contain a 'board' area, which is where the stock footage will be placed, at its centre: 
-- REUSABLE_IMAGES/board-einstein-1.png
-- REUSABLE_IMAGES/board-einstein-2.png
-
-I want to:
-- randomly select one of those images to use as the base.
-- generate an output image / output mp4, that layers the stock image / footage onto that base.
-    - This generated image is then what will be shown at that position in the final output.
-
-
-Here are the info about the image's board position:
-
-want to place the image/stock approx on the board, just a tiny little bit smaller than the board so you can see the edges of the board. It will of course want to be centred on the board, and no bigger on any axis.
-
-board left -> right => x:  220 -> 986
-board top -> bottom => y: 11 -> 466
-
-so board dimensions: 
-- widht = 986-220 = 766 
-- height = 466 - 11 = 455
-
-so image / stock dimension will need to fit less than or equal to at each side: 760 x 450 I should think.
-
-full image is 1,024 x 576.
-
----
-I have also added a third image:
-- REUSABLE_IMAGES/board-einstein-1.png
-
-lets also have that as an option.
-This one has different board coords though;
-
-board left -> right => x: 32 -> 982 
-board top -> bottom => y: 12 -> 576
-
-
 -------------------------------------
 
 
@@ -96,9 +31,6 @@ then it will treat them like a regular 3 row and add them side by side...
 
 
 --------
-
-current issues:
-- whatever fades the music doesn't work. it accidentally fades the main voiceovre audio instead.
 
 other other:
 - update the ai_edit.py.

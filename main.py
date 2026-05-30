@@ -180,6 +180,8 @@ class MediaType(Enum):
     AI_EDIT     = "ai_edit"        # Edit the preceding AI image; N variants -> 2nd review
     STICKMAN_EXPLAIN_STOCK     = "stickman_explain_stock"      # chosen Pexels clip composited onto a board base
     STICKMAN_EXPLAIN_WIKIPEDIA = "stickman_explain_wikipedia"  # chosen Wikipedia image composited onto a board base
+    STICKMAN_TEXT_OVERLAY      = "stickman_text_overlay"  # caption (search_term) on the PREVIOUS scene's image
+    STICKMAN_JOINT_3_ROW = "stickman_joint_3_row"  # like JOINT_3_ROW but tiles are AI stickman images
 
 
 class SearchTermData(TypedDict):
@@ -201,7 +203,7 @@ NEEDS_EXTERNAL_CANDIDATES: set[MediaType] = {
 
 # Which MediaTypes are handled by the joint compositor. Add new joint
 # layouts here AND to JOINT_LAYOUT_POSITIONS below.
-JOINT_TYPES: set[MediaType] = {MediaType.JOINT_3_ROW}
+JOINT_TYPES: set[MediaType] = {MediaType.JOINT_3_ROW, MediaType.STICKMAN_JOINT_3_ROW}
 
 # Which MediaTypes pull their candidates from Wikipedia instead of Pexels.
 # Everything else in NEEDS_EXTERNAL_CANDIDATES goes via Pexels.
@@ -232,6 +234,13 @@ STICKMAN_PROMPTS_FILE: str = LINE_INDEX_TO_SEARCH_TERM_FILE
 # Where generated PNGs are written (cache-scoped, like joint/read-out output).
 STICKMAN_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_scenes")
 
+# Stickman-joint scenes reuse the AI stickman generator to produce the TILES
+# that feed the joint compositor (instead of Pexels stills). The compositor
+# only ever consumes the first image per scene, so we generate 1 variant.
+STICKMAN_JOINT_TYPES: set[MediaType] = {MediaType.STICKMAN_JOINT_3_ROW}
+STICKMAN_JOINT_NUM_VARIANTS: int = 1
+STICKMAN_JOINT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_joint_scenes")
+
 
 # AI edit scenes are generated AFTER stage-1 review (they need the chosen
 # preceding image), then reviewed in a SECOND stage with its own state file.
@@ -255,6 +264,15 @@ STICKMAN_EXPLAIN_TYPES: set[MediaType] = {
 STICKMAN_EXPLAIN_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_explain_scenes")
 STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC: float = 0.08
 
+
+# Text-overlay scenes: a Fireship-style caption (the scene's search_term)
+# composited onto the PREVIOUS scene's chosen image. Synthesised AFTER review
+# + explainer (so any prior scene type resolves) and BEFORE Ken Burns. Not
+# fetched, not AI-generated, not reviewed.
+STICKMAN_TEXT_OVERLAY_TYPES: set[MediaType] = {MediaType.STICKMAN_TEXT_OVERLAY}
+STICKMAN_TEXT_OVERLAY_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/text_overlay_scenes")
+STICKMAN_TEXT_OVERLAY_RENDER_SAFETY_PAD_SEC: float = 0.08
+
 # ===========================================================================
 # JOINT SCENE LAYOUTS
 # ===========================================================================
@@ -262,6 +280,11 @@ STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 JOINT_LAYOUT_POSITIONS: dict[MediaType, list[list[int]]] = {
     MediaType.JOINT_3_ROW: [
+        [25, 50],
+        [50, 50],
+        [75, 50],
+    ],
+    MediaType.STICKMAN_JOINT_3_ROW: [
         [25, 50],
         [50, 50],
         [75, 50],
@@ -285,6 +308,10 @@ MUSIC_VOLUME: float = 0.01   # ducked under narration
 # User can still override per-scene by setting `"sfx"` in the JSON.
 JOINT_TYPE_SFX_MAP: dict[MediaType, dict] = {
     MediaType.JOINT_3_ROW: {
+        "path":   "se-pop.mp3",
+        "timing": "loop_start",
+    },
+    MediaType.STICKMAN_JOINT_3_ROW: {
         "path":   "se-pop.mp3",
         "timing": "loop_start",
     },
@@ -1138,6 +1165,113 @@ def generate_stickman_candidates(
     print(f"[stickman] DONE — {len(bundles)} candidate bundle(s)")
     return bundles
 
+def generate_stickman_joint_candidates(
+    script_to_search_term: dict[str, SearchTermData],
+) -> list[dict]:
+    """
+    For every scene whose search_type is in STICKMAN_JOINT_TYPES (currently just
+    MediaType.STICKMAN_JOINT_3_ROW), generate ONE AI stickman image — reusing
+    the SAME generator + prompt engineering as MediaType.STICKMAN — and return
+    candidate bundles in the SAME shape load_stock_footage() returns.
+
+    These bundles are appended to candidates_data and consumed by the joint
+    compositor (generate_joint_scenes) EXACTLY like the Pexels-image bundles are
+    for JOINT_3_ROW. The ONLY difference between joint_3_row and
+    stickman_joint_3_row is the source of the tile images: Pexels vs AI.
+
+    generate_stickman_images() filters its prompts file by an EXACT
+    search_type == process_type match, so we just pass the REAL search-term file
+    with process_type = "stickman_joint_3_row". No temp file / relabelling
+    needed, and it can't collide with the ordinary "stickman" pass.
+
+    Returns [] (and does no work) if there are no stickman-joint scenes.
+    """
+    joint_scenes = {
+        txt: data for txt, data in script_to_search_term.items()
+        if data["search_type"] in STICKMAN_JOINT_TYPES
+    }
+
+    print("\n" + "=" * 70)
+    print(f"[stickman-joint] {len(joint_scenes)} stickman-joint scene(s) found")
+    print("=" * 70)
+
+    if not joint_scenes:
+        print("[stickman-joint] nothing to generate — skipping")
+        return []
+
+    # Lazy import — keeps the fal / dotenv dependency out of runs that don't
+    # use any AI-generated scenes.
+    from ai_generate_stickman_images import generate_stickman_images
+
+    STICKMAN_JOINT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Generate once per stickman-joint type (the file filter matches ONE
+    # type-string per call). Currently a single type, but looping keeps the
+    # set honest if more get added later.
+    print(f"[stickman-joint] generating {STICKMAN_JOINT_NUM_VARIANTS} variant(s) "
+          f"per scene → {STICKMAN_JOINT_OUTPUT_DIR}")
+    generated: dict[str, list[str]] = {}
+    for jt in STICKMAN_JOINT_TYPES:
+        part = generate_stickman_images(
+            prompts_file=STICKMAN_PROMPTS_FILE,     # the real search-term file
+            out_dir=STICKMAN_JOINT_OUTPUT_DIR,
+            num_variants=STICKMAN_JOINT_NUM_VARIANTS,
+            process_type=jt.value,                  # e.g. "stickman_joint_3_row"
+        )
+        generated.update(part)
+    # generated: { script_text: [path, ...] }
+    print(f"[stickman-joint] generator returned images for {len(generated)} scene(s)")
+
+    scene_timings = _load_scene_timings()
+
+    bundles: list[dict] = []
+    history = _load_history()
+    added = 0
+
+    for txt in joint_scenes:
+        image_paths = generated.get(txt)
+        if not image_paths:  # stripped-key fallback (mirrors stickman/joint paths)
+            for k, v in generated.items():
+                if k.strip() == txt.strip():
+                    image_paths = v
+                    break
+
+        image_paths = [p for p in (image_paths or []) if Path(p).exists()]
+        if not image_paths:
+            print(f"[stickman-joint] WARNING: no image generated for "
+                  f"'{txt[:60]}' — the joint compositor will fail for this scene")
+            continue
+
+        if txt not in scene_timings:
+            print(f"[stickman-joint] FATAL: no timing for '{txt[:60]}'")
+            sys.exit(1)
+        duration = round(float(scene_timings[txt]), 3)
+
+        # One image fills this scene's tile; the compositor uses the first
+        # candidate, so a single variant is all that's needed.
+        image_candidates = [{p: duration} for p in image_paths]
+
+        bundles.append({
+            "script_text":                  txt,
+            "candidates":                   {"videos": [], "images": image_candidates},
+            "num_clips_needed":             1,
+            "max_runtime_per_clip_seconds": duration,
+        })
+        print(f"[stickman-joint]   '{txt[:50]}' → {len(image_candidates)} "
+              f"image(s), {duration:.2f}s each")
+
+        # Identity entries so history.get(image_url) in the joint compositor
+        # resolves these PNGs straight to disk (no download attempted).
+        for p in image_paths:
+            if p not in history:
+                history[p] = p
+                added += 1
+
+    _save_history(history)
+    print(f"[stickman-joint] added {added} identity entry(ies) to history.json")
+    print(f"[stickman-joint] DONE — {len(bundles)} candidate bundle(s)")
+    return bundles
+
 
 
 def build_ai_edit_candidates(
@@ -1324,9 +1458,22 @@ def generate_joint_scenes(
                 base_duration    = JOINT_BASE_DURATION_FALLBACK_SEC
                 remove_bg        = True
 
+            case MediaType.STICKMAN_JOINT_3_ROW:
+                # Identical to JOINT_3_ROW; the ONLY difference is the tiles come
+                # from the AI stickman generator instead of Pexels. The stickman
+                # images are line art on forced-white backgrounds, so remove_bg
+                # cuts the figure out onto the crumpled card. Flip to False if you
+                # ever want the white kept.
+                box_percentage   = 28
+                transition       = TRANSITION_RANDOM
+                background_path  = "_BACKGROUNDS/bg_crumpled_card.mp4"
+                base_duration    = JOINT_BASE_DURATION_FALLBACK_SEC
+                remove_bg        = True
+
             case _:
                 print(f"[joint scenes] FATAL: unsupported joint type: {joint_type}")
                 sys.exit(1)
+
 
         stage_timings = [
             _compute_joint_stage_timing(script_text, scene_timings)
@@ -1643,6 +1790,107 @@ def generate_stickman_explain_scenes(
 
     print("\n" + "=" * 70)
     print(f"[explain scenes] DONE — produced {len(footage_map)} explainer scene(s)")
+    print("=" * 70)
+    return footage_map
+
+
+def generate_text_overlay_scenes(
+    script_to_search_term: dict[str, SearchTermData],
+    final_data: list[dict],
+) -> dict[str, list[dict]]:
+    """
+    For every MediaType.STICKMAN_TEXT_OVERLAY scene, composite a tilted
+    Fireship-style caption (the scene's search_term) onto the PREVIOUS scene's
+    chosen image, returning a stitcher-ready map:
+
+        { script_text: [ {local_mp4_path: trim_seconds} ], ... }
+
+    "Previous image" = the nearest preceding scene that is NOT itself a
+    text-overlay and whose final footage resolves to an image (or a video,
+    whose first frame is used). Output is a STATIC MP4 so the Ken Burns pass
+    skips it and the tilted caption is never cropped/zoomed.
+
+    NOT in LOCAL_FOOTAGE_GENERATORS: it needs the post-review picks
+    (final_data), not the raw candidates.
+    """
+    print("\n" + "=" * 70)
+    print("[text-overlay] STARTING generate_text_overlay_scenes")
+    print("=" * 70)
+
+    overlay_scenes = [
+        (txt, data) for txt, data in script_to_search_term.items()
+        if data["search_type"] in STICKMAN_TEXT_OVERLAY_TYPES
+    ]
+    if not overlay_scenes:
+        print("[text-overlay] no text-overlay scenes — returning empty map")
+        return {}
+
+    print(f"[text-overlay] found {len(overlay_scenes)} text-overlay scene(s)")
+
+    from MAKE_TEXT_OVERLAY import make_text_overlay   # lazy import
+
+    scene_timings = _load_scene_timings()
+    ordered_texts = list(script_to_search_term.keys())
+    final_by_text = {e["script_text"]: e for e in final_data}
+
+    def _resolve_base_for(idx: int) -> str | None:
+        """Nearest preceding non-overlay scene's resolved local image/video."""
+        for j in range(idx - 1, -1, -1):
+            prev_text = ordered_texts[j]
+            if script_to_search_term[prev_text]["search_type"] in STICKMAN_TEXT_OVERLAY_TYPES:
+                continue                                   # skip other captions
+            footage = (final_by_text.get(prev_text) or {}).get("footage") or []
+            if not footage:
+                continue
+            key = next(iter(footage[0]), None)             # url or local path
+            local = _resolve_to_local_path(key) if key else None
+            if local:
+                print(f"[text-overlay]   base for '{ordered_texts[idx][:45]}' "
+                      f"← '{prev_text[:45]}' ({Path(local).name})")
+                return local
+        print(f"[text-overlay]   WARNING: no prior image for "
+              f"'{ordered_texts[idx][:45]}' — using a plain background")
+        return None
+
+    out_dir = STICKMAN_TEXT_OVERLAY_OUTPUT_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    footage_map: dict[str, list[dict]] = {}
+    for txt, data in overlay_scenes:
+        idx = ordered_texts.index(txt)
+        base_local = _resolve_base_for(idx)
+
+        if txt not in scene_timings:
+            print(f"[text-overlay] FATAL: no timing for '{txt[:60]}'")
+            sys.exit(1)
+        duration = float(scene_timings[txt])
+        if duration <= 0:
+            print(f"[text-overlay] WARNING: zero/negative duration — skipping "
+                  f"'{txt[:60]}'")
+            continue
+
+        render_duration = duration + STICKMAN_TEXT_OVERLAY_RENDER_SAFETY_PAD_SEC
+        safe_stem = re.sub(r"[^a-zA-Z0-9]+", "_", txt).strip("_")[:50] or "scene"
+        output_path = str(out_dir / f"text_overlay_{idx:03d}_{safe_stem}.mp4")
+
+        try:
+            make_text_overlay(
+                base_image_path=base_local or "",
+                text=data["search_term"],     # the caption text
+                output_path=output_path,
+                duration=render_duration,
+                seed=txt,                      # deterministic position/tilt per scene
+            )
+        except Exception as exc:
+            print(f"[text-overlay] FATAL: render failed for '{txt[:50]}': {exc}")
+            sys.exit(1)
+
+        footage_map[txt] = [{output_path: round(duration, 3)}]
+        print(f"[text-overlay]   ✓ '{txt[:50]}' → {Path(output_path).name} "
+              f"(trim {round(duration, 3)}s)")
+
+    print("\n" + "=" * 70)
+    print(f"[text-overlay] DONE — produced {len(footage_map)} scene(s)")
     print("=" * 70)
     return footage_map
 
@@ -2222,11 +2470,20 @@ def main() -> None:
 
         # AI-generated stickman candidates (STICKMAN_NUM_VARIANTS images each),
         # reviewed by the SAME GUI alongside the stock candidates.
-        stickman_candidates = generate_stickman_candidates(scriptTextToPexelSearch)
         if stickman_candidates:
             candidates_data.extend(stickman_candidates)
             print(f"[main] added {len(stickman_candidates)} stickman candidate "
                   f"bundle(s) to the review set")
+
+        # AI stickman tiles for stickman_joint scenes — same downstream flow as
+        # JOINT_3_ROW (these bundles feed the joint compositor) but the tiles
+        # are AI renders, not Pexels stills.
+        stickman_joint_candidates = generate_stickman_joint_candidates(scriptTextToPexelSearch)
+        if stickman_joint_candidates:
+            candidates_data.extend(stickman_joint_candidates)
+            print(f"[main] added {len(stickman_joint_candidates)} stickman-joint "
+                  f"candidate bundle(s) to the review set")
+
 
         # Stickman bundles are appended, so re-sort the review list into SCRIPT
         # order. We use each scene's position in the search-term file (its dict
@@ -2364,6 +2621,25 @@ def main() -> None:
         print(f"💾 Updated final_data with explainer footage → {FINAL_SCRIPT_AND_CLIPS}")
     else:
         print("\n[main] no explainer scenes; final_data unchanged")
+
+    # 2.63) Text-overlay scenes: caption (search_term) composited onto the
+    #       PREVIOUS scene's chosen image. After explainer (so any prior scene
+    #       type resolves) and before Ken Burns (static MP4 → KB skips it, so
+    #       the tilted caption is never cropped).
+    overlay_footage_map = generate_text_overlay_scenes(
+        script_to_search_term=scriptTextToPexelSearch,
+        final_data=final_data,
+    )
+    if overlay_footage_map:
+        print("\n[main] text-overlay footage produced — integrating into final_data")
+        final_data = _merge_generated_footage_into_final_data(
+            final_data, overlay_footage_map, source_label="text-overlay",
+        )
+        _add_local_paths_to_history(overlay_footage_map)
+        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
+        print(f"💾 Updated final_data with text-overlay footage → {FINAL_SCRIPT_AND_CLIPS}")
+    else:
+        print("\n[main] no text-overlay scenes; final_data unchanged")
 
 
 

@@ -25,6 +25,14 @@ them to relative time inside the scene. When precise timings are absent
 or don't match the word count we fall back to syllable-based estimation
 that's scaled to exactly fill the scene duration.
 
+PIXELATED MODE
+--------------
+`WordRenderConfig.pixelated` (default True) renders BLACK text on a WHITE
+background with a chunky low-res "pixel" look to match the ms-paint stickman
+aesthetic. The pixel look comes from a pixel FONT when one is found, and/or
+from a nearest-neighbour downscale so it still looks pixelated WITHOUT a
+special font. See _find_pixel_font() for where pixel fonts are searched.
+
 Requirements
 ------------
     pip install Pillow
@@ -107,6 +115,45 @@ FONT_CANDIDATES = [
     "C:/Windows/Fonts/arial.ttf",
 ]
 
+# ── Pixel-font discovery (used when WordRenderConfig.pixelated is True) ──────
+# Set this to an absolute .ttf path to FORCE a specific pixel font and skip
+# the search below. Leave "" to auto-detect.
+PIXEL_FONT_OVERRIDE = ""
+
+# Common free pixel-font filenames. Drop one into ~/.local/share/fonts/ (then
+# run `fc-cache -f`) or a ./fonts/ folder next to this script and it's picked
+# up automatically. Press Start 2P / VT323 / Silkscreen / Pixelify Sans are
+# all free on Google Fonts.
+_PIXEL_FONT_NAMES = [
+    "PressStart2P-Regular.ttf", "PressStart2P.ttf",
+    "VT323-Regular.ttf",
+    "Silkscreen-Regular.ttf", "Silkscreen-Bold.ttf",
+    "PixelifySans-Regular.ttf", "PixelifySans-VariableFont_wght.ttf",
+    "PixelOperator.ttf", "PixelOperator-Bold.ttf", "PixelOperator8.ttf",
+    "Minecraftia-Regular.ttf",
+]
+
+def _script_dir() -> str:
+    try:
+        return os.path.dirname(os.path.abspath(__file__))
+    except NameError:          # interactive / exec
+        return os.getcwd()
+
+_PIXEL_FONT_DIRS = [
+    os.path.expanduser("~/.local/share/fonts"),
+    os.path.expanduser("~/.fonts"),
+    "/usr/local/share/fonts",
+    "/usr/share/fonts/truetype",
+    os.path.join(_script_dir(), "fonts"),
+    os.path.join(_script_dir(), "_FONTS"),
+]
+
+# Flat fast-path candidates (dir/name). _find_pixel_font also does a shallow
+# recursive walk of the dirs above, so fonts inside subfolders are found too.
+PIXEL_FONT_CANDIDATES = [
+    os.path.join(d, n) for d in _PIXEL_FONT_DIRS for n in _PIXEL_FONT_NAMES
+]
+
 
 # ============================================================================
 # WordRenderConfig — all visual / layout / timing knobs
@@ -150,8 +197,69 @@ class WordRenderConfig:
     preset: str = "medium"
     font_path: str | None = None  # auto-detect when None
 
-    def resolved_font_path(self) -> str:
-        return self.font_path or _find_font()
+    # ── Pixelated ("retro" / ms-paint) styling ───────────────────────────
+    # When True: WHITE background, BLACK text, chunky low-res pixel look.
+    # The pixel look comes from a pixel FONT when one is found (see
+    # _find_pixel_font), and/or from a nearest-neighbour downscale so it
+    # still looks pixelated even without a pixel font installed.
+    pixelated: bool = True
+    pixelated_background_color: tuple[int, int, int] = (255, 255, 255)
+    pixelated_text_color: tuple[int, int, int] = (0, 0, 0)
+    # Nearest-neighbour pixelation block size, in OUTPUT pixels.
+    #   1  = no downscale (rely on the pixel font for crisp pixels)
+    #   >1 = force solid block-pixels of this size even with an ordinary font
+    pixel_block_size: int = 3
+    # If pixelated is on but NO pixel font is found, fall back to this block
+    # size so the result is still visibly pixelated without a special font.
+    pixel_block_size_when_no_pixel_font: int = 3
+    # Disable glyph antialiasing when leaning on a pixel font, so edges stay
+    # crisp instead of being smoothed to grey.
+    disable_antialiasing_for_pixel_font: bool = True
+
+    # ── One-word-at-a-time ────────────────────────────────────────────────
+    # When True, show a SINGLE word on screen at a time (each word centred),
+    # instead of building words up into a multi-word sentence/screen. Each
+    # word is shown for its own time slice (until the next word's start, or
+    # the scene end for the last word). Applies to BOTH run() and the
+    # per-scene renderer; pass a config with this False to get the old
+    # sentence build-up.
+    one_word_at_a_time: bool = True
+
+    # ── Colour helpers (respect pixelated mode) ──────────────────────────
+    def effective_background_color(self) -> tuple[int, int, int]:
+        return (self.pixelated_background_color if self.pixelated
+                else self.background_color)
+
+    def effective_text_color(self) -> tuple[int, int, int]:
+        return (self.pixelated_text_color if self.pixelated
+                else self.text_color)
+
+    # ── Font resolution ──────────────────────────────────────────────────
+    def resolve_font(self) -> tuple[str, bool]:
+        """Return (font_path, is_pixel_font).
+
+        Priority: explicit font_path / PIXEL_FONT_OVERRIDE → a known pixel
+        font from the search dirs → ordinary font fallback.
+        """
+        if self.font_path:
+            return self.font_path, True            # user chose it deliberately
+        if self.pixelated:
+            pf = _find_pixel_font()
+            if pf:
+                return pf, True
+        return _find_font(), False
+
+    def resolved_font_path(self) -> str:           # back-compat shim
+        return self.resolve_font()[0]
+
+    def effective_pixel_block(self, is_pixel_font: bool) -> int:
+        """How many output px per pixel-cell. 1 = no downscale."""
+        if not self.pixelated:
+            return 1
+        if is_pixel_font:
+            return max(1, self.pixel_block_size)
+        # No pixel font → force a chunky downscale so it still looks pixelated.
+        return max(self.pixel_block_size, self.pixel_block_size_when_no_pixel_font)
 
 
 # Module-level default — snapshot of the original constants so existing
@@ -171,6 +279,32 @@ def _find_font() -> str:
         "No font found on disk.  Edit FONT_CANDIDATES at the top of "
         "WORDS_ON_SCREEN.py to point at a .ttf you have."
     )
+
+
+def _find_pixel_font() -> str | None:
+    """Locate a pixel font, or None if none is installed.
+
+    Checks PIXEL_FONT_OVERRIDE, then the flat candidate list, then a shallow
+    recursive walk of the font dirs (so e.g. ~/.local/share/fonts/PressStart2P/
+    PressStart2P-Regular.ttf is found even though it's in a subfolder).
+    """
+    if PIXEL_FONT_OVERRIDE and os.path.exists(PIXEL_FONT_OVERRIDE):
+        return PIXEL_FONT_OVERRIDE
+    for p in PIXEL_FONT_CANDIDATES:
+        if os.path.exists(p):
+            return p
+    wanted = {n.lower() for n in _PIXEL_FONT_NAMES}
+    for d in _PIXEL_FONT_DIRS:
+        if not os.path.isdir(d):
+            continue
+        try:
+            for root, _dirs, files in os.walk(d):
+                for fn in files:
+                    if fn.lower() in wanted:
+                        return os.path.join(root, fn)
+        except OSError:
+            continue
+    return None
 
 
 def _check_tool(name: str) -> None:
@@ -404,7 +538,21 @@ def _pack_screens(words: list[dict], space_w: int,
 
     When row 1 is also full or out of horizontal space, the screen closes
     and we start a new one on row 0.
+
+    ONE-WORD-AT-A-TIME (cfg.one_word_at_a_time): short-circuit the packer and
+    make every word its own single-word screen, so the renderer shows one
+    centred word at a time instead of a building sentence.
     """
+    # One word at a time → each word is its own (single-word, row-0) screen.
+    if getattr(cfg, "one_word_at_a_time", False):
+        screens = []
+        for w in words:
+            placed = dict(w)
+            placed["row"] = 0
+            placed["x"] = 0
+            screens.append([placed])
+        return screens
+
     max_text_w = cfg.video_w - 2 * cfg.horizontal_margin
     screens: list[list[dict]] = []
     current: list[dict] = []
@@ -509,13 +657,39 @@ def _build_states(
 # Rendering
 # ============================================================================
 
+def _pixelate_image(img, block: int):
+    """Nearest-neighbour pixelation.
+
+    Area-downscale (BOX) to a coarse grid, then NEAREST upscale back to full
+    size — producing solid `block`×`block` block-pixels. Works with any font.
+    """
+    from PIL import Image
+    if block <= 1:
+        return img
+    w, h = img.size
+    sw, sh = max(1, w // block), max(1, h // block)
+    small = img.resize((sw, sh), Image.BOX)
+    return small.resize((w, h), Image.NEAREST)
+
+
 def _render_state(state: dict, font, out_path: str,
-                  cfg: WordRenderConfig) -> None:
+                  cfg: WordRenderConfig, pixelate_block: int = 1) -> None:
     from PIL import Image, ImageDraw
     img = Image.new("RGB", (cfg.video_w, cfg.video_h),
-                    color=cfg.background_color)
+                    color=cfg.effective_background_color())
     if state["visible"]:
         draw = ImageDraw.Draw(img)
+
+        # Crisp (no-AA) glyphs when we're leaning on a pixel font. The
+        # downscale path (pixelate_block > 1) keeps AA on, since the block
+        # averaging is what defines the pixels there anyway.
+        if (cfg.pixelated and pixelate_block <= 1
+                and cfg.disable_antialiasing_for_pixel_font):
+            try:
+                draw.fontmode = "1"     # "1" = 1-bit, no antialiasing
+            except Exception:
+                pass
+
         rw = state["screen_row_widths"]
         two_rows = rw[1] > 0
 
@@ -527,6 +701,7 @@ def _render_state(state: dict, font, out_path: str,
         y1 = y0 + cfg.line_height
         ys = [y0, y1]
 
+        fill = cfg.effective_text_color()
         for w in state["visible"]:
             row = w["row"]
             row_offset = (cfg.video_w - rw[row]) // 2
@@ -534,8 +709,12 @@ def _render_state(state: dict, font, out_path: str,
                 (row_offset + w["x"], ys[row]),
                 w["text"],
                 font=font,
-                fill=cfg.text_color,
+                fill=fill,
             )
+
+    if pixelate_block > 1:
+        img = _pixelate_image(img, pixelate_block)
+
     img.save(out_path, "PNG")
 
 
@@ -676,7 +855,17 @@ def render_scene_to_video(
     )
     print(f"[words-on-screen]   built {len(events)} word event(s)")
 
-    # Empty / whitespace-only script — emit a black silent MP4 of the
+    # Resolve font + pixelation ONCE (file checks are cheap but no need to
+    # repeat them per frame).
+    font_path, is_pixel = cfg.resolve_font()
+    pixel_block = cfg.effective_pixel_block(is_pixel)
+    if cfg.pixelated:
+        print(f"[words-on-screen]   pixelated: font={os.path.basename(font_path)} "
+              f"(pixel_font={is_pixel}), block={pixel_block}px, "
+              f"bg={cfg.effective_background_color()}, "
+              f"fg={cfg.effective_text_color()}")
+
+    # Empty / whitespace-only script — emit a blank silent MP4 of the
     # right length instead of crashing. (Edge case for a scene whose
     # text is e.g. just punctuation.)
     if not events:
@@ -691,12 +880,13 @@ def render_scene_to_video(
           f"{len(states)} state frame(s)")
 
     from PIL import ImageFont
-    font = ImageFont.truetype(cfg.resolved_font_path(), cfg.font_size)
+    font = ImageFont.truetype(font_path, cfg.font_size)
 
     with tempfile.TemporaryDirectory(prefix="wbw_scene_") as tmpdir:
         for i, s in enumerate(states):
             _render_state(s, font,
-                          os.path.join(tmpdir, f"frame_{i:05d}.png"), cfg)
+                          os.path.join(tmpdir, f"frame_{i:05d}.png"), cfg,
+                          pixelate_block=pixel_block)
         list_path = os.path.join(tmpdir, "concat.txt")
         _write_concat_list(states, tmpdir, list_path)
         _run_ffmpeg(list_path, None, output_path, cfg)  # silent
@@ -708,7 +898,7 @@ def render_scene_to_video(
 def _emit_blank_silent_video(output_path: str, duration: float,
                              cfg: WordRenderConfig) -> None:
     """Edge case: render a silent solid-colour clip of given duration."""
-    bg_hex = "#{:02x}{:02x}{:02x}".format(*cfg.background_color)
+    bg_hex = "#{:02x}{:02x}{:02x}".format(*cfg.effective_background_color())
     cmd = [
         "ffmpeg", "-y",
         "-loglevel", "warning",
@@ -795,7 +985,15 @@ def run(
     print(f"      {len(words)} word events "
           f"({n_precise} precise, {len(words) - n_precise} estimated)")
 
-    print(f"\n[2/4] measuring + packing with {cfg.resolved_font_path()}")
+    # Resolve font + pixelation once.
+    font_path, is_pixel = cfg.resolve_font()
+    pixel_block = cfg.effective_pixel_block(is_pixel)
+
+    print(f"\n[2/4] measuring + packing with {font_path}")
+    if cfg.pixelated:
+        print(f"      pixelated: pixel_font={is_pixel}, block={pixel_block}px, "
+              f"bg={cfg.effective_background_color()}, "
+              f"fg={cfg.effective_text_color()}")
     space_w = _measure_words(words, cfg)
     screens = _pack_screens(words, space_w, cfg)
     print(f"      packed into {len(screens)} screens "
@@ -805,12 +1003,13 @@ def run(
     print(f"\n[3/4] rendering {len(states)} frames…")
 
     from PIL import ImageFont
-    font = ImageFont.truetype(cfg.resolved_font_path(), cfg.font_size)
+    font = ImageFont.truetype(font_path, cfg.font_size)
 
     with tempfile.TemporaryDirectory(prefix="wbw_") as tmpdir:
         for i, s in enumerate(states):
             _render_state(s, font,
-                          os.path.join(tmpdir, f"frame_{i:05d}.png"), cfg)
+                          os.path.join(tmpdir, f"frame_{i:05d}.png"), cfg,
+                          pixelate_block=pixel_block)
             if (i + 1) % 50 == 0:
                 print(f"      {i + 1}/{len(states)}")
 
