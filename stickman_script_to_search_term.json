@@ -1,6 +1,6 @@
 {
   "If you open your kitchen cupboard right now,": {
-    "search_term": "kitchen cupboard opening",
+    "search_term": "kitchen cupboard closed",
     "search_type": "stickman",
     "position": "1",
     "sfx": "none",
@@ -10,7 +10,7 @@
     "music_fade_out": 0
   },
   "you probably have a jar of nutmeg.": {
-    "search_term": "add jar of nutmeg into the cupboard",
+    "search_term": "open the door and add jar of nutmeg into the cupboard",
     "search_type": "ai_edit",
     "position": "1",
     "sfx": "se-pop.mp3",
@@ -19,9 +19,29 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0
   },
-  "It costs about two dollars.": {
-    "search_term": "two dollar bill",
+  "It costs about two": {
+    "search_term": "jar of nutmeg at left and then equals sign",
     "search_type": "stickman",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "two": {
+    "search_term": "add a one dollar coin after the equals",
+    "search_type": "ai_edit",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "dollars.": {
+    "search_term": "Add another dollar coin after the equals",
+    "search_type": "ai_edit",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -51,7 +71,7 @@
   },
   "Nutmeg only grew in one place on Earth:": {
     "search_term": "antique world map",
-    "search_type": "stickman",
+    "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -109,7 +129,7 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0
   },
-  "shipwrecks.": {
+  "shipwrecks. But if you made it back with a": {
     "search_term": "shipwreck ocean rocks",
     "search_type": "stickman_joint_3_row",
     "position": "3",
@@ -119,7 +139,7 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0
   },
-  "But if you made it back with a single ship full of nutmeg, you were set for life.": {
+  "single ship full of nutmeg, you were set for life.": {
     "search_term": "single tall ship ocean treasure",
     "search_type": "stickman",
     "position": "1",

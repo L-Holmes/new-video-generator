@@ -1,0 +1,15 @@
+[
+    {
+        "script_text": "dollars.",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/ai_edit_scenes/dollars_2a422c7b_0.png": 0.34
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.34
+    }
+]

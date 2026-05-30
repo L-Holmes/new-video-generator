@@ -246,8 +246,11 @@ STICKMAN_JOINT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_joint_scenes")
 # preceding image), then reviewed in a SECOND stage with its own state file.
 AI_EDIT_NUM_VARIANTS: int   = 1
 AI_EDIT_OUTPUT_DIR:   Path  = Path(f"{_CACHE_DIR}/ai_edit_scenes")
-EDIT_CANDIDATES_CACHE_FILE  = f"{_CACHE_DIR}/edit_candidates.json"
-REVIEW_EDITS_OUTPUT_FILE    = f"{_CACHE_DIR}/stock_footage/review_accepting_edits.json"
+
+# How many preceding AI images (stickman / ai_edit) to pass to the generator
+# as ADDITIONAL context, on top of the base image being edited. 0 = disable.
+# There may be fewer than this available (or none) — best effort.
+AI_EDIT_CONTEXT_NUM_IMAGES: int = 3
 
 # Which MediaTypes count as a valid base for an ai_edit (walk-back eligibility).
 AI_BASE_TYPES: set[MediaType] = {MediaType.STICKMAN, MediaType.AI_EDIT}
@@ -341,6 +344,34 @@ _http_session.mount("http://", _http_adapter)
 # Guards history.json mutations from worker threads.
 _history_lock = threading.Lock()
 
+# Wikimedia (upload.wikimedia.org) rate-limits hard and returns HTTP 429 when
+# hit with many parallel connections. Cap concurrent WIKI downloads well below
+# DOWNLOAD_WORKERS and retry 429/503 with backoff. Pexels keeps full
+# concurrency — this throttles Wikimedia only.
+WIKI_DOWNLOAD_CONCURRENCY: int        = 2
+WIKI_DOWNLOAD_MAX_RETRIES: int        = 4
+WIKI_DOWNLOAD_BASE_BACKOFF_SEC: float = 1.5
+_wiki_download_semaphore = threading.Semaphore(WIKI_DOWNLOAD_CONCURRENCY)
+
+# Wikimedia's UA policy is enforced with a hard 403 on upload.wikimedia.org for
+# generic / thin User-Agents. Use a DEDICATED session with the descriptive UA
+# set at the SESSION level (mirrors GET_FROM_WIKIPEDIA.py, whose requests work),
+# rather than passing a per-request header through the shared Pexels session.
+WIKI_DOWNLOAD_USER_AGENT: str = (
+    "VideoGenerationPipeline/1.0 "
+    "(personal research project; contact: logosa1960@gmail.com)"
+)
+
+_wiki_session = requests.Session()
+_wiki_session.headers.update({"User-Agent": WIKI_DOWNLOAD_USER_AGENT})
+_wiki_adapter = requests.adapters.HTTPAdapter(
+    pool_connections=WIKI_DOWNLOAD_CONCURRENCY,
+    pool_maxsize=WIKI_DOWNLOAD_CONCURRENCY,
+    max_retries=0,                       # we handle retries/backoff ourselves
+)
+_wiki_session.mount("https://", _wiki_adapter)
+_wiki_session.mount("http://",  _wiki_adapter)
+
 
 class ProgressTracker:
     """Thread-safe text progress indicator."""
@@ -387,6 +418,19 @@ class ProgressTracker:
                f"TIME REMAINING {bar} {eta}      ")
         sys.stdout.write("\r" + msg)
         sys.stdout.flush()
+
+
+# =================================================
+# some ai edit stuff
+# =================================================
+
+def _edit_candidates_cache_file(scene_index: int) -> str:
+    return f"{_CACHE_DIR}/edit_candidates_{scene_index:03d}.json"
+
+
+def _edit_review_state_file(scene_index: int) -> str:
+    STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    return str(STOCK_FOOTAGE_CACHE_DIR / f"review_accepting_edits_{scene_index:03d}.json")
 
 # ===========================================================================
 # STEP 1  –  SCRIPTS
@@ -675,14 +719,21 @@ def _download_image_parallel(url: str) -> str | None:
 
 
 def _download_wikipedia_image_parallel(url: str) -> str | None:
-    """Thread-safe Wikipedia image downloader."""
+    """
+    Thread-safe Wikipedia image downloader.
+
+    Wikimedia 429s under parallel load, so this:
+      - limits concurrent Wikimedia connections via a dedicated semaphore
+        (independent of the 12-worker Pexels pool),
+      - retries 429/503 with exponential backoff, honouring Retry-After,
+      - sends Wikimedia's required descriptive User-Agent.
+    """
     with _history_lock:
         history = _load_history()
         if url in history and Path(history[url]).exists():
             return history[url]
 
     url_hash = hashlib.md5(url.encode()).hexdigest()[:12]
-
     ext = ".jpg"
     lower = url.lower()
     for cand_ext in (".jpg", ".jpeg", ".png", ".webp", ".gif"):
@@ -694,22 +745,51 @@ def _download_wikipedia_image_parallel(url: str) -> str | None:
     STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     dest = STOCK_FOOTAGE_CACHE_DIR / filename
 
-    try:
-        resp = _http_session.get(
-            url,
-            stream=True,
-            timeout=20,
-            headers={"User-Agent": "VideoGenerationPipeline/1.0 (local)"},
-        )
-        if resp.status_code != 200:
-            print(f"  [wiki download] FAILED {resp.status_code} for {url}")
-            return None
-        with open(dest, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=65536):
-                f.write(chunk)
-    except Exception as exc:
-        print(f"  [wiki download] FAILED: {exc}")
-        return None
+    with _wiki_download_semaphore:           # throttle Wikimedia concurrency
+        for attempt in range(1, WIKI_DOWNLOAD_MAX_RETRIES + 1):
+            resp = None
+            try:
+                resp = _wiki_session.get(url, stream=True, timeout=30)
+            except Exception as exc:
+                print(f"  [wiki download] conn error (attempt {attempt}): {exc}")
+
+            # Success.
+            if resp is not None and resp.status_code == 200:
+                try:
+                    with open(dest, "wb") as f:
+                        for chunk in resp.iter_content(chunk_size=65536):
+                            f.write(chunk)
+                except Exception as exc:
+                    print(f"  [wiki download] write failed: {exc}")
+                    return None
+                break
+
+            status = resp.status_code if resp is not None else "conn-error"
+
+            # Non-retryable HTTP error → give up immediately.
+            if resp is not None and resp.status_code not in (429, 503):
+                print(f"  [wiki download] FAILED {status} for {url}")
+                return None
+
+            # Out of attempts.
+            if attempt == WIKI_DOWNLOAD_MAX_RETRIES:
+                print(f"  [wiki download] FAILED {status} after "
+                      f"{WIKI_DOWNLOAD_MAX_RETRIES} attempts for {url}")
+                return None
+
+            # Honour Retry-After if present, else exponential backoff + jitter.
+            wait = WIKI_DOWNLOAD_BASE_BACKOFF_SEC * (2 ** (attempt - 1))
+            if resp is not None:
+                ra = resp.headers.get("Retry-After")
+                if ra:
+                    try:
+                        wait = max(wait, float(ra))
+                    except ValueError:
+                        pass
+            wait += random.uniform(0, 0.5)
+            print(f"  [wiki download] {status} — retry "
+                  f"{attempt}/{WIKI_DOWNLOAD_MAX_RETRIES} in {wait:.1f}s")
+            time.sleep(wait)
 
     with _history_lock:
         history = _load_history()
@@ -1274,79 +1354,205 @@ def generate_stickman_joint_candidates(
 
 
 
-def build_ai_edit_candidates(
+def build_ai_edit_candidates_for_target(
     script_to_search_term: dict[str, SearchTermData],
-    stage1_final_data: list[dict],
+    final_data: list[dict],
+    target_text: str,
 ) -> list[dict]:
     """
-    After stage-1 review, generate ai_edit images and return candidate bundles
-    in the SAME shape as load_stock_footage(), for a 2nd review stage.
-    Returns [] if there are no ai_edit scenes.
-    """
-    has_edits = any(
-        d["search_type"] == MediaType.AI_EDIT
-        for d in script_to_search_term.values()
-    )
-    if not has_edits:
-        print("[ai_edit] no ai_edit scenes - skipping stage 2")
-        return []
+    Generate ai_edit image(s) for a SINGLE target ai_edit scene, returned in
+    the load_stock_footage() shape so the same review GUI consumes them.
 
+    CRITICAL: `final_data` must already hold the user's picks for every scene
+    that PRECEDES `target_text` in script order — including earlier ai_edits.
+    That's what makes chains work: edit N is built from the image the user
+    actually CHOSE for the preceding AI scene (which may be edit N-1).
+
+    Only the target is flagged is_edit=True, so generate_ai_edits produces
+    exactly one scene's images; every other scene is offered purely as a
+    potential walk-back base (is_ai_base + chosen_image).
+    """
     from ai_edit import generate_ai_edits
 
-    # Stage-1 chosen image per scene (first footage entry's path/url -> local).
+    # Resolve each decided scene's CHOSEN image (first footage entry) to disk.
     chosen_by_text: dict[str, str | None] = {}
-    for entry in stage1_final_data:
+    for entry in final_data:
         footage = entry.get("footage") or []
-        if not footage:
-            chosen_by_text[entry["script_text"]] = None
-            continue
-        key = next(iter(footage[0]), None)  # url or local path
-        local = _resolve_to_local_path(key) if key else None
-        chosen_by_text[entry["script_text"]] = local
+        key = next(iter(footage[0]), None) if footage else None
+        chosen_by_text[entry["script_text"]] = (
+            _resolve_to_local_path(key) if key else None
+        )
 
-    # Ordered scene descriptors for the resolver (script order = dict order).
-    ordered_scenes = []
+    # Ordered descriptors (dict order == script order). Collect preceding AI
+    # images for optional context as we walk.
+    ordered_scenes: list[dict] = []
+    preceding_ai_images: list[str] = []   # resolved local paths, script order
+    reached_target = False
+
     for text, data in script_to_search_term.items():
         st = data["search_type"]
+        is_target = (text == target_text)
+        chosen_local = chosen_by_text.get(text)
+
         ordered_scenes.append({
-            "script_text": text,
-            "is_edit":     st == MediaType.AI_EDIT,
-            "is_ai_base":  st in AI_BASE_TYPES,
-            "instruction": data["search_term"],
-            "chosen_image": chosen_by_text.get(text),
+            "script_text":  text,
+            "is_edit":      is_target,                    # ONLY the target
+            "is_ai_base":   st in AI_BASE_TYPES,
+            "instruction":  data["search_term"],
+            "chosen_image": None if is_target else chosen_local,
         })
 
+        if is_target:
+            reached_target = True
+        elif not reached_target and st in AI_BASE_TYPES and chosen_local:
+            preceding_ai_images.append(chosen_local)
+
+    if not preceding_ai_images:
+        print(f"[ai_edit] WARNING: no preceding stickman/ai_edit scene before "
+              f"'{target_text[:60]}' — there's no base image to edit. Put a "
+              f"stickman (or an earlier ai_edit) ahead of it in the script.")
+
+    # Optional extra context: the N most recent preceding AI images, EXCLUDING
+    # the immediate base (preceding_ai_images[-1]) which is already the edit
+    # source. Flip to include the base by dropping the [:-1] slice.
+    context_images: list[str] = []
+    if AI_EDIT_CONTEXT_NUM_IMAGES > 0 and len(preceding_ai_images) > 1:
+        context_images = preceding_ai_images[:-1][-AI_EDIT_CONTEXT_NUM_IMAGES:]
+
+    for sc in ordered_scenes:
+        if sc["is_edit"]:
+            sc["context_images"] = context_images   # consumed by generate_ai_edits
+
+    print(f"\n[ai_edit] building target '{target_text[:60]}'")
+    base_name = Path(preceding_ai_images[-1]).name if preceding_ai_images else "NONE"
+    print(f"[ai_edit]   preceding AI images: {len(preceding_ai_images)} (base = {base_name})")
+    print(f"[ai_edit]   context images passed: {len(context_images)}")
+    for ci in context_images:
+        print(f"[ai_edit]     context ← {Path(ci).name}")
+
     generated = generate_ai_edits(
-        ordered_scenes, out_dir=AI_EDIT_OUTPUT_DIR,
+        ordered_scenes,
+        out_dir=AI_EDIT_OUTPUT_DIR,
         num_variants=AI_EDIT_NUM_VARIANTS,
     )  # { edit_text: [path, ...] }
 
+    paths = [p for p in generated.get(target_text, []) if Path(p).exists()]
+    if not paths:
+        print(f"[ai_edit] WARNING: no images generated for '{target_text[:60]}'")
+        return []
+
     scene_timings = _load_scene_timings()
-    bundles: list[dict] = []
-    history = _load_history()
-    for text, data in script_to_search_term.items():
-        if data["search_type"] != MediaType.AI_EDIT:
-            continue
-        paths = [p for p in generated.get(text, []) if Path(p).exists()]
-        if not paths:
-            print(f"[ai_edit] WARNING: no images for '{text[:50]}'")
-            continue
-        if text not in scene_timings:
-            print(f"[ai_edit] FATAL: no timing for '{text[:50]}'")
-            sys.exit(1)
-        dur = round(float(scene_timings[text]), 3)
-        bundles.append({
-            "script_text": text,
-            "candidates": {"videos": [], "images": [{p: dur} for p in paths]},
-            "num_clips_needed": 1,
-            "max_runtime_per_clip_seconds": dur,
-        })
-        for p in paths:                 # identity entries so lookups resolve
-            history.setdefault(p, p)
+    if target_text not in scene_timings:
+        print(f"[ai_edit] FATAL: no timing for '{target_text[:60]}'")
+        sys.exit(1)
+    dur = round(float(scene_timings[target_text]), 3)
+
+    history = _load_history()           # identity entries so lookups resolve
+    for p in paths:
+        history.setdefault(p, p)
     _save_history(history)
 
-    print(f"[ai_edit] built {len(bundles)} edit candidate bundle(s)")
-    return bundles
+    print(f"[ai_edit]   → {len(paths)} candidate image(s), {dur:.2f}s each")
+    return [{
+        "script_text":                  target_text,
+        "candidates":                   {"videos": [], "images": [{p: dur} for p in paths]},
+        "num_clips_needed":             1,
+        "max_runtime_per_clip_seconds": dur,
+    }]
+
+
+def run_ai_edit_stage(
+    script_to_search_term: dict[str, SearchTermData],
+    final_data: list[dict],
+) -> list[dict]:
+    """
+    Generate + review every ai_edit scene ONE AT A TIME, in script order.
+
+    An ai_edit edits the image chosen for the nearest preceding AI scene, which
+    may itself be an earlier ai_edit — so edit N can't be generated until the
+    user has PICKED edit N-1. We therefore loop:
+
+        for each ai_edit (script order):
+            build candidates from the CURRENT final_data (has all prior picks)
+            review it (blocking GUI, just this one scene)
+            merge the pick back into final_data
+
+    Handles a single ai_edit, scattered ai_edits, and arbitrarily long runs of
+    consecutive ai_edits identically. Per-edit candidate + review-state files
+    are scoped by script index, so a re-run resumes and reuses prior work.
+    Delete those files (or the cache dir) to force regeneration.
+    """
+    edit_texts = [
+        txt for txt, data in script_to_search_term.items()
+        if data["search_type"] == MediaType.AI_EDIT
+    ]
+
+    print("\n" + "=" * 70)
+    print(f"[ai_edit stage] {len(edit_texts)} ai_edit scene(s) to process")
+    print("=" * 70)
+
+    if not edit_texts:
+        print("[ai_edit stage] no ai_edit scenes — skipping")
+        return final_data
+
+    by_script    = {e["script_text"]: i for i, e in enumerate(final_data)}
+    script_index = {txt: i for i, txt in enumerate(script_to_search_term)}
+
+    for n, edit_text in enumerate(edit_texts, start=1):
+        idx        = script_index[edit_text]
+        cand_cache = _edit_candidates_cache_file(idx)
+        state_file = _edit_review_state_file(idx)
+
+        print("\n" + "-" * 70)
+        print(f"[ai_edit stage] ({n}/{len(edit_texts)}) scene #{idx}: '{edit_text[:60]}'")
+        print("-" * 70)
+
+        # Build (or load) THIS edit's candidates from the up-to-date final_data.
+        bundles = load_from_cache(cand_cache)
+        if bundles:
+            print(f"[ai_edit stage]   loaded {len(bundles)} cached bundle(s)")
+        else:
+            bundles = build_ai_edit_candidates_for_target(
+                script_to_search_term=script_to_search_term,
+                final_data=final_data,
+                target_text=edit_text,
+            )
+            save_to_cache(bundles, cand_cache)
+
+        if not bundles:
+            print(f"[ai_edit stage]   WARNING: nothing generated — skipping")
+            continue
+
+        # Review THIS edit (blocking; returns after the user picks).
+        print(f"[ai_edit stage]   launching review GUI for this edit...")
+        edit_final, has_manual = run_media_review(
+            candidates_data=bundles,
+            history_file=str(HISTORY_FILE),
+            review_state_file=state_file,
+            cache_dir=_CACHE_DIR,
+        )
+        if has_manual:
+            print(f"\n[ai_edit stage] Exiting for manual fixes (scene #{idx}). "
+                  f"Re-run to resume from here.")
+            sys.exit(0)
+
+        # Merge the pick so the NEXT edit can build on it.
+        for e in edit_final:
+            if e["script_text"] in by_script:
+                final_data[by_script[e["script_text"]]]["footage"] = e["footage"]
+            else:
+                final_data.append(e)
+                by_script[e["script_text"]] = len(final_data) - 1
+            for item in e["footage"]:
+                for path, trim in item.items():
+                    print(f"[ai_edit stage]   ✓ picked {Path(path).name} (trim {trim}s)")
+
+        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)   # checkpoint each pick
+
+    print("\n" + "=" * 70)
+    print(f"[ai_edit stage] DONE — processed {len(edit_texts)} ai_edit scene(s)")
+    print("=" * 70)
+    return final_data
 
 
 # ===========================================================================
@@ -1452,7 +1658,7 @@ def generate_joint_scenes(
         # new joint layout (and an entry in JOINT_LAYOUT_POSITIONS).
         match joint_type:
             case MediaType.JOINT_3_ROW:
-                box_percentage   = 28
+                box_percentage   = 50
                 transition       = TRANSITION_RANDOM
                 background_path  = "_BACKGROUNDS/bg_crumpled_card.mp4"
                 base_duration    = JOINT_BASE_DURATION_FALLBACK_SEC
@@ -1464,7 +1670,7 @@ def generate_joint_scenes(
                 # images are line art on forced-white backgrounds, so remove_bg
                 # cuts the figure out onto the crumpled card. Flip to False if you
                 # ever want the white kept.
-                box_percentage   = 28
+                box_percentage   = 50
                 transition       = TRANSITION_RANDOM
                 background_path  = "_BACKGROUNDS/bg_crumpled_card.mp4"
                 base_duration    = JOINT_BASE_DURATION_FALLBACK_SEC
@@ -1517,13 +1723,23 @@ def generate_joint_scenes(
                 print(f"[joint scenes] FATAL: no image_url extracted from candidate")
                 sys.exit(1)
 
-            history = _load_history()
-            local_path = history.get(image_url)
-            if not (local_path and Path(local_path).exists()):
+            # Resolve the candidate to an on-disk file. Pexels joint_3_row
+            # candidates are URLs (download if not cached); stickman_joint
+            # candidates are ALREADY-LOCAL AI tiles — never try to download a
+            # local path (that's what produced the "No scheme supplied" error).
+            local_path = _resolve_to_local_path(image_url)
+            if not local_path and image_url.startswith(("http://", "https://")):
                 local_path = _download_image(image_url)
-                if not local_path:
-                    print(f"[joint scenes] FATAL: failed to download image: {image_url}")
-                    sys.exit(1)
+            if not local_path:
+                print(f"[joint scenes] FATAL: could not resolve image to disk: {image_url}")
+                if not image_url.startswith(("http://", "https://")):
+                    print(f"  It's a LOCAL file that's gone — most likely the review-GUI")
+                    print(f"  cleanup deleted it because a STALE review decision (from when")
+                    print(f"  this scene had a different search_type) pointed elsewhere.")
+                    print(f"  Delete {CANDIDATES_CACHE_FILE} and re-run to regenerate it.")
+                else:
+                    print(f"  HINT: delete {CANDIDATES_CACHE_FILE} and re-run to refresh.")
+                sys.exit(1)
 
             items.append({
                 "path":                       local_path,
@@ -2470,6 +2686,7 @@ def main() -> None:
 
         # AI-generated stickman candidates (STICKMAN_NUM_VARIANTS images each),
         # reviewed by the SAME GUI alongside the stock candidates.
+        stickman_candidates = generate_stickman_candidates(scriptTextToPexelSearch)
         if stickman_candidates:
             candidates_data.extend(stickman_candidates)
             print(f"[main] added {len(stickman_candidates)} stickman candidate "
@@ -2517,10 +2734,18 @@ def main() -> None:
     # 2.5) STAGE 1 review — everything EXCEPT ai_edit
     print("====================================================================")
     print("Launching media review GUI (stage 1: stock / wiki / joint / stickman)...")
+    # Exclude from the stage-1 review GUI:
+    #   - ai_edit: reviewed later in stage 2 (needs the stage-1 picks first)
+    #   - stickman_joint: the joint compositor always uses candidate [0] and
+    #     IGNORES the review pick, so reviewing these is pointless — and the
+    #     review's cleanup would delete the "unchosen" local AI tiles, which
+    #     (unlike Pexels URLs) can't be re-downloaded. They re-enter final_data
+    #     via the generator-merge step (2.6) afterwards.
+    _excluded_from_review = {MediaType.AI_EDIT} | STICKMAN_JOINT_TYPES
     non_edit_candidates = [
         c for c in candidates_data
         if scriptTextToPexelSearch.get(c["script_text"], {}).get("search_type")
-           != MediaType.AI_EDIT
+           not in _excluded_from_review
     ]
     final_data, has_manual = run_media_review(
         candidates_data=non_edit_candidates,
@@ -2532,36 +2757,13 @@ def main() -> None:
         print("\n[main] Exiting so you can perform the manual fixes above.")
         sys.exit(0)
 
-    # 2.55) Generate ai_edit images from stage-1 picks, then STAGE 2 review
-    edit_candidates = load_from_cache(EDIT_CANDIDATES_CACHE_FILE)
-    if edit_candidates:
-        print(f"✅ Loaded {len(edit_candidates)} edit candidate bundle(s) from cache.")
-    else:
-        edit_candidates = build_ai_edit_candidates(scriptTextToPexelSearch, final_data)
-        save_to_cache(edit_candidates, EDIT_CANDIDATES_CACHE_FILE)
-
-    if edit_candidates:
-        print("============================================================")
-        print("Launching media review GUI (stage 2: ai_edit)...")
-        edit_final_data, has_manual2 = run_media_review(
-            candidates_data=edit_candidates,
-            history_file=str(HISTORY_FILE),
-            review_state_file=REVIEW_EDITS_OUTPUT_FILE,
-            cache_dir=_CACHE_DIR,
-        )
-        if has_manual2:
-            print("\n[main] Exiting for manual fixes (stage 2).")
-            sys.exit(0)
-        # Merge stage-2 picks in. by_script keeps script order from stage 1.
-        by_script = {e["script_text"]: i for i, e in enumerate(final_data)}
-        for e in edit_final_data:
-            if e["script_text"] in by_script:
-                final_data[by_script[e["script_text"]]]["footage"] = e["footage"]
-            else:
-                final_data.append(e)
-
-    save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
-    print(f"💾 Final script→clips map written to {FINAL_SCRIPT_AND_CLIPS}.")
+    # 2.55) ai_edit scenes — generated + reviewed ONE AT A TIME, in script
+    #       order, so chains of consecutive ai_edits work to any depth (each
+    #       edit waits for the previous scene's pick before it's generated).
+    final_data = run_ai_edit_stage(
+        script_to_search_term=scriptTextToPexelSearch,
+        final_data=final_data,
+    )
 
     print("\n=== FINAL SCRIPT → CHOSEN MEDIA ===")
     for entry in final_data:

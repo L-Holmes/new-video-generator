@@ -1,21 +1,6 @@
-
-
 TODO:
-ask claude to fix the most current issue after 10:10pm...
-
-
-TODO:
-next update: for WORDS_ON_SCREEN.py
-- have a flag on the words thing, that, instead of doing the words as a sentence, it just shows one word at once.
-    - lets have this turned on as 'true' by default.
-
-
-TODO:
-- try again with stickman explainer scenes...
 - then do todos on either phone or below..  
     - do i consider doing more functional tihngs rather than the stock footage processing?!?!??!
-    - do i organsie things like move the below definition??!??!
-    - do i create a true read me???
 
 
 TODO:
@@ -23,22 +8,7 @@ TODO:
 
 -------------------------------------
 
-
-lets also now integrate the 3_row thing, but for stickmen/ai...
---> so if its stickmen_3_row, it will fetch the ai image(s) as usual... 
-then it will treat them like a regular 3 row and add them side by side...
-(using basically the same logic if that's possible...)
-
-
---------
-
-other other:
-- update the ai_edit.py.
-    - we don't currently pass in the reference images...
-    -> and then maybe mixing in some just basic edits as well, like to spruce up a scene midw way through (like raising the sword of alaric the goth...)
-
 plus:
-- defo mix in some real stock footage at some point... with my professor dude... or on like a cinema screen...
     - have a few things that are reused between videos for consistency.
     - i.e.:
         - wikipedia for named things (especially obscure named things...)
@@ -62,15 +32,6 @@ later:
 - for stock footage, apply same edits to all-- like a subtle film grain or whatever...
 
 -------
-then integrate with joint...
-e.g. 'stickman-joint-3'??? will i need stickman-joint-3??? 
-and then handle in the same way we do regular joint things with the positions etc...
-
---------
-
-hmmmm...
-- maybe zoom in, reveal the cuboard, and then in the next scene the same cupboard but with a jar of nutmeg on the side...
-    - or maybe it spins around and reveals that it is nutmeg...
 - then for two dollars...
     - one dollar coin comes on screen, and then another one, and then the equals sign to the jar of nutmeg...
 

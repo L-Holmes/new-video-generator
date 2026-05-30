@@ -7,10 +7,10 @@
     ],
     "manual_intervention": false
   },
-  "It costs about two dollars.": {
+  "It costs about two": {
     "footage": [
       {
-        "stickman-CACHE/stickman_scenes/It_costs_about_two_dollars_e8030d43_0.png": 1.92
+        "stickman-CACHE/stickman_scenes/It_costs_about_two_3f3701aa_0.png": 0.79
       }
     ],
     "manual_intervention": false
@@ -34,7 +34,7 @@
   "Nutmeg only grew in one place on Earth:": {
     "footage": [
       {
-        "stickman-CACHE/stickman_scenes/Nutmeg_only_grew_in_one_place_on_Earth_4c4caf26_0.png": 2.18
+        "https://videos.pexels.com/video-files/30550542/13086247_1920_1080_30fps.mp4": 2.18
       }
     ],
     "manual_intervention": false
@@ -55,34 +55,10 @@
     ],
     "manual_intervention": false
   },
-  "scurvy,": {
+  "single ship full of nutmeg, you were set for life.": {
     "footage": [
       {
-        "stickman-CACHE/stickman_scenes/scurvy_fe1e3862_0.png": 0.58
-      }
-    ],
-    "manual_intervention": false
-  },
-  "pirates and": {
-    "footage": [
-      {
-        "stickman-CACHE/stickman_scenes/pirates_and_af957ef8_0.png": 0.88
-      }
-    ],
-    "manual_intervention": false
-  },
-  "shipwrecks.": {
-    "footage": [
-      {
-        "stickman-CACHE/stickman_scenes/shipwrecks_9fb3819e_0.png": 0.56
-      }
-    ],
-    "manual_intervention": false
-  },
-  "But if you made it back with a single ship full of nutmeg, you were set for life.": {
-    "footage": [
-      {
-        "stickman-CACHE/stickman_scenes/But_if_you_made_it_back_with_a_single_sh_e549e059_0.png": 4.08
+        "stickman-CACHE/stickman_scenes/single_ship_full_of_nutmeg_you_were_set__8a862210_0.png": 2.38
       }
     ],
     "manual_intervention": false

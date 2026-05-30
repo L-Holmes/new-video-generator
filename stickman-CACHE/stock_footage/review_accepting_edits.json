@@ -6,5 +6,21 @@
       }
     ],
     "manual_intervention": false
+  },
+  "two": {
+    "footage": [
+      {
+        "stickman-CACHE/ai_edit_scenes/two_b8a9f715_0.png": 0.79
+      }
+    ],
+    "manual_intervention": false
+  },
+  "dollars.": {
+    "footage": [
+      {
+        "stickman-CACHE/ai_edit_scenes/dollars_2a422c7b_0.png": 0.34
+      }
+    ],
+    "manual_intervention": false
   }
 }

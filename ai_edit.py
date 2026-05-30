@@ -56,6 +56,15 @@ EDIT_STYLE_SUFFIX = ("Keep the same hand-drawn ms paint style, in colour, "
                      "minimal, on a white background.")
 
 
+# Appended to the prompt ONLY when context images are supplied. Nudges the
+# model to treat the trailing reference images as consistency cues, not new
+# content to merge. Set to "" to disable if your edit model handles
+# multi-image refs poorly.
+EDIT_CONTEXT_CLAUSE = (" The additional trailing reference images show "
+                       "preceding scenes for character and style consistency "
+                       "only; do not merge their content into the edit.")
+
+
 def _variant0_path(out_dir, script_text) -> str:
     """Deterministic path of an edit scene's variant-0 image (used as a base by
     later edits, and computable BEFORE generation)."""
@@ -103,7 +112,7 @@ def resolve_edit_bases(ordered_scenes, out_dir):
 
 
 async def _edit_one(sem, script_text, instruction, base_image_path, ref_urls,
-                    out_dir, variant, abort_event, client):
+                    context_urls, out_dir, variant, abort_event, client):
     stem        = _scene_stem(script_text)
     real        = pathlib.Path(out_dir) / f"{stem}_{variant}.png"
     placeholder = pathlib.Path(out_dir) / f"{stem}_{variant}.placeholder.png"
@@ -121,17 +130,19 @@ async def _edit_one(sem, script_text, instruction, base_image_path, ref_urls,
 
     try:
         if use_fresh:
-            image_urls = list(ref_urls)               # refs only — nothing to edit
+            # Nothing to edit: context (preceding AI scenes) + style refs only.
+            image_urls = [*context_urls, *ref_urls]
             prompt = f"{STYLE_PREFIX} {instruction}. {STYLE_SUFFIX}"
         else:
             base_url = await asyncio.to_thread(fal_client.upload_file, base_image_path)
-            # Base is "the first file" (the thing being edited); the style refs
-            # follow so the edit keeps the ms-paint stickman look — the same
-            # refs ai_generate_stickman_images grounds on. If the model ends up
-            # leaning too hard on a ref instead of the base, flip the order or
-            # drop refs here.
-            image_urls = [base_url, *ref_urls]
+            # Base (the thing being edited) FIRST, then context images
+            # (preceding AI scenes for consistency), then style refs. If the
+            # model leans too hard on context/refs instead of the base,
+            # reorder or drop entries here.
+            image_urls = [base_url, *context_urls, *ref_urls]
             prompt = f"{instruction}. {EDIT_STYLE_SUFFIX}"
+        if context_urls:
+            prompt += EDIT_CONTEXT_CLAUSE
     except Exception as e:
         if sg._looks_like_credit_error(e):
             abort_event.set()
@@ -158,15 +169,9 @@ async def _generate_all(ordered_scenes, out_dir, num_variants):
     if not edit_scenes:
         return {}
 
-    # Fresh per-loop fal client — see the matching note in
-    # ai_generate_stickman_images._generate_all. The pipeline runs asyncio.run()
-    # twice (stickman then ai_edit); a client made here binds to THIS loop and
-    # avoids the "Event loop is closed" reuse of a client from the (closed)
-    # stickman loop.
     client = fal_client.AsyncClient()
 
-    # Upload the style refs ONCE (not per scene/variant) and reuse the URLs —
-    # the same reference images ai_generate_stickman_images grounds on.
+    # Upload the style refs ONCE and reuse the URLs.
     ref_urls = [await asyncio.to_thread(fal_client.upload_file, p) for p in REF_IMAGES]
 
     bases = resolve_edit_bases(ordered_scenes, out_dir)
@@ -175,16 +180,44 @@ async def _generate_all(ordered_scenes, out_dir, num_variants):
 
     mapping, placeholder_scenes = {}, set()
 
-    # Generate SCENE-BY-SCENE in script order: a later edit whose base is an
-    # earlier edit's variant-0 needs that file to exist first. Variants WITHIN a
-    # scene run concurrently (bounded by sem); we await each scene before the next.
     instr_by_text = {s["script_text"]: s.get("instruction", "") for s in edit_scenes}
+    context_by_text = {
+        s["script_text"]: list(s.get("context_images", []) or [])
+        for s in edit_scenes
+    }
+
+    # Upload each distinct context image once; reuse the URL across variants
+    # (and across scenes, should the same image recur).
+    _ctx_url_cache: dict[str, str] = {}
+    async def _upload_ctx(path):
+        if path in _ctx_url_cache:
+            return _ctx_url_cache[path]
+        if not pathlib.Path(path).exists():
+            print(f"[ai_edit] context image missing on disk, skipping: {path}")
+            return None
+        url = await asyncio.to_thread(fal_client.upload_file, path)
+        _ctx_url_cache[path] = url
+        return url
+
+    # Generate SCENE-BY-SCENE in script order (variants within a scene run
+    # concurrently, bounded by sem). In the one-at-a-time review flow there's
+    # exactly one edit scene per call.
     for scene in edit_scenes:
         text = scene["script_text"]
         base = bases.get(text)
+
+        context_urls = []
+        for cp in context_by_text.get(text, []):
+            u = await _upload_ctx(cp)
+            if u:
+                context_urls.append(u)
+        if context_by_text.get(text):
+            print(f"[ai_edit] '{text[:45]}' using {len(context_urls)} "
+                  f"context image(s)")
+
         tasks = [
-            _edit_one(sem, text, instr_by_text[text], base, ref_urls, out_dir,
-                      v, abort_event, client)
+            _edit_one(sem, text, instr_by_text[text], base, ref_urls,
+                      context_urls, out_dir, v, abort_event, client)
             for v in range(num_variants)
         ]
         for t, variant, path, is_ph in await asyncio.gather(*tasks):
@@ -197,8 +230,8 @@ async def _generate_all(ordered_scenes, out_dir, num_variants):
     if placeholder_scenes:
         print("\n" + "!" * 70)
         print(f"[ai_edit] WARNING: {len(placeholder_scenes)} edit scene(s) got a "
-              f"PLACEHOLDER. To retry: delete edit_candidates.json and the "
-              f"*.placeholder.png files in {out_dir}, top up, re-run.")
+              f"PLACEHOLDER. To retry: delete the per-edit edit_candidates_NNN.json "
+              f"and the *.placeholder.png files in {out_dir}, top up, re-run.")
         print("!" * 70)
 
     return {
