@@ -230,7 +230,7 @@ def _write_placeholder(path, script_text: str, reason: str,
 # -- SHARED ROBUST CALL CORE (used by stickman AND ai_edit) ---------------
 
 async def _call_flux_to_file(*, prompt, image_urls, real_path, placeholder_path,
-                             scene_text, abort_event, sem):
+                             scene_text, abort_event, sem, client):
     """
     Run ONE flux call to disk with full robustness. Returns
     (path, is_placeholder); `path` is always a real file (image or placeholder
@@ -254,7 +254,7 @@ async def _call_flux_to_file(*, prompt, image_urls, real_path, placeholder_path,
 
         try:
             result = await asyncio.wait_for(
-                fal_client.subscribe_async(MODEL, arguments={
+                client.subscribe(MODEL, arguments={
                     "prompt": prompt,
                     "image_urls": image_urls,
                     "image_size": IMAGE_SIZE,
@@ -307,7 +307,7 @@ async def _call_flux_to_file(*, prompt, image_urls, real_path, placeholder_path,
 # -- STICKMAN GENERATION --------------------------------------------------
 
 async def _generate_one(sem, narration, entry, ref_urls, out_dir, variant,
-                        abort_event):
+                        abort_event, client):
     stem        = _scene_stem(narration)
     real        = pathlib.Path(out_dir) / f"{stem}_{variant}.png"
     placeholder = pathlib.Path(out_dir) / f"{stem}_{variant}.placeholder.png"
@@ -315,7 +315,7 @@ async def _generate_one(sem, narration, entry, ref_urls, out_dir, variant,
     path, is_ph = await _call_flux_to_file(
         prompt=prompt, image_urls=ref_urls,
         real_path=real, placeholder_path=placeholder,
-        scene_text=narration, abort_event=abort_event, sem=sem,
+        scene_text=narration, abort_event=abort_event, sem=sem, client=client,
     )
     return narration, variant, path, is_ph
 
@@ -334,12 +334,22 @@ async def _generate_all(prompts_file, out_dir, num_variants, process_type):
     if not targets:
         return {}
 
+    # Fresh per-loop fal client. The module-level fal_client.subscribe_async
+    # caches an httpx.AsyncClient bound to the FIRST event loop it runs in.
+    # The pipeline calls asyncio.run() twice (stickman, then ai_edit), and
+    # asyncio.run() closes its loop on return — so the cached client would be
+    # reused on a CLOSED loop the second time and raise "Event loop is closed".
+    # A client constructed HERE binds to this run's own loop. (upload_file is
+    # the SYNC client — no loop — so it's fine to keep as-is.)
+    client = fal_client.AsyncClient()
+
     ref_urls = [await asyncio.to_thread(fal_client.upload_file, p) for p in REF_IMAGES]
     sem = asyncio.Semaphore(CONCURRENCY)
     abort_event = asyncio.Event()
 
     tasks = [
-        _generate_one(sem, narration, entry, ref_urls, out_dir, variant, abort_event)
+        _generate_one(sem, narration, entry, ref_urls, out_dir, variant,
+                      abort_event, client)
         for narration, entry in targets
         for variant in range(num_variants)
     ]

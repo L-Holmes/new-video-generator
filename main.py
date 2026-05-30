@@ -178,6 +178,8 @@ class MediaType(Enum):
     READ_OUT    = "read_out"       # Kinetic typography (script text on screen)
     STICKMAN    = "stickman"       # AI-generated stickman; 2 variants → review GUI
     AI_EDIT     = "ai_edit"        # Edit the preceding AI image; N variants -> 2nd review
+    STICKMAN_EXPLAIN_STOCK     = "stickman_explain_stock"      # chosen Pexels clip composited onto a board base
+    STICKMAN_EXPLAIN_WIKIPEDIA = "stickman_explain_wikipedia"  # chosen Wikipedia image composited onto a board base
 
 
 class SearchTermData(TypedDict):
@@ -193,6 +195,8 @@ NEEDS_EXTERNAL_CANDIDATES: set[MediaType] = {
     MediaType.STOCK,
     MediaType.WIKIPEDIA,
     MediaType.JOINT_3_ROW,
+    MediaType.STICKMAN_EXPLAIN_STOCK,
+    MediaType.STICKMAN_EXPLAIN_WIKIPEDIA,
 }
 
 # Which MediaTypes are handled by the joint compositor. Add new joint
@@ -201,7 +205,10 @@ JOINT_TYPES: set[MediaType] = {MediaType.JOINT_3_ROW}
 
 # Which MediaTypes pull their candidates from Wikipedia instead of Pexels.
 # Everything else in NEEDS_EXTERNAL_CANDIDATES goes via Pexels.
-WIKIPEDIA_TYPES: set[MediaType] = {MediaType.WIKIPEDIA}
+WIKIPEDIA_TYPES: set[MediaType] = {
+    MediaType.WIKIPEDIA,
+    MediaType.STICKMAN_EXPLAIN_WIKIPEDIA,
+}
 
 
 # ===========================================================================
@@ -237,7 +244,16 @@ REVIEW_EDITS_OUTPUT_FILE    = f"{_CACHE_DIR}/stock_footage/review_accepting_edit
 AI_BASE_TYPES: set[MediaType] = {MediaType.STICKMAN, MediaType.AI_EDIT}
 
 
+# Explainer scenes: a chosen stock/wiki clip composited onto an Einstein board
+# base AFTER review. Stock-explain pulls from Pexels; wiki-explain from
+# Wikipedia (already wired via NEEDS_EXTERNAL_CANDIDATES + WIKIPEDIA_TYPES above).
+STICKMAN_EXPLAIN_TYPES: set[MediaType] = {
+    MediaType.STICKMAN_EXPLAIN_STOCK,
+    MediaType.STICKMAN_EXPLAIN_WIKIPEDIA,
+}
 
+STICKMAN_EXPLAIN_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_explain_scenes")
+STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 # ===========================================================================
 # JOINT SCENE LAYOUTS
@@ -357,14 +373,18 @@ def save_to_cache(data: list, file_path: str):
         print(f"Error saving cache: {e}")
 
 def load_from_cache(file_path: str) -> list | None:
-    """Loads data from the JSON file. Returns None if file doesn't exist or is invalid."""
+    """Loads data from a cache JSON file. Returns None if the file doesn't
+    exist (a normal cache miss) or can't be parsed (worth flagging)."""
     p = Path(file_path)
     if not p.exists():
-        print("ERROR! THE FILE DOESN'T EXIST: "+str(file_path))
+        # Not an error — we just haven't generated this cache yet.
+        print(f"ℹ️  [cache miss] no file yet at {file_path} — will generate it.")
         return None
     try:
         return json.loads(p.read_text())
-    except Exception:
+    except Exception as exc:
+        print(f"⚠️  [cache] {file_path} exists but couldn't be parsed "
+              f"({exc}) — regenerating.")
         return None
 
 
@@ -902,6 +922,13 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
         search_term = scene_data["search_term"]
         search_type = scene_data["search_type"]
         num_clips, max_runtime = _get_num_stock_images(script_text)
+
+        # Explainer scenes feature ONE chosen clip on the board for the whole
+        # scene, regardless of length — collapse the multi-clip split so the
+        # review GUI asks for a single pick spanning the full scene.
+        if search_type in STICKMAN_EXPLAIN_TYPES:
+            max_runtime = num_clips * max_runtime   # == full scene runtime
+            num_clips = 1
 
         print(f"\n[fetch:meta] scene[{idx}] '{script_text[:50]}...'")
         print(f"[fetch:meta]   search='{search_term}', type={search_type.value}")
@@ -1513,6 +1540,109 @@ def generate_read_out_scenes(
 
     print("\n" + "=" * 70)
     print(f"[read-out scenes] DONE — produced {len(footage_map)} read-out scene(s)")
+    print("=" * 70)
+    return footage_map
+
+
+def generate_stickman_explain_scenes(
+    script_to_search_term: dict[str, SearchTermData],
+    final_data: list[dict],
+) -> dict[str, list[dict]]:
+    """
+    For every scene whose search_type is in STICKMAN_EXPLAIN_TYPES, composite
+    the clip the user CHOSE in review (stored in final_data) onto a randomly
+    selected Einstein board base, and return a stitcher-ready map:
+
+        { script_text: [ {local_mp4_path: trim_seconds} ], ... }
+
+    Always renders an MP4 (even when the chosen footage is a still) so the
+    board stays static under the later Ken Burns pass — Ken Burns only touches
+    image entries, and these are already video.
+
+    NOT in LOCAL_FOOTAGE_GENERATORS because it needs the post-review picks
+    (final_data), not the raw candidates the registry generators receive.
+    """
+    print("\n" + "=" * 70)
+    print("[explain scenes] STARTING generate_stickman_explain_scenes")
+    print("=" * 70)
+
+    explain_scenes = [
+        (txt, data) for txt, data in script_to_search_term.items()
+        if data["search_type"] in STICKMAN_EXPLAIN_TYPES
+    ]
+    if not explain_scenes:
+        print("[explain scenes] no explainer scenes — returning empty map")
+        return {}
+
+    print(f"[explain scenes] found {len(explain_scenes)} explainer scene(s)")
+
+    # Lazy import keeps the PIL/ffmpeg-only dep out of runs that don't use it.
+    from MAKE_EXPLAINER_IMAGE import make_explainer
+
+    scene_timings = _load_scene_timings()
+
+    # Map script_text -> local path of the clip chosen in stage-1 review.
+    chosen_by_text: dict[str, str | None] = {}
+    for entry in final_data:
+        footage = entry.get("footage") or []
+        if not footage:
+            chosen_by_text[entry["script_text"]] = None
+            continue
+        key = next(iter(footage[0]), None)             # url or local path
+        chosen_by_text[entry["script_text"]] = (
+            _resolve_to_local_path(key) if key else None
+        )
+
+    out_dir = STICKMAN_EXPLAIN_OUTPUT_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[explain scenes] output dir: {out_dir}")
+
+    footage_map: dict[str, list[dict]] = {}
+
+    for idx, (script_text, _) in enumerate(explain_scenes):
+        chosen = chosen_by_text.get(script_text)
+        if not chosen:
+            print(f"[explain scenes] FATAL: no chosen footage in final_data for "
+                  f"'{script_text[:70]}' — was it picked in review?")
+            sys.exit(1)
+
+        if script_text not in scene_timings:
+            print(f"[explain scenes] FATAL: no timing for '{script_text[:70]}'")
+            sys.exit(1)
+
+        duration = float(scene_timings[script_text])
+        if duration <= 0:
+            print(f"[explain scenes] WARNING: zero/negative duration "
+                  f"({duration}s) — skipping '{script_text[:60]}'")
+            continue
+
+        render_duration = duration + STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC
+
+        safe_stem = re.sub(r"[^a-zA-Z0-9]+", "_", script_text).strip("_")[:50] or "scene"
+        output_path = str(out_dir / f"explain_{idx:03d}_{safe_stem}.mp4")
+
+        print(f"\n[explain scenes] [{idx + 1}/{len(explain_scenes)}] "
+              f"'{script_text[:60]}{'...' if len(script_text) > 60 else ''}'")
+        print(f"[explain scenes]   base footage   = {chosen}")
+        print(f"[explain scenes]   scene duration = {duration:.3f}s")
+        print(f"[explain scenes]   render dur     = {render_duration:.3f}s")
+
+        try:
+            make_explainer(
+                media_path=chosen,
+                output_path=output_path,
+                duration=render_duration,
+            )
+        except Exception as exc:
+            print(f"[explain scenes] FATAL: explainer render failed: {exc}")
+            sys.exit(1)
+
+        # Report the ORIGINAL scene duration as trim; the safety pad is trimmed off.
+        footage_map[script_text] = [{output_path: round(duration, 3)}]
+        print(f"[explain scenes]   ✓ done — stitcher trim = {round(duration, 3)}s")
+
+    print("\n" + "=" * 70)
+    print(f"[explain scenes] DONE — produced {len(footage_map)} explainer scene(s)")
     print("=" * 70)
     return footage_map
 
@@ -2214,6 +2344,27 @@ def main() -> None:
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     else:
         print("\n[main] no local generators produced anything; final_data unchanged")
+
+    # 2.62) Stickman-explain scenes: composite each scene's CHOSEN stock/wiki
+    #       clip onto a board base. Runs AFTER review (needs the picks) and
+    #       BEFORE Ken Burns (outputs are MP4s, so KB skips them — and the raw
+    #       still, if one was picked, is already replaced here so KB never
+    #       animates the board).
+    explain_footage_map = generate_stickman_explain_scenes(
+        script_to_search_term=scriptTextToPexelSearch,
+        final_data=final_data,
+    )
+    if explain_footage_map:
+        print("\n[main] explainer footage produced — integrating into final_data")
+        final_data = _merge_generated_footage_into_final_data(
+            final_data, explain_footage_map, source_label="stickman-explain",
+        )
+        _add_local_paths_to_history(explain_footage_map)
+        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
+        print(f"💾 Updated final_data with explainer footage → {FINAL_SCRIPT_AND_CLIPS}")
+    else:
+        print("\n[main] no explainer scenes; final_data unchanged")
+
 
 
     # 2.65) Convert remaining static images in final_data to Ken Burns MP4s.

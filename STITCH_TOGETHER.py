@@ -130,6 +130,22 @@ def _audio_duration(path: str) -> float:
     )
     return float(r.stdout.strip())
 
+_DUR_CACHE: dict[str, float] = {}
+
+def _media_duration_cached(path: str) -> float:
+    """ffprobe duration with a process-lifetime cache.
+
+    Lets a music fade land on the file's real end even when the user gave no
+    trim, without re-probing the same file for every scene that references it.
+    """
+    if path in _DUR_CACHE:
+        return _DUR_CACHE[path]
+    try:
+        d = _audio_duration(path)
+    except Exception:
+        d = 0.0
+    _DUR_CACHE[path] = d
+    return d
 
 
 def _resolve_audio_events(
@@ -214,17 +230,45 @@ def _resolve_audio_events(
             # Volume comes from the hardcoded constants based on event type
             volume = music_volume if ev_type == "music" else sfx_volume
 
+            # ── Resolve trim + fade timing ─────────────────────────────────
+            # The out-fade must land on the END of the AUDIBLE source. We bound
+            # the source to the time actually left in the video (and to the
+            # user's trim, if any), then probe the file so the fade starts in
+            # the right place even when no trim was given. This is what makes
+            # `music_fade_out` work with `music_trim_seconds: 0` — previously
+            # duration=None skipped the fade entirely.
+            raw_trim  = ev.get("duration")                 # user trim, or None
+            fade_secs = float(ev.get("fade_out", 0.0) or 0.0)
+            available = max(0.0, total_duration - start)   # video time left after start
+
+            trim_len   = raw_trim if (raw_trim and raw_trim > 0) else None
+            fade_start = None
+            if fade_secs > 0 and available > 0.05:
+                src_dur  = _media_duration_cached(path)
+                real_len = min(src_dur, available) if src_dur > 0 else available
+                if raw_trim and raw_trim > 0:
+                    real_len = min(real_len, raw_trim)
+                trim_len = real_len                        # bound so the fade ends at the true end
+                if real_len > fade_secs + 0.05:
+                    fade_start = real_len - fade_secs
+                else:
+                    fade_start = 0.0                       # clip shorter than fade → fade all of it
+                    fade_secs  = real_len
+
             resolved_ev = {
                 "path":          path,
                 "start_seconds": start,
-                "duration":      ev.get("duration"),     # None = full
+                "duration":      raw_trim,                 # kept for back-compat / debug
+                "trim_len":      trim_len,                 # bounded playable length (atrim)
+                "fade_start":    fade_start,               # out-fade start in source time
                 "volume":        volume,
-                "fade_out":      float(ev.get("fade_out", 0.0)),
+                "fade_out":      fade_secs,
                 "_debug":        ev.get("_debug", ""),
             }
             resolved.append(resolved_ev)
             print(f"[audio resolve]   ✓ [{ev_type:5}] {Path(path).name}  "
-                  f"start={start:.3f}s  dur={resolved_ev['duration']}  "
+                  f"start={start:.3f}s  trim_len={resolved_ev['trim_len']}  "
+                  f"fade_start={resolved_ev['fade_start']}  "
                   f"vol={volume}  fade={resolved_ev['fade_out']}s")
 
     print(f"\n[audio resolve] DONE — {len(resolved)} event(s) resolved")
@@ -233,21 +277,33 @@ def _resolve_audio_events(
 
 
 def _build_audio_filter_chain(ev: dict, input_idx: int, output_label: str) -> str:
-    """Build one filter_complex chain for a single audio event."""
+    """Build one filter_complex chain for a single audio event.
+
+    Everything here is applied ONLY to this event's own input stream and is
+    emitted to a private [output_label]. Narration ([1:a]) is never part of
+    this chain, so trimming/fading an event can only ever touch that event —
+    never the narration.
+
+    `trim_len` and `fade_start` are precomputed in _resolve_audio_events (which
+    knows the video length and can probe the source), so the out-fade lands on
+    the source's true end even when the user gave no explicit trim.
+    """
     parts = []
 
-    # 1. Trim source if duration set
-    if ev.get("duration") is not None and ev["duration"] > 0:
-        parts.append(f"atrim=0:{ev['duration']:.3f}")
+    # 1. Bound the source length (atrim). `trim_len` is the resolved playable
+    #    length; fall back to the raw `duration` for any caller that didn't set it.
+    trim_len = ev.get("trim_len", ev.get("duration"))
+    if trim_len is not None and trim_len > 0:
+        parts.append(f"atrim=0:{trim_len:.3f}")
         parts.append("asetpts=PTS-STARTPTS")
 
-    # 2. Fade out relative to start of (trimmed) source
-    fade = ev.get("fade_out", 0.0)
-    dur  = ev.get("duration")
-    if fade > 0 and dur is not None and dur > fade + 0.1:
-        fade_start = dur - fade
-        # parts.append(f"afade=t=out:st={fade_start:.3f}:d={fade:.3f}")
-        parts.append( f"afade=t=out:st={fade_start:.3f}:d={fade:.3f}:curve=log")
+    # 2. Fade out the last `fade_out` secs of the (bounded) source. `fade_start`
+    #    is in source-stream time (post-trim) and is computed where the
+    #    durations are known. No fade_start ⇒ no fade (e.g. SFX, or fade off).
+    fade_start = ev.get("fade_start")
+    fade       = float(ev.get("fade_out", 0.0) or 0.0)
+    if fade_start is not None and fade > 0:
+        parts.append(f"afade=t=out:st={fade_start:.3f}:d={fade:.3f}:curve=log")
 
     # 3. Volume
     vol = ev.get("volume", 1.0)
@@ -506,7 +562,6 @@ def stitch_together_video(
             mix_chain = (
                 f"{mix_inputs}"
                 f"amix=inputs={n}:duration=first:dropout_transition=0:normalize=0,"
-                f"dynaudnorm,"
                 f"alimiter=limit=0.95[aout]"
             )
 

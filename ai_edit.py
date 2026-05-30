@@ -102,8 +102,8 @@ def resolve_edit_bases(ordered_scenes, out_dir):
     return resolved
 
 
-async def _edit_one(sem, script_text, instruction, base_image_path, out_dir,
-                    variant, abort_event):
+async def _edit_one(sem, script_text, instruction, base_image_path, ref_urls,
+                    out_dir, variant, abort_event, client):
     stem        = _scene_stem(script_text)
     real        = pathlib.Path(out_dir) / f"{stem}_{variant}.png"
     placeholder = pathlib.Path(out_dir) / f"{stem}_{variant}.placeholder.png"
@@ -113,7 +113,7 @@ async def _edit_one(sem, script_text, instruction, base_image_path, out_dir,
         return script_text, variant, str(real), False
 
     # Resolve base -> upload. If a base was expected but is missing on disk,
-    # fall back to FRESH generation (refs) rather than crashing.
+    # fall back to FRESH generation (refs only) rather than crashing.
     use_fresh = base_image_path is None or not pathlib.Path(base_image_path).exists()
     if base_image_path is not None and use_fresh:
         print(f"[ai_edit] base missing on disk for '{script_text[:45]}' "
@@ -121,12 +121,16 @@ async def _edit_one(sem, script_text, instruction, base_image_path, out_dir,
 
     try:
         if use_fresh:
-            image_urls = [await asyncio.to_thread(fal_client.upload_file, p)
-                          for p in REF_IMAGES]
+            image_urls = list(ref_urls)               # refs only — nothing to edit
             prompt = f"{STYLE_PREFIX} {instruction}. {STYLE_SUFFIX}"
         else:
             base_url = await asyncio.to_thread(fal_client.upload_file, base_image_path)
-            image_urls = [base_url]                   # base is "the first file"
+            # Base is "the first file" (the thing being edited); the style refs
+            # follow so the edit keeps the ms-paint stickman look — the same
+            # refs ai_generate_stickman_images grounds on. If the model ends up
+            # leaning too hard on a ref instead of the base, flip the order or
+            # drop refs here.
+            image_urls = [base_url, *ref_urls]
             prompt = f"{instruction}. {EDIT_STYLE_SUFFIX}"
     except Exception as e:
         if sg._looks_like_credit_error(e):
@@ -140,7 +144,7 @@ async def _edit_one(sem, script_text, instruction, base_image_path, out_dir,
     path, is_ph = await _call_flux_to_file(
         prompt=prompt, image_urls=image_urls,
         real_path=real, placeholder_path=placeholder,
-        scene_text=script_text, abort_event=abort_event, sem=sem,
+        scene_text=script_text, abort_event=abort_event, sem=sem, client=client,
     )
     return script_text, variant, path, is_ph
 
@@ -153,6 +157,17 @@ async def _generate_all(ordered_scenes, out_dir, num_variants):
     print(f"Processing {len(edit_scenes)} ai_edit scene(s) x {num_variants} variant(s)")
     if not edit_scenes:
         return {}
+
+    # Fresh per-loop fal client — see the matching note in
+    # ai_generate_stickman_images._generate_all. The pipeline runs asyncio.run()
+    # twice (stickman then ai_edit); a client made here binds to THIS loop and
+    # avoids the "Event loop is closed" reuse of a client from the (closed)
+    # stickman loop.
+    client = fal_client.AsyncClient()
+
+    # Upload the style refs ONCE (not per scene/variant) and reuse the URLs —
+    # the same reference images ai_generate_stickman_images grounds on.
+    ref_urls = [await asyncio.to_thread(fal_client.upload_file, p) for p in REF_IMAGES]
 
     bases = resolve_edit_bases(ordered_scenes, out_dir)
     sem = asyncio.Semaphore(CONCURRENCY)
@@ -168,7 +183,8 @@ async def _generate_all(ordered_scenes, out_dir, num_variants):
         text = scene["script_text"]
         base = bases.get(text)
         tasks = [
-            _edit_one(sem, text, instr_by_text[text], base, out_dir, v, abort_event)
+            _edit_one(sem, text, instr_by_text[text], base, ref_urls, out_dir,
+                      v, abort_event, client)
             for v in range(num_variants)
         ]
         for t, variant, path, is_ph in await asyncio.gather(*tasks):

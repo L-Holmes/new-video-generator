@@ -5,11 +5,11 @@
             "videos": [],
             "images": [
                 {
-                    "stickman-CACHE/ai_edit_scenes/you_probably_have_a_jar_of_nutmeg_09589fbb_0.png": 2.18
+                    "stickman-CACHE/ai_edit_scenes/you_probably_have_a_jar_of_nutmeg_09589fbb_0.png": 1.68
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 2.18
+        "max_runtime_per_clip_seconds": 1.68
     }
 ]
