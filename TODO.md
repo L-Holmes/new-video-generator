@@ -1,6 +1,15 @@
+
+
 TODO:
-- then do todos on either phone or below..  
-    - do i consider doing more functional tihngs rather than the stock footage processing?!?!??!
+- add an option to the review stock footage...
+    - To sort of request new ai generations?!?!?!? !?!? (not sure how we will know if its ai or just stock footage!)
+
+TODO:
+- process the audio sound like that one youtuber...
+- apply same affects to all footage...
+    - film grain... crafted by cm... etc.
+- add reusable rules... 
+    - e.g. things part of the same sentence / same concept... should be ai edit, not new pics...
 
 
 TODO:

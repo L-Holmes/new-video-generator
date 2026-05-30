@@ -51,6 +51,7 @@ REF_IMAGES = [
 DEFAULT_PROMPTS_FILE = "ai_prompts.json"
 DEFAULT_OUT_DIR      = pathlib.Path("ai_output")
 DEFAULT_NUM_VARIANTS = 2
+DEFAULT_CONTEXT_NUM_IMAGES = 0   # 0 = no preceding-scene context (original behaviour)
 
 MODEL        = "fal-ai/flux-2-max/edit"   # accepts image_urls
 IMAGE_SIZE   = "landscape_16_9"           # 16:9 to match the video (was square_hd)
@@ -68,6 +69,15 @@ STYLE_PREFIX = ("generate me, with a minimal, clean line look as if drawn on "
                 "microsoft paint with low pixel density: ")
 STYLE_SUFFIX = (". Again, in hand drawn ms paint style, in colour, minimal, "
                 "white background")
+
+# Appended to a stickman prompt ONLY when preceding-scene context images are
+# supplied. Tells the model the trailing images are for character/style
+# continuity, not content to copy. Set to "" to disable the textual hint and
+# rely on image ordering alone (style refs first, context after).
+CONTEXT_CLAUSE = (" The final reference images are previously generated scenes "
+                  "from this same sequence — keep the character design and "
+                  "drawing style consistent with them, but draw the new scene "
+                  "described above; do not copy their content.")
 
 # -- Output canvas / placeholder styling (16:9) --------------------------
 CANVAS_W, CANVAS_H = 1920, 1080
@@ -306,21 +316,32 @@ async def _call_flux_to_file(*, prompt, image_urls, real_path, placeholder_path,
 
 # -- STICKMAN GENERATION --------------------------------------------------
 
-async def _generate_one(sem, narration, entry, ref_urls, out_dir, variant,
-                        abort_event, client):
+async def _generate_one(sem, narration, entry, ref_urls, context_urls, out_dir,
+                        variant, abort_event, client):
     stem        = _scene_stem(narration)
     real        = pathlib.Path(out_dir) / f"{stem}_{variant}.png"
     placeholder = pathlib.Path(out_dir) / f"{stem}_{variant}.placeholder.png"
-    prompt      = f"{STYLE_PREFIX} {entry['search_term']}. {STYLE_SUFFIX}"
+
+    prompt = f"{STYLE_PREFIX} {entry['search_term']}. {STYLE_SUFFIX}"
+    if context_urls:
+        prompt += CONTEXT_CLAUSE
+
+    # Style refs FIRST (the grounding that already works), preceding generated
+    # images AFTER as continuity context. Refs-first matters: putting a prior
+    # generated image first risks the model "editing"/reproducing it instead of
+    # drawing the NEW scene. Flip if you ever want context to dominate.
+    image_urls = [*ref_urls, *context_urls]
+
     path, is_ph = await _call_flux_to_file(
-        prompt=prompt, image_urls=ref_urls,
+        prompt=prompt, image_urls=image_urls,
         real_path=real, placeholder_path=placeholder,
         scene_text=narration, abort_event=abort_event, sem=sem, client=client,
     )
     return narration, variant, path, is_ph
 
 
-async def _generate_all(prompts_file, out_dir, num_variants, process_type):
+async def _generate_all(prompts_file, out_dir, num_variants, process_type,
+                        context_num_images=DEFAULT_CONTEXT_NUM_IMAGES):
     out_dir = pathlib.Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -330,31 +351,80 @@ async def _generate_all(prompts_file, out_dir, num_variants, process_type):
         if _search_type_str(v.get("search_type")) == process_type
     ]
     print(f"Processing {len(targets)} {process_type} scene(s) "
-          f"x {num_variants} variant(s)")
+          f"x {num_variants} variant(s)"
+          + (f"  (+ up to {context_num_images} context image(s) each)"
+             if context_num_images > 0 else ""))
     if not targets:
         return {}
 
-    # Fresh per-loop fal client. The module-level fal_client.subscribe_async
-    # caches an httpx.AsyncClient bound to the FIRST event loop it runs in.
-    # The pipeline calls asyncio.run() twice (stickman, then ai_edit), and
-    # asyncio.run() closes its loop on return — so the cached client would be
-    # reused on a CLOSED loop the second time and raise "Event loop is closed".
-    # A client constructed HERE binds to this run's own loop. (upload_file is
-    # the SYNC client — no loop — so it's fine to keep as-is.)
     client = fal_client.AsyncClient()
-
     ref_urls = [await asyncio.to_thread(fal_client.upload_file, p) for p in REF_IMAGES]
     sem = asyncio.Semaphore(CONCURRENCY)
     abort_event = asyncio.Event()
 
-    tasks = [
-        _generate_one(sem, narration, entry, ref_urls, out_dir, variant,
-                      abort_event, client)
-        for narration, entry in targets
-        for variant in range(num_variants)
-    ]
-    results = await asyncio.gather(*tasks)
+    results: list = []
 
+    if context_num_images <= 0:
+        # ── Original fast path: every variant of every scene at once. ──
+        tasks = [
+            _generate_one(sem, narration, entry, ref_urls, [], out_dir,
+                          variant, abort_event, client)
+            for narration, entry in targets
+            for variant in range(num_variants)
+        ]
+        results = list(await asyncio.gather(*tasks))
+    else:
+        # ── Context path: serialise scenes so each scene's preceding outputs
+        #    exist on disk before we upload them as context. Variants WITHIN a
+        #    scene still run concurrently (bounded by sem). ──
+        _ctx_url_cache: dict[str, str] = {}
+        async def _upload_ctx(path):
+            if path in _ctx_url_cache:
+                return _ctx_url_cache[path]
+            if not pathlib.Path(path).exists():
+                print(f"[stickman] context image missing on disk, skipping: {path}")
+                return None
+            url = await asyncio.to_thread(fal_client.upload_file, path)
+            _ctx_url_cache[path] = url
+            return url
+
+        generated_in_order: list[str] = []   # real variant paths, script order
+
+        for narration, entry in targets:
+            # Skip context uploads if this scene is already fully cached — a
+            # cached scene returns instantly and never looks at image_urls.
+            all_exist = all(
+                (out_dir / f"{_scene_stem(narration)}_{v}.png").exists()
+                for v in range(num_variants)
+            )
+            context_urls: list[str] = []
+            if not all_exist:
+                for cp in generated_in_order[-context_num_images:]:
+                    u = await _upload_ctx(cp)
+                    if u:
+                        context_urls.append(u)
+                if context_urls:
+                    print(f"[stickman] '{narration[:45]}' + {len(context_urls)} "
+                          f"context image(s)")
+
+            scene_results = await asyncio.gather(*[
+                _generate_one(sem, narration, entry, ref_urls, context_urls,
+                              out_dir, v, abort_event, client)
+                for v in range(num_variants)
+            ])
+            results.extend(scene_results)
+
+            # Record the lowest-numbered REAL (non-placeholder) variant so later
+            # scenes can use it as context. Placeholder cards are never context.
+            real_paths = [
+                path for (_, v, path, is_ph)
+                in sorted(scene_results, key=lambda r: r[1])
+                if path and not is_ph
+            ]
+            if real_paths:
+                generated_in_order.append(real_paths[0])
+
+    # ── Common tail (unchanged) ──
     mapping, placeholder_scenes = {}, set()
     for narration, variant, path, is_ph in results:
         if path is None:
@@ -379,14 +449,20 @@ async def _generate_all(prompts_file, out_dir, num_variants, process_type):
 def generate_stickman_images(prompts_file=DEFAULT_PROMPTS_FILE,
                              out_dir=DEFAULT_OUT_DIR,
                              num_variants=DEFAULT_NUM_VARIANTS,
-                             process_type=PROCESS_TYPE):
+                             process_type=PROCESS_TYPE,
+                             context_num_images=DEFAULT_CONTEXT_NUM_IMAGES):
     """
     Synchronous entry point. Returns { script_text: [image_path, ...] } with up
     to `num_variants` images per stickman scene. Never raises on a generation
     failure - failed scenes get a placeholder image path instead.
+
+    context_num_images > 0 also feeds the lowest-variant output of each of the
+    previous N stickman scenes (script order, same batch) as extra reference
+    images for character/style continuity. Generation then runs scene-by-scene.
     """
     return asyncio.run(
-        _generate_all(str(prompts_file), out_dir, num_variants, process_type)
+        _generate_all(str(prompts_file), out_dir, num_variants, process_type,
+                      context_num_images)
     )
 
 

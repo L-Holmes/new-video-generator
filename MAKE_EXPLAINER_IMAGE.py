@@ -66,7 +66,7 @@ BOARD_CONFIGS: list[dict] = [
         # a second time (almost certainly a typo). Assuming board-einstein-3.png
         # here -- rename if it's actually called something else.
         "path":  "REUSABLE_IMAGES/board-big.png",
-        "board": {"left": 32, "top": 12, "right": 982, "bottom": 576},
+        "board": {"left": 32, "top": 12, "right": 982, "bottom": 565},
     },
 ]
 

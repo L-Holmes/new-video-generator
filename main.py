@@ -276,6 +276,14 @@ STICKMAN_TEXT_OVERLAY_TYPES: set[MediaType] = {MediaType.STICKMAN_TEXT_OVERLAY}
 STICKMAN_TEXT_OVERLAY_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/text_overlay_scenes")
 STICKMAN_TEXT_OVERLAY_RENDER_SAFETY_PAD_SEC: float = 0.08
 
+# How many preceding stickman images to pass as ADDITIONAL context (on top of
+# the 3 style refs) for character/style continuity → up to 6 images total.
+# 0 = original behaviour. Context is drawn only from preceding STICKMAN scenes
+# in the same batch (script order); it can't see stock/wiki/joint/ai_edit images.
+# NOTE: uses each scene's generation-time variant-0 output, not the reviewed
+# pick (which doesn't exist yet — all stickman gen runs before review).
+STICKMAN_CONTEXT_NUM_IMAGES: int = 3
+
 # ===========================================================================
 # JOINT SCENE LAYOUTS
 # ===========================================================================
@@ -1186,6 +1194,7 @@ def generate_stickman_candidates(
         prompts_file=STICKMAN_PROMPTS_FILE,
         out_dir=STICKMAN_OUTPUT_DIR,
         num_variants=STICKMAN_NUM_VARIANTS,
+        context_num_images=STICKMAN_CONTEXT_NUM_IMAGES,
     )
     # generated: { script_text: [path, path, ...] }
     print(f"[stickman] generator returned images for {len(generated)} scene(s)")
