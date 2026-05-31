@@ -12,6 +12,13 @@ and just see how that is?
 so try and keep really similar to the previous revision but with slight tweaks? because i liked the result...
 
 
+-----
+
+TODO:
+before stitch together...
+    - or actually... since.. wait do we have scenes that mix stickman and regular?
+    - it would be much easier to just do it all in place before stitch together...
+--> anyway basically call PIXELLATE.py on all images...
 
 
 -------
@@ -25,11 +32,6 @@ so try and keep really similar to the previous revision but with slight tweaks? 
 
 - add the same affects to all stock footage to make it all look aligned????
     - (and maybe try out a sort of retro appearance to it?)
-
-
-
-perhaps check if there is a tool that will make something pixellated... 
-    - like look like it was drawn with like squares on a 64x64 grid... like not like 'slightl blur the edges'... i mean like actually drawn on that limited grid...
 
 
 
