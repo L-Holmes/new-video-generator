@@ -1,5 +1,45 @@
 
 
+TODO: at 2:20pm... ask claude:
+
+It actually worked better before.
+Now it doesn't seem to overlay the text at all.
+
+can we go back to the previous method, but just fix that issue with the words being cut out and having guards for short sentences?
+and then some tweakable variables at the top?
+and just see how that is?
+
+so try and keep really similar to the previous revision but with slight tweaks? because i liked the result...
+
+
+
+
+-------
+
+- hook up the audio processor into main
+    - obviously pass in some differnet cache locations thta ill have to define...
+    - make the output like stickman-CACHE/AUDIO/script-stickman-processed.wav... 
+    - then update main to use that instead of script-stickman.wav 
+        (obvoiusly it won't be 'stickman' for all.. that's just the prefix for this example... as you know there may not even be a prefix...)
+
+
+- add the same affects to all stock footage to make it all look aligned????
+    - (and maybe try out a sort of retro appearance to it?)
+
+
+
+perhaps check if there is a tool that will make something pixellated... 
+    - like look like it was drawn with like squares on a 64x64 grid... like not like 'slightl blur the edges'... i mean like actually drawn on that limited grid...
+
+
+
+fix the issue with my terminal text disappearing!
+    - will need to find out at which stage this occurs... (is it the stitch together?)
+
+
+
+-------
+
 TODO:
 - add an option to the review stock footage...
     - To sort of request new ai generations?!?!?!? !?!? (not sure how we will know if its ai or just stock footage!)

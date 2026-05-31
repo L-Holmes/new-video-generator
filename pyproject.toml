@@ -20,6 +20,8 @@ dependencies = [
     "numpy",
     "pytest>=9.0.3",
     "fal-client>=1.0.0",
+    "num2words>=0.5",
+    "pydub>=0.25",
 ]
 
 [dependency-groups]
