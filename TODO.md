@@ -1,15 +1,6 @@
 
 
-TODO: at 2:20pm... ask claude:
-
-It actually worked better before.
-Now it doesn't seem to overlay the text at all.
-
-can we go back to the previous method, but just fix that issue with the words being cut out and having guards for short sentences?
-and then some tweakable variables at the top?
-and just see how that is?
-
-so try and keep really similar to the previous revision but with slight tweaks? because i liked the result...
+like a youtube formula...
 
 
 -----
@@ -29,25 +20,16 @@ before stitch together...
     - then update main to use that instead of script-stickman.wav 
         (obvoiusly it won't be 'stickman' for all.. that's just the prefix for this example... as you know there may not even be a prefix...)
 
-
 - add the same affects to all stock footage to make it all look aligned????
     - (and maybe try out a sort of retro appearance to it?)
-
-
-
-fix the issue with my terminal text disappearing!
-    - will need to find out at which stage this occurs... (is it the stitch together?)
-
-
 
 -------
 
 TODO:
-- add an option to the review stock footage...
+- add an option to the review ai generations???
     - To sort of request new ai generations?!?!?!? !?!? (not sure how we will know if its ai or just stock footage!)
 
 TODO:
-- process the audio sound like that one youtuber...
 - apply same affects to all footage...
     - film grain... crafted by cm... etc.
 - add reusable rules... 
@@ -73,12 +55,6 @@ plus:
                 - e.g. sahara desert
 
 
-also stop ai detection:
-- make all similar colours the same
-- overlay noise (i.e. like 'image noise' as they call it to confuse their thing)
-- whatever else would be useful...
-
-
 later:
 - for stock footage, apply same edits to all-- like a subtle film grain or whatever...
 
@@ -90,34 +66,13 @@ later:
 -------------------------
 
 TODO:
-- think how to optimise the start of the video..
-    - then add those changes... Think what I would want, then code it! 
-- work out how to process the audio 
-    - getting that effect of constant speaking that that other youtuber does
-- work out how to automate the process of generating the code that says how to generate scenes... (that input json...)
-    -> I guess this will be AI choosing from a few preset options?
 
-
-- get stock stuff   
-    - will need sound effects, and when to use them.
-        --> look for a youtube starter package with the beeps and bops and what not...
-        --> (could maybe get music later on)
-    - may want to pay for like the stock footage things once just to get all of the explainer backgrounds like crinkled paper, slow black static, grid background, etc. that i want...
+- get the stock footage things once just to get all of the explainer backgrounds like crinkled paper, slow black static, grid background, etc. that i want...
 --> will then need to make a list of scenarios and when i want them..
     - e.g. always wikipedia for named things...
     - e.g. always use 'bops' on the rule of three thing...
 
-- start generating actual videos...
-    - use the actual sentence splitter... 
-        - if there are issues... fix one by one...
-    - inspect the output video... if there's something wrong, fix it...
-
-
-- look at channels like 'adam something'... think what they do, and how i want to achieve that...
-
-
 -------
-
 
 consider:
 - just simple things like:
@@ -135,8 +90,6 @@ Then:
 -----------------
 
 TODO MEGA MASTER PLAN:
-- todo: go through the below notes...
-- ... 
 - Create a youtube formula!
     - add to list of rules:
         - go through the big best youtubers. (will of course need a list first! I think i have on already on the website...)
@@ -167,13 +120,7 @@ TODO:
     - perhaps with loads of tests...
     - ask opus to add a few more clauses to the script generator thing.
 - Link up wikipedia etc. if possible...
-- For longer things... like:  'Manhattan. Yep... New York City was traded for nutmeg.'
-    - e.g. show manhatten and then manhatten with text overlayed at slight angle: "traded for pepper"
-- do i intersplice text coming on the screen as I say it, for dull moments? 
-    - is that even possible? Like the one by group of 5 words flash on screen in successive order, synched to the script???
-    - words on screen.
-    --> probs have a seperate python file that does this, and interacts with the audio script synchronizer thing and how it uses that thing to determine when words go...
-- hmmm
+- hmmm other ways to add more scenes with the things I already have...
     - do i add a thing like cgp grey where you zoom out and then you show the same picture but on like a whiteboard and then a stickman, representing the teacher, sitting there???
     - what else could i use this method in? 
         - (like a buid a library of reactions and add them at appropriate times in the video????)
@@ -216,26 +163,15 @@ TODO:
     - Download loads of sound effects
     - Have a system for adding the sound effects...
 
-    ------------
-
-TODO LATER ISH
-- start planning the finance videos
-- find out how I can do that audio thing done by https://youtu.be/AGkRkNuhO_o?si=Jf38aI0woBjtVYAd ... 
-
 ------------
 
 TODO LATER:
 - maybe link up the other image providers??!?!?!?!? (or actually... just stick with pexels for now...)
 
-
-
 - load the background.
 - Get picture of the person
 - pipe into remove background
 - compose that on top of the animated background
-
-
-
 
 # Review against plan:
 
@@ -252,15 +188,3 @@ TODO LATER:
 - bigger, brighter, moving...
 
 5) ==> reuse library of icons...
-
-
-"how can I design this visually step by step" 
-
-
-
-
-----
-
-debian 13
-- manual method of locking the screen? (e.g. for if I'm out and about??? (but when im just at home it doesn't lock?)
-        - also annoying with that error box that has started popping up saying that the screen didn't lock

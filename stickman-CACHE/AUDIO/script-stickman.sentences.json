@@ -1,0 +1,93 @@
+[
+  {
+    "index": 0,
+    "text": "If you open your kitchen cupboard right now, you probably have a jar\nof nutmeg.",
+    "start": 0.0,
+    "end": 4.38,
+    "matched": true
+  },
+  {
+    "index": 1,
+    "text": "It costs about two dollars.",
+    "start": 4.38,
+    "end": 6.3,
+    "matched": true
+  },
+  {
+    "index": 2,
+    "text": "But in the 1600s, this little wrinkled seed was the single most contested resource on the planet.",
+    "start": 6.3,
+    "end": 11.8,
+    "matched": true
+  },
+  {
+    "index": 3,
+    "text": "It was worth more than its weight in gold.",
+    "start": 11.8,
+    "end": 14.6,
+    "matched": true
+  },
+  {
+    "index": 4,
+    "text": "Nutmeg only grew in one place on Earth:\nThe Banda Islands.",
+    "start": 14.6,
+    "end": 17.86,
+    "matched": true
+  },
+  {
+    "index": 5,
+    "text": "A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.",
+    "start": 17.86,
+    "end": 22.28,
+    "matched": true
+  },
+  {
+    "index": 6,
+    "text": "If you were a European merchant, getting it meant\nsailing for months, surviving \nscurvy, \npirates,\nand shipwrecks.",
+    "start": 22.28,
+    "end": 29.32,
+    "matched": true
+  },
+  {
+    "index": 7,
+    "text": "But if you made it back with a \nsingle ship full of nutmeg, you were set for life.",
+    "start": 29.32,
+    "end": 33.4,
+    "matched": true
+  },
+  {
+    "index": 8,
+    "text": "The Dutch and the British fought bloody, brutal wars over these tiny islands.",
+    "start": 33.4,
+    "end": 37.62,
+    "matched": true
+  },
+  {
+    "index": 9,
+    "text": "In fact, to secure a monopoly on nutmeg, \nthe Dutch formally traded a different island they owned to the British.",
+    "start": 37.62,
+    "end": 43.6,
+    "matched": true
+  },
+  {
+    "index": 10,
+    "text": "That island was Manhattan.",
+    "start": 43.6,
+    "end": 45.64,
+    "matched": true
+  },
+  {
+    "index": 11,
+    "text": "Yep...",
+    "start": 46.2,
+    "end": 46.72,
+    "matched": true
+  },
+  {
+    "index": 12,
+    "text": "New York City was traded for nutmeg.",
+    "start": 47.34,
+    "end": 49.24,
+    "matched": true
+  }
+]

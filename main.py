@@ -25,6 +25,7 @@ from PIL import Image
 from rake_nltk import Rake
 import spacy
 from GET_FROM_WIKIPEDIA import get_from_wikipedia
+import subprocess
 
 # ===========================================================================
 # IMPORTS - LOCAL
@@ -35,6 +36,7 @@ from STOCK_FOOTAGE_REVIEW import run_media_review
 from STITCH_TOGETHER import stitch_together_video
 from JOINT_IMAGE_CREATOR import composite as create_joint_scene, TRANSITION_RANDOM, TRANSITION_FADE
 from WORDS_ON_SCREEN import render_scene_to_video, WordRenderConfig
+from SCRIPT_AUDIO_CUTDOWN_AND_PROCESS import run as run_audio_cutdown
 
 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 print("running main")
@@ -91,7 +93,28 @@ HISTORY_FILE = STOCK_FOOTAGE_CACHE_DIR / "history.json"
 OUTPUT_FILE = f"{_OUTPUT_DIR}/output.mp4"
 TEMP_DIR    = Path("tmp_stitch/")
 
-SCRIPT_AUDIO_FILE = f"{_SCRIPT_STEM}.wav"
+# --- Narration audio -------------------------------------------------
+# The ORIGINAL recording (what you record / TTS-generate).
+RAW_SCRIPT_AUDIO_FILE = f"{_SCRIPT_STEM}.wav"          # e.g. script-stickman.wav
+
+# Tightened narration produced by SCRIPT_AUDIO_CUTDOWN_AND_PROCESS.run(),
+# written under the cache dir, e.g.
+#   stickman-CACHE/AUDIO/script-stickman.processed.wav   (--name stickman)
+#   CACHE/AUDIO/script.processed.wav                     (no --name)
+PROCESSED_AUDIO_DIR = f"{_CACHE_DIR}/AUDIO"
+
+# SCRIPT_AUDIO_FILE now points at the PROCESSED file, so every existing use
+# (synchroniser + final stitch) automatically runs on the tightened audio.
+SCRIPT_AUDIO_FILE = f"{PROCESSED_AUDIO_DIR}/{_SCRIPT_STEM}.processed.wav"
+
+# Whisper model the cutdown uses (keep in step with the synchroniser's).
+AUDIO_CUTDOWN_WHISPER_MODEL = "small.en"
+# Re-run the cutdown even if the processed WAV already exists — flip to True
+# after you change the EASY KNOBS in SCRIPT_AUDIO_CUTDOWN_AND_PROCESS.py,
+# otherwise the cached processed file is reused.
+FORCE_AUDIO_CUTDOWN = False
+
+
 SYNCHRONIZED_SCRIPT_OUTPUT_FILE = f"{_CACHE_DIR}/script_timings_seconds.json"
 AUDIO_START_DELAY_SECONDS = 0.5
 
@@ -120,6 +143,7 @@ WORD_TIMINGS_FILE = f"{_CACHE_DIR}/{_NAME}_word_timings.json" if _NAME else f"{_
 Path(_CACHE_DIR).mkdir(parents=True, exist_ok=True)
 Path(_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+Path(PROCESSED_AUDIO_DIR).mkdir(parents=True, exist_ok=True)   # ← add
 
 # ===========================================================================
 # JOINT SCENE INTEGRATION
@@ -2674,6 +2698,31 @@ def main() -> None:
     print("!!!!!!script text to pexel search:")
     print(scriptTextToPexelSearch)
 
+
+
+    # 1.4) Tighten the narration BEFORE anything time-based runs. The cutdown
+    #      removes dead-air + adds the sentence transitions, writing
+    #      PROCESSED_AUDIO_DIR/<stem>.processed.wav. Because SCRIPT_AUDIO_FILE
+    #      points there, the synchroniser (1.5) and the final stitch both run
+    #      on the tightened audio, so the timings and the baked-in narration match.
+    print("====================================================================")
+    print("Tightening narration audio (silence cutdown + sentence transitions)...")
+    if not Path(RAW_SCRIPT_AUDIO_FILE).exists():
+        print(f"ERROR! raw narration not found: {RAW_SCRIPT_AUDIO_FILE}")
+        sys.exit(1)
+    processed_wav, _ = run_audio_cutdown(
+        audio_file=RAW_SCRIPT_AUDIO_FILE,
+        script_file=SCRIPT_FILE,
+        output_dir=PROCESSED_AUDIO_DIR,
+        whisper_model=AUDIO_CUTDOWN_WHISPER_MODEL,
+        force=FORCE_AUDIO_CUTDOWN,
+    )
+    if os.path.normpath(str(processed_wav)) != os.path.normpath(SCRIPT_AUDIO_FILE):
+        print(f"  ! cutdown wrote {processed_wav}, but the pipeline expects "
+              f"{SCRIPT_AUDIO_FILE} — check PROCESSED_AUDIO_DIR / the stem.")
+        sys.exit(1)
+    print(f"  ✓ pipeline narration: {SCRIPT_AUDIO_FILE}")
+
     # 1.5) Audio synchronisation — produces line timings + (optionally) per-word timings
     run_audio_script_synchronizer(SCRIPT_AUDIO_FILE, LINE_INDEX_TO_SEARCH_TERM_FILE,
                                   SYNCHRONIZED_SCRIPT_OUTPUT_FILE, TIMESTAMPS_ABSOLUTE_FILE,
@@ -2895,6 +2944,11 @@ def main() -> None:
         SFX_VOLUME,
         MUSIC_VOLUME,
     )
+
+
+
+    # so that our terminal doesn't mess up! (so i can still see what I'm typing...)
+    subprocess.run(["stty", "sane"])
 
     print("done")
 

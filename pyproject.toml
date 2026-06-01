@@ -23,6 +23,8 @@ dependencies = [
     "num2words>=0.5",
     "pydub>=0.25",
     "onnxruntime", 
+    "audioop-lts<1.0; python_version >= '3.13'",
+    "faster-whisper>=1.0",
 ]
 
 [dependency-groups]
