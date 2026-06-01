@@ -14,22 +14,30 @@ If edit mode is selected after I choose something:
         - save & continue (saves that editted image... continues with the media review onto the next one...)
 
 
+---
+THEN EXTEND BY DOINOG THIS:
+
+
     Also, I'd like another option...
-    'r' enters regenerate mode...
+    'r' enters 'try again' mode...
     then for ai images or ai edits, it simply runs them again...
     for stock footage... it will fetch more previously unseen (I don't know if that's possible with pexels.. e.g. to get like results 4 through 7... (rather than 1 through 3 as it does by default...))
 
+---
+
+THEN DO:
 
 
-???
-OOOH! Or an option to say remove the background, using the existing method of removing a background (I think at least hte joint image creator does that...)
+and now an option to say remove the background, using the existing method of removing a background (I think at least hte joint image creator does that...)
     --> But then after that the user is shown the result.
     --> they can then either reject (and go back to the stock selection screen)
     --> or choose to edit (in which case it would bring up that editting thing again
     --> or of course just choose to accept and move on.
 
 
------
+------------------------------------------------------------------------------------------------------------------
+
+# SECOND (SEPERATE) TASK.
 create a new option for the class MediaType(Enum):...
     (and thus for the script_to_search_term.json...)
 
@@ -101,51 +109,55 @@ OOH! May be also nice to:
 
     -> to note, if they don't choose that, just use the stock footage as is, and layer the image onto the video background... (this is default!)
 
-----
+------------------------------------------------------------------------------------------------------------------
+# THIRD THING
 
-stickonomics..
 
-I am now thinking..
-- do i ditch the ai appraoch...
-- and instead just manually click on screen with stock footage...
-NO -> I should have both capabilities!!!
+change the code:
 
-Yeah... and then like a quick way to edit...
-    - but as part of the automated process... so it brings up something like kolourpaint...
-        --> then you can quickly choose to add labels somewhere... or rub bits out... 
+try fetching like 2 wikipedia images by default... when the type is stock... (or one of the stock sub variants...)
+    --> and then if I manage to get two... then show 2 pexels images, and 2 wikipedia images... 
+    --> so then we will be fetching less pixels...
+    --> and we will need to increase the number of images that are shown in the STOCK_FOOTAGE_REVIEW.py...
+
+------------------------------------------------------------------------------------------------------------------
+
+# FOURTH THING
+ PIXELLATE.py
+I want to apply it to all of the AI generated images
+
+
+ before stitch together...
+    - or actually... since.. wait do we have scenes that mix stickman and regular?
+    - it would be much easier to just do it all in place before stitch together...
+
+
+To be honest- its probably best to apply it right after the images are selected in by the stock footage review...
+
+------------------------------------------------------------------------------------------------------------------
+# ALL OTHER NOTES:
 
 --> add auto zooming, but only for things that are not edit scenes? so standalone scenes? (which don't then get editted!)
 
-
-maybe I should try fetching like 2 wikipedia images by default...
-    --> and then if I manage to get two... then show 2 pexels images, and 2 wikipedia images... 
-
-
 Am I currently passing everything through the 256 pixelisaition??
 
-
 -----
+
 add an option:
 - 'same as previous'
     
 --> then could perhaps add variations... like same as previous but slight zoom cut...
     --> or same as previous but rotate the other way (if its an image slightly rotated on a background... lol...)
 
-
 ---
 
 like a youtube formula...
 
-
 -----
 
 TODO:
-before stitch together...
-    - or actually... since.. wait do we have scenes that mix stickman and regular?
-    - it would be much easier to just do it all in place before stitch together...
---> anyway basically call PIXELLATE.py on all images...
 
-
+kd 
 -------
 
 - hook up the audio processor into main
