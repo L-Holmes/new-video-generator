@@ -19,8 +19,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0
   },
-  "It costs about two": {
-    "search_term": "jar of nutmeg at left and then equals sign",
+  "It costs about": {
+    "search_term": "one dollar coin",
     "search_type": "stickman",
     "position": "1",
     "sfx": "none",
@@ -29,18 +29,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0
   },
-  "two": {
-    "search_term": "add a one dollar coin after the equals",
-    "search_type": "ai_edit",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "dollars.": {
-    "search_term": "Add another dollar coin after the equals",
+  "two dollars": {
+    "search_term": "add a second one dollar coin",
     "search_type": "ai_edit",
     "position": "1",
     "sfx": "none",
