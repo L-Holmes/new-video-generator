@@ -1,5 +1,4 @@
 
-
 I want to update the media review stage:
 - currently you can choose 1,2,3,4,5.
     -> I want another option... if I press 'e', that will bring it into edit mode.
@@ -8,7 +7,7 @@ so then.. I choose a number as usual (or press 'e' again to toggle off edit mode
 
 If edit mode is selected after I choose something:
 - It will pause the editting.
-- either it opens a new window, or changes the actual edit window itself (preferred but I suspect that isn't possible!)
+- either it opens a new window, or changes the actual edit window itself (preferred but I suspect that isn't possible! -- i would really like the kolourpaint to be put in the window! or some other paint clone!)
 - E.g. so I'm on debian 13, so I'll want it to open the selected picture in kolourPaint. (have some check to ensure it is already installed... or exit and tell user to install it..)
     --> in an ideal world, there would still be some ui around the kolour paint window allowing the user to:
         - Exit (returns back to choosing from the original 5 options)
