@@ -96,6 +96,9 @@ OOH! May be also nice to:
     - have an option to 'get still, and then edit still in [the current scene] [i..e the scene after the stock footage]
     be able to press a button to stop it at the point they want a screenshot to be taken.
     then that screenshot will be used as the base 'previous image' in the image review stage...
+    actually, scratch that, no. 
+    Instead of the user choosing the end of the stock footage, it will instead determine how long the json will be based on the calculated scene length values (we have lots of jsons with stats already...)
+        - this will then be used as the still moment automatically, for the user to then edit...
 
     -> to note, if they don't choose that, just use the stock footage as is, and layer the image onto the video background... (this is default!)
 
