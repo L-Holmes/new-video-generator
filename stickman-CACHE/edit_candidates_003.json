@@ -1,0 +1,15 @@
+[
+    {
+        "script_text": "two dollars",
+        "candidates": {
+            "videos": [],
+            "images": [
+                {
+                    "stickman-CACHE/ai_edit_scenes/two_dollars_f96ee347_0.png": 0.64
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.64
+    }
+]

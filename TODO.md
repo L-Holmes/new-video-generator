@@ -3,14 +3,14 @@ TODO:
 - test the new regenerate mode (and perhaps edit mode again...)
     - add more credits to fal...
     - remove the cache...
-    - try again...
+    - try again... 1:30pm...
 
 ---
 
 THEN DO:
 
-
 and now an option to say remove the background, using the existing method of removing a background (I think at least hte joint image creator does that...)
+    (--> hmmm as in 'b' when previewing to remove the background???)
     --> But then after that the user is shown the result.
     --> they can then either reject (and go back to the stock selection screen)
     --> or choose to edit (in which case it would bring up that editting thing again
@@ -122,6 +122,12 @@ To be honest- its probably best to apply it right after the images are selected 
 --> add auto zooming, but only for things that are not edit scenes? so standalone scenes? (which don't then get editted!)
 
 Am I currently passing everything through the 256 pixelisaition??
+
+
+----
+Hmmmmm..
+Do i add an easy way to have specficialy styled text? e.g. at a slight rotated angle and in that pixellated style? 
+    -> and then anything else I would commonly do like adding arrows that have a certain appearance? (or anything else like that???)
 
 -----
 

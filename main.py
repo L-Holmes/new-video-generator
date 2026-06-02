@@ -1386,6 +1386,58 @@ def generate_stickman_joint_candidates(
     return bundles
 
 
+def _regenerate_stickman_joint_scene(
+    script_text: str,
+    script_to_search_term: dict[str, SearchTermData],
+) -> list[dict] | None:
+    """
+    Re-run the stickman generator for ONE stickman_joint tile → fresh image
+    candidates for the review GUI's 'try again' (R). Same generator + prompt
+    engineering as stickman, just the joint type/dir/variant count.
+    """
+    from ai_generate_stickman_images import generate_stickman_images, _scene_stem
+
+    stem = _scene_stem(script_text)
+    for v in range(STICKMAN_JOINT_NUM_VARIANTS):
+        for fname in (f"{stem}_{v}.png", f"{stem}_{v}.placeholder.png"):
+            try:
+                (STICKMAN_JOINT_OUTPUT_DIR / fname).unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    st = script_to_search_term.get(script_text, {}).get("search_type")
+    process_type = st.value if hasattr(st, "value") else "stickman_joint_3_row"
+
+    generated = generate_stickman_images(
+        prompts_file=STICKMAN_PROMPTS_FILE,
+        out_dir=STICKMAN_JOINT_OUTPUT_DIR,
+        num_variants=STICKMAN_JOINT_NUM_VARIANTS,
+        process_type=process_type,
+    )
+
+    paths = generated.get(script_text)
+    if not paths:
+        for k, v in generated.items():
+            if k.strip() == script_text.strip():
+                paths = v
+                break
+    paths = [p for p in (paths or []) if Path(p).exists()]
+    if not paths:
+        print(f"[regen] stickman_joint produced nothing for '{script_text[:60]}'")
+        return None
+
+    scene_timings = _load_scene_timings()
+    duration = round(float(scene_timings[script_text]), 3)
+
+    history = _load_history()
+    for p in paths:
+        history.setdefault(p, p)
+    _save_history(history)
+
+    print(f"[regen] stickman_joint '{script_text[:50]}' → {len(paths)} new option(s)")
+    return [{p: duration} for p in paths]
+
+
 def _regenerate_stickman_scene(
     script_text: str,
     script_to_search_term: dict[str, SearchTermData],
@@ -1701,6 +1753,7 @@ def run_ai_edit_stage(
 def generate_joint_scenes(
     script_to_search_term: dict[str, SearchTermData],
     candidates_data: list[dict],
+    final_data: list[dict] | None = None,
 ) -> dict[str, list[dict]]:
     """
     Build joint composite scenes for any scene whose search_type is in
@@ -1856,10 +1909,21 @@ def generate_joint_scenes(
                 print(f"[joint scenes] FATAL: no image candidates for: '{script_text}'")
                 sys.exit(1)
 
-            first_image = image_candidates[0]
-            image_url = next(iter(first_image), "")
+            # Prefer the reviewed pick; fall back to candidate[0] only if this
+            # scene was never reviewed (shouldn't happen now joint scenes are
+            # in stage-1 review).
+            image_url = chosen_by_text.get(script_text) or ""
             if not image_url:
-                print(f"[joint scenes] FATAL: no image_url extracted from candidate")
+                first_image = image_candidates[0]
+                image_url = next(iter(first_image), "")
+                print(f"[joint scenes]   no review pick for '{script_text[:50]}' "
+                      f"— falling back to candidate[0]")
+            else:
+                print(f"[joint scenes]   using reviewed pick for "
+                      f"'{script_text[:50]}': "
+                      f"{Path(image_url).name if '/' in image_url else image_url}")
+            if not image_url:
+                print(f"[joint scenes] FATAL: no image_url for '{script_text}'")
                 sys.exit(1)
 
             # Resolve the candidate to an on-disk file. Pexels joint_3_row
@@ -1928,7 +1992,8 @@ def generate_joint_scenes(
 
 def generate_read_out_scenes(
     script_to_search_term: dict[str, SearchTermData],
-    candidates_data: list[dict],   # unused — kept for registry signature uniformity
+    candidates_data: list[dict],   # unused — registry signature uniformity
+    final_data: list[dict] | None = None,   # unused — registry signature uniformity
 ) -> dict[str, list[dict]]:
     """
     Render a silent kinetic-typography MP4 for every scene flagged
@@ -2083,17 +2148,14 @@ def generate_stickman_explain_scenes(
 
     scene_timings = _load_scene_timings()
 
-    # Map script_text -> local path of the clip chosen in stage-1 review.
+    # Map script_text -> the image the user CHOSE in review (url or local path).
+    # The compositor uses this instead of candidate[0], so edited/regenerated
+    # tiles flow through correctly.
     chosen_by_text: dict[str, str | None] = {}
-    for entry in final_data:
+    for entry in (final_data or []):
         footage = entry.get("footage") or []
-        if not footage:
-            chosen_by_text[entry["script_text"]] = None
-            continue
-        key = next(iter(footage[0]), None)             # url or local path
-        chosen_by_text[entry["script_text"]] = (
-            _resolve_to_local_path(key) if key else None
-        )
+        key = next(iter(footage[0]), None) if footage else None
+        chosen_by_text[entry["script_text"]] = key
 
     out_dir = STICKMAN_EXPLAIN_OUTPUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -2274,6 +2336,7 @@ LOCAL_FOOTAGE_GENERATORS: dict[str, Callable[
 def run_all_local_generators(
     script_to_search_term: dict[str, SearchTermData],
     candidates_data: list[dict],
+    final_data: list[dict] | None = None,
 ) -> dict[str, list[dict]]:
     """
     Invoke every registered generator and merge their outputs into a single
@@ -2291,7 +2354,7 @@ def run_all_local_generators(
     for name, generator in LOCAL_FOOTAGE_GENERATORS.items():
         print(f"\n[generators] → {name}: {generator.__name__}")
         try:
-            produced = generator(script_to_search_term, candidates_data)
+            produced = generator(script_to_search_term, candidates_data, final_data)
         except Exception as exc:
             print(f"[generators] FATAL: {generator.__name__} raised: {exc}")
             raise
@@ -2905,7 +2968,7 @@ def main() -> None:
     #     review's cleanup would delete the "unchosen" local AI tiles, which
     #     (unlike Pexels URLs) can't be re-downloaded. They re-enter final_data
     #     via the generator-merge step (2.6) afterwards.
-    _excluded_from_review = {MediaType.AI_EDIT} | STICKMAN_JOINT_TYPES
+    _excluded_from_review = {MediaType.AI_EDIT}
     non_edit_candidates = [
         c for c in candidates_data
         if scriptTextToPexelSearch.get(c["script_text"], {}).get("search_type")
@@ -2916,11 +2979,19 @@ def main() -> None:
         t for t, d in scriptTextToPexelSearch.items()
         if d.get("search_type") == MediaType.STICKMAN
     }
+    _stickman_joint_texts = {
+        t for t, d in scriptTextToPexelSearch.items()
+        if d.get("search_type") in STICKMAN_JOINT_TYPES
+    }
+    _regenerable_stage1 = _stickman_texts | _stickman_joint_texts
 
     def _regen_stage1(script_text: str) -> list[dict] | None:
-        if script_text not in _stickman_texts:
-            return None
-        return _regenerate_stickman_scene(script_text, scriptTextToPexelSearch)
+        st = scriptTextToPexelSearch.get(script_text, {}).get("search_type")
+        if st == MediaType.STICKMAN:
+            return _regenerate_stickman_scene(script_text, scriptTextToPexelSearch)
+        if st in STICKMAN_JOINT_TYPES:
+            return _regenerate_stickman_joint_scene(script_text, scriptTextToPexelSearch)
+        return None
 
     final_data, has_manual = run_media_review(
         candidates_data=non_edit_candidates,
@@ -2928,7 +2999,7 @@ def main() -> None:
         review_state_file=REVIEW_STOCK_FOOTAGE_OUTPUT_FILE,
         cache_dir=_CACHE_DIR,
         regenerate_fn=_regen_stage1,
-        regenerable_texts=_stickman_texts,
+        regenerable_texts=_regenerable_stage1,
     )
     if has_manual:
         print("\n[main] Exiting so you can perform the manual fixes above.")
@@ -2958,6 +3029,7 @@ def main() -> None:
     generated_footage_map = run_all_local_generators(
         script_to_search_term=scriptTextToPexelSearch,
         candidates_data=candidates_data,
+        final_data=final_data,
     )
 
     if generated_footage_map:

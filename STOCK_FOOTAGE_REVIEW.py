@@ -272,6 +272,66 @@ def _send_ctrl_s(wid: str) -> None:
     )
 
 
+# ── AI-GENERATION TIMING STATS (for the 'try again' ETA) ────────────────────
+# We persist how long regenerations take, keyed by how many images they
+# produced, to a small JSON file OUTSIDE the cache dir so clearing the cache
+# doesn't wipe the learned averages. With data we can show an estimated time
+# remaining; without it we just show a spinner.
+#
+# File shape:
+#   {"by_count": {"1": {"samples": 5, "total_seconds": 232.4}, "2": {...}}}
+
+def _load_gen_timings(path: str) -> dict:
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _record_gen_timing(path: str, n_images: int, seconds: float) -> None:
+    """Fold one (n_images, seconds) sample into the averages file."""
+    data = _load_gen_timings(path)
+    by = data.setdefault("by_count", {})
+    key = str(max(1, int(n_images)))
+    bucket = by.setdefault(key, {"samples": 0, "total_seconds": 0.0})
+    bucket["samples"] += 1
+    bucket["total_seconds"] = float(bucket["total_seconds"]) + float(seconds)
+    try:
+        Path(path).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception as exc:
+        print(f"[review] couldn't write timings file {path}: {exc}")
+
+
+def _estimate_gen_seconds(path: str, n_images: int) -> float | None:
+    """
+    Best estimate of how long generating `n_images` will take, or None if we
+    have no data at all.
+
+    Prefers the exact-count bucket's average; otherwise derives a per-image
+    rate from every bucket and scales it by n_images.
+    """
+    n_images = max(1, int(n_images))
+    by = _load_gen_timings(path).get("by_count", {})
+
+    exact = by.get(str(n_images))
+    if exact and exact.get("samples"):
+        return float(exact["total_seconds"]) / exact["samples"]
+
+    total_seconds = 0.0
+    total_images = 0
+    for k, v in by.items():
+        try:
+            cnt = int(k)
+        except ValueError:
+            continue
+        samples = int(v.get("samples", 0))
+        total_seconds += float(v.get("total_seconds", 0.0))
+        total_images += cnt * samples
+    if total_images > 0:
+        return (total_seconds / total_images) * n_images
+    return None
+
+
 # ── REVIEWER GUI ──────────────────────────────────────────────────────────────
 
 class _MediaReviewer:
@@ -295,7 +355,8 @@ class _MediaReviewer:
     """
 
     def __init__(self, pending_items, history_map, state_file, review_state,
-                 regenerate_fn=None, regenerable_texts=None):
+                 regenerate_fn=None, regenerable_texts=None,
+                 timings_file=".ai_generation_timings.json"):
         self.items        = pending_items
         self.history      = history_map
         self.state_file   = state_file
@@ -346,6 +407,16 @@ class _MediaReviewer:
         self._regenerate_fn     = regenerate_fn
         self._regenerable_texts = regenerable_texts
         self._regen_frame       = None            # "Regenerating…" overlay
+        # Spinner + ETA state for the regenerate overlay
+        self._timings_file      = timings_file
+        self._spin_canvas       = None
+        self._spin_arc          = None
+        self._spin_after        = None            # scheduled after() id
+        self._spin_angle        = 0
+        self._regen_status_lbl  = None
+        self._regen_start       = None            # time.time() at regen start
+        self._regen_estimate    = None            # estimated total seconds | None
+        self._regen_n           = 0               # expected image count
 
         # Tk
         self.root = tk.Tk()
@@ -754,10 +825,11 @@ class _MediaReviewer:
         """
         R — re-run the generator for the CURRENT scene and replace its options.
 
-        Only meaningful for AI scenes (stickman / ai_edit); the caller supplies
-        `regenerate_fn` + `regenerable_texts`. Generation is slow and blocking,
-        so it runs on a worker thread behind a "Regenerating…" overlay and the
-        slots refresh on the main thread when it returns.
+        Only meaningful for AI scenes (stickman / ai_edit / stickman_joint); the
+        caller supplies `regenerate_fn` + `regenerable_texts`. Generation is slow
+        and blocking, so it runs on a worker thread behind an animated overlay
+        (spinner + ETA when we have timing data); the slots refresh on the main
+        thread when it returns.
         """
         # Inert while transitioning, during an edit session, or mid-regen.
         if (self._advancing or self._editor_frame is not None
@@ -766,7 +838,8 @@ class _MediaReviewer:
         if self.item_idx >= len(self.items):
             return
 
-        script_text = self.items[self.item_idx]["script_text"]
+        item = self.items[self.item_idx]
+        script_text = item["script_text"]
 
         if self._regenerate_fn is None or (
             self._regenerable_texts is not None
@@ -777,9 +850,25 @@ class _MediaReviewer:
             )
             return
 
+        # Expected image count = how many options this scene currently shows.
+        # Regeneration produces the same number (same variant count), so this
+        # is what we estimate against and record under.
+        n_images = len((item.get("candidates", {}) or {}).get("images", []) or [])
+        if n_images <= 0:
+            n_images = 1
+
+        estimate = _estimate_gen_seconds(self._timings_file, n_images)
+        self._regen_n        = n_images
+        self._regen_start    = time.time()
+        self._regen_estimate = estimate
+
+        est_txt = f"~{estimate:0.0f}s" if estimate else "unknown (no timing data yet)"
+        print(f"[review] regenerating '{script_text[:60]}' — "
+              f"{n_images} image(s), estimated {est_txt}")
+
         self._advancing = True            # block other keys until it returns
         self._stop_all_videos()
-        self._build_regen_overlay()
+        self._build_regen_overlay(n_images, estimate)
         self.root.update_idletasks()
 
         fn = self._regenerate_fn
@@ -797,22 +886,80 @@ class _MediaReviewer:
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def _build_regen_overlay(self):
-        """Full-window 'Regenerating…' cover shown while the worker runs."""
+    def _build_regen_overlay(self, n_images: int, estimate_seconds):
+        """Full-window 'Regenerating…' cover with an animated spinner + ETA."""
         self._regen_frame = tk.Frame(self.root, bg=BG)
         self._regen_frame.place(x=0, y=0, relwidth=1, relheight=1)
 
         box = tk.Frame(self._regen_frame, bg=BG)
         box.place(relx=0.5, rely=0.5, anchor="center")
-        tk.Label(box, text="↻  Regenerating…", bg=BG, fg=ACCENT,
-                 font=("Segoe UI", 22, "bold")).pack(pady=(0, 12))
+
+        # Spinner: a faint full ring with a brighter arc that rotates.
+        self._spin_canvas = tk.Canvas(box, width=72, height=72, bg=BG,
+                                      highlightthickness=0)
+        self._spin_canvas.pack(pady=(0, 14))
+        self._spin_canvas.create_oval(10, 10, 62, 62, outline=PANEL_BG, width=6)
+        self._spin_arc = self._spin_canvas.create_arc(
+            10, 10, 62, 62, start=0, extent=90, style="arc",
+            outline=EDIT_OUTLINE, width=6)
+
+        tk.Label(box, text="Regenerating…", bg=BG, fg=ACCENT,
+                 font=("Segoe UI", 20, "bold")).pack()
+        plural = "s" if n_images != 1 else ""
         tk.Label(box,
-                 text="Re-running the AI request for this scene.\n"
-                      "This can take a little while — the options refresh "
-                      "when it's done.",
-                 bg=BG, fg=TEXT_COL, font=FONT_UI, justify="center").pack()
+                 text=f"Re-running the AI request for this scene "
+                      f"({n_images} image{plural}).",
+                 bg=BG, fg=TEXT_COL, font=FONT_UI, justify="center"
+                 ).pack(pady=(6, 10))
+
+        self._regen_status_lbl = tk.Label(box, text="", bg=BG, fg=HINT_COL,
+                                          font=("Segoe UI", 10))
+        self._regen_status_lbl.pack()
+
+        self._spin_angle = 0
+        self._animate_spinner()
+
+    def _animate_spinner(self):
+        """Rotate the arc and refresh the elapsed/remaining line (~25 fps)."""
+        if self._regen_frame is None or self._spin_canvas is None:
+            return
+        try:
+            self._spin_angle = (self._spin_angle - 14) % 360
+            self._spin_canvas.itemconfig(self._spin_arc, start=self._spin_angle)
+        except tk.TclError:
+            return
+
+        if self._regen_start is not None and self._regen_status_lbl is not None:
+            elapsed = time.time() - self._regen_start
+            if self._regen_estimate:
+                remaining = self._regen_estimate - elapsed
+                if remaining > 0:
+                    txt = (f"elapsed {elapsed:0.0f}s   ·   "
+                           f"~{remaining:0.0f}s remaining")
+                else:
+                    txt = f"elapsed {elapsed:0.0f}s   ·   almost there…"
+            else:
+                txt = f"elapsed {elapsed:0.0f}s"
+            try:
+                self._regen_status_lbl.config(text=txt)
+            except tk.TclError:
+                return
+
+        try:
+            self._spin_after = self.root.after(40, self._animate_spinner)
+        except tk.TclError:
+            return
 
     def _teardown_regen_overlay(self):
+        if self._spin_after is not None:
+            try:
+                self.root.after_cancel(self._spin_after)
+            except (tk.TclError, AttributeError):
+                pass
+        self._spin_after       = None
+        self._spin_canvas      = None
+        self._spin_arc         = None
+        self._regen_status_lbl = None
         frame = self._regen_frame
         self._regen_frame = None
         if frame is not None:
@@ -825,7 +972,27 @@ class _MediaReviewer:
         # The window may have been closed while the generator ran.
         if self.root is None:
             return
+
+        elapsed = None
+        if self._regen_start is not None:
+            elapsed = time.time() - self._regen_start
+
         self._teardown_regen_overlay()
+
+        # Record timing only on a successful generation (so failures/timeouts
+        # don't poison the averages). Key on the count we actually got back.
+        if elapsed is not None and err is None and result:
+            n_got = len(result) or self._regen_n or 1
+            _record_gen_timing(self._timings_file, n_got, elapsed)
+            print(f"[review] regeneration done in {elapsed:0.1f}s "
+                  f"({n_got} image(s)) — timing averages updated")
+        elif elapsed is not None:
+            why = f"error: {err}" if err else "nothing returned"
+            print(f"[review] regeneration ended after {elapsed:0.1f}s "
+                  f"({why}) — not recording timing")
+
+        self._regen_start    = None
+        self._regen_estimate = None
 
         if err is not None:
             self.status_var.set(f"Regeneration failed: {err}")
@@ -1205,6 +1372,37 @@ class _MediaReviewer:
                 frame.destroy()
             except tk.TclError:
                 pass
+        # KolourPaint held the keyboard focus; once it's gone the WM often
+        # leaves our window unfocused, so the user has to click it before the
+        # number/letter keys work again. Grab focus back — immediately, and
+        # again shortly after so we win even if the WM is still settling.
+        self._refocus_main_window()
+        try:
+            self.root.after(120, self._refocus_main_window)
+            self.root.after(400, self._refocus_main_window)
+        except tk.TclError:
+            pass
+
+    def _refocus_main_window(self):
+        """Best-effort: return keyboard focus to the review window."""
+        if self.root is None:
+            return
+        try:
+            self.root.deiconify()
+            self.root.lift()
+            self.root.focus_force()
+        except tk.TclError:
+            return
+        # X11 backup — helps when a child app (KolourPaint) had grabbed focus.
+        if _have_cmd("xdotool"):
+            try:
+                wid = self.root.winfo_id()
+                subprocess.run(["xdotool", "windowactivate", str(wid)],
+                               check=False, stderr=subprocess.DEVNULL)
+                subprocess.run(["xdotool", "windowfocus", str(wid)],
+                               check=False, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
 
     def _kill_edit_proc(self):
         proc = self._edit_proc
@@ -1439,6 +1637,7 @@ def run_media_review(
     cache_dir: str = "CACHE",
     regenerate_fn=None,
     regenerable_texts=None,
+    timings_file: str = ".ai_generation_timings.json",
 ) -> tuple[list[dict] | None, bool]:
     """
     Display the multi-candidate review GUI and return the final ordered footage
@@ -1490,6 +1689,13 @@ def run_media_review(
         None, every scene attempts regeneration and relies on `regenerate_fn`
         returning None for the inapplicable ones.
 
+    timings_file : str
+        Where to persist AI-generation timing averages (used to show an
+        estimated time remaining on the regenerate overlay). Defaults to
+        ``.ai_generation_timings.json`` in the CURRENT WORKING DIRECTORY — i.e.
+        deliberately OUTSIDE the cache dir, so clearing the cache keeps the
+        learned averages. With no data yet, the overlay shows just a spinner.
+
     Returns
     -------
     (final_data, has_manual) : tuple
@@ -1528,7 +1734,8 @@ def run_media_review(
               f"({len(review_state)} already decided). Launching GUI…")
         reviewer = _MediaReviewer(pending, history_map, review_state_file, review_state,
                                   regenerate_fn=regenerate_fn,
-                                  regenerable_texts=regenerable_texts)
+                                  regenerable_texts=regenerable_texts,
+                                  timings_file=timings_file)
         # Tk teardown MUST finish on this (main) thread. If a later GC pass on a
         # worker thread (the stitcher's ThreadPoolExecutor) finalizes any
         # lingering Tcl-backed objects, the process dies with
