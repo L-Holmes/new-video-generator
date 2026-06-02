@@ -18,7 +18,31 @@ Key bindings
 ------------
     1 / 2          → choose video 1 / video 2
     3 / 4 / 5      → choose image 1 / 2 / 3
+    E              → toggle EDIT MODE (blue outlines appear on editable images)
     F or BACKSPACE → reject all → mark scene for MANUAL INTERVENTION
+
+Edit mode
+---------
+Press E to enter edit mode. Editable image slots get a blue outline and a
+banner appears. Now pressing an image number (3/4/5, or a promoted image in
+slots 1/2) does NOT pick it directly — instead it PAUSES review and opens that
+image in KolourPaint for touch-ups, with a control bar offering:
+
+    • Save & Continue  → saves the edit and uses it as this scene's pick,
+                         then advances to the next review item.
+    • Exit             → discards the edit and returns to the five options.
+
+KolourPaint is embedded directly in the window via X11 reparenting (needs
+`xdotool`). On sessions where reparenting isn't possible (or `xdotool` is
+missing) it falls back to opening KolourPaint as a separate window while the
+Save & Continue / Exit controls stay in this window.
+
+Requirements for edit mode (Debian/Ubuntu):
+    sudo apt install kolourpaint   # the editor itself (required)
+    sudo apt install xdotool       # only needed to EMBED it in the window
+
+If KolourPaint isn't installed, edit mode refuses to turn on and tells you how
+to install it. Videos can't be edited (KolourPaint is an image editor).
 
 Multi-clip scenes
 -----------------
@@ -44,16 +68,24 @@ Cleanup
 At the end of every GUI session we sweep all DECIDED items: any candidate URL
 that was downloaded but not chosen gets its file deleted and its entry pulled
 from history.json. Pending (still-undecided) items are not touched.
+Edited images are NOT candidates, so cleanup never deletes them.
 """
 
 from __future__ import annotations
 
 import json
+import os
+import gc
 import queue
+import shutil
+import subprocess
 import sys
 import threading
+import time
 import tkinter as tk
 from pathlib import Path
+from tkinter import messagebox
+from uuid import uuid4
 
 from PIL import Image, ImageTk
 
@@ -76,6 +108,7 @@ HINT_COL    = "#888"
 SLOT_BG     = "#0f1626"
 DISABLED_BG = "#2a2a3a"
 CHOSEN_BG   = "#2ecc71"
+EDIT_OUTLINE = "#3498db"   # blue ring shown on editable slots in edit mode
 
 FONT_MONO  = ("Courier New", 13)
 FONT_UI    = ("Segoe UI", 11)
@@ -83,10 +116,6 @@ FONT_LABEL = ("Segoe UI", 14, "bold")
 FONT_KEY   = ("Segoe UI", 18, "bold")
 
 VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
-
-
-import os
-import gc
 
 
 # ── JSON / FILE HELPERS ───────────────────────────────────────────────────────
@@ -129,6 +158,120 @@ def _resolve_local(url: str, history: dict) -> str | None:
     return p if p and Path(p).exists() else None
 
 
+# ── EDIT-MODE / KOLOURPAINT (X11 EMBED) HELPERS ────────────────────────────────
+# These shell out to `xdotool` to reparent KolourPaint's X11 window into a Tk
+# frame. They only work under X11 (or XWayland — both KolourPaint and Tk run as
+# X11 clients there, so reparenting between them works). Every call is
+# best-effort and never raises; the caller falls back to a separate window if
+# embedding can't be established.
+
+def _have_cmd(name: str) -> bool:
+    """True if `name` is on PATH."""
+    return shutil.which(name) is not None
+
+
+def _window_area(wid: str) -> int:
+    """Pixel area of an X11 window id, or -1 if it can't be queried."""
+    try:
+        out = subprocess.check_output(
+            ["xdotool", "getwindowgeometry", "--shell", str(wid)],
+            stderr=subprocess.DEVNULL,
+        ).decode()
+    except Exception:
+        return -1
+    w = h = 0
+    for line in out.splitlines():
+        if line.startswith("WIDTH="):
+            try:
+                w = int(line.split("=", 1)[1])
+            except ValueError:
+                pass
+        elif line.startswith("HEIGHT="):
+            try:
+                h = int(line.split("=", 1)[1])
+            except ValueError:
+                pass
+    return w * h
+
+
+def _search_windows(args: list[str]) -> list[str]:
+    """Run `xdotool search --onlyvisible <args>` → list of window ids."""
+    try:
+        out = subprocess.check_output(
+            ["xdotool", "search", "--onlyvisible"] + args,
+            stderr=subprocess.DEVNULL,
+        ).decode().split()
+        return out
+    except Exception:
+        return []
+
+
+def _wait_kolourpaint_window(pid: int, timeout: float = 15.0, proc=None) -> str | None:
+    """
+    Poll for KolourPaint's main X11 window after launch and return the
+    largest-area visible match (skips splash/utility windows). Tries the
+    process pid first, then class/name. Bails early if `proc` has already died.
+    """
+    deadline = time.time() + timeout
+    queries = (
+        ["--pid", str(pid)],
+        ["--class", "kolourpaint"],
+        ["--classname", "kolourpaint"],
+        ["--name", "KolourPaint"],
+    )
+    while time.time() < deadline:
+        if proc is not None and proc.poll() is not None:
+            return None
+        for q in queries:
+            best, best_area = None, 0
+            for wid in _search_windows(q):
+                area = _window_area(wid)
+                if area > best_area:
+                    best, best_area = wid, area
+            # Require a real, sized window — the editor canvas is large.
+            if best and best_area >= 150 * 150:
+                return best
+        time.sleep(0.25)
+    return None
+
+
+def _reparent_window(wid: str, parent_id: int, w: int, h: int) -> None:
+    """Reparent `wid` into the X window `parent_id`, then fill it."""
+    subprocess.run(["xdotool", "windowreparent", str(wid), str(parent_id)],
+                   check=False, stderr=subprocess.DEVNULL)
+    subprocess.run(["xdotool", "windowmove", str(wid), "0", "0"],
+                   check=False, stderr=subprocess.DEVNULL)
+    subprocess.run(["xdotool", "windowsize", str(wid), str(w), str(h)],
+                   check=False, stderr=subprocess.DEVNULL)
+
+
+def _resize_window(wid: str, w: int, h: int) -> None:
+    """Keep an embedded window pinned to (0,0) at the frame's size."""
+    subprocess.run(["xdotool", "windowmove", str(wid), "0", "0"],
+                   check=False, stderr=subprocess.DEVNULL)
+    subprocess.run(["xdotool", "windowsize", str(wid), str(w), str(h)],
+                   check=False, stderr=subprocess.DEVNULL)
+
+
+def _send_ctrl_s(wid: str) -> None:
+    """
+    Best-effort 'save' in KolourPaint. We set input focus directly
+    (XSetInputFocus works even for reparented/unmanaged windows), send a real
+    XTEST Ctrl+S, and ALSO send a synthetic one straight to the window as a
+    fallback. Because we always edit a PNG copy, KolourPaint saves it without
+    a format dialog.
+    """
+    subprocess.run(["xdotool", "windowfocus", str(wid)],
+                   check=False, stderr=subprocess.DEVNULL)
+    time.sleep(0.15)
+    subprocess.run(["xdotool", "key", "--clearmodifiers", "ctrl+s"],
+                   check=False, stderr=subprocess.DEVNULL)
+    subprocess.run(
+        ["xdotool", "key", "--clearmodifiers", "--window", str(wid), "ctrl+s"],
+        check=False, stderr=subprocess.DEVNULL,
+    )
+
+
 # ── REVIEWER GUI ──────────────────────────────────────────────────────────────
 
 class _MediaReviewer:
@@ -151,7 +294,8 @@ class _MediaReviewer:
     to `state_file` after every selection.
     """
 
-    def __init__(self, pending_items, history_map, state_file, review_state):
+    def __init__(self, pending_items, history_map, state_file, review_state,
+                 regenerate_fn=None, regenerable_texts=None):
         self.items        = pending_items
         self.history      = history_map
         self.state_file   = state_file
@@ -177,6 +321,32 @@ class _MediaReviewer:
         # double-presses during a slow load don't land on the next scene.
         self._advancing = False
 
+        # ── Edit-mode state ──────────────────────────────────────────────
+        self._edit_mode = False
+        self._editable_slots: set[int] = set()   # slot nums holding an image
+        # Active KolourPaint edit session (None when not editing)
+        self._editor_frame = None                 # Tk overlay Frame
+        self._embed_frame  = None                 # Frame KolourPaint reparents into
+        self._embed_status = None                 # status label inside embed frame
+        self._save_btn     = None
+        self._exit_btn     = None
+        self._embedded_wid = None                 # X11 id of embedded KolourPaint
+        self._edit_proc    = None                 # KolourPaint subprocess
+        self._edit_path    = None                 # working PNG copy being edited
+        self._edit_trim    = 0.0
+        self._edit_original_url = None            # candidate this edit derived from
+        self._finalizing_edit = False             # guard during save/exit
+
+        # ── "Try again" (regenerate) state ───────────────────────────────
+        # regenerate_fn(script_text) -> list[{local_path: trim}] | None
+        #   Returns fresh image candidates to REPLACE this scene's options,
+        #   or None if regeneration isn't applicable / produced nothing.
+        # regenerable_texts: optional set of script_texts that support it; when
+        #   given, R is gated to those (so non-AI scenes don't even try).
+        self._regenerate_fn     = regenerate_fn
+        self._regenerable_texts = regenerable_texts
+        self._regen_frame       = None            # "Regenerating…" overlay
+
         # Tk
         self.root = tk.Tk()
         self.root.title("Media Review — Multi-Candidate")
@@ -201,6 +371,11 @@ class _MediaReviewer:
                  fg=HINT_COL, font=FONT_UI).pack(side="left", padx=12)
         tk.Label(top, text="MEDIA REVIEW", bg=PANEL_BG, fg=ACCENT,
                  font=("Segoe UI", 13, "bold")).pack(side="left", expand=True)
+
+        # Edit-mode banner (single line → constant height, no layout jump)
+        self.edit_banner = tk.Label(self.root, text="", bg=BG, fg="white",
+                                    font=("Segoe UI", 11, "bold"), pady=4)
+        self.edit_banner.pack(fill="x")
 
         # Script panel
         script_frame = tk.Frame(self.root, bg=PANEL_BG, padx=18, pady=8)
@@ -236,9 +411,11 @@ class _MediaReviewer:
 
         # Hint
         tk.Label(self.root,
-                 text="1 / 2 = pick a video    "
-                      "3 / 4 / 5 = pick an image    "
-                      "F or BACKSPACE = mark for manual intervention",
+                 text="1 / 2 = video    "
+                      "3 / 4 / 5 = image    "
+                      "E = edit    "
+                      "R = try again (AI)    "
+                      "F / BACKSPACE = manual",
                  bg=BG, fg=TEXT_COL, font=("Segoe UI", 10)).pack(pady=(2, 2))
         self.status_var = tk.StringVar(value="")
         tk.Label(self.root, textvariable=self.status_var, bg=BG, fg=HINT_COL,
@@ -275,6 +452,10 @@ class _MediaReviewer:
     def _bind_keys(self):
         for n in "12345":
             self.root.bind(n, lambda e, k=n: self._on_select(int(k)))
+        for k in ("e", "E"):
+            self.root.bind(k, lambda e: self._toggle_edit_mode())
+        for k in ("r", "R"):
+            self.root.bind(k, lambda e: self._on_try_again())
         for k in ("f", "F"):
             self.root.bind(k, lambda e: self._on_manual())
         self.root.bind("<BackSpace>", lambda e: self._on_manual())
@@ -371,6 +552,16 @@ class _MediaReviewer:
             else:
                 self._render_unavailable(slot, "file missing on disk")
 
+        # Recompute which slots currently hold an editable IMAGE. A slot is
+        # editable iff it has a choice AND that file resolves to a non-video
+        # (this correctly treats images promoted into the video slots as
+        # editable, and real videos as not editable).
+        self._editable_slots = set()
+        for sn, (u, _t) in self._slot_to_choice.items():
+            lp = _resolve_local(u, self.history)
+            if lp and not _is_video_file(lp):
+                self._editable_slots.add(sn)
+
         if self.chosen:
             self.status_var.set(
                 f"This scene's picks so far: "
@@ -378,6 +569,8 @@ class _MediaReviewer:
             )
         else:
             self.status_var.set("")
+
+        self._apply_edit_mode_visuals()
 
         # UI is ready for input again
         self._advancing = False
@@ -498,18 +691,183 @@ class _MediaReviewer:
         slot.media_label._img_ref = None
         slot.cap_label.config(text="locked", fg=CHOSEN_BG)
 
+    # ── Edit-mode visuals ────────────────────────────────────────────────────
+
+    def _apply_edit_mode_visuals(self):
+        """Show/hide the blue banner + outline editable image slots."""
+        on = self._edit_mode
+
+        if on:
+            self.edit_banner.config(
+                text="✏  EDIT MODE — press an image key (3 / 4 / 5) to edit it "
+                     "in KolourPaint    ·    press E to cancel",
+                bg=EDIT_OUTLINE, fg="white",
+            )
+        else:
+            self.edit_banner.config(text="", bg=BG)
+
+        for slot in (*self.video_slots, *self.image_slots):
+            try:
+                if on and slot.slot_num in self._editable_slots:
+                    slot.config(highlightthickness=3,
+                                highlightbackground=EDIT_OUTLINE,
+                                highlightcolor=EDIT_OUTLINE)
+                else:
+                    slot.config(highlightthickness=0)
+            except tk.TclError:
+                pass
+
+    def _toggle_edit_mode(self):
+        # Ignore while transitioning or while an edit session is open.
+        if self._advancing or self._editor_frame is not None:
+            return
+
+        if not self._edit_mode:
+            # Turning ON requires KolourPaint to be installed.
+            if not _have_cmd("kolourpaint"):
+                messagebox.showerror(
+                    "KolourPaint not found",
+                    "Edit mode needs KolourPaint, which doesn't appear to be "
+                    "installed.\n\nInstall it with:\n\n"
+                    "    sudo apt install kolourpaint\n\n"
+                    "Then press E again. (Your review progress is safe.)",
+                )
+                self.status_var.set("KolourPaint isn't installed — see the dialog.")
+                return
+            self._edit_mode = True
+            if not _have_cmd("xdotool"):
+                self.status_var.set(
+                    "Edit mode ON — note: install 'xdotool' "
+                    "(sudo apt install xdotool) to embed KolourPaint in this window."
+                )
+            else:
+                self.status_var.set("Edit mode ON — pick an image to edit it.")
+        else:
+            self._edit_mode = False
+            self.status_var.set("")
+
+        self._apply_edit_mode_visuals()
+
+    # ── "Try again" (regenerate AI candidates) ───────────────────────────────
+
+    def _on_try_again(self):
+        """
+        R — re-run the generator for the CURRENT scene and replace its options.
+
+        Only meaningful for AI scenes (stickman / ai_edit); the caller supplies
+        `regenerate_fn` + `regenerable_texts`. Generation is slow and blocking,
+        so it runs on a worker thread behind a "Regenerating…" overlay and the
+        slots refresh on the main thread when it returns.
+        """
+        # Inert while transitioning, during an edit session, or mid-regen.
+        if (self._advancing or self._editor_frame is not None
+                or self._regen_frame is not None):
+            return
+        if self.item_idx >= len(self.items):
+            return
+
+        script_text = self.items[self.item_idx]["script_text"]
+
+        if self._regenerate_fn is None or (
+            self._regenerable_texts is not None
+            and script_text not in self._regenerable_texts
+        ):
+            self.status_var.set(
+                "Try-again only works for AI scenes (stickman / ai_edit)."
+            )
+            return
+
+        self._advancing = True            # block other keys until it returns
+        self._stop_all_videos()
+        self._build_regen_overlay()
+        self.root.update_idletasks()
+
+        fn = self._regenerate_fn
+
+        def worker():
+            result, err = None, None
+            try:
+                result = fn(script_text)
+            except Exception as exc:       # never let a generator crash the GUI
+                err = exc
+            try:
+                self.root.after(0, lambda: self._finish_try_again(result, err))
+            except (RuntimeError, tk.TclError):
+                pass
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _build_regen_overlay(self):
+        """Full-window 'Regenerating…' cover shown while the worker runs."""
+        self._regen_frame = tk.Frame(self.root, bg=BG)
+        self._regen_frame.place(x=0, y=0, relwidth=1, relheight=1)
+
+        box = tk.Frame(self._regen_frame, bg=BG)
+        box.place(relx=0.5, rely=0.5, anchor="center")
+        tk.Label(box, text="↻  Regenerating…", bg=BG, fg=ACCENT,
+                 font=("Segoe UI", 22, "bold")).pack(pady=(0, 12))
+        tk.Label(box,
+                 text="Re-running the AI request for this scene.\n"
+                      "This can take a little while — the options refresh "
+                      "when it's done.",
+                 bg=BG, fg=TEXT_COL, font=FONT_UI, justify="center").pack()
+
+    def _teardown_regen_overlay(self):
+        frame = self._regen_frame
+        self._regen_frame = None
+        if frame is not None:
+            try:
+                frame.destroy()
+            except tk.TclError:
+                pass
+
+    def _finish_try_again(self, result, err):
+        # The window may have been closed while the generator ran.
+        if self.root is None:
+            return
+        self._teardown_regen_overlay()
+
+        if err is not None:
+            self.status_var.set(f"Regeneration failed: {err}")
+            self._advancing = False
+            return
+        if not result:
+            self.status_var.set(
+                "Nothing came back — keeping the current options."
+            )
+            self._advancing = False
+            return
+
+        # Swap in the fresh image candidates and make their local paths
+        # resolvable (generated files are keyed by their own path).
+        item  = self.items[self.item_idx]
+        cands = item.setdefault("candidates", {})
+        cands.setdefault("videos", [])
+        cands["images"] = result
+        for entry in result:
+            for path in entry:
+                self.history[path] = path
+
+        # Re-render this same scene with the new options (resets _advancing).
+        self._load_current()
+        self.status_var.set(
+            "Fresh options ready — pick one, edit it (E), or try again (R)."
+        )
+
     # ── Decisions ────────────────────────────────────────────────────────────
 
-    def _on_select(self, slot_num: int):
-        if self._advancing:
-            return
-        if slot_num not in self._slot_to_choice:
-            self.status_var.set(f"Slot {slot_num} unavailable — try another key")
-            return
-        self._advancing = True
-        url, trim = self._slot_to_choice[slot_num]
-        self.chosen.append({url: trim})
-        self.chosen_urls.add(url)
+    def _commit_choice(self, footage_key: str, trim: float,
+                       block_urls: set[str] | None = None):
+        """
+        Record `footage_key` (a URL or local path) as a pick for the current
+        clip slot, then either advance to the next clip slot or finalise the
+        scene. `block_urls` additionally marks source candidates as used so
+        they grey out for the rest of a multi-clip scene.
+        """
+        self.chosen.append({footage_key: trim})
+        self.chosen_urls.add(footage_key)
+        if block_urls:
+            self.chosen_urls.update(block_urls)
 
         item = self.items[self.item_idx]
         self.clip_slot_idx += 1
@@ -522,11 +880,46 @@ class _MediaReviewer:
             self._save_state()
             self._advance_to_next_item()
         else:
-            # Same scene, next clip slot — re-render with chosen-greyed
+            # Same scene, next clip slot — re-render with chosen greyed out.
             self._load_current()
+
+    def _on_select(self, slot_num: int):
+        if self._advancing:
+            return
+        if self._editor_frame is not None:
+            # An edit session is open — number keys are inert here.
+            return
+        if slot_num not in self._slot_to_choice:
+            self.status_var.set(f"Slot {slot_num} unavailable — try another key")
+            return
+
+        url, trim = self._slot_to_choice[slot_num]
+
+        # ── Edit-mode branch: open the chosen IMAGE in KolourPaint ──────────
+        if self._edit_mode:
+            if slot_num not in self._editable_slots:
+                self.status_var.set(
+                    "That's a video — KolourPaint only edits images. "
+                    "Pick an image, or press E to leave edit mode and pick this video."
+                )
+                return
+            local = _resolve_local(url, self.history)
+            if not local:
+                self.status_var.set("Can't find that file on disk to edit.")
+                return
+            self._advancing = True  # pause review while the editor is open
+            self._open_editor(original_url=url, trim=float(trim),
+                              source_local=local)
+            return
+
+        # ── Normal selection ────────────────────────────────────────────────
+        self._advancing = True
+        self._commit_choice(url, float(trim))
 
     def _on_manual(self):
         if self._advancing:
+            return
+        if self._editor_frame is not None:
             return
         self._advancing = True
         item = self.items[self.item_idx]
@@ -551,6 +944,287 @@ class _MediaReviewer:
     def _save_state(self):
         _save_json(self.review_state, self.state_file)
 
+    # ── KolourPaint edit session ──────────────────────────────────────────────
+
+    def _open_editor(self, original_url: str, trim: float, source_local: str):
+        """
+        Make a PNG working copy of the chosen image and open it in KolourPaint
+        inside an overlay with Save & Continue / Exit controls.
+
+        We always convert to a flattened RGB PNG so Ctrl+S in KolourPaint never
+        triggers a lossy-format confirmation dialog, and the original candidate
+        file is left untouched.
+        """
+        self._stop_all_videos()
+
+        src = Path(source_local)
+        edited = src.parent / f"edited-{uuid4().hex[:10]}.png"
+        try:
+            im = Image.open(src)
+            if im.mode in ("RGBA", "LA", "P"):
+                im = im.convert("RGBA")
+                white = Image.new("RGBA", im.size, (255, 255, 255, 255))
+                im = Image.alpha_composite(white, im).convert("RGB")
+            else:
+                im = im.convert("RGB")
+            im.save(edited, "PNG")
+        except Exception as exc:
+            messagebox.showerror(
+                "Edit mode",
+                f"Couldn't prepare that image for editing:\n\n{exc}",
+            )
+            self._advancing = False
+            return
+
+        self._edit_original_url = original_url
+        self._edit_trim         = float(trim)
+        self._edit_path         = str(edited)
+
+        self._build_editor_overlay(edited.name)
+        self.root.update_idletasks()  # realise geometry before reading size/id
+        self._launch_and_embed_kolourpaint(str(edited))
+
+    def _build_editor_overlay(self, filename: str):
+        """Overlay covering the whole window: control bar + embed area."""
+        self._editor_frame = tk.Frame(self.root, bg=BG)
+        self._editor_frame.place(x=0, y=0, relwidth=1, relheight=1)
+
+        bar = tk.Frame(self._editor_frame, bg=PANEL_BG, pady=8)
+        bar.pack(fill="x")
+        tk.Label(bar, text=f"✏  EDITING:  {filename}", bg=PANEL_BG, fg=ACCENT,
+                 font=("Segoe UI", 12, "bold")).pack(side="left", padx=14)
+
+        self._save_btn = tk.Button(
+            bar, text="✓  Save & Continue",
+            command=self._editor_save_and_continue,
+            bg=CHOSEN_BG, fg="white",
+            activebackground=CHOSEN_BG, activeforeground="white",
+            font=("Segoe UI", 11, "bold"), relief="flat",
+            padx=14, pady=6, cursor="hand2")
+        self._save_btn.pack(side="right", padx=(8, 14))
+
+        self._exit_btn = tk.Button(
+            bar, text="✕  Exit (back to options)",
+            command=self._editor_exit,
+            bg=ACCENT, fg="white",
+            activebackground=ACCENT, activeforeground="white",
+            font=("Segoe UI", 11, "bold"), relief="flat",
+            padx=14, pady=6, cursor="hand2")
+        self._exit_btn.pack(side="right", padx=8)
+
+        tk.Label(
+            self._editor_frame,
+            text="Draw in KolourPaint → press Ctrl+S → click \u201cSave & Continue\u201d.   "
+                 "\u201cExit\u201d discards this edit and returns to the five options.",
+            bg=BG, fg=HINT_COL, font=("Segoe UI", 9)).pack(fill="x", pady=(6, 2))
+
+        self._embed_frame = tk.Frame(
+            self._editor_frame, bg="#000000",
+            highlightthickness=2, highlightbackground=EDIT_OUTLINE)
+        self._embed_frame.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+        self._embed_frame.pack_propagate(False)
+
+        self._embed_status = tk.Label(
+            self._embed_frame, text="Launching KolourPaint…",
+            bg="#000000", fg=TEXT_COL, font=FONT_UI, justify="center")
+        self._embed_status.pack(expand=True)
+        self._embed_frame.bind("<Configure>", self._on_embed_configure)
+
+    def _launch_and_embed_kolourpaint(self, path: str):
+        self._embedded_wid = None
+        try:
+            self._edit_proc = subprocess.Popen(
+                ["kolourpaint", path],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception as exc:
+            if self._embed_status is not None:
+                self._embed_status.config(text=f"Failed to launch KolourPaint:\n{exc}")
+            return
+
+        if not _have_cmd("xdotool"):
+            if self._embed_status is not None:
+                self._embed_status.config(
+                    text="KolourPaint opened in a SEPARATE window.\n\n"
+                         "Install 'xdotool' (sudo apt install xdotool) to embed it here.\n\n"
+                         "Edit it, press Ctrl+S, then click \u201cSave & Continue\u201d.")
+            return
+
+        # Find KolourPaint's window off-thread (polling is slow), then embed it
+        # back on the main thread.
+        proc = self._edit_proc
+
+        def worker():
+            wid = _wait_kolourpaint_window(proc.pid, timeout=15.0, proc=proc)
+            try:
+                self.root.after(0, lambda: self._finish_embed(wid))
+            except (RuntimeError, tk.TclError):
+                pass
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _finish_embed(self, wid):
+        # The session may have been exited (or the app closed) while we were
+        # searching for the window.
+        if self._editor_frame is None or self._embed_frame is None:
+            return
+        if self._edit_proc is None or self._edit_proc.poll() is not None:
+            return
+
+        if not wid:
+            if self._embed_status is not None:
+                self._embed_status.config(
+                    text="Couldn't embed KolourPaint (your session may block "
+                         "window reparenting).\n\n"
+                         "It's open in a SEPARATE window — edit it, press Ctrl+S, "
+                         "then click \u201cSave & Continue\u201d.")
+            return
+
+        self.root.update_idletasks()
+        w = max(100, self._embed_frame.winfo_width())
+        h = max(100, self._embed_frame.winfo_height())
+        parent_id = self._embed_frame.winfo_id()
+        _reparent_window(wid, parent_id, w, h)
+        self._embedded_wid = wid
+
+        if self._embed_status is not None:
+            try:
+                self._embed_status.pack_forget()
+            except tk.TclError:
+                pass
+
+        # Re-assert geometry once it has mapped into our frame.
+        def _resize_again():
+            if self._embedded_wid and self._embed_frame is not None:
+                _resize_window(
+                    self._embedded_wid,
+                    max(100, self._embed_frame.winfo_width()),
+                    max(100, self._embed_frame.winfo_height()),
+                )
+
+        self.root.after(300, _resize_again)
+
+    def _on_embed_configure(self, event):
+        if self._embedded_wid:
+            _resize_window(self._embedded_wid,
+                           max(100, event.width), max(100, event.height))
+
+    def _set_editor_busy(self, msg: str):
+        for btn in (self._save_btn, self._exit_btn):
+            try:
+                if btn is not None:
+                    btn.config(state="disabled")
+            except tk.TclError:
+                pass
+        if self._embed_status is not None:
+            try:
+                self._embed_status.config(text=msg)
+            except tk.TclError:
+                pass
+
+    def _editor_save_and_continue(self):
+        if self._finalizing_edit:
+            return
+        self._finalizing_edit = True
+        self._set_editor_busy("Saving your edit…")
+
+        wid  = self._embedded_wid
+        proc = self._edit_proc
+
+        def worker():
+            # Best-effort: tell KolourPaint to save, give it time to flush.
+            try:
+                target = wid
+                if (not target and proc is not None
+                        and proc.poll() is None and _have_cmd("xdotool")):
+                    target = _wait_kolourpaint_window(proc.pid, timeout=3.0, proc=proc)
+                if target and _have_cmd("xdotool"):
+                    _send_ctrl_s(target)
+                    time.sleep(1.4)
+            except Exception:
+                pass
+            # Kill KolourPaint BEFORE the overlay (and its embed frame) are
+            # destroyed, so its reparented window doesn't die under it.
+            self._kill_edit_proc()
+            try:
+                self.root.after(0, self._finalize_save)
+            except (RuntimeError, tk.TclError):
+                pass
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _finalize_save(self):
+        self._finalizing_edit = False
+        edited_path  = self._edit_path
+        trim         = self._edit_trim
+        original_url = self._edit_original_url
+
+        self._teardown_editor_overlay()
+        self._edit_mode = False
+
+        if not edited_path or not Path(edited_path).exists():
+            self.status_var.set("Edit didn't save — please choose an option again.")
+            self._load_current()
+            return
+
+        # Resolve this local file for the rest of the session. (Downstream
+        # resolves local paths by existence, so no history.json write needed.)
+        self.history[edited_path] = edited_path
+
+        block = {original_url} if original_url else set()
+        self._commit_choice(edited_path, float(trim), block_urls=block)
+
+    def _editor_exit(self):
+        if self._finalizing_edit:
+            return
+        self._kill_edit_proc()
+
+        # Discard the working copy.
+        p = self._edit_path
+        if p:
+            try:
+                Path(p).unlink(missing_ok=True)
+            except Exception:
+                pass
+        self._edit_path = None
+
+        self._teardown_editor_overlay()
+        self._edit_mode = False
+        self.status_var.set("Edit discarded — pick one of the five options.")
+        self._load_current()
+
+    def _teardown_editor_overlay(self):
+        self._embedded_wid = None
+        self._save_btn     = None
+        self._exit_btn     = None
+        self._embed_status = None
+        self._embed_frame  = None
+        frame = self._editor_frame
+        self._editor_frame = None
+        if frame is not None:
+            try:
+                frame.destroy()
+            except tk.TclError:
+                pass
+
+    def _kill_edit_proc(self):
+        proc = self._edit_proc
+        self._edit_proc = None
+        if proc is None:
+            return
+        try:
+            if proc.poll() is None:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=3.0)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    try:
+                        proc.wait(timeout=2.0)
+                    except subprocess.TimeoutExpired:
+                        pass
+        except Exception:
+            pass
+
     def _purge_tk(self):
         """
         Tear the Tk interpreter down COMPLETELY, on the calling (main) thread.
@@ -564,6 +1238,9 @@ class _MediaReviewer:
         Dropping every PhotoImage reference and destroying root HERE forces all
         that finalization to happen now, on the main thread.
         """
+        # Kill any live KolourPaint FIRST so its reparented window doesn't get
+        # destroyed out from under the still-running process.
+        self._kill_edit_proc()
         self._stop_all_videos()
         for slot in (*getattr(self, "video_slots", []),
                      *getattr(self, "image_slots", [])):
@@ -596,6 +1273,9 @@ def _cleanup_unchosen(review_state, candidates_data, history_file, history_map):
     Update history.json on disk to drop the deleted entries.
 
     Pending items (still being reviewed) are intentionally not touched.
+    Edited images are NOT candidates, so they're never deleted here; the
+    original they were derived from may be (it's no longer needed once the
+    edited copy is the recorded pick).
     """
     chosen_urls: set[str] = set()
     for entry in review_state.values():
@@ -757,6 +1437,8 @@ def run_media_review(
     history_file: str,
     review_state_file: str,
     cache_dir: str = "CACHE",
+    regenerate_fn=None,
+    regenerable_texts=None,
 ) -> tuple[list[dict] | None, bool]:
     """
     Display the multi-candidate review GUI and return the final ordered footage
@@ -792,6 +1474,21 @@ def run_media_review(
 
     cache_dir : str
         Root cache dir (only used for printing manual-intervention paths).
+
+    regenerate_fn : callable | None
+        Optional ``regenerate_fn(script_text) -> list[{local_path: trim}] | None``.
+        When the user presses **R** on a scene, this is called (on a worker
+        thread) to re-run that scene's generator; its return value REPLACES the
+        scene's image candidates in the GUI. Return None if regeneration isn't
+        applicable or produced nothing. Intended for AI scenes (stickman /
+        ai_edit) — the caller owns deleting stale outputs and registering the
+        new files in history.json.
+
+    regenerable_texts : set[str] | None
+        Optional set of script_texts that support R. When given, R is gated to
+        those scenes (others show a hint and don't invoke the generator). When
+        None, every scene attempts regeneration and relies on `regenerate_fn`
+        returning None for the inapplicable ones.
 
     Returns
     -------
@@ -829,7 +1526,9 @@ def run_media_review(
     if pending:
         print(f"[review] {len(pending)} item(s) need review "
               f"({len(review_state)} already decided). Launching GUI…")
-        reviewer = _MediaReviewer(pending, history_map, review_state_file, review_state)
+        reviewer = _MediaReviewer(pending, history_map, review_state_file, review_state,
+                                  regenerate_fn=regenerate_fn,
+                                  regenerable_texts=regenerable_texts)
         # Tk teardown MUST finish on this (main) thread. If a later GC pass on a
         # worker thread (the stitcher's ThreadPoolExecutor) finalizes any
         # lingering Tcl-backed objects, the process dies with

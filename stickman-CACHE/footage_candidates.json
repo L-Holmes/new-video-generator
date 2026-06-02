@@ -2,10 +2,23 @@
     {
         "script_text": "If you open your kitchen cupboard right now,",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/32320840/13786036_2562_1440_60fps.mp4": 2.82
+                },
+                {
+                    "https://videos.pexels.com/video-files/6848731/6848731-uhd_4096_2160_25fps.mp4": 2.82
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_scenes/If_you_open_your_kitchen_cupboard_right__a2d9ba82_0.png": 2.82
+                    "https://images.pexels.com/photos/10167700/pexels-photo-10167700.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.82
+                },
+                {
+                    "https://images.pexels.com/photos/7195739/pexels-photo-7195739.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.82
+                },
+                {
+                    "https://images.pexels.com/photos/6510298/pexels-photo-6510298.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.82
                 }
             ]
         },
@@ -13,25 +26,103 @@
         "max_runtime_per_clip_seconds": 2.82
     },
     {
-        "script_text": "It costs about two",
+        "script_text": "you probably have a jar of nutmeg.",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/32320840/13786036_2562_1440_60fps.mp4": 1.9
+                },
+                {
+                    "https://videos.pexels.com/video-files/36983577/15667855_3840_2160_25fps.mp4": 1.9
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_scenes/It_costs_about_two_3f3701aa_0.png": 0.49
+                    "https://images.pexels.com/photos/4778354/pexels-photo-4778354.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
+                },
+                {
+                    "https://images.pexels.com/photos/33316024/pexels-photo-33316024.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
+                },
+                {
+                    "https://images.pexels.com/photos/8176604/pexels-photo-8176604.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 0.49
+        "max_runtime_per_clip_seconds": 1.9
+    },
+    {
+        "script_text": "It costs about",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/1797245/1797245-uhd_3840_2160_24fps.mp4": 0.82
+                },
+                {
+                    "https://videos.pexels.com/video-files/1797247/1797247-uhd_3840_2160_24fps.mp4": 0.82
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/17674674/pexels-photo-17674674.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.82
+                },
+                {
+                    "https://images.pexels.com/photos/3943718/pexels-photo-3943718.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.82
+                },
+                {
+                    "https://images.pexels.com/photos/3943717/pexels-photo-3943717.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.82
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.82
+    },
+    {
+        "script_text": "two dollars",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/1797245/1797245-uhd_3840_2160_24fps.mp4": 0.64
+                },
+                {
+                    "https://videos.pexels.com/video-files/1797247/1797247-uhd_3840_2160_24fps.mp4": 0.64
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/3943718/pexels-photo-3943718.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.64
+                },
+                {
+                    "https://images.pexels.com/photos/17674674/pexels-photo-17674674.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.64
+                },
+                {
+                    "https://images.pexels.com/photos/3943720/pexels-photo-3943720.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.64
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 0.64
     },
     {
         "script_text": "But in the 1600s, this little wrinkled seed was the single most contested resource on the planet.",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/28283517/12351606_3840_2160_30fps.mp4": 5.66
+                },
+                {
+                    "https://videos.pexels.com/video-files/16292155/16292155-uhd_3840_2160_60fps.mp4": 5.66
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_scenes/But_in_the_1600s_this_little_wrinkled_se_c469ba9e_0.png": 5.66
+                    "https://images.pexels.com/photos/35339664/pexels-photo-35339664.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.66
+                },
+                {
+                    "https://images.pexels.com/photos/1471387/pexels-photo-1471387.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.66
+                },
+                {
+                    "https://images.pexels.com/photos/13093699/pexels-photo-13093699.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.66
                 }
             ]
         },
@@ -41,22 +132,23 @@
     {
         "script_text": "It was worth more than its weight in gold.",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/5847832/5847832-hd_1920_1080_30fps.mp4": 2.2
+                },
+                {
+                    "https://videos.pexels.com/video-files/6275141/6275141-uhd_4096_2160_30fps.mp4": 2.2
+                }
+            ],
             "images": [
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/1/11/Gold_Ingot_100g_Perth_Mint.JPG": 2.2
+                    "https://images.pexels.com/photos/8442325/pexels-photo-8442325.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.2
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/c/c6/Gold_bullion_2.jpg": 2.2
+                    "https://images.pexels.com/photos/346547/pexels-photo-346547.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.2
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/a/ad/Kinebar3.jpg": 2.2
-                },
-                {
-                    "https://upload.wikimedia.org/wikipedia/commons/0/02/Zwei_Goldbarren.JPG": 2.2
-                },
-                {
-                    "https://upload.wikimedia.org/wikipedia/commons/d/d3/Gold_Bar%2C_WA_-_Gateway_Community_Park_gazebo_%28June_2025%29.jpg": 2.2
+                    "https://images.pexels.com/photos/342946/pexels-photo-342946.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.2
                 }
             ]
         },
@@ -116,12 +208,51 @@
         "max_runtime_per_clip_seconds": 5.46
     },
     {
-        "script_text": "sailing for months, surviving",
+        "script_text": "If you were a European merchant, getting it meant",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/36061048/15293099_2560_1440_30fps.mp4": 1.82
+                },
+                {
+                    "https://videos.pexels.com/video-files/36229324/15364136_1920_1080_30fps.mp4": 1.82
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_scenes/sailing_for_months_surviving_25508570_0.png": 1.64
+                    "https://images.pexels.com/photos/35531243/pexels-photo-35531243.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.82
+                },
+                {
+                    "https://images.pexels.com/photos/9328777/pexels-photo-9328777.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.82
+                },
+                {
+                    "https://images.pexels.com/photos/6199455/pexels-photo-6199455.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.82
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.82
+    },
+    {
+        "script_text": "sailing for months, surviving",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/4327087/4327087-hd_1920_1080_24fps.mp4": 1.64
+                },
+                {
+                    "https://videos.pexels.com/video-files/35230430/14925951_2560_1440_30fps.mp4": 1.64
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/6195223/pexels-photo-6195223.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.64
+                },
+                {
+                    "https://images.pexels.com/photos/27683225/pexels-photo-27683225.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.64
+                },
+                {
+                    "https://images.pexels.com/photos/34701678/pexels-photo-34701678.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.64
                 }
             ]
         },
@@ -131,10 +262,23 @@
     {
         "script_text": "scurvy,",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/35402920/14999856_1920_1080_25fps.mp4": 0.6
+                },
+                {
+                    "https://videos.pexels.com/video-files/34324796/14541575_3840_2160_25fps.mp4": 0.6
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_joint_scenes/scurvy_fe1e3862_0.png": 0.6
+                    "https://images.pexels.com/photos/28830024/pexels-photo-28830024.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.6
+                },
+                {
+                    "https://images.pexels.com/photos/4588841/pexels-photo-4588841.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.6
+                },
+                {
+                    "https://images.pexels.com/photos/13757260/pexels-photo-13757260.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.6
                 }
             ]
         },
@@ -144,10 +288,23 @@
     {
         "script_text": "pirates and",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/5983913/5983913-uhd_3840_2160_25fps.mp4": 0.86
+                },
+                {
+                    "https://videos.pexels.com/video-files/2836292/2836292-uhd_3840_2160_24fps.mp4": 0.86
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_joint_scenes/pirates_and_af957ef8_0.png": 0.86
+                    "https://images.pexels.com/photos/9570297/pexels-photo-9570297.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.86
+                },
+                {
+                    "https://images.pexels.com/photos/3660228/pexels-photo-3660228.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.86
+                },
+                {
+                    "https://images.pexels.com/photos/28297306/pexels-photo-28297306.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.86
                 }
             ]
         },
@@ -157,10 +314,23 @@
     {
         "script_text": "shipwrecks. But if you made it back with a",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/10194440/10194440-hd_1920_1080_30fps.mp4": 1.98
+                },
+                {
+                    "https://videos.pexels.com/video-files/31841062/13564856_3840_2160_60fps.mp4": 1.98
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_joint_scenes/shipwrecks_But_if_you_made_it_back_with__93f0a032_0.png": 1.98
+                    "https://images.pexels.com/photos/36253411/pexels-photo-36253411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.98
+                },
+                {
+                    "https://images.pexels.com/photos/8130517/pexels-photo-8130517.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.98
+                },
+                {
+                    "https://images.pexels.com/photos/8130520/pexels-photo-8130520.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.98
                 }
             ]
         },
@@ -170,10 +340,23 @@
     {
         "script_text": "single ship full of nutmeg, you were set for life.",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/34228530/14506265_3840_2160_60fps.mp4": 2.34
+                },
+                {
+                    "https://videos.pexels.com/video-files/5703392/5703392-uhd_3840_2160_30fps.mp4": 2.34
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_scenes/single_ship_full_of_nutmeg_you_were_set__8a862210_0.png": 2.34
+                    "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.34
+                },
+                {
+                    "https://images.pexels.com/photos/27683225/pexels-photo-27683225.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.34
+                },
+                {
+                    "https://images.pexels.com/photos/8166101/pexels-photo-8166101.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.34
                 }
             ]
         },
@@ -183,10 +366,23 @@
     {
         "script_text": "The Dutch and the British fought bloody, brutal wars over these tiny islands.",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/6731286/6731286-hd_1920_1080_25fps.mp4": 3.72
+                },
+                {
+                    "https://videos.pexels.com/video-files/7117255/7117255-uhd_4096_2160_25fps.mp4": 3.72
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_scenes/The_Dutch_and_the_British_fought_bloody__94318276_0.png": 3.72
+                    "https://images.pexels.com/photos/37573755/pexels-photo-37573755.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
+                },
+                {
+                    "https://images.pexels.com/photos/34062176/pexels-photo-34062176.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
+                },
+                {
+                    "https://images.pexels.com/photos/29319297/pexels-photo-29319297.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
                 }
             ]
         },
@@ -196,10 +392,23 @@
     {
         "script_text": "In fact, to secure a monopoly on nutmeg, the Dutch formally traded a different island they owned to the British. That island was ",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/7977620/7977620-hd_1920_1080_30fps.mp4": 6.06
+                },
+                {
+                    "https://videos.pexels.com/video-files/7841593/7841593-hd_1920_1080_30fps.mp4": 6.06
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_scenes/In_fact_to_secure_a_monopoly_on_nutmeg_t_5ed929a6_0.png": 6.06
+                    "https://images.pexels.com/photos/51343/old-letters-old-letter-handwriting-51343.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.06
+                },
+                {
+                    "https://images.pexels.com/photos/7386039/pexels-photo-7386039.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.06
+                },
+                {
+                    "https://images.pexels.com/photos/5102219/pexels-photo-5102219.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 6.06
                 }
             ]
         },
@@ -209,14 +418,53 @@
     {
         "script_text": "Manhattan. Yep... New York City was",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/853836/853836-hd_1920_1080_25fps.mp4": 2.48
+                },
+                {
+                    "https://videos.pexels.com/video-files/4467019/4467019-hd_1920_1080_30fps.mp4": 2.48
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_scenes/Manhattan_Yep_New_York_City_was_d05b1254_0.placeholder.png": 2.48
+                    "https://images.pexels.com/photos/8569166/pexels-photo-8569166.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.48
+                },
+                {
+                    "https://images.pexels.com/photos/1461370/pexels-photo-1461370.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.48
+                },
+                {
+                    "https://images.pexels.com/photos/12327112/pexels-photo-12327112.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.48
                 }
             ]
         },
         "num_clips_needed": 1,
         "max_runtime_per_clip_seconds": 2.48
+    },
+    {
+        "script_text": "traded for nutmeg.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/34863442/14774902_2560_1440_30fps.mp4": 1.26
+                },
+                {
+                    "https://videos.pexels.com/video-files/28283516/12351476_3840_2160_30fps.mp4": 1.26
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/5769700/pexels-photo-5769700.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
+                },
+                {
+                    "https://images.pexels.com/photos/17870116/pexels-photo-17870116.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
+                },
+                {
+                    "https://images.pexels.com/photos/35339664/pexels-photo-35339664.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.26
     }
 ]

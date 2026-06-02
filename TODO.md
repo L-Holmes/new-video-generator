@@ -1,27 +1,9 @@
 
-I want to update the media review stage:
-- currently you can choose 1,2,3,4,5.
-    -> I want another option... if I press 'e', that will bring it into edit mode.
-    (something will change on screen to indicate that... e.g. like blue outlines or something)
-so then.. I choose a number as usual (or press 'e' again to toggle off edit mode)
-
-If edit mode is selected after I choose something:
-- It will pause the editting.
-- either it opens a new window, or changes the actual edit window itself (preferred but I suspect that isn't possible! -- i would really like the kolourpaint to be put in the window! or some other paint clone!)
-- E.g. so I'm on debian 13, so I'll want it to open the selected picture in kolourPaint. (have some check to ensure it is already installed... or exit and tell user to install it..)
-    --> in an ideal world, there would still be some ui around the kolour paint window allowing the user to:
-        - Exit (returns back to choosing from the original 5 options)
-        - save & continue (saves that editted image... continues with the media review onto the next one...)
-
-
----
-THEN EXTEND BY DOINOG THIS:
-
-
-    Also, I'd like another option...
-    'r' enters 'try again' mode...
-    then for ai images or ai edits, it simply runs them again...
-    for stock footage... it will fetch more previously unseen (I don't know if that's possible with pexels.. e.g. to get like results 4 through 7... (rather than 1 through 3 as it does by default...))
+TODO:
+- test the new regenerate mode (and perhaps edit mode again...)
+    - add more credits to fal...
+    - remove the cache...
+    - try again...
 
 ---
 

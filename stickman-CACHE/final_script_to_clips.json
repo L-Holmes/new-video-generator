@@ -3,15 +3,31 @@
         "script_text": "If you open your kitchen cupboard right now,",
         "footage": [
             {
-                "stickman-CACHE/stickman_scenes/If_you_open_your_kitchen_cupboard_right__a2d9ba82_0.png": 2.82
+                "https://videos.pexels.com/video-files/6848731/6848731-uhd_4096_2160_25fps.mp4": 2.82
             }
         ]
     },
     {
-        "script_text": "It costs about two",
+        "script_text": "you probably have a jar of nutmeg.",
         "footage": [
             {
-                "stickman-CACHE/stickman_scenes/It_costs_about_two_3f3701aa_0.png": 0.49
+                "stickman-CACHE/stock_footage/edited-02e0bdd11a.png": 1.9
+            }
+        ]
+    },
+    {
+        "script_text": "It costs about",
+        "footage": [
+            {
+                "https://videos.pexels.com/video-files/1797247/1797247-uhd_3840_2160_24fps.mp4": 0.82
+            }
+        ]
+    },
+    {
+        "script_text": "two dollars",
+        "footage": [
+            {
+                "https://videos.pexels.com/video-files/1797247/1797247-uhd_3840_2160_24fps.mp4": 0.64
             }
         ]
     },
@@ -19,7 +35,7 @@
         "script_text": "But in the 1600s, this little wrinkled seed was the single most contested resource on the planet.",
         "footage": [
             {
-                "stickman-CACHE/stickman_scenes/But_in_the_1600s_this_little_wrinkled_se_c469ba9e_0.png": 5.66
+                "https://videos.pexels.com/video-files/16292155/16292155-uhd_3840_2160_60fps.mp4": 5.66
             }
         ]
     },
@@ -27,7 +43,7 @@
         "script_text": "It was worth more than its weight in gold.",
         "footage": [
             {
-                "stickman-CACHE/stickman_explain_scenes/explain_000_It_was_worth_more_than_its_weight_in_gold.mp4": 2.2
+                "https://videos.pexels.com/video-files/6275141/6275141-uhd_4096_2160_30fps.mp4": 2.2
             }
         ]
     },
@@ -43,98 +59,7 @@
         "script_text": "The Banda Islands. A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.",
         "footage": [
             {
-                "stickman-CACHE/stickman_explain_scenes/explain_001_The_Banda_Islands_A_tiny_incredibly_remote_volcani.mp4": 5.46
-            }
-        ]
-    },
-    {
-        "script_text": "sailing for months, surviving",
-        "footage": [
-            {
-                "stickman-CACHE/stickman_scenes/sailing_for_months_surviving_25508570_0.png": 1.64
-            }
-        ]
-    },
-    {
-        "script_text": "single ship full of nutmeg, you were set for life.",
-        "footage": [
-            {
-                "stickman-CACHE/stickman_scenes/single_ship_full_of_nutmeg_you_were_set__8a862210_0.png": 2.34
-            }
-        ]
-    },
-    {
-        "script_text": "The Dutch and the British fought bloody, brutal wars over these tiny islands.",
-        "footage": [
-            {
-                "stickman-CACHE/stickman_scenes/The_Dutch_and_the_British_fought_bloody__94318276_0.png": 3.72
-            }
-        ]
-    },
-    {
-        "script_text": "In fact, to secure a monopoly on nutmeg, the Dutch formally traded a different island they owned to the British. That island was ",
-        "footage": [
-            {
-                "stickman-CACHE/stickman_scenes/In_fact_to_secure_a_monopoly_on_nutmeg_t_5ed929a6_0.png": 6.06
-            }
-        ]
-    },
-    {
-        "script_text": "Manhattan. Yep... New York City was",
-        "footage": [
-            {
-                "stickman-CACHE/stickman_scenes/Manhattan_Yep_New_York_City_was_d05b1254_0.placeholder.png": 2.48
-            }
-        ]
-    },
-    {
-        "script_text": "you probably have a jar of nutmeg.",
-        "footage": [
-            {
-                "stickman-CACHE/ai_edit_scenes/you_probably_have_a_jar_of_nutmeg_09589fbb_0.png": 1.9
-            }
-        ]
-    },
-    {
-        "script_text": "two",
-        "footage": [
-            {
-                "stickman-CACHE/ai_edit_scenes/two_b8a9f715_0.png": 0.49
-            }
-        ]
-    },
-    {
-        "script_text": "dollars.",
-        "footage": [
-            {
-                "stickman-CACHE/ai_edit_scenes/dollars_2a422c7b_0.png": 0.49
-            }
-        ]
-    },
-    {
-        "script_text": "scurvy,",
-        "footage": [
-            {
-                "stickman-CACHE/joint_scenes/group_0/stage_01_of_03_loop.mp4": 0.6
-            }
-        ]
-    },
-    {
-        "script_text": "pirates and",
-        "footage": [
-            {
-                "stickman-CACHE/joint_scenes/group_0/stage_02_of_03_loop.mp4": 0.86
-            }
-        ]
-    },
-    {
-        "script_text": "shipwrecks. But if you made it back with a",
-        "footage": [
-            {
-                "stickman-CACHE/joint_scenes/group_0/stage_03_of_03.mp4": 0.65
-            },
-            {
-                "stickman-CACHE/joint_scenes/group_0/stage_03_of_03_loop.mp4": 1.33
+                "https://videos.pexels.com/video-files/31974302/13624646_1920_1080_30fps.mp4": 5.46
             }
         ]
     },
@@ -142,7 +67,71 @@
         "script_text": "If you were a European merchant, getting it meant",
         "footage": [
             {
-                "stickman-CACHE/read_out_scenes/read_out_000_If_you_were_a_European_merchant_getting_it_meant.mp4": 1.82
+                "https://videos.pexels.com/video-files/36061048/15293099_2560_1440_30fps.mp4": 1.82
+            }
+        ]
+    },
+    {
+        "script_text": "sailing for months, surviving",
+        "footage": [
+            {
+                "https://images.pexels.com/photos/27683225/pexels-photo-27683225.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.64
+            }
+        ]
+    },
+    {
+        "script_text": "scurvy,",
+        "footage": [
+            {
+                "https://images.pexels.com/photos/28830024/pexels-photo-28830024.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.6
+            }
+        ]
+    },
+    {
+        "script_text": "pirates and",
+        "footage": [
+            {
+                "https://images.pexels.com/photos/9570297/pexels-photo-9570297.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.86
+            }
+        ]
+    },
+    {
+        "script_text": "shipwrecks. But if you made it back with a",
+        "footage": [
+            {
+                "https://images.pexels.com/photos/36253411/pexels-photo-36253411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.98
+            }
+        ]
+    },
+    {
+        "script_text": "single ship full of nutmeg, you were set for life.",
+        "footage": [
+            {
+                "https://videos.pexels.com/video-files/5703392/5703392-uhd_3840_2160_30fps.mp4": 2.34
+            }
+        ]
+    },
+    {
+        "script_text": "The Dutch and the British fought bloody, brutal wars over these tiny islands.",
+        "footage": [
+            {
+                "https://images.pexels.com/photos/37573755/pexels-photo-37573755.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.72
+            }
+        ]
+    },
+    {
+        "script_text": "In fact, to secure a monopoly on nutmeg, the Dutch formally traded a different island they owned to the British. That island was ",
+        "footage": [
+            {
+                "https://videos.pexels.com/video-files/7977620/7977620-hd_1920_1080_30fps.mp4": 6.06
+            }
+        ]
+    },
+    {
+        "script_text": "Manhattan. Yep... New York City was",
+        "footage": [
+            {
+                "https://images.pexels.com/photos/12327112/pexels-photo-12327112.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.48
             }
         ]
     },
@@ -150,7 +139,7 @@
         "script_text": "traded for nutmeg.",
         "footage": [
             {
-                "stickman-CACHE/text_overlay_scenes/text_overlay_018_traded_for_nutmeg.mp4": 1.26
+                "https://videos.pexels.com/video-files/34863442/14774902_2560_1440_30fps.mp4": 1.26
             }
         ]
     }

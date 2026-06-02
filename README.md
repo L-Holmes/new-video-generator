@@ -114,6 +114,8 @@ Image folder structure
 # prereqs
 uv pip install faster-whisper num2words
 
+sudo apt install xdotool -y 
+
 
 # recording
 

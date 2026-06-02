@@ -1386,6 +1386,98 @@ def generate_stickman_joint_candidates(
     return bundles
 
 
+def _regenerate_stickman_scene(
+    script_text: str,
+    script_to_search_term: dict[str, SearchTermData],
+) -> list[dict] | None:
+    """
+    Re-run the stickman generator for ONE scene → fresh image candidates
+    ([{path: trim}, ...]) for the review GUI's 'try again' (R).
+
+    Deletes this scene's existing variant + placeholder PNGs so the generator
+    actually re-renders it (it skips files that already exist); every OTHER
+    stickman scene keeps its cached image.
+    """
+    from ai_generate_stickman_images import generate_stickman_images, _scene_stem
+
+    stem = _scene_stem(script_text)
+    for v in range(STICKMAN_NUM_VARIANTS):
+        for fname in (f"{stem}_{v}.png", f"{stem}_{v}.placeholder.png"):
+            try:
+                (STICKMAN_OUTPUT_DIR / fname).unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    generated = generate_stickman_images(
+        prompts_file=STICKMAN_PROMPTS_FILE,
+        out_dir=STICKMAN_OUTPUT_DIR,
+        num_variants=STICKMAN_NUM_VARIANTS,
+        context_num_images=STICKMAN_CONTEXT_NUM_IMAGES,
+    )
+
+    paths = generated.get(script_text)
+    if not paths:                                   # stripped-key fallback
+        for k, v in generated.items():
+            if k.strip() == script_text.strip():
+                paths = v
+                break
+    paths = [p for p in (paths or []) if Path(p).exists()]
+    if not paths:
+        print(f"[regen] stickman produced nothing for '{script_text[:60]}'")
+        return None
+
+    scene_timings = _load_scene_timings()
+    duration = round(float(scene_timings[script_text]), 3)
+
+    history = _load_history()                       # identity entries so lookups resolve
+    for p in paths:
+        history.setdefault(p, p)
+    _save_history(history)
+
+    print(f"[regen] stickman '{script_text[:50]}' → {len(paths)} new option(s)")
+    return [{p: duration} for p in paths]
+
+
+def _regenerate_ai_edit_scene(
+    edit_text: str,
+    script_to_search_term: dict[str, SearchTermData],
+    final_data: list[dict],
+    cand_cache: str,
+) -> list[dict] | None:
+    """
+    Re-run the ai_edit generator for ONE edit scene → fresh image candidates
+    for the review GUI's 'try again' (R).
+
+    Deletes this edit's existing variant + placeholder PNGs (the generator
+    skips existing files), rebuilds the candidates from the CURRENT final_data
+    (same base/context the user is reviewing), and refreshes the per-edit
+    candidate cache so a later resume uses the new images.
+    """
+    from ai_generate_stickman_images import _scene_stem
+
+    stem = _scene_stem(edit_text)
+    for v in range(AI_EDIT_NUM_VARIANTS):
+        for fname in (f"{stem}_{v}.png", f"{stem}_{v}.placeholder.png"):
+            try:
+                (AI_EDIT_OUTPUT_DIR / fname).unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    bundles = build_ai_edit_candidates_for_target(
+        script_to_search_term=script_to_search_term,
+        final_data=final_data,
+        target_text=edit_text,
+    )
+    if not bundles:
+        print(f"[regen] ai_edit produced nothing for '{edit_text[:60]}'")
+        return None
+
+    save_to_cache(bundles, cand_cache)              # keep resume in sync
+    images = bundles[0].get("candidates", {}).get("images") or None
+    if images:
+        print(f"[regen] ai_edit '{edit_text[:50]}' → {len(images)} new option(s)")
+    return images
+
 
 def build_ai_edit_candidates_for_target(
     script_to_search_term: dict[str, SearchTermData],
@@ -1558,12 +1650,26 @@ def run_ai_edit_stage(
 
         # Review THIS edit (blocking; returns after the user picks).
         print(f"[ai_edit stage]   launching review GUI for this edit...")
+
+        def _regen_edit(script_text: str, _t=edit_text, _cc=cand_cache) -> list[dict] | None:
+            if script_text != _t:
+                return None
+            return _regenerate_ai_edit_scene(
+                edit_text=_t,
+                script_to_search_term=script_to_search_term,
+                final_data=final_data,
+                cand_cache=_cc,
+            )
+
         edit_final, has_manual = run_media_review(
             candidates_data=bundles,
             history_file=str(HISTORY_FILE),
             review_state_file=state_file,
             cache_dir=_CACHE_DIR,
+            regenerate_fn=_regen_edit,
+            regenerable_texts={edit_text},
         )
+
         if has_manual:
             print(f"\n[ai_edit stage] Exiting for manual fixes (scene #{idx}). "
                   f"Re-run to resume from here.")
@@ -2805,11 +2911,24 @@ def main() -> None:
         if scriptTextToPexelSearch.get(c["script_text"], {}).get("search_type")
            not in _excluded_from_review
     ]
+
+    _stickman_texts = {
+        t for t, d in scriptTextToPexelSearch.items()
+        if d.get("search_type") == MediaType.STICKMAN
+    }
+
+    def _regen_stage1(script_text: str) -> list[dict] | None:
+        if script_text not in _stickman_texts:
+            return None
+        return _regenerate_stickman_scene(script_text, scriptTextToPexelSearch)
+
     final_data, has_manual = run_media_review(
         candidates_data=non_edit_candidates,
         history_file=str(HISTORY_FILE),
         review_state_file=REVIEW_STOCK_FOOTAGE_OUTPUT_FILE,
         cache_dir=_CACHE_DIR,
+        regenerate_fn=_regen_stage1,
+        regenerable_texts=_stickman_texts,
     )
     if has_manual:
         print("\n[main] Exiting so you can perform the manual fixes above.")
@@ -2934,6 +3053,12 @@ def main() -> None:
     print("====================================================================")
     print("Stitching final video...")
     gc.collect()
+
+    # Some upstream stages only write this conditionally; guarantee it exists
+    # so the stitcher can always load the latest picks.
+    save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
+    print(f"💾 Final clip map → {FINAL_SCRIPT_AND_CLIPS}")
+
     stitch_together_video(
         FINAL_SCRIPT_AND_CLIPS,
         TIMESTAMPS_ABSOLUTE_FILE,
