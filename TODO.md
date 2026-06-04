@@ -1,86 +1,39 @@
 
-rm -f  "stickman-CACHE/stock_footage/review_accepting_footage.json" \
-       "stickman-CACHE/stock_footage/review_accepting_edits_"*.json \
-       "stickman-CACHE/edit_candidates_"*.json \
-       "stickman-CACHE/final_script_to_clips.json" \
-       "stickman-CACHE/footage_candidates.json"
+
+find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
 
 
 
 
-TODO:
-- test the most recent.
-    - if it doesn't work: fix
-- if it does work:
-    - consider adding on the mentoined additions... (do i let them add on the sticker multiple times?????)
+- consider adding on the mentoined additions... (do i let them add on the sticker multiple times?????)
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 
-# SECOND (SEPERATE) TASK. (In progress)
-create a new option for the class MediaType(Enum):...
-    (and thus for the script_to_search_term.json...)
+NEXT:
+extend the current manual_stock_add_to_previous method to allow for multiple images to be added, as default behaviour (not just one)
+...
+- add a way to:
+    - easily make the replicas... i.e. the picture thing... 
+    ---> I guess that would just be a variation of the current thing we already have with layering an image on top.
+    ---> But this time, after clicking, you can just keep clicking, adding multiple, even of different sizes if you want...
+    ---> then it layers them all together... 
+    (the undo will act on the prevoius one, so you can keep pressing that to undo everything...)
 
-I should be 'manual_stock_add_to_previous'
-
-
-Essentially, it lets you put stock image inside of another stock image.
-- It takes the previous image/stock
-- then adds the current selected stock into that image.
-
-
-It bring up a review window:
-- at the top right, is a small preview of the current stock which will be added.
-- at the right, under the image preview, there is a control to allow you to increase the size of the image 
-    - there will be a sort of dashed line box representing the size of that. Max size will be 80% of screen.
-    - user can click a big plus or big minus in order to increase or decrease the size by 5%...
-    - increases by increments of 5%. Or user can click text box and type in a custom amount which must be an integer between 1 and 80 inclusive. (representing the image width relative to the width of the full image its being placed inside of)
-- user then uses their mouse to click somewhere on the image.
-    --> It will then layer on the image at the given size, centred at the given spot.
-    --> user then accepts or rejects.
-    - if they accept, it of course goes onto the next one
-    - To note: If you could easily show a preview of the size of the image preview that would be great! (i.e. to show the user where they are placing the image).. although I don't know if that is easily possible...
-    - if they reject, it will show where the original image, ideall with a box outline of where they clicked last time, in the correct size... 
-        -> they can then click again, or of course press some key to exit and return back...
+in fact yes, just to clarify, this will be the new default behaviour...
+--> so in the new one, you click to add it, and then it will say like '1 added' in the sidebar..
+--> and then it just adds it, and lets you continue clicking to add more...
+--> then you press done when you are finished...
 
 
-
-e.g. the script_to_search_term.json may have entires like:
-    {
-    ...
-    "If you open your kitchen cupboard right now,": {
-    "search_term": "kitchen cupboard open",
-    "search_type": "stickman",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "you probably have a jar of nutmeg.": {
-    "search_term": "jar of nutmeg",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
-    "sfx": "se-pop.mp3",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-
-  In this case, it would show the stock footage / image of the kitchen cupboard open... and then the user will click where the want the jar of nutmeg to be placed.
-
-
-To note:
-- the actual manual user input of where to place the [jar of nutmeg] will happen after all of the stock / ai edits have taken place / been selected.
-    - so the choosing of the stock (this already exists), and then this layering will be seperate stages...
-
-
+------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 hmmm
 
 
 OOH! May be also nice to:
+new media type: static-of-previous
 - if it is stock footage, 
     - have an option to 'get still, and then edit still in [the current scene] [i..e the scene after the stock footage]
     be able to press a button to stop it at the point they want a screenshot to be taken.
@@ -91,16 +44,6 @@ OOH! May be also nice to:
 
     -> to note, if they don't choose that, just use the stock footage as is, and layer the image onto the video background... (this is default!)
 
-------------------------------------------------------------------------------------------------------------------
-# THIRD THING
-
-
-change the code:
-
-try fetching like 2 wikipedia images by default... when the type is stock... (or one of the stock sub variants...)
-    --> and then if I manage to get two... then show 2 pexels images, and 2 wikipedia images... 
-    --> so then we will be fetching less pixels...
-    --> and we will need to increase the number of images that are shown in the STOCK_FOOTAGE_REVIEW.py...
 
 ------------------------------------------------------------------------------------------------------------------
 
@@ -115,6 +58,18 @@ Am I currently passing everything through the 256 pixelisaition??
 Hmmmmm..
 Do i add an easy way to have specficialy styled text? e.g. at a slight rotated angle and in that pixellated style? 
     -> and then anything else I would commonly do like adding arrows that have a certain appearance? (or anything else like that???)
+
+------
+Hmmmmm....
+what do i do if all of the stock images are just terrible?
+--> Like there isn't just a jar of nutmeg or a cupboard...
+
+0----
+Hmmmm.
+
+there is an issue with the ai image generation...
+I feel it actually just gets more confused when i add more reference images?
+(or maybe im wrong... not sure...)
 
 -----
 
