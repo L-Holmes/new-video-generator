@@ -69,6 +69,11 @@ At the end of every GUI session we sweep all DECIDED items: any candidate URL
 that was downloaded but not chosen gets its file deleted and its entry pulled
 from history.json. Pending (still-undecided) items are not touched.
 Edited images are NOT candidates, so cleanup never deletes them.
+
+E              → toggle EDIT MODE (blue outlines appear on editable images)
+B              → toggle REMOVE-BG MODE (teal outlines; cut out an image's bg)
+R              → re-generate this scene's options (AI scenes only)
+F or BACKSPACE → reject all → mark scene for MANUAL INTERVENTION
 """
 
 from __future__ import annotations
@@ -87,7 +92,7 @@ from pathlib import Path
 from tkinter import messagebox
 from uuid import uuid4
 
-from PIL import Image, ImageTk
+from PIL import Image, ImageDraw, ImageTk
 
 
 # ── DISPLAY CONSTANTS ─────────────────────────────────────────────────────────
@@ -109,6 +114,7 @@ SLOT_BG     = "#0f1626"
 DISABLED_BG = "#2a2a3a"
 CHOSEN_BG   = "#2ecc71"
 EDIT_OUTLINE = "#3498db"   # blue ring shown on editable slots in edit mode
+REMOVE_BG_OUTLINE = "#16a085"   # teal ring shown on editable slots in remove-bg mode
 
 FONT_MONO  = ("Courier New", 13)
 FONT_UI    = ("Segoe UI", 11)
@@ -157,6 +163,24 @@ def _resolve_local(url: str, history: dict) -> str | None:
     p = history.get(url)
     return p if p and Path(p).exists() else None
 
+def _rembg_available() -> bool:
+    """True if the rembg package is importable (without importing it yet)."""
+    import importlib.util
+    return importlib.util.find_spec("rembg") is not None
+
+
+def _remove_background_to_file(source_local: str) -> str:
+    """
+    rembg-cut `source_local` → a sibling `nobg-<hash>.png` (RGBA); return its
+    path. Module-level so it's trivially callable from a worker thread. Uses
+    REMOVE_BACKGROUND.remove_background (same library the joint compositor
+    uses). The cut-out is NOT a candidate, so review cleanup never deletes it
+    (only the original it derived from may be culled).
+    """
+    from REMOVE_BACKGROUND import remove_background
+    src = Path(source_local)
+    out = src.parent / f"nobg-{uuid4().hex[:10]}.png"
+    return remove_background(str(src), str(out))
 
 # ── EDIT-MODE / KOLOURPAINT (X11 EMBED) HELPERS ────────────────────────────────
 # These shell out to `xdotool` to reparent KolourPaint's X11 window into a Tk
@@ -418,6 +442,23 @@ class _MediaReviewer:
         self._regen_estimate    = None            # estimated total seconds | None
         self._regen_n           = 0               # expected image count
 
+        # ── Remove-background ("B") state ─────────────────────────────────
+        # B arms remove-bg mode (parallels edit mode). Picking an image then
+        # runs rembg on a worker thread behind a busy overlay; the result is
+        # previewed with Accept / Edit / Reject.
+        self._remove_bg_mode          = False
+        self._bg_busy_frame           = None   # "Removing background…" cover
+        self._busy_spin_canvas        = None
+        self._busy_spin_arc           = None
+        self._busy_spin_angle         = 0
+        self._busy_after              = None   # scheduled spinner after() id
+        self._bg_result_frame         = None   # Accept/Edit/Reject preview
+        self._bg_removed_path         = None   # the rembg PNG (RGBA)
+        self._bg_pending_original_url = None   # candidate the cut-out derived from
+        self._bg_pending_trim         = 0.0
+        self._bg_source_local         = None
+
+
         # Tk
         self.root = tk.Tk()
         self.root.title("Media Review — Multi-Candidate")
@@ -485,6 +526,7 @@ class _MediaReviewer:
                  text="1 / 2 = video    "
                       "3 / 4 / 5 = image    "
                       "E = edit    "
+                      "B = remove bg    "
                       "R = try again (AI)    "
                       "F / BACKSPACE = manual",
                  bg=BG, fg=TEXT_COL, font=("Segoe UI", 10)).pack(pady=(2, 2))
@@ -525,6 +567,8 @@ class _MediaReviewer:
             self.root.bind(n, lambda e, k=n: self._on_select(int(k)))
         for k in ("e", "E"):
             self.root.bind(k, lambda e: self._toggle_edit_mode())
+        for k in ("b", "B"):
+            self.root.bind(k, lambda e: self._toggle_remove_bg_mode())
         for k in ("r", "R"):
             self.root.bind(k, lambda e: self._on_try_again())
         for k in ("f", "F"):
@@ -765,32 +809,46 @@ class _MediaReviewer:
     # ── Edit-mode visuals ────────────────────────────────────────────────────
 
     def _apply_edit_mode_visuals(self):
-        """Show/hide the blue banner + outline editable image slots."""
-        on = self._edit_mode
+        """Show/hide the banner + outline editable image slots for whichever
+        mode (edit OR remove-bg) is active. Same name as before so existing
+        call sites are untouched; it now covers both modes."""
+        edit_on = self._edit_mode
+        bg_on   = self._remove_bg_mode
 
-        if on:
+        if edit_on:
             self.edit_banner.config(
                 text="✏  EDIT MODE — press an image key (3 / 4 / 5) to edit it "
                      "in KolourPaint    ·    press E to cancel",
                 bg=EDIT_OUTLINE, fg="white",
             )
+        elif bg_on:
+            self.edit_banner.config(
+                text="✂  REMOVE-BG MODE — press an image key (3 / 4 / 5) to cut "
+                     "out its background    ·    press B to cancel",
+                bg=REMOVE_BG_OUTLINE, fg="white",
+            )
         else:
             self.edit_banner.config(text="", bg=BG)
 
+        outline = EDIT_OUTLINE if edit_on else REMOVE_BG_OUTLINE
+        show    = edit_on or bg_on
         for slot in (*self.video_slots, *self.image_slots):
             try:
-                if on and slot.slot_num in self._editable_slots:
+                if show and slot.slot_num in self._editable_slots:
                     slot.config(highlightthickness=3,
-                                highlightbackground=EDIT_OUTLINE,
-                                highlightcolor=EDIT_OUTLINE)
+                                highlightbackground=outline,
+                                highlightcolor=outline)
                 else:
                     slot.config(highlightthickness=0)
             except tk.TclError:
                 pass
 
     def _toggle_edit_mode(self):
-        # Ignore while transitioning or while an edit session is open.
-        if self._advancing or self._editor_frame is not None:
+        # Ignore while transitioning, an edit session is open, or a remove-bg
+        # overlay is up.
+        if (self._advancing or self._editor_frame is not None
+                or self._bg_result_frame is not None
+                or self._bg_busy_frame is not None):
             return
 
         if not self._edit_mode:
@@ -806,6 +864,7 @@ class _MediaReviewer:
                 self.status_var.set("KolourPaint isn't installed — see the dialog.")
                 return
             self._edit_mode = True
+            self._remove_bg_mode = False        # the two modes are exclusive
             if not _have_cmd("xdotool"):
                 self.status_var.set(
                     "Edit mode ON — note: install 'xdotool' "
@@ -1056,6 +1115,9 @@ class _MediaReviewer:
         if self._editor_frame is not None:
             # An edit session is open — number keys are inert here.
             return
+        if self._bg_result_frame is not None or self._bg_busy_frame is not None:
+            # A remove-bg preview/worker is up — number keys are inert here.
+            return
         if slot_num not in self._slot_to_choice:
             self.status_var.set(f"Slot {slot_num} unavailable — try another key")
             return
@@ -1077,6 +1139,23 @@ class _MediaReviewer:
             self._advancing = True  # pause review while the editor is open
             self._open_editor(original_url=url, trim=float(trim),
                               source_local=local)
+            return
+
+        # ── Remove-BG branch: cut out the chosen IMAGE's background ──────────
+        if self._remove_bg_mode:
+            if slot_num not in self._editable_slots:
+                self.status_var.set(
+                    "That's a video — background removal only works on images. "
+                    "Pick an image, or press B to leave remove-bg mode."
+                )
+                return
+            local = _resolve_local(url, self.history)
+            if not local:
+                self.status_var.set("Can't find that file on disk.")
+                return
+            self._advancing = True  # pause review while rembg + preview run
+            self._start_remove_bg(original_url=url, trim=float(trim),
+                                  source_local=local)
             return
 
         # ── Normal selection ────────────────────────────────────────────────
@@ -1113,14 +1192,18 @@ class _MediaReviewer:
 
     # ── KolourPaint edit session ──────────────────────────────────────────────
 
-    def _open_editor(self, original_url: str, trim: float, source_local: str):
+    def _open_editor(self, original_url: str, trim: float, source_local: str,
+                     preserve_alpha: bool = False):
         """
         Make a PNG working copy of the chosen image and open it in KolourPaint
         inside an overlay with Save & Continue / Exit controls.
 
-        We always convert to a flattened RGB PNG so Ctrl+S in KolourPaint never
-        triggers a lossy-format confirmation dialog, and the original candidate
-        file is left untouched.
+        Normally we flatten onto white (RGBA→RGB) so Ctrl+S never triggers a
+        lossy-format dialog. When `preserve_alpha` is True (editing a
+        background-removed cut-out) we keep RGBA instead, so the transparency
+        survives the touch-up — KolourPaint edits + saves PNG-with-alpha
+        without a format prompt either way. The original candidate file is
+        left untouched.
         """
         self._stop_all_videos()
 
@@ -1128,7 +1211,9 @@ class _MediaReviewer:
         edited = src.parent / f"edited-{uuid4().hex[:10]}.png"
         try:
             im = Image.open(src)
-            if im.mode in ("RGBA", "LA", "P"):
+            if preserve_alpha:
+                im = im.convert("RGBA")            # keep the cut-out transparent
+            elif im.mode in ("RGBA", "LA", "P"):
                 im = im.convert("RGBA")
                 white = Image.new("RGBA", im.size, (255, 255, 255, 255))
                 im = Image.alpha_composite(white, im).convert("RGB")
@@ -1383,6 +1468,275 @@ class _MediaReviewer:
         except tk.TclError:
             pass
 
+
+    # ── Remove-background ("B") flow ──────────────────────────────────────────
+    def _toggle_remove_bg_mode(self):
+        # Ignore while transitioning, an edit session is open, or a remove-bg
+        # overlay is already up.
+        if (self._advancing or self._editor_frame is not None
+                or self._bg_result_frame is not None
+                or self._bg_busy_frame is not None):
+            return
+
+        if not self._remove_bg_mode:
+            if not _rembg_available():
+                messagebox.showerror(
+                    "rembg not found",
+                    "Background removal needs the 'rembg' package, which "
+                    "doesn't appear to be installed.\n\nInstall it with:\n\n"
+                    "    pip install rembg\n\n"
+                    "Then press B again. (Your review progress is safe.)",
+                )
+                self.status_var.set("rembg isn't installed — see the dialog.")
+                return
+            self._remove_bg_mode = True
+            self._edit_mode = False             # the two modes are exclusive
+            self.status_var.set(
+                "Remove-BG mode ON — pick an image to cut out its background."
+            )
+        else:
+            self._remove_bg_mode = False
+            self.status_var.set("")
+
+        self._apply_edit_mode_visuals()
+
+    def _start_remove_bg(self, original_url: str, trim: float, source_local: str):
+        """Kick off rembg on a worker thread behind a busy overlay."""
+        self._stop_all_videos()
+        self._bg_pending_original_url = original_url
+        self._bg_pending_trim         = float(trim)
+        self._bg_source_local         = source_local
+
+        self._build_busy_overlay(
+            "Removing background…",
+            "Running rembg on this image (first run also loads the model).",
+        )
+        self.root.update_idletasks()
+
+        src = source_local
+
+        def worker():
+            result, err = None, None
+            try:
+                result = _remove_background_to_file(src)
+            except Exception as exc:           # never let rembg crash the GUI
+                err = exc
+            try:
+                self.root.after(0, lambda: self._finish_remove_bg(result, err))
+            except (RuntimeError, tk.TclError):
+                pass
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _finish_remove_bg(self, result, err):
+        if self.root is None:
+            return
+        self._teardown_busy_overlay()
+
+        if err is not None or not result or not Path(result).exists():
+            why = f"error: {err}" if err else "no output produced"
+            print(f"[review] background removal failed ({why})")
+            self.status_var.set(
+                f"Background removal failed ({why}) — keeping the options."
+            )
+            self._remove_bg_mode = False
+            self._advancing = False
+            self._apply_edit_mode_visuals()    # clear the teal highlights
+            return
+
+        self._bg_removed_path = result
+        self.history[result] = result          # resolvable for the session
+        self._show_bg_result_overlay(result)
+
+    # ── Busy spinner overlay (reusable) ───────────────────────────────────────
+
+    def _build_busy_overlay(self, title: str, subtitle: str):
+        """A full-window cover with a rotating arc spinner."""
+        self._bg_busy_frame = tk.Frame(self.root, bg=BG)
+        self._bg_busy_frame.place(x=0, y=0, relwidth=1, relheight=1)
+
+        box = tk.Frame(self._bg_busy_frame, bg=BG)
+        box.place(relx=0.5, rely=0.5, anchor="center")
+
+        self._busy_spin_canvas = tk.Canvas(box, width=72, height=72, bg=BG,
+                                           highlightthickness=0)
+        self._busy_spin_canvas.pack(pady=(0, 14))
+        self._busy_spin_canvas.create_oval(10, 10, 62, 62, outline=PANEL_BG, width=6)
+        self._busy_spin_arc = self._busy_spin_canvas.create_arc(
+            10, 10, 62, 62, start=0, extent=90, style="arc",
+            outline=REMOVE_BG_OUTLINE, width=6)
+
+        tk.Label(box, text=title, bg=BG, fg=ACCENT,
+                 font=("Segoe UI", 20, "bold")).pack()
+        tk.Label(box, text=subtitle, bg=BG, fg=TEXT_COL, font=FONT_UI,
+                 justify="center").pack(pady=(6, 0))
+
+        self._busy_spin_angle = 0
+        self._animate_busy_spinner()
+
+    def _animate_busy_spinner(self):
+        if self._bg_busy_frame is None or self._busy_spin_canvas is None:
+            return
+        try:
+            self._busy_spin_angle = (self._busy_spin_angle - 14) % 360
+            self._busy_spin_canvas.itemconfig(self._busy_spin_arc,
+                                              start=self._busy_spin_angle)
+        except tk.TclError:
+            return
+        try:
+            self._busy_after = self.root.after(40, self._animate_busy_spinner)
+        except tk.TclError:
+            return
+
+    def _teardown_busy_overlay(self):
+        if self._busy_after is not None:
+            try:
+                self.root.after_cancel(self._busy_after)
+            except (tk.TclError, AttributeError):
+                pass
+        self._busy_after       = None
+        self._busy_spin_canvas = None
+        self._busy_spin_arc    = None
+        frame = self._bg_busy_frame
+        self._bg_busy_frame = None
+        if frame is not None:
+            try:
+                frame.destroy()
+            except tk.TclError:
+                pass
+
+    # ── Cut-out preview overlay (Accept / Edit / Reject) ──────────────────────
+
+    def _show_bg_result_overlay(self, path: str):
+        """Preview the cut-out with Accept / Edit / Reject controls."""
+        self._bg_result_frame = tk.Frame(self.root, bg=BG)
+        self._bg_result_frame.place(x=0, y=0, relwidth=1, relheight=1)
+
+        bar = tk.Frame(self._bg_result_frame, bg=PANEL_BG, pady=8)
+        bar.pack(fill="x")
+        tk.Label(bar, text="✂  BACKGROUND REMOVED — preview", bg=PANEL_BG,
+                 fg=ACCENT, font=("Segoe UI", 12, "bold")).pack(side="left", padx=14)
+
+        reject_btn = tk.Button(
+            bar, text="✕  Reject (back to options)", command=self._bg_reject,
+            bg=ACCENT, fg="white", activebackground=ACCENT,
+            activeforeground="white", font=("Segoe UI", 11, "bold"),
+            relief="flat", padx=14, pady=6, cursor="hand2")
+        reject_btn.pack(side="right", padx=(8, 14))
+
+        edit_btn = tk.Button(
+            bar, text="✏  Edit", command=self._bg_edit,
+            bg=EDIT_OUTLINE, fg="white", activebackground=EDIT_OUTLINE,
+            activeforeground="white", font=("Segoe UI", 11, "bold"),
+            relief="flat", padx=14, pady=6, cursor="hand2")
+        edit_btn.pack(side="right", padx=8)
+
+        accept_btn = tk.Button(
+            bar, text="✓  Accept & Continue", command=self._bg_accept,
+            bg=CHOSEN_BG, fg="white", activebackground=CHOSEN_BG,
+            activeforeground="white", font=("Segoe UI", 11, "bold"),
+            relief="flat", padx=14, pady=6, cursor="hand2")
+        accept_btn.pack(side="right", padx=8)
+
+        tk.Label(
+            self._bg_result_frame,
+            text="Background replaced.   "
+                 "Accept to use this · Edit to touch it up in KolourPaint · "
+                 "Reject to return to the five options.",
+            bg=BG, fg=HINT_COL, font=("Segoe UI", 9)).pack(fill="x", pady=(6, 2))
+
+        disp = tk.Frame(self._bg_result_frame, bg=BG)
+        disp.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+        media = tk.Label(disp, bg=BG)
+        media.pack(expand=True)
+        self._render_bg_result_preview(media, path)
+
+    def _render_bg_result_preview(self, label, path: str):
+        """Show the result — the subject is already composited onto the
+        REMOVE_BACKGROUND.BACKDROP (white by default), so this is just a
+        straight image render (no transparency to indicate)."""
+        try:
+            img = Image.open(path)
+            img.thumbnail((900, 560), Image.LANCZOS)
+            tk_img = ImageTk.PhotoImage(img)
+            label.config(image=tk_img, text="")
+            label._img_ref = tk_img
+        except Exception as exc:
+            label.config(text=f"preview error: {exc}", fg=HINT_COL, font=FONT_UI)
+            label._img_ref = None
+
+    def _bg_accept(self):
+        """Use the cut-out as this scene's pick and move on."""
+        path = self._bg_removed_path
+        trim = self._bg_pending_trim
+        orig = self._bg_pending_original_url
+        self._teardown_bg_result_overlay()
+        self._remove_bg_mode  = False
+        self._bg_removed_path = None
+
+        if not path or not Path(path).exists():
+            self.status_var.set("The cut-out went missing — pick again.")
+            self._advancing = False
+            self._load_current()
+            return
+
+        self.history[path] = path
+        block = {orig} if orig else set()
+        # _commit_choice handles advancing (or the next clip slot for multi-clip
+        # scenes) and resets _advancing via _load_current.
+        self._commit_choice(path, float(trim), block_urls=block)
+
+    def _bg_edit(self):
+        """Open the cut-out in KolourPaint for touch-ups (keeps transparency)."""
+        path = self._bg_removed_path
+        trim = self._bg_pending_trim
+        orig = self._bg_pending_original_url
+        self._teardown_bg_result_overlay()
+        self._remove_bg_mode = False
+        # Keep self._bg_removed_path as-is; the editor copies FROM it.
+
+        if not path or not Path(path).exists():
+            self.status_var.set("The cut-out went missing — pick again.")
+            self._advancing = False
+            self._load_current()
+            return
+
+        # _advancing is already True (set when remove-bg started); the editor
+        # owns the screen from here. preserve_alpha keeps the cut-out's
+        # transparency through the edit.
+        self._open_editor(original_url=orig, trim=float(trim),
+                          source_local=path, preserve_alpha=True)
+
+    def _bg_reject(self):
+        """Discard the cut-out and return to the five options."""
+        path = self._bg_removed_path
+        self._teardown_bg_result_overlay()
+        self._remove_bg_mode  = False
+        self._bg_removed_path = None
+
+        if path:
+            try:
+                Path(path).unlink(missing_ok=True)
+            except Exception:
+                pass
+            self.history.pop(path, None)
+
+        self.status_var.set("Cut-out discarded — pick one of the options.")
+        self._advancing = False
+        self._load_current()
+
+    def _teardown_bg_result_overlay(self):
+        frame = self._bg_result_frame
+        self._bg_result_frame = None
+        if frame is not None:
+            try:
+                frame.destroy()
+            except tk.TclError:
+                pass
+        # Buttons may have held focus; make sure number/letter keys work again.
+        self._refocus_main_window()
+
+
     def _refocus_main_window(self):
         """Best-effort: return keyboard focus to the review window."""
         if self.root is None:
@@ -1440,6 +1794,18 @@ class _MediaReviewer:
         # destroyed out from under the still-running process.
         self._kill_edit_proc()
         self._stop_all_videos()
+
+
+        # Cancel the remove-bg busy spinner callback if one is scheduled.
+        if getattr(self, "_busy_after", None) is not None:
+            try:
+                self.root.after_cancel(self._busy_after)
+            except (tk.TclError, AttributeError):
+                pass
+            self._busy_after = None
+
+
+
         for slot in (*getattr(self, "video_slots", []),
                      *getattr(self, "image_slots", [])):
             try:

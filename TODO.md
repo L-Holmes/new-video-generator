@@ -1,20 +1,10 @@
 
-TODO:
-- test the new regenerate mode (and perhaps edit mode again...)
-    - add more credits to fal...
-    - remove the cache...
-    - try again... 1:30pm...
+rm -f  "stickman-CACHE/stock_footage/review_accepting_footage.json" \
+       "stickman-CACHE/stock_footage/review_accepting_edits_"*.json \
+       "stickman-CACHE/edit_candidates_"*.json \
+       "stickman-CACHE/final_script_to_clips.json" \
+       "stickman-CACHE/footage_candidates.json"
 
----
-
-THEN DO:
-
-and now an option to say remove the background, using the existing method of removing a background (I think at least hte joint image creator does that...)
-    (--> hmmm as in 'b' when previewing to remove the background???)
-    --> But then after that the user is shown the result.
-    --> they can then either reject (and go back to the stock selection screen)
-    --> or choose to edit (in which case it would bring up that editting thing again
-    --> or of course just choose to accept and move on.
 
 
 ------------------------------------------------------------------------------------------------------------------
@@ -33,7 +23,6 @@ Essentially, it lets you put stock image inside of another stock image.
 
 It bring up a review window:
 - at the top right, is a small preview of the current stock which will be added.
-- taking 
 - at the right, under the image preview, there is a control to allow you to increase the size of the image 
     - there will be a sort of dashed line box representing the size of that. Max size will be 80% of screen.
     - user can click a big plus or big minus in order to increase or decrease the size by 5%...
@@ -115,6 +104,7 @@ I want to apply it to all of the AI generated images
 
 
 To be honest- its probably best to apply it right after the images are selected in by the stock footage review...
+but obviously be careful as there are multiple stages of stock review after edits and what not...
 
 ------------------------------------------------------------------------------------------------------------------
 # ALL OTHER NOTES:
