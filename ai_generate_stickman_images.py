@@ -49,7 +49,7 @@ REF_IMAGES = [
 
 # -- Defaults (used when run standalone; the pipeline passes its own) -----
 DEFAULT_PROMPTS_FILE = "ai_prompts.json"
-DEFAULT_OUT_DIR      = pathlib.Path("ai_output")
+DEFAULT_OUT_DIR      = pathlib.Path("temp/ai_output")
 DEFAULT_NUM_VARIANTS = 2
 DEFAULT_CONTEXT_NUM_IMAGES = 0   # 0 = no preceding-scene context (original behaviour)
 

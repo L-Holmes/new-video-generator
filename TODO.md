@@ -7,9 +7,16 @@ rm -f  "stickman-CACHE/stock_footage/review_accepting_footage.json" \
 
 
 
+
+TODO:
+- test the most recent.
+    - if it doesn't work: fix
+- if it does work:
+    - consider adding on the mentoined additions... (do i let them add on the sticker multiple times?????)
+
 ------------------------------------------------------------------------------------------------------------------
 
-# SECOND (SEPERATE) TASK.
+# SECOND (SEPERATE) TASK. (In progress)
 create a new option for the class MediaType(Enum):...
     (and thus for the script_to_search_term.json...)
 
@@ -69,6 +76,10 @@ To note:
     - so the choosing of the stock (this already exists), and then this layering will be seperate stages...
 
 
+------------------------------------------------------------------------------------------------------------------
+hmmm
+
+
 OOH! May be also nice to:
 - if it is stock footage, 
     - have an option to 'get still, and then edit still in [the current scene] [i..e the scene after the stock footage]
@@ -93,20 +104,6 @@ try fetching like 2 wikipedia images by default... when the type is stock... (or
 
 ------------------------------------------------------------------------------------------------------------------
 
-# FOURTH THING
- PIXELLATE.py
-I want to apply it to all of the AI generated images
-
-
- before stitch together...
-    - or actually... since.. wait do we have scenes that mix stickman and regular?
-    - it would be much easier to just do it all in place before stitch together...
-
-
-To be honest- its probably best to apply it right after the images are selected in by the stock footage review...
-but obviously be careful as there are multiple stages of stock review after edits and what not...
-
-------------------------------------------------------------------------------------------------------------------
 # ALL OTHER NOTES:
 
 --> add auto zooming, but only for things that are not edit scenes? so standalone scenes? (which don't then get editted!)
@@ -163,6 +160,18 @@ TODO:
 TODO:
 - do i get some 8 bit music in the same style as mario etc, in order to fit the theme???
 
+-------------------------------------
+-------------------------------------
+
+hmmmmmmmm...
+- handle when there is [5] coins;
+    - for stuff like coins and what not... if I'm doing '5' coins...
+        -> do i either let the code manually add 5 of the thing onto screen...
+        -> AND/OR do i let the user place as many as they want, as part of the 'manual_stock_add_to_previous'??, a bit like a 'sticker'
+
+
+
+-------------------------------------
 -------------------------------------
 
 plus:

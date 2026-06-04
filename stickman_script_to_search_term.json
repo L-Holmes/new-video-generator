@@ -1,7 +1,7 @@
 {
   "If you open your kitchen cupboard right now,": {
-    "search_term": "kitchen cupboard closed",
-    "search_type": "stickman",
+    "search_term": "kitchen cupboard open",
+    "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -11,7 +11,7 @@
   },
   "you probably have a jar of nutmeg.": {
     "search_term": "open the door and add jar of nutmeg into the cupboard",
-    "search_type": "ai_edit",
+    "search_type": "manual_stock_add_to_previous",
     "position": "1",
     "sfx": "se-pop.mp3",
     "sfx_timing": "loop_start",

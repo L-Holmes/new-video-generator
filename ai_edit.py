@@ -7,7 +7,7 @@ uv run edit.py output/004.png "raise the pirate's right arm above his head, swor
 uv run edit.py output/012.png "add a small parrot on his shoulder" -o output/012_parrot.png
 
 
-uv run ai_edit.py ai_output/005.png "raise the sword hand" -o ai_output/005-hand-raised.png
+uv run ai_edit.py temp/ai_output/005.png "raise the sword hand" -o temp/ai_output/005-hand-raised.png
 """
 
 """

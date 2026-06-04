@@ -207,6 +207,7 @@ class MediaType(Enum):
     STICKMAN_EXPLAIN_WIKIPEDIA = "stickman_explain_wikipedia"  # chosen Wikipedia image composited onto a board base
     STICKMAN_TEXT_OVERLAY      = "stickman_text_overlay"  # caption (search_term) on the PREVIOUS scene's image
     STICKMAN_JOINT_3_ROW = "stickman_joint_3_row"  # like JOINT_3_ROW but tiles are AI stickman images
+    MANUAL_STOCK_ADD_TO_PREVIOUS = "manual_stock_add_to_previous"  # place this scene's chosen still onto the PREVIOUS scene's image (manual click/size)
 
 
 class SearchTermData(TypedDict):
@@ -224,6 +225,7 @@ NEEDS_EXTERNAL_CANDIDATES: set[MediaType] = {
     MediaType.JOINT_3_ROW,
     MediaType.STICKMAN_EXPLAIN_STOCK,
     MediaType.STICKMAN_EXPLAIN_WIKIPEDIA,
+    MediaType.MANUAL_STOCK_ADD_TO_PREVIOUS,
 }
 
 # Which MediaTypes are handled by the joint compositor. Add new joint
@@ -308,6 +310,18 @@ STICKMAN_TEXT_OVERLAY_RENDER_SAFETY_PAD_SEC: float = 0.08
 # NOTE: uses each scene's generation-time variant-0 output, not the reviewed
 # pick (which doesn't exist yet — all stickman gen runs before review).
 STICKMAN_CONTEXT_NUM_IMAGES: int = 3
+
+
+# ===========================================================================
+# MANUAL STOCK PLACEMENT (overlay one stock still onto the previous image)
+# ===========================================================================
+# The scene's OWN still is fetched + picked in normal stage-1 review (image-
+# only — see load_stock_footage). Then a SEPARATE stage (after all picks are
+# made) lets the user click where on the PREVIOUS scene's image to drop it.
+# Output is a static MP4 so the Ken Burns pass leaves the placement untouched.
+MANUAL_STOCK_ADD_TYPES: set[MediaType] = {MediaType.MANUAL_STOCK_ADD_TO_PREVIOUS}
+MANUAL_STOCK_PLACEMENT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/manual_stock_placement")
+MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 # ===========================================================================
 # JOINT SCENE LAYOUTS
@@ -1063,10 +1077,9 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
         search_type = scene_data["search_type"]
         num_clips, max_runtime = _get_num_stock_images(script_text)
 
-        # Explainer scenes feature ONE chosen clip on the board for the whole
-        # scene, regardless of length — collapse the multi-clip split so the
-        # review GUI asks for a single pick spanning the full scene.
-        if search_type in STICKMAN_EXPLAIN_TYPES:
+        # Explainer scenes feature ONE chosen clip; manual-placement scenes use
+        # ONE chosen still. Both want a single pick spanning the full scene.
+        if search_type in STICKMAN_EXPLAIN_TYPES or search_type in MANUAL_STOCK_ADD_TYPES:
             max_runtime = num_clips * max_runtime   # == full scene runtime
             num_clips = 1
 
@@ -1085,17 +1098,20 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
         print(f"[fetch:meta]   → using PEXELS source")
 
         video_meta: list[tuple[str, float]] = []
+        # manual_stock_add_to_previous places a STILL, so never fetch clips for it.
+        fetch_videos = search_type not in MANUAL_STOCK_ADD_TYPES
         seen: set[str] = set()
-        for page in range(1, 4):
-            if len(video_meta) >= 2:
-                break
-            for url, dur in _get_video_metadata(search_term, max_results=10, page=page):
-                if url in seen or dur <= 0:
-                    continue
-                seen.add(url)
-                video_meta.append((url, dur))
+        if fetch_videos:
+            for page in range(1, 4):
                 if len(video_meta) >= 2:
                     break
+                for url, dur in _get_video_metadata(search_term, max_results=10, page=page):
+                    if url in seen or dur <= 0:
+                        continue
+                    seen.add(url)
+                    video_meta.append((url, dur))
+                    if len(video_meta) >= 2:
+                        break
 
         image_urls: list[str] = []
         seen_img: set[str] = set()
@@ -2341,6 +2357,186 @@ def generate_text_overlay_scenes(
     return footage_map
 
 
+def _render_image_to_static_mp4(image_path: str, duration: float,
+                                output_path: str) -> str:
+    """Bake a still into a silent, perfectly static H.264 MP4 of `duration`s
+    (plus a tiny safety pad the stitcher trims). Used so composited scenes stay
+    still and the Ken Burns pass skips them."""
+    render_duration = duration + MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC
+    cmd = [
+        "ffmpeg", "-y", "-loop", "1", "-framerate", str(KEN_BURNS_FPS),
+        "-i", image_path, "-t", f"{render_duration:.3f}",
+        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "veryfast",
+        "-r", str(KEN_BURNS_FPS), "-an", output_path,
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"[manual-place] ffmpeg stderr (tail): {result.stderr[-800:]}")
+        raise RuntimeError(f"static MP4 render failed for {image_path}")
+    return output_path
+
+
+def run_manual_stock_placement_stage(
+    script_to_search_term: dict[str, "SearchTermData"],
+    final_data: list[dict],
+) -> list[dict]:
+    """
+    For every MANUAL_STOCK_ADD_TO_PREVIOUS scene, let the user place that
+    scene's CHOSEN stock still onto the PREVIOUS scene's image at a clicked
+    position/size, then bake the composite to a static MP4.
+
+    Processed ONE AT A TIME in script order (like run_ai_edit_stage): each
+    composite is merged back into final_data before the next is built, so a
+    chain of consecutive placements stacks (jar onto cupboard, then spoon onto
+    cupboard+jar). Per-scene placement is cached as placement_<idx>.json — on
+    re-run it's reused without re-opening the GUI; delete it to redo.
+    """
+    manual_texts = [
+        txt for txt, d in script_to_search_term.items()
+        if d["search_type"] == MediaType.MANUAL_STOCK_ADD_TO_PREVIOUS
+    ]
+
+    print("\n" + "=" * 70)
+    print(f"[manual-place] {len(manual_texts)} manual-placement scene(s) to process")
+    print("=" * 70)
+    if not manual_texts:
+        print("[manual-place] none — skipping")
+        return final_data
+
+    from MANUAL_STOCK_PLACEMENT import (
+        place_overlay_interactive, composite_overlay, extract_frame, Placement,
+    )
+
+    scene_timings = _load_scene_timings()
+    ordered_texts = list(script_to_search_term.keys())
+    by_script     = {e["script_text"]: i for i, e in enumerate(final_data)}
+    script_index  = {txt: i for i, txt in enumerate(script_to_search_term)}
+
+    out_dir = MANUAL_STOCK_PLACEMENT_OUTPUT_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    def _resolve_scene_still(text: str) -> str | None:
+        """A scene's chosen footage -> a local STILL (extract a frame if video)."""
+        entry   = next((e for e in final_data if e["script_text"] == text), None)
+        footage = (entry or {}).get("footage") or []
+        key     = next(iter(footage[0]), None) if footage else None
+        if not key:
+            return None
+        local = _resolve_to_local_path(key)
+        if not local:
+            return None
+        if _classify_footage_path(local) == "video":
+            frame_png = out_dir / f"frame_{hashlib.md5(local.encode()).hexdigest()[:12]}.png"
+            if not (frame_png.exists() and frame_png.stat().st_size > 1024):
+                try:
+                    extract_frame(local, str(frame_png))
+                except Exception as exc:
+                    print(f"[manual-place] WARNING: frame extract failed "
+                          f"for {Path(local).name}: {exc}")
+                    return None
+            return str(frame_png) if frame_png.exists() else None
+        return local
+
+    def _resolve_base(idx: int) -> tuple[str | None, str | None]:
+        """Nearest PRECEDING scene that resolves to a usable still."""
+        for j in range(idx - 1, -1, -1):
+            still = _resolve_scene_still(ordered_texts[j])
+            if still:
+                return still, ordered_texts[j]
+        return None, None
+
+    for n, text in enumerate(manual_texts, start=1):
+        idx = script_index[text]
+        print("\n" + "-" * 70)
+        print(f"[manual-place] ({n}/{len(manual_texts)}) scene #{idx}: '{text[:60]}'")
+        print("-" * 70)
+
+        overlay_still = _resolve_scene_still(text)
+        if not overlay_still:
+            print(f"[manual-place] FATAL: no chosen stock for '{text[:70]}'. Its "
+                  f"overlay is picked in stage-1 review — did you select one? "
+                  f"(Delete {CANDIDATES_CACHE_FILE} and re-run if stale.)")
+            sys.exit(1)
+
+        base_still, base_text = _resolve_base(idx)
+        if not base_still:
+            print(f"[manual-place] FATAL: no preceding image to place onto for "
+                  f"'{text[:70]}'. This type needs a normal scene before it.")
+            sys.exit(1)
+
+        if text not in scene_timings:
+            print(f"[manual-place] FATAL: no timing for '{text[:70]}'")
+            sys.exit(1)
+        duration = float(scene_timings[text])
+        if duration <= 0:
+            print(f"[manual-place] WARNING: zero duration — skipping '{text[:60]}'")
+            continue
+
+        safe_stem     = re.sub(r"[^a-zA-Z0-9]+", "_", text).strip("_")[:50] or "scene"
+        state_file    = out_dir / f"placement_{idx:03d}.json"
+        composite_png = out_dir / f"manual_place_{idx:03d}_{safe_stem}.png"
+        output_mp4    = out_dir / f"manual_place_{idx:03d}_{safe_stem}.mp4"
+
+        print(f"[manual-place]   base    <- '{base_text[:50]}' ({Path(base_still).name})")
+        print(f"[manual-place]   overlay  = {Path(overlay_still).name}")
+        print(f"[manual-place]   duration = {duration:.3f}s")
+
+        placement = None
+        if state_file.exists():
+            try:
+                d = json.loads(state_file.read_text())
+                placement = Placement(int(d["width_pct"]),
+                                      float(d["cx_frac"]), float(d["cy_frac"]))
+                print(f"[manual-place]   resume: reusing saved placement "
+                      f"(w={placement.width_pct}%, x={placement.cx_frac:.3f}, "
+                      f"y={placement.cy_frac:.3f})")
+            except Exception as exc:
+                print(f"[manual-place]   couldn't read {state_file.name} ({exc}) "
+                      f"— re-opening GUI")
+                placement = None
+
+        if placement is None:
+            print("[manual-place]   launching placement GUI...")
+            placement = place_overlay_interactive(
+                base_image_path=base_still,
+                overlay_image_path=overlay_still,
+                window_title=(f"Place '{script_to_search_term[text]['search_term']}'  "
+                              f"(scene {n}/{len(manual_texts)})"),
+            )
+            if placement is None:
+                print(f"\n[manual-place] Exited without placing scene #{idx}. "
+                      f"Re-run to resume from here.")
+                sys.exit(0)
+            state_file.write_text(json.dumps({
+                "width_pct": placement.width_pct,
+                "cx_frac":   placement.cx_frac,
+                "cy_frac":   placement.cy_frac,
+            }, indent=2))
+
+        try:
+            composite_overlay(base_still, overlay_still, placement, str(composite_png))
+            _render_image_to_static_mp4(str(composite_png), duration, str(output_mp4))
+        except Exception as exc:
+            print(f"[manual-place] FATAL: render failed: {exc}")
+            sys.exit(1)
+
+        entries = [{str(output_mp4): round(duration, 3)}]
+        if text in by_script:
+            final_data[by_script[text]]["footage"] = entries
+        else:
+            final_data.append({"script_text": text, "footage": entries})
+            by_script[text] = len(final_data) - 1
+
+        _add_local_paths_to_history({text: entries})
+        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
+        print(f"[manual-place]   OK {Path(output_mp4).name}  (trim {round(duration,3)}s)")
+
+    print("\n" + "=" * 70)
+    print(f"[manual-place] DONE — processed {len(manual_texts)} scene(s)")
+    print("=" * 70)
+    return final_data
+
+
 # ===========================================================================
 # GENERATOR REGISTRY
 # ===========================================================================
@@ -3272,6 +3468,17 @@ def main() -> None:
         print(f"💾 Updated final_data with text-overlay footage → {FINAL_SCRIPT_AND_CLIPS}")
     else:
         print("\n[main] no text-overlay scenes; final_data unchanged")
+
+
+    # 2.64) Manual stock placement: composite each MANUAL_STOCK_ADD_TO_PREVIOUS
+    #       scene's chosen still onto the PREVIOUS scene's image at a clicked
+    #       position/size. After text-overlay (so the base resolves to a
+    #       finished image) and before Ken Burns (static MP4 → KB skips it).
+    final_data = run_manual_stock_placement_stage(
+        script_to_search_term=scriptTextToPexelSearch,
+        final_data=final_data,
+    )
+    save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
 
 
 
