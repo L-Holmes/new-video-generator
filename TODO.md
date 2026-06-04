@@ -2,31 +2,6 @@
 
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
 
-
-
-
-- consider adding on the mentoined additions... (do i let them add on the sticker multiple times?????)
-
-
-
-------------------------------------------------------------------------------------------------------------------
-
-NEXT:
-extend the current manual_stock_add_to_previous method to allow for multiple images to be added, as default behaviour (not just one)
-...
-- add a way to:
-    - easily make the replicas... i.e. the picture thing... 
-    ---> I guess that would just be a variation of the current thing we already have with layering an image on top.
-    ---> But this time, after clicking, you can just keep clicking, adding multiple, even of different sizes if you want...
-    ---> then it layers them all together... 
-    (the undo will act on the prevoius one, so you can keep pressing that to undo everything...)
-
-in fact yes, just to clarify, this will be the new default behaviour...
---> so in the new one, you click to add it, and then it will say like '1 added' in the sidebar..
---> and then it just adds it, and lets you continue clicking to add more...
---> then you press done when you are finished...
-
-
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 hmmm
@@ -59,72 +34,34 @@ Hmmmmm..
 Do i add an easy way to have specficialy styled text? e.g. at a slight rotated angle and in that pixellated style? 
     -> and then anything else I would commonly do like adding arrows that have a certain appearance? (or anything else like that???)
 
+    WAIT - am i not just making my own paint at that point???
+
 ------
 Hmmmmm....
 what do i do if all of the stock images are just terrible?
 --> Like there isn't just a jar of nutmeg or a cupboard...
-
-0----
-Hmmmm.
-
-there is an issue with the ai image generation...
-I feel it actually just gets more confused when i add more reference images?
-(or maybe im wrong... not sure...)
 
 -----
 
 add an option:
 - 'same as previous'
     
---> then could perhaps add variations... like same as previous but slight zoom cut...
-    --> or same as previous but rotate the other way (if its an image slightly rotated on a background... lol...)
+--> or same as previous but rotate the other way (if its an image slightly rotated on a background... lol...)?????
 
 ---
 
-like a youtube formula...
-
------
-
-TODO:
-
-kd 
--------
-
-- hook up the audio processor into main
-    - obviously pass in some differnet cache locations thta ill have to define...
-    - make the output like stickman-CACHE/AUDIO/script-stickman-processed.wav... 
-    - then update main to use that instead of script-stickman.wav 
-        (obvoiusly it won't be 'stickman' for all.. that's just the prefix for this example... as you know there may not even be a prefix...)
-
 - add the same affects to all stock footage to make it all look aligned????
     - (and maybe try out a sort of retro appearance to it?)
+    - apply same affects to all footage...
+        - film grain... crafted by cm... etc.
 
--------
 
-TODO:
-- add an option to the review ai generations???
-    - To sort of request new ai generations?!?!?!? !?!? (not sure how we will know if its ai or just stock footage!)
-
-TODO:
-- apply same affects to all footage...
-    - film grain... crafted by cm... etc.
-- add reusable rules... 
+- add reusable rules... the youtube rules
     - e.g. things part of the same sentence / same concept... should be ai edit, not new pics...
 
 
 TODO:
 - do i get some 8 bit music in the same style as mario etc, in order to fit the theme???
-
--------------------------------------
--------------------------------------
-
-hmmmmmmmm...
-- handle when there is [5] coins;
-    - for stuff like coins and what not... if I'm doing '5' coins...
-        -> do i either let the code manually add 5 of the thing onto screen...
-        -> AND/OR do i let the user place as many as they want, as part of the 'manual_stock_add_to_previous'??, a bit like a 'sticker'
-
-
 
 -------------------------------------
 -------------------------------------
