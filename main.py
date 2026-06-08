@@ -38,6 +38,7 @@ from JOINT_IMAGE_CREATOR import composite as create_joint_scene, TRANSITION_RAND
 from WORDS_ON_SCREEN import render_scene_to_video, WordRenderConfig
 from SCRIPT_AUDIO_CUTDOWN_AND_PROCESS import run as run_audio_cutdown
 from PIXELLATE import pixellate_image
+from GET_MAP import get_map_image
 
 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 print("running main")
@@ -181,6 +182,28 @@ READ_OUT_ENABLE: bool = True
 
 
 # ===========================================================================
+# MAP INTEGRATION
+# ===========================================================================
+# "map" scenes are rendered locally by GET_MAP.py: the scene's search_term is
+# treated as a PLACE NAME (country / region / city), geocoded via OpenStreetMap,
+# and drawn as a clean highlighted map. Like read-out/joint scenes they need NO
+# external candidates and NO review — generate_map_scenes produces them from the
+# script + timings and the generic merge step folds them into final_data. The
+# rendered PNG is baked to a STATIC MP4 so the Ken Burns pass leaves the composed
+# map untouched (whole-world highlight / pin stays exactly as drawn).
+
+# Set False to disable map rendering entirely.
+MAP_ENABLE: bool = True
+
+# Where rendered map stills + MP4s are written (cache-scoped).
+MAP_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/map_scenes")
+
+# Where GET_MAP caches geocoding results (cache-scoped). The world-borders
+# GeoJSON itself is cached once, globally, next to GET_MAP.py and shared.
+MAP_GEOCODE_CACHE_DIR: str = f"{_CACHE_DIR}/maps"
+
+
+# ===========================================================================
 # SEARCH TERM TYPES   (FLAT SCHEMA — every "(type, variant)" is its own enum)
 # ===========================================================================
 #
@@ -201,6 +224,7 @@ class MediaType(Enum):
     WIKIPEDIA   = "wikipedia"      # Wikipedia images, picked via review GUI
     JOINT_3_ROW = "joint_3_row"    # 3-image collage composited locally
     READ_OUT    = "read_out"       # Kinetic typography (script text on screen)
+    MAP         = "map"            # Highlighted map of a country/region/place (rendered locally)
     STICKMAN    = "stickman"       # AI-generated stickman; 2 variants → review GUI
     AI_EDIT     = "ai_edit"        # Edit the preceding AI image; N variants -> 2nd review
     STICKMAN_EXPLAIN_STOCK     = "stickman_explain_stock"      # chosen Pexels clip composited onto a board base
@@ -209,6 +233,7 @@ class MediaType(Enum):
     STICKMAN_JOINT_3_ROW = "stickman_joint_3_row"  # like JOINT_3_ROW but tiles are AI stickman images
     MANUAL_STOCK_ADD_TO_PREVIOUS = "manual_stock_add_to_previous"  # place this scene's chosen still onto the PREVIOUS scene's image (manual click/size)
     ZOOM_PREV_IMG = "zoom_prev_img"  # derive this scene's image by cropping/zooming into the PREVIOUS scene's image
+    STATIC_OF_PREVIOUS = "static_of_previous"  # reuse prev image, OR freeze prev video's last *played* frame
 
 
 class SearchTermData(TypedDict):
@@ -322,6 +347,7 @@ STICKMAN_CONTEXT_NUM_IMAGES: int = 3
 # Output is a static MP4 so the Ken Burns pass leaves the placement untouched.
 MANUAL_STOCK_ADD_TYPES: set[MediaType] = {MediaType.MANUAL_STOCK_ADD_TO_PREVIOUS}
 ZOOM_PREV_TYPES: set[MediaType] = {MediaType.ZOOM_PREV_IMG}
+STATIC_OF_PREVIOUS_TYPES: set[MediaType] = {MediaType.STATIC_OF_PREVIOUS}
 MANUAL_STOCK_PLACEMENT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/manual_stock_placement")
 MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC: float = 0.08
 
@@ -2155,6 +2181,104 @@ def generate_read_out_scenes(
     return footage_map
 
 
+def generate_map_scenes(
+    script_to_search_term: dict[str, SearchTermData],
+    candidates_data: list[dict],            # unused — registry signature uniformity
+    final_data: list[dict] | None = None,   # unused — registry signature uniformity
+) -> dict[str, list[dict]]:
+    """
+    Render a highlighted map for every scene flagged MediaType.MAP and return a
+    stitcher-ready map:
+
+        { script_text: [ {local_mp4_path: trim_seconds} ], ... }
+
+    The scene's `search_term` is treated as a PLACE NAME. GET_MAP geocodes it
+    and decides what to draw:
+      - a country   -> the whole world, with that country highlighted
+      - a region    -> the parent country, with the region/state highlighted
+      - a city/town -> the parent country, with a pin dropped on the place
+
+    Each map renders to a PNG, then bakes into a STATIC MP4 (exactly like the
+    text-overlay / manual-placement scenes) so the Ken Burns pass skips it and
+    the composed map is never cropped. One entry per scene, trimmed to runtime.
+
+    Like read-out scenes, map scenes need NO external candidates and NO review,
+    so this generator is registered in LOCAL_FOOTAGE_GENERATORS and its output
+    is appended into final_data by the generic merge step.
+    """
+    print("\n" + "=" * 70)
+    print("[map scenes] STARTING generate_map_scenes")
+    print("=" * 70)
+
+    if not MAP_ENABLE:
+        print("[map scenes] MAP_ENABLE is False — skipping")
+        return {}
+
+    map_scenes = [
+        (txt, data) for txt, data in script_to_search_term.items()
+        if data["search_type"] == MediaType.MAP
+    ]
+    if not map_scenes:
+        print("[map scenes] no map scenes — returning empty map")
+        return {}
+
+    print(f"[map scenes] found {len(map_scenes)} map scene(s)")
+
+    scene_timings = _load_scene_timings()
+
+    output_dir = MAP_OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[map scenes] output dir: {output_dir}")
+
+    footage_map: dict[str, list[dict]] = {}
+
+    for idx, (script_text, scene_data) in enumerate(map_scenes):
+        place = scene_data["search_term"]
+
+        if script_text not in scene_timings:
+            print(f"[map scenes] FATAL: no timing for '{script_text[:80]}'")
+            sys.exit(1)
+
+        duration = float(scene_timings[script_text])
+        if duration <= 0:
+            print(f"[map scenes] WARNING: zero/negative duration "
+                  f"({duration}s) — skipping '{script_text[:60]}'")
+            continue
+
+        safe_stem = re.sub(r"[^a-zA-Z0-9]+", "_", script_text).strip("_")[:50] or "scene"
+        png_path = str(output_dir / f"map_{idx:03d}_{safe_stem}.png")
+        mp4_path = str(output_dir / f"map_{idx:03d}_{safe_stem}.mp4")
+
+        print(f"\n[map scenes] [{idx + 1}/{len(map_scenes)}] "
+              f"'{script_text[:60]}{'...' if len(script_text) > 60 else ''}'")
+        print(f"[map scenes]   place          = '{place}'")
+        print(f"[map scenes]   scene duration = {duration:.3f}s")
+        print(f"[map scenes]   -> {png_path}")
+
+        rendered = get_map_image(place, png_path, cache_dir=MAP_GEOCODE_CACHE_DIR)
+        if not rendered:
+            print(f"[map scenes] FATAL: could not render a map for '{place}' "
+                  f"(scene '{script_text[:60]}')")
+            sys.exit(1)
+
+        # Bake the still into a static MP4 so the Ken Burns pass skips it and
+        # the composed map (whole-world highlight / pin) is never cropped.
+        try:
+            _render_image_to_static_mp4(rendered, duration, mp4_path)
+        except Exception as exc:
+            print(f"[map scenes] FATAL: static MP4 render failed for "
+                  f"'{script_text[:50]}': {exc}")
+            sys.exit(1)
+
+        footage_map[script_text] = [{mp4_path: round(duration, 3)}]
+        print(f"[map scenes]   ✓ done — stitcher trim = {round(duration, 3)}s")
+
+    print("\n" + "=" * 70)
+    print(f"[map scenes] DONE — produced {len(footage_map)} map scene(s)")
+    print("=" * 70)
+    return footage_map
+
+
 def generate_stickman_explain_scenes(
     script_to_search_term: dict[str, SearchTermData],
     final_data: list[dict],
@@ -2358,6 +2482,54 @@ def generate_text_overlay_scenes(
     print("=" * 70)
     return footage_map
 
+def _extract_frame_at_timestamp(video_path: str, timestamp_sec: float,
+                                output_png: str) -> str:
+    """Grab a single frame from `video_path` at `timestamp_sec` (the moment the
+    clip stops being shown) and write it to `output_png`. Used by
+    static_of_previous to freeze the last *played* frame of the previous
+    scene's video. Seeks just inside the cut so we never run past the clip."""
+    import shlex
+    vp = Path(video_path)
+    if not vp.exists():
+        raise RuntimeError(f"video does not exist: {video_path}")
+
+    # Land just inside the played window. -ss AFTER -i = accurate (decoded) seek.
+    ts = max(0.0, float(timestamp_sec) - 0.05)
+    cmd = [
+        "ffmpeg", "-y", "-nostdin", "-loglevel", "warning",
+        "-i", video_path,
+        "-ss", f"{ts:.3f}",
+        "-frames:v", "1",
+        "-q:v", "2",
+        output_png,
+    ]
+    if DEBUG:
+        print(f"[static-prev:ffmpeg]   {shlex.join(cmd)}")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.stderr.strip():
+        print(f"[static-prev:ffmpeg]   stderr:\n{result.stderr.rstrip()}")
+
+    out = Path(output_png)
+    if result.returncode != 0 or not out.exists() or out.stat().st_size == 0:
+        # Fallback: some short/odd clips fail an interior seek — grab the very
+        # last frame from end-of-file instead.
+        cmd_eof = [
+            "ffmpeg", "-y", "-nostdin", "-loglevel", "warning",
+            "-sseof", "-0.1",
+            "-i", video_path,
+            "-frames:v", "1", "-q:v", "2",
+            output_png,
+        ]
+        if DEBUG:
+            print(f"[static-prev:ffmpeg]   interior seek failed — trying EOF: "
+                  f"{shlex.join(cmd_eof)}")
+        result = subprocess.run(cmd_eof, capture_output=True, text=True)
+        if result.returncode != 0 or not out.exists() or out.stat().st_size == 0:
+            raise RuntimeError(
+                f"frame extraction failed for {video_path} @ {ts:.3f}s "
+                f"(returncode={result.returncode})"
+            )
+    return output_png
 
 def _render_image_to_static_mp4(image_path: str, duration: float,
                                 output_path: str) -> str:
@@ -2432,28 +2604,33 @@ def run_manual_image_stage(
     final_data: list[dict],
 ) -> list[dict]:
     """
-    Single script-order pass over all MANUAL image-edit scenes:
+    Single script-order pass over all "derive-from-previous" image scenes:
       • MANUAL_STOCK_ADD_TO_PREVIOUS — composite this scene's chosen still onto
         the PREVIOUS scene's image at a clicked position/size.
       • ZOOM_PREV_IMG — crop/zoom into the PREVIOUS scene's image.
+      • STATIC_OF_PREVIOUS — reuse the PREVIOUS scene's image as-is, OR freeze
+        the last *played* frame of the PREVIOUS scene's last video clip
+        (timestamp from the JSON-derived trim). Non-interactive.
 
-    Both are processed together, ONE AT A TIME, merging each result back into
+    All processed together, ONE AT A TIME, merging each result back into
     final_data before the next, so any mix chains correctly (zoom into a
-    composite, place onto a zoom, zoom into a zoom, ...). "Previous" = the
-    nearest preceding scene that resolves to a usable still (videos → first
-    frame). Runs after stage-1 review + the explainer/text-overlay generators
-    and before Ken Burns (output is a static MP4 → KB skips it).
+    composite, place onto a zoom, freeze a video then zoom the frozen frame,
+    ...). "Previous" = the nearest preceding scene that resolves to usable
+    footage (videos → a frame). Runs after stage-1 review + the
+    explainer/text-overlay generators and before Ken Burns (output is a static
+    MP4 → KB skips it).
 
     Resume: placement_<idx>.json / crop_<idx>.json are reused without
-    re-opening the GUI; delete one to redo that scene.
+    re-opening the GUI; delete one to redo that scene. STATIC_OF_PREVIOUS has
+    no GUI, so it's just recomputed each run (cheap + deterministic).
     """
-    manual_set = MANUAL_STOCK_ADD_TYPES | ZOOM_PREV_TYPES
+    manual_set = MANUAL_STOCK_ADD_TYPES | ZOOM_PREV_TYPES | STATIC_OF_PREVIOUS_TYPES
     ordered_texts = list(script_to_search_term.keys())
     manual_texts = [t for t in ordered_texts
                     if script_to_search_term[t]["search_type"] in manual_set]
 
     print("\n" + "=" * 70)
-    print(f"[manual-img] {len(manual_texts)} manual image-edit scene(s) to process")
+    print(f"[manual-img] {len(manual_texts)} derive-from-previous scene(s) to process")
     print("=" * 70)
     if not manual_texts:
         print("[manual-img] none — skipping")
@@ -2508,20 +2685,51 @@ def run_manual_image_stage(
                 return still, ordered_texts[j]
         return None, None
 
+    def _resolve_static_source(idx: int) -> tuple[str | None, str | None]:
+        """For STATIC_OF_PREVIOUS: walk back to the nearest scene with footage,
+        then reuse its image as-is, or freeze the last *played* frame of its
+        last video clip (timestamp = that clip's trim, from the JSON timings)."""
+        for j in range(idx - 1, -1, -1):
+            prev_text = ordered_texts[j]
+            entry   = next((e for e in final_data if e["script_text"] == prev_text), None)
+            footage = (entry or {}).get("footage") or []
+            if not footage:
+                continue
+            last_path, last_trim = next(iter(footage[-1].items()))   # LAST clip of prev scene
+            local = _resolve_to_local_path(last_path)
+            if not local:
+                continue
+
+            if _classify_footage_path(local) == "video":
+                key = f"{local}|{round(float(last_trim), 3)}"
+                freeze_png = out_dir / f"static_src_{hashlib.md5(key.encode()).hexdigest()[:12]}.png"
+                if not (freeze_png.exists() and freeze_png.stat().st_size > 1024):
+                    try:
+                        _extract_frame_at_timestamp(local, float(last_trim), str(freeze_png))
+                    except Exception as exc:
+                        print(f"[manual-img] WARNING: freeze-frame failed for "
+                              f"{Path(local).name}: {exc}")
+                        continue
+                print(f"[manual-img]   static source ← '{prev_text[:45]}' "
+                      f"(VIDEO {Path(local).name}, freeze @ {float(last_trim):.2f}s)")
+                return str(freeze_png), prev_text
+
+            print(f"[manual-img]   static source ← '{prev_text[:45]}' "
+                  f"(IMAGE {Path(local).name}, reused as-is)")
+            return local, prev_text
+        return None, None
+
     for n, text in enumerate(manual_texts, start=1):
         idx   = script_index[text]
         stype = script_to_search_term[text]["search_type"]
-        kind  = "zoom" if stype in ZOOM_PREV_TYPES else "place"
+        kind  = ("static" if stype in STATIC_OF_PREVIOUS_TYPES
+                 else "zoom" if stype in ZOOM_PREV_TYPES
+                 else "place")
 
         print("\n" + "-" * 70)
         print(f"[manual-img] ({n}/{len(manual_texts)}) [{kind}] scene #{idx}: '{text[:55]}'")
         print("-" * 70)
 
-        base_still, base_text = _resolve_base(idx)
-        if not base_still:
-            print(f"[manual-img] FATAL: no preceding image for '{text[:60]}'. This "
-                  f"type needs a normal scene before it whose image is the backdrop.")
-            sys.exit(1)
         if text not in scene_timings:
             print(f"[manual-img] FATAL: no timing for '{text[:60]}'")
             sys.exit(1)
@@ -2533,87 +2741,110 @@ def run_manual_image_stage(
         safe_stem  = re.sub(r"[^a-zA-Z0-9]+", "_", text).strip("_")[:50] or "scene"
         result_png = out_dir / f"manual_{kind}_{idx:03d}_{safe_stem}.png"
         output_mp4 = out_dir / f"manual_{kind}_{idx:03d}_{safe_stem}.mp4"
-
-        print(f"[manual-img]   base <- '{base_text[:50]}' "
-              f"({Path(base_still).name}, {_dims(base_still)})")
         print(f"[manual-img]   duration = {duration:.3f}s")
 
-        if kind == "place":
-            overlay_still = _resolve_scene_still(text)
-            if not overlay_still:
-                print(f"[manual-img] FATAL: no chosen stock for '{text[:60]}'. Its "
-                      f"overlay is picked in stage-1 review — did you select one? "
-                      f"(Delete {CANDIDATES_CACHE_FILE} and re-run if stale.)")
+        if kind == "static":
+            # Non-interactive: reuse prev image, or freeze prev video's last frame.
+            src_still, _src_text = _resolve_static_source(idx)
+            if not src_still:
+                print(f"[manual-img] FATAL: no preceding media to derive a still "
+                      f"from for '{text[:60]}'. static_of_previous needs a normal "
+                      f"image/video scene before it.")
                 sys.exit(1)
-            print(f"[manual-img]   overlay = {Path(overlay_still).name} "
-                  f"({_dims(overlay_still)})")
-
-            state_file = out_dir / f"placement_{idx:03d}.json"
-            placements = None
-            if state_file.exists():
-                try:
-                    d = json.loads(state_file.read_text())
-                    remove_bg = bool(d.get("remove_bg", True))
-                    # new format: {"remove_bg":.., "placements":[{...}, ...]}
-                    # old format (single stamp): {"width_pct":.., "cx_frac":.., ...}
-                    raw = d["placements"] if "placements" in d else [d]
-                    placements = [Placement(int(r["width_pct"]), float(r["cx_frac"]),
-                                            float(r["cy_frac"]), remove_bg) for r in raw]
-                    print(f"[manual-img]   resume: reusing {len(placements)} saved "
-                          f"placement(s)")
-                except Exception as exc:
-                    print(f"[manual-img]   couldn't read {state_file.name} ({exc}); "
-                          f"re-opening GUI")
-                    placements = None
-            if placements is None:
-                placements = place_overlays_interactive(
-                    base_image_path=base_still, overlay_image_path=overlay_still,
-                    window_title=(f"Place '{script_to_search_term[text]['search_term']}' "
-                                  f"(scene {n}/{len(manual_texts)})"),
-                )
-                if not placements:
-                    print(f"\n[manual-img] Exited without placing scene #{idx}. "
-                          f"Re-run to resume.")
-                    sys.exit(0)
-                state_file.write_text(json.dumps({
-                    "remove_bg": placements[0].remove_bg,
-                    "placements": [{"width_pct": p.width_pct, "cx_frac": p.cx_frac,
-                                    "cy_frac": p.cy_frac} for p in placements],
-                }, indent=2))
-            print(f"[manual-img]   stamps = {len(placements)}")
             try:
-                composite_overlays(base_still, overlay_still, placements, str(result_png))
+                shutil.copyfile(src_still, str(result_png))
             except Exception as exc:
-                print(f"[manual-img] FATAL: composite failed: {exc}")
+                print(f"[manual-img] FATAL: couldn't stage still from "
+                      f"{Path(src_still).name}: {exc}")
                 sys.exit(1)
 
-        else:  # zoom
-            state_file = out_dir / f"crop_{idx:03d}.json"
-            crop = None
-            if state_file.exists():
+        else:
+            # place & zoom both use the PREVIOUS scene's image as the backdrop.
+            base_still, base_text = _resolve_base(idx)
+            if not base_still:
+                print(f"[manual-img] FATAL: no preceding image for '{text[:60]}'. "
+                      f"This type needs a normal scene before it whose image is "
+                      f"the backdrop.")
+                sys.exit(1)
+            print(f"[manual-img]   base <- '{base_text[:50]}' "
+                  f"({Path(base_still).name}, {_dims(base_still)})")
+
+            if kind == "place":
+                overlay_still = _resolve_scene_still(text)
+                if not overlay_still:
+                    print(f"[manual-img] FATAL: no chosen stock for '{text[:60]}'. Its "
+                          f"overlay is picked in stage-1 review — did you select one? "
+                          f"(Delete {CANDIDATES_CACHE_FILE} and re-run if stale.)")
+                    sys.exit(1)
+                print(f"[manual-img]   overlay = {Path(overlay_still).name} "
+                      f"({_dims(overlay_still)})")
+
+                state_file = out_dir / f"placement_{idx:03d}.json"
+                placements = None
+                if state_file.exists():
+                    try:
+                        d = json.loads(state_file.read_text())
+                        remove_bg = bool(d.get("remove_bg", True))
+                        # new format: {"remove_bg":.., "placements":[{...}, ...]}
+                        # old format (single stamp): {"width_pct":.., "cx_frac":.., ...}
+                        raw = d["placements"] if "placements" in d else [d]
+                        placements = [Placement(int(r["width_pct"]), float(r["cx_frac"]),
+                                                float(r["cy_frac"]), remove_bg) for r in raw]
+                        print(f"[manual-img]   resume: reusing {len(placements)} saved "
+                              f"placement(s)")
+                    except Exception as exc:
+                        print(f"[manual-img]   couldn't read {state_file.name} ({exc}); "
+                              f"re-opening GUI")
+                        placements = None
+                if placements is None:
+                    placements = place_overlays_interactive(
+                        base_image_path=base_still, overlay_image_path=overlay_still,
+                        window_title=(f"Place '{script_to_search_term[text]['search_term']}' "
+                                      f"(scene {n}/{len(manual_texts)})"),
+                    )
+                    if not placements:
+                        print(f"\n[manual-img] Exited without placing scene #{idx}. "
+                              f"Re-run to resume.")
+                        sys.exit(0)
+                    state_file.write_text(json.dumps({
+                        "remove_bg": placements[0].remove_bg,
+                        "placements": [{"width_pct": p.width_pct, "cx_frac": p.cx_frac,
+                                        "cy_frac": p.cy_frac} for p in placements],
+                    }, indent=2))
+                print(f"[manual-img]   stamps = {len(placements)}")
                 try:
-                    d = json.loads(state_file.read_text())
-                    crop = CropBox(int(d["width_pct"]), float(d["cx_frac"]), float(d["cy_frac"]))
-                    print(f"[manual-img]   resume: reusing saved crop box")
+                    composite_overlays(base_still, overlay_still, placements, str(result_png))
                 except Exception as exc:
-                    print(f"[manual-img]   couldn't read {state_file.name} ({exc}); re-opening GUI")
-                    crop = None
-            if crop is None:
-                crop = zoom_prev_interactive(
-                    base_image_path=base_still,
-                    window_title=f"Zoom into previous image (scene {n}/{len(manual_texts)})",
-                )
+                    print(f"[manual-img] FATAL: composite failed: {exc}")
+                    sys.exit(1)
+
+            else:  # zoom
+                state_file = out_dir / f"crop_{idx:03d}.json"
+                crop = None
+                if state_file.exists():
+                    try:
+                        d = json.loads(state_file.read_text())
+                        crop = CropBox(int(d["width_pct"]), float(d["cx_frac"]), float(d["cy_frac"]))
+                        print(f"[manual-img]   resume: reusing saved crop box")
+                    except Exception as exc:
+                        print(f"[manual-img]   couldn't read {state_file.name} ({exc}); re-opening GUI")
+                        crop = None
                 if crop is None:
-                    print(f"\n[manual-img] Exited without zooming scene #{idx}. Re-run to resume.")
-                    sys.exit(0)
-                state_file.write_text(json.dumps({
-                    "width_pct": crop.width_pct, "cx_frac": crop.cx_frac,
-                    "cy_frac": crop.cy_frac}, indent=2))
-            try:
-                crop_and_zoom(base_still, crop, str(result_png))
-            except Exception as exc:
-                print(f"[manual-img] FATAL: crop/zoom failed: {exc}")
-                sys.exit(1)
+                    crop = zoom_prev_interactive(
+                        base_image_path=base_still,
+                        window_title=f"Zoom into previous image (scene {n}/{len(manual_texts)})",
+                    )
+                    if crop is None:
+                        print(f"\n[manual-img] Exited without zooming scene #{idx}. Re-run to resume.")
+                        sys.exit(0)
+                    state_file.write_text(json.dumps({
+                        "width_pct": crop.width_pct, "cx_frac": crop.cx_frac,
+                        "cy_frac": crop.cy_frac}, indent=2))
+                try:
+                    crop_and_zoom(base_still, crop, str(result_png))
+                except Exception as exc:
+                    print(f"[manual-img] FATAL: crop/zoom failed: {exc}")
+                    sys.exit(1)
 
         print(f"[manual-img]   result = {Path(result_png).name} ({_dims(str(result_png))})")
         try:
@@ -2656,6 +2887,7 @@ LOCAL_FOOTAGE_GENERATORS: dict[str, Callable[
 ]] = {
     "joint":    generate_joint_scenes,    # handles every type in JOINT_TYPES
     "read_out": generate_read_out_scenes, # handles MediaType.READ_OUT
+    "map":      generate_map_scenes,      # handles MediaType.MAP
 }
 
 
@@ -3444,7 +3676,7 @@ def main() -> None:
     #     review's cleanup would delete the "unchosen" local AI tiles, which
     #     (unlike Pexels URLs) can't be re-downloaded. They re-enter final_data
     #     via the generator-merge step (2.6) afterwards.
-    _excluded_from_review = {MediaType.AI_EDIT, MediaType.ZOOM_PREV_IMG}
+    _excluded_from_review = {MediaType.AI_EDIT, MediaType.ZOOM_PREV_IMG, MediaType.STATIC_OF_PREVIOUS}
     non_edit_candidates = [
         c for c in candidates_data
         if scriptTextToPexelSearch.get(c["script_text"], {}).get("search_type")

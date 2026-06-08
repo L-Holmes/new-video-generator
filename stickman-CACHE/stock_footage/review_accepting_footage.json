@@ -10,7 +10,7 @@
   "you probably have a jar of nutmeg.": {
     "footage": [
       {
-        "stickman-CACHE/stock_footage/edited-9990d97278.png": 1.9
+        "stickman-CACHE/stock_footage/edited-adf02ef3ff.png": 1.9
       }
     ],
     "manual_intervention": false
@@ -47,10 +47,10 @@
     ],
     "manual_intervention": false
   },
-  "The Banda Islands. A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.": {
+  "The Banda Islands. A tiny, incredibly remote volcanic archipelago": {
     "footage": [
       {
-        "https://videos.pexels.com/video-files/31974302/13624646_1920_1080_30fps.mp4": 5.46
+        "https://videos.pexels.com/video-files/31974302/13624646_1920_1080_30fps.mp4": 3.82
       }
     ],
     "manual_intervention": false
@@ -87,10 +87,10 @@
     ],
     "manual_intervention": false
   },
-  "single ship full of nutmeg, you were set for life.": {
+  "single ship full of nutmeg,": {
     "footage": [
       {
-        "stickman-CACHE/pixellated/px-74802316d4cf4cae.png": 2.34
+        "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
       }
     ],
     "manual_intervention": false

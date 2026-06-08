@@ -17,3 +17,4 @@ __pycache__/
 *.avif
 tmp_stitch/
 uv.lock
+_MAP_DATA/

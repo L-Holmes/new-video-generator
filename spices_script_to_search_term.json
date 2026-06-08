@@ -59,7 +59,17 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0
   },
-  "The Banda Islands. A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.": {
+  "The Banda Islands. A tiny, incredibly remote volcanic archipelago": {
+    "search_term": "Banda Islands Indonesia aerial volcanic",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "in modern-day Indonesia.": {
     "search_term": "Banda Islands Indonesia aerial volcanic",
     "search_type": "stock",
     "position": "1",

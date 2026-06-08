@@ -48,10 +48,10 @@
         ]
     },
     {
-        "script_text": "The Banda Islands. A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.",
+        "script_text": "The Banda Islands. A tiny, incredibly remote volcanic archipelago",
         "footage": [
             {
-                "stickman-CACHE/stickman_explain_scenes/explain_001_The_Banda_Islands_A_tiny_incredibly_remote_volcani.mp4": 5.46
+                "stickman-CACHE/stickman_explain_scenes/explain_001_The_Banda_Islands_A_tiny_incredibly_remote_volcani.mp4": 3.82
             }
         ]
     },
@@ -91,10 +91,10 @@
         ]
     },
     {
-        "script_text": "single ship full of nutmeg, you were set for life.",
+        "script_text": "single ship full of nutmeg,",
         "footage": [
             {
-                "stickman-CACHE/pixellated/px-74802316d4cf4cae.png": 2.34
+                "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
             }
         ]
     },
@@ -139,10 +139,18 @@
         ]
     },
     {
+        "script_text": "in modern-day Indonesia.",
+        "footage": [
+            {
+                "stickman-CACHE/map_scenes/map_000_in_modern_day_Indonesia.mp4": 1.64
+            }
+        ]
+    },
+    {
         "script_text": "traded for nutmeg.",
         "footage": [
             {
-                "stickman-CACHE/text_overlay_scenes/text_overlay_018_traded_for_nutmeg.mp4": 1.26
+                "stickman-CACHE/text_overlay_scenes/text_overlay_020_traded_for_nutmeg.mp4": 1.26
             }
         ]
     },
@@ -151,6 +159,14 @@
         "footage": [
             {
                 "stickman-CACHE/manual_stock_placement/manual_zoom_005_single_most_contested_resource_on_the_planet.mp4": 2.34
+            }
+        ]
+    },
+    {
+        "script_text": "you were set for life.",
+        "footage": [
+            {
+                "stickman-CACHE/manual_stock_placement/manual_static_016_you_were_set_for_life.mp4": 1.02
             }
         ]
     }

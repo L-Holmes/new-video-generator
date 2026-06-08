@@ -1,33 +1,115 @@
-
-
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
+
+
+------------------------------------------------------------------------------------------------------------------
+NEXT:
+- maps integration for place names
+    - either the whole map
+    - or map with a pointer on 
+    - or even layer the map at a slight angle over whatever was already on the screen... (perhaps better for a quick mention of a place before scene switch? (Wait no that will be basically every time!)
+
+so in the script_to_search_term.json, if the search type is 'map'... 
+(same for the mediatype map in the code...)
+then it will use the search term as the place to search for...
+
+or it'll intelligently determine whether it is showing a county or place or country etc. 
+if its a country, it shows the whole world map, with then that country highlighted.. and/or a label on on it.
+if its a county/state etc. it'll ideally show that relative to the map of the country..
+same for towns / villages / cities.. show that relative to the country...
+
+so im imagining open street map or something similar.. or maybe even wikipedia potentially as i know they have maps.. but ill leave that up to you..
+
+------------------------------------------------------------------------------------------------------------------
+THEN:
+- Add the 'shot on film a golden hour' appearance to all the stock...
+    ... light vingette etc.
+    ... colour graded... etc.
+    chromatic aberration ??
+
+------------------------------------------------------------------------------------------------------------------
+
+
+
+THEN:
+- text, arrows and presets???
+------------------------------------------------------------------------------------------------------------------
+
+
+THEN:
+- same as previous, but rotated/flipped???
+
+------------------------------------------------------------------------------------------------------------------
+
+
+THEN:
+- repeated things for common things:
+    - questoins (question mark comes on screen)
+    - etc. 
+    - (need to make a big list here!)
+- synced music
+    - have a theme, switch to different footage on the beats of a song??
+
+------------------------------------------------------------------------------------------------------------------
+THEN:
+- actually create the rules... for when to add certain scenes / sound effects etc.
+    - don't shy away from it compadre!
+
+------------------------------------------------------------------------------------------------------------------
+
+THEN:
+- make the code better
+    - take things out of main that should be in their own seperate files...
+    - to note: before seperating out, will want to first seperate in-place in the main file itself. -- i.e. thing slike when update the json are called etc... or updates to different things or reviews that happen in the middle...
+    --> straighten all that out...
+
+
+------------------------------------------------------------------------------------------------------------------
+
+
+Other ideas:
+- Create seperate foreground and background, then add parallax effect?
+- stock fallback
+    - (if all the stock is just rubbish... do i allow backup of generate ai image?)
+- speed ramps:
+    - 100% -> 150% for boring middle section, snap back to 100% on beat. Great for walking, clouds, city timelapses.
+- 2 to 3 brand colours? (for like labels.. text .. arrows.. stock.. etc.)
+- blurs and highlights?
+    - same as previous I assume, but then blur/darken/shadow or highlight effects? 
+- highlighting layered things
+    - like adding shaddow...
+    - gaussian blur whatever that is...
+    - etc.
+- slight rotation for layered things...
+    - hmmm . yeah so either layer on prexisting background
+- maybe transitions etc. for when I place something in a scene manually?? 
+    - (even if i place multiple items in a scene? - e.g. adding 5 coins... could have default it adds them one by one, cutting one after the other... (unless the length of the clip isn't long enough?)
+- character reactions library
+    - Reuse a small library of stickman poses: thinking, pointing, shocked, shrug. Trigger by sentiment of line.
+- graphs / bars / ...
+    - Counter animations
+    Numbers tick up, bar fills, pie chart draws on. Perfect for stats you mention.
+    - hmmm - do i use manim for this? and generate code to then generate the thing? or what? 
+
+More questionable ideas:
+- masked text title cards
+    -  stock plays inside the letters. Works for titles and chapter cards.
+Comic panel grid
+    2x2 or 1x3 panels for rapid examples. Each panel gets its own mini caption.
+
+
+
+------------------------------------------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 hmmm
 
 
-OOH! May be also nice to:
-new media type: static-of-previous
-- if it is stock footage, 
-    - have an option to 'get still, and then edit still in [the current scene] [i..e the scene after the stock footage]
-    be able to press a button to stop it at the point they want a screenshot to be taken.
-    then that screenshot will be used as the base 'previous image' in the image review stage...
-    actually, scratch that, no. 
-    Instead of the user choosing the end of the stock footage, it will instead determine how long the json will be based on the calculated scene length values (we have lots of jsons with stats already...)
-        - this will then be used as the still moment automatically, for the user to then edit...
-
-    -> to note, if they don't choose that, just use the stock footage as is, and layer the image onto the video background... (this is default!)
 
 
 ------------------------------------------------------------------------------------------------------------------
 
 # ALL OTHER NOTES:
-
---> add auto zooming, but only for things that are not edit scenes? so standalone scenes? (which don't then get editted!)
-
-Am I currently passing everything through the 256 pixelisaition??
-
 
 ----
 Hmmmmm..

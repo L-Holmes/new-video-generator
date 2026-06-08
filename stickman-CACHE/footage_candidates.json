@@ -122,30 +122,30 @@
         "max_runtime_per_clip_seconds": 1.76
     },
     {
-        "script_text": "The Banda Islands. A tiny, incredibly remote volcanic archipelago in modern-day Indonesia.",
+        "script_text": "The Banda Islands. A tiny, incredibly remote volcanic archipelago",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/31974302/13624646_1920_1080_30fps.mp4": 5.46
+                    "https://videos.pexels.com/video-files/31974302/13624646_1920_1080_30fps.mp4": 3.82
                 },
                 {
-                    "https://videos.pexels.com/video-files/5046216/5046216-hd_1920_1080_24fps.mp4": 5.46
+                    "https://videos.pexels.com/video-files/5046216/5046216-hd_1920_1080_24fps.mp4": 3.82
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/4096290/pexels-photo-4096290.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.46
+                    "https://images.pexels.com/photos/4096290/pexels-photo-4096290.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.82
                 },
                 {
-                    "https://images.pexels.com/photos/4870657/pexels-photo-4870657.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.46
+                    "https://images.pexels.com/photos/4870657/pexels-photo-4870657.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.82
                 },
                 {
-                    "https://images.pexels.com/photos/37211343/pexels-photo-37211343.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.46
+                    "https://images.pexels.com/photos/37211343/pexels-photo-37211343.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.82
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 5.46
+        "max_runtime_per_clip_seconds": 3.82
     },
     {
         "script_text": "sailing for months, surviving",
@@ -200,17 +200,30 @@
         "max_runtime_per_clip_seconds": 1.98
     },
     {
-        "script_text": "single ship full of nutmeg, you were set for life.",
+        "script_text": "single ship full of nutmeg,",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/34228530/14506265_3840_2160_60fps.mp4": 1.32
+                },
+                {
+                    "https://videos.pexels.com/video-files/5703392/5703392-uhd_3840_2160_30fps.mp4": 1.32
+                }
+            ],
             "images": [
                 {
-                    "stickman-CACHE/stickman_scenes/single_ship_full_of_nutmeg_you_were_set__8a862210_0.png": 2.34
+                    "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
+                },
+                {
+                    "https://images.pexels.com/photos/27683225/pexels-photo-27683225.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
+                },
+                {
+                    "https://images.pexels.com/photos/8166101/pexels-photo-8166101.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 2.34
+        "max_runtime_per_clip_seconds": 1.32
     },
     {
         "script_text": "The Dutch and the British fought bloody, brutal wars over these tiny islands.",
