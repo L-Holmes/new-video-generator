@@ -25,17 +25,7 @@ Apply fine cinematic sharpening for a crisp, high-end film feel
     so they all look like part of the same collection...
     and got that nice movie type appearance..
 
-
-Hmmmm...
-maybe a test first that gives a few variations that I can pick from??
-
-
 Also, make this toggleable via a CONSTANT in the main.py file... like 'TOGGLE_STOCK_COLOUR_GRADING_ETC'
-
-
-if you need to use a preexisting set of defaults to do this- ensure it is open source etc.
-
-ensure you don't miss out stock like wikipedia.. or STICKMAN_EXPLAIN_STOCK etc. (but don't apply to say the stickman / ai generated images...)
 but then have another flag... 'APPLY_COLOUR_GRADING_TO_ALL' which will just apply to absolutely everything...
 
 if the new 'COLOUR_GRADE_ETC.py' file is ran itself..

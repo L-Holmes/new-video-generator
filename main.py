@@ -1,11 +1,11 @@
 from __future__ import annotations
-import hashlib
 
 import argparse
+import gc
+import hashlib
 import json
 import math
 import os
-import gc
 import random
 import re
 import shutil
@@ -15,30 +15,31 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, TypedDict
 from pathlib import Path
+from typing import Callable, TypedDict
 
 import nltk
 import ollama
 import requests
+import spacy
 from PIL import Image
 from rake_nltk import Rake
-import spacy
-from GET_FROM_WIKIPEDIA import get_from_wikipedia
-import subprocess
+
+import COLOUR_GRADE_ETC
 
 # ===========================================================================
 # IMPORTS - LOCAL
 # ===========================================================================
-
 from AUDIO_SCRIPT_SYNCHRONIZER import run as run_audio_script_synchronizer
-from STOCK_FOOTAGE_REVIEW import run_media_review
-from STITCH_TOGETHER import stitch_together_video
-from JOINT_IMAGE_CREATOR import composite as create_joint_scene, TRANSITION_RANDOM, TRANSITION_FADE
-from WORDS_ON_SCREEN import render_scene_to_video, WordRenderConfig
-from SCRIPT_AUDIO_CUTDOWN_AND_PROCESS import run as run_audio_cutdown
-from PIXELLATE import pixellate_image
+from GET_FROM_WIKIPEDIA import get_from_wikipedia
 from GET_MAP import get_map_image
+from JOINT_IMAGE_CREATOR import TRANSITION_FADE, TRANSITION_RANDOM
+from JOINT_IMAGE_CREATOR import composite as create_joint_scene
+from PIXELLATE import pixellate_image
+from SCRIPT_AUDIO_CUTDOWN_AND_PROCESS import run as run_audio_cutdown
+from STITCH_TOGETHER import stitch_together_video
+from STOCK_FOOTAGE_REVIEW import run_media_review
+from WORDS_ON_SCREEN import WordRenderConfig, render_scene_to_video
 
 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 print("running main")
@@ -64,8 +65,8 @@ _arg_parser.add_argument("--name", default="")
 _known_args, _ = _arg_parser.parse_known_args()
 _NAME = _known_args.name.strip()
 
-_CACHE_DIR   = f"{_NAME}-CACHE"  if _NAME else "CACHE"
-_OUTPUT_DIR  = f"{_NAME}-OUTPUT" if _NAME else "OUTPUT"
+_CACHE_DIR = f"{_NAME}-CACHE" if _NAME else "CACHE"
+_OUTPUT_DIR = f"{_NAME}-OUTPUT" if _NAME else "OUTPUT"
 _SCRIPT_STEM = f"script-{_NAME}" if _NAME else "script"
 
 # ===========================================================================
@@ -87,17 +88,32 @@ MIN_CLIP_LENGTH_SEC = 1.8
 
 APPLY_KEN_BURNS_AFFECT = False
 
+# --- Cinematic colour grading (unified "shot on film at golden hour" look) ---
+# Master switch: give STOCK footage one cohesive film grade so the whole video
+# reads as a single graded collection. Applied late (just before Ken Burns) to
+# the CHOSEN footage only — see apply_colour_grading_to_final_data + the
+# "CINEMATIC COLOUR GRADING" section lower down for the full machinery.
+#
+# Preview / pick a look first:   uv run COLOUR_GRADE_ETC.py
+TOGGLE_STOCK_COLOUR_GRADING_ETC: bool = True
+# When True, grade EVERY scene (stickman / ai_edit / read-out / maps included),
+# not just real-world stock. Ignored unless TOGGLE_STOCK_COLOUR_GRADING_ETC.
+APPLY_COLOUR_GRADING_TO_ALL: bool = False
+# COLOUR_GRADE_ETC now has ONE unified cinematic look (no variations); this just
+# selects it. Run `uv run COLOUR_GRADE_ETC.py` to preview before/after stills.
+STOCK_COLOUR_GRADE_PRESET: str = COLOUR_GRADE_ETC.DEFAULT_PRESET
+
 PEXELS_API_KEY: str = "PewOP3u4JK8nTBe0kkazrBgXPSwfeh0tWS1kE9y4eS26TzTEG0wmuGK8"
 
 STOCK_FOOTAGE_CACHE_DIR = Path(f"{_CACHE_DIR}/stock_footage/")
 HISTORY_FILE = STOCK_FOOTAGE_CACHE_DIR / "history.json"
 
 OUTPUT_FILE = f"{_OUTPUT_DIR}/output.mp4"
-TEMP_DIR    = Path("tmp_stitch/")
+TEMP_DIR = Path("tmp_stitch/")
 
 # --- Narration audio -------------------------------------------------
 # The ORIGINAL recording (what you record / TTS-generate).
-RAW_SCRIPT_AUDIO_FILE = f"{_SCRIPT_STEM}.wav"          # e.g. script-stickman.wav
+RAW_SCRIPT_AUDIO_FILE = f"{_SCRIPT_STEM}.wav"  # e.g. script-stickman.wav
 
 # Tightened narration produced by SCRIPT_AUDIO_CUTDOWN_AND_PROCESS.run(),
 # written under the cache dir, e.g.
@@ -121,7 +137,9 @@ SYNCHRONIZED_SCRIPT_OUTPUT_FILE = f"{_CACHE_DIR}/script_timings_seconds.json"
 AUDIO_START_DELAY_SECONDS = 0.5
 
 STOCK_FOOTAGE_TO_DOWNLOADED_MEDIA_FILE = f"{_CACHE_DIR}/stock_footage/history.json"
-REVIEW_STOCK_FOOTAGE_OUTPUT_FILE       = f"{_CACHE_DIR}/stock_footage/review_accepting_footage.json"
+REVIEW_STOCK_FOOTAGE_OUTPUT_FILE = (
+    f"{_CACHE_DIR}/stock_footage/review_accepting_footage.json"
+)
 
 FINAL_SCRIPT_AND_CLIPS = f"{_CACHE_DIR}/final_script_to_clips.json"
 
@@ -130,13 +148,23 @@ FINAL_SCRIPT_AND_CLIPS = f"{_CACHE_DIR}/final_script_to_clips.json"
 # written only AFTER the user has finished picking.
 CANDIDATES_CACHE_FILE = f"{_CACHE_DIR}/footage_candidates.json"
 
-LINE_INDEX_TO_SEARCH_TERM_FILE = f"{_NAME}_script_to_search_term.json" if _NAME else "script_to_search_term.json"
-TIMESTAMPS_ABSOLUTE_FILE = f"{_CACHE_DIR}/{_NAME}_timestamps_absolute.json" if _NAME else f"{_CACHE_DIR}/timestamps_absolute.json"
+LINE_INDEX_TO_SEARCH_TERM_FILE = (
+    f"{_NAME}_script_to_search_term.json" if _NAME else "script_to_search_term.json"
+)
+TIMESTAMPS_ABSOLUTE_FILE = (
+    f"{_CACHE_DIR}/{_NAME}_timestamps_absolute.json"
+    if _NAME
+    else f"{_CACHE_DIR}/timestamps_absolute.json"
+)
 
 # Optional per-word timings produced by AUDIO_SCRIPT_SYNCHRONIZER (Whisper
 # word-level). If present, READ_OUT scenes use these for exact sync;
 # otherwise they fall back to syllable-based estimation.
-WORD_TIMINGS_FILE = f"{_CACHE_DIR}/{_NAME}_word_timings.json" if _NAME else f"{_CACHE_DIR}/word_timings.json"
+WORD_TIMINGS_FILE = (
+    f"{_CACHE_DIR}/{_NAME}_word_timings.json"
+    if _NAME
+    else f"{_CACHE_DIR}/word_timings.json"
+)
 
 # ===========================================================================
 # Create all required dirs on startup
@@ -145,7 +173,7 @@ WORD_TIMINGS_FILE = f"{_CACHE_DIR}/{_NAME}_word_timings.json" if _NAME else f"{_
 Path(_CACHE_DIR).mkdir(parents=True, exist_ok=True)
 Path(_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-Path(PROCESSED_AUDIO_DIR).mkdir(parents=True, exist_ok=True)   # ← add
+Path(PROCESSED_AUDIO_DIR).mkdir(parents=True, exist_ok=True)  # ← add
 
 # ===========================================================================
 # JOINT SCENE INTEGRATION
@@ -219,18 +247,25 @@ MAP_GEOCODE_CACHE_DIR: str = f"{_CACHE_DIR}/maps"
 #      LOCAL_FOOTAGE_GENERATORS at the bottom of this file.
 # ===========================================================================
 
+
 class MediaType(Enum):
-    STOCK       = "stock"          # Pexels videos+images, picked via review GUI
-    WIKIPEDIA   = "wikipedia"      # Wikipedia images, picked via review GUI
-    JOINT_3_ROW = "joint_3_row"    # 3-image collage composited locally
-    READ_OUT    = "read_out"       # Kinetic typography (script text on screen)
-    MAP         = "map"            # Highlighted map of a country/region/place (rendered locally)
-    STICKMAN    = "stickman"       # AI-generated stickman; 2 variants → review GUI
-    AI_EDIT     = "ai_edit"        # Edit the preceding AI image; N variants -> 2nd review
-    STICKMAN_EXPLAIN_STOCK     = "stickman_explain_stock"      # chosen Pexels clip composited onto a board base
+    STOCK = "stock"  # Pexels videos+images, picked via review GUI
+    WIKIPEDIA = "wikipedia"  # Wikipedia images, picked via review GUI
+    JOINT_3_ROW = "joint_3_row"  # 3-image collage composited locally
+    READ_OUT = "read_out"  # Kinetic typography (script text on screen)
+    MAP = "map"  # Highlighted map of a country/region/place (rendered locally)
+    STICKMAN = "stickman"  # AI-generated stickman; 2 variants → review GUI
+    AI_EDIT = "ai_edit"  # Edit the preceding AI image; N variants -> 2nd review
+    STICKMAN_EXPLAIN_STOCK = (
+        "stickman_explain_stock"  # chosen Pexels clip composited onto a board base
+    )
     STICKMAN_EXPLAIN_WIKIPEDIA = "stickman_explain_wikipedia"  # chosen Wikipedia image composited onto a board base
-    STICKMAN_TEXT_OVERLAY      = "stickman_text_overlay"  # caption (search_term) on the PREVIOUS scene's image
-    STICKMAN_JOINT_3_ROW = "stickman_joint_3_row"  # like JOINT_3_ROW but tiles are AI stickman images
+    STICKMAN_TEXT_OVERLAY = (
+        "stickman_text_overlay"  # caption (search_term) on the PREVIOUS scene's image
+    )
+    STICKMAN_JOINT_3_ROW = (
+        "stickman_joint_3_row"  # like JOINT_3_ROW but tiles are AI stickman images
+    )
     MANUAL_STOCK_ADD_TO_PREVIOUS = "manual_stock_add_to_previous"  # place this scene's chosen still onto the PREVIOUS scene's image (manual click/size)
     ZOOM_PREV_IMG = "zoom_prev_img"  # derive this scene's image by cropping/zooming into the PREVIOUS scene's image
     STATIC_OF_PREVIOUS = "static_of_previous"  # reuse prev image, OR freeze prev video's last *played* frame
@@ -297,8 +332,8 @@ STICKMAN_JOINT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_joint_scenes")
 
 # AI edit scenes are generated AFTER stage-1 review (they need the chosen
 # preceding image), then reviewed in a SECOND stage with its own state file.
-AI_EDIT_NUM_VARIANTS: int   = 1
-AI_EDIT_OUTPUT_DIR:   Path  = Path(f"{_CACHE_DIR}/ai_edit_scenes")
+AI_EDIT_NUM_VARIANTS: int = 1
+AI_EDIT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/ai_edit_scenes")
 
 # How many preceding AI images (stickman / ai_edit) to pass to the generator
 # as ADDITIONAL context, on top of the base image being edited. 0 = disable.
@@ -378,19 +413,19 @@ SOUND_EFFECTS_DIR = Path("_SOUND_EFFECTS")
 AUDIO_EVENTS_FILE = f"{_CACHE_DIR}/audio_events.json"
 
 # Hardcoded volumes — applied to all SFX and music respectively.
-SFX_VOLUME:   float = 0.3
-MUSIC_VOLUME: float = 0.01   # ducked under narration
+SFX_VOLUME: float = 0.3
+MUSIC_VOLUME: float = 0.01  # ducked under narration
 
 # Per-type auto-injected SFX for joint scenes. Played at "loop_start"
 # (right after the transition animation finishes) on every joint stage.
 # User can still override per-scene by setting `"sfx"` in the JSON.
 JOINT_TYPE_SFX_MAP: dict[MediaType, dict] = {
     MediaType.JOINT_3_ROW: {
-        "path":   "se-pop.mp3",
+        "path": "se-pop.mp3",
         "timing": "loop_start",
     },
     MediaType.STICKMAN_JOINT_3_ROW: {
-        "path":   "se-pop.mp3",
+        "path": "se-pop.mp3",
         "timing": "loop_start",
     },
 }
@@ -423,8 +458,8 @@ _history_lock = threading.Lock()
 # hit with many parallel connections. Cap concurrent WIKI downloads well below
 # DOWNLOAD_WORKERS and retry 429/503 with backoff. Pexels keeps full
 # concurrency — this throttles Wikimedia only.
-WIKI_DOWNLOAD_CONCURRENCY: int        = 2
-WIKI_DOWNLOAD_MAX_RETRIES: int        = 4
+WIKI_DOWNLOAD_CONCURRENCY: int = 2
+WIKI_DOWNLOAD_MAX_RETRIES: int = 4
 WIKI_DOWNLOAD_BASE_BACKOFF_SEC: float = 1.5
 _wiki_download_semaphore = threading.Semaphore(WIKI_DOWNLOAD_CONCURRENCY)
 
@@ -442,17 +477,16 @@ _wiki_session.headers.update({"User-Agent": WIKI_DOWNLOAD_USER_AGENT})
 _wiki_adapter = requests.adapters.HTTPAdapter(
     pool_connections=WIKI_DOWNLOAD_CONCURRENCY,
     pool_maxsize=WIKI_DOWNLOAD_CONCURRENCY,
-    max_retries=0,                       # we handle retries/backoff ourselves
+    max_retries=0,  # we handle retries/backoff ourselves
 )
 _wiki_session.mount("https://", _wiki_adapter)
-_wiki_session.mount("http://",  _wiki_adapter)
+_wiki_session.mount("http://", _wiki_adapter)
 
 
 class ProgressTracker:
     """Thread-safe text progress indicator."""
 
-    def __init__(self, total: int, label: str = "PROGRESS",
-                 bar_width: int = 30):
+    def __init__(self, total: int, label: str = "PROGRESS", bar_width: int = 30):
         self.total = max(1, total)
         self.label = label
         self.bar_width = bar_width
@@ -489,8 +523,10 @@ class ProgressTracker:
         filled = int(self.bar_width * frac)
         bar = ">" * filled + "-" * (self.bar_width - filled)
 
-        msg = (f"{self.label} [{self.done:>4}/{self.total}]  "
-               f"TIME REMAINING {bar} {eta}      ")
+        msg = (
+            f"{self.label} [{self.done:>4}/{self.total}]  "
+            f"TIME REMAINING {bar} {eta}      "
+        )
         sys.stdout.write("\r" + msg)
         sys.stdout.flush()
 
@@ -499,17 +535,22 @@ class ProgressTracker:
 # some ai edit stuff
 # =================================================
 
+
 def _edit_candidates_cache_file(scene_index: int) -> str:
     return f"{_CACHE_DIR}/edit_candidates_{scene_index:03d}.json"
 
 
 def _edit_review_state_file(scene_index: int) -> str:
     STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    return str(STOCK_FOOTAGE_CACHE_DIR / f"review_accepting_edits_{scene_index:03d}.json")
+    return str(
+        STOCK_FOOTAGE_CACHE_DIR / f"review_accepting_edits_{scene_index:03d}.json"
+    )
+
 
 # ===========================================================================
 # STEP 1  –  SCRIPTS
 # ===========================================================================
+
 
 def save_to_cache(data: list, file_path: str):
     """Saves the script and footage data to a JSON file."""
@@ -517,6 +558,7 @@ def save_to_cache(data: list, file_path: str):
         Path(file_path).write_text(json.dumps(data, indent=4))
     except Exception as e:
         print(f"Error saving cache: {e}")
+
 
 def load_from_cache(file_path: str) -> list | None:
     """Loads data from a cache JSON file. Returns None if the file doesn't
@@ -529,8 +571,10 @@ def load_from_cache(file_path: str) -> list | None:
     try:
         return json.loads(p.read_text())
     except Exception as exc:
-        print(f"⚠️  [cache] {file_path} exists but couldn't be parsed "
-              f"({exc}) — regenerating.")
+        print(
+            f"⚠️  [cache] {file_path} exists but couldn't be parsed "
+            f"({exc}) — regenerating."
+        )
         return None
 
 
@@ -551,7 +595,10 @@ def load_json(file_path: str) -> dict:
 
 # ---------------------------------------------------------------------------
 
-def get_script_text_to_stock_footage_search(scene_lines: list[str]) -> dict[str, SearchTermData]:
+
+def get_script_text_to_stock_footage_search(
+    scene_lines: list[str],
+) -> dict[str, SearchTermData]:
     """
     Returns
     -------
@@ -563,12 +610,14 @@ def get_script_text_to_stock_footage_search(scene_lines: list[str]) -> dict[str,
 
     return result
 
+
 # ===========================================================================
 # STEP 2 GET IMAGES
 # ===========================================================================
 
 
 # --- History helpers (cache index: url → local file path) ---
+
 
 def _load_history() -> dict:
     """Load the URL→local-path cache index from disk."""
@@ -587,6 +636,7 @@ def _save_history(history: dict) -> None:
 
 
 # --- Scene timing helper ---
+
 
 def _get_num_stock_images(input_script: str) -> tuple[int, float]:
     """Decide how many stock images a scene needs and how long it should run."""
@@ -613,12 +663,20 @@ def _get_num_stock_images(input_script: str) -> tuple[int, float]:
 # Pexels metadata + download helpers
 # ---------------------------------------------------------------------------
 
-def _get_video_metadata(search_term: str, max_results: int = 10, page: int = 1) -> list[tuple[str, float]]:
+
+def _get_video_metadata(
+    search_term: str, max_results: int = 10, page: int = 1
+) -> list[tuple[str, float]]:
     """Hit Pexels Videos API, return (url, duration) pairs — NO downloading yet."""
     resp = requests.get(
         "https://api.pexels.com/videos/search",
         headers={"Authorization": PEXELS_API_KEY},
-        params={"query": search_term, "per_page": max_results, "orientation": "landscape", "page": page},
+        params={
+            "query": search_term,
+            "per_page": max_results,
+            "orientation": "landscape",
+            "page": page,
+        },
         timeout=8,
     )
     if resp.status_code != 200:
@@ -627,22 +685,30 @@ def _get_video_metadata(search_term: str, max_results: int = 10, page: int = 1) 
 
     results = []
     for video in resp.json().get("videos", []):
-        files = sorted(video.get("video_files", []), key=lambda f: f.get("width", 0), reverse=True)
+        files = sorted(
+            video.get("video_files", []), key=lambda f: f.get("width", 0), reverse=True
+        )
         if files:
             results.append((files[0]["link"], float(video.get("duration", 0))))
 
     print(f"  [video meta] '{search_term}' p{page} → {len(results)} results")
     return results
 
-def _get_image_metadata(search_term: str, max_results: int = 5,
-                       page: int = 1) -> list[str]:
+
+def _get_image_metadata(
+    search_term: str, max_results: int = 5, page: int = 1
+) -> list[str]:
     """Hit Pexels Images API, return URLs only — NO downloading."""
     try:
         resp = _http_session.get(
             "https://api.pexels.com/v1/search",
             headers={"Authorization": PEXELS_API_KEY},
-            params={"query": search_term, "per_page": max_results,
-                    "orientation": "landscape", "page": page},
+            params={
+                "query": search_term,
+                "per_page": max_results,
+                "orientation": "landscape",
+                "page": page,
+            },
             timeout=8,
         )
     except Exception as exc:
@@ -820,7 +886,7 @@ def _download_wikipedia_image_parallel(url: str) -> str | None:
     STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     dest = STOCK_FOOTAGE_CACHE_DIR / filename
 
-    with _wiki_download_semaphore:           # throttle Wikimedia concurrency
+    with _wiki_download_semaphore:  # throttle Wikimedia concurrency
         for attempt in range(1, WIKI_DOWNLOAD_MAX_RETRIES + 1):
             resp = None
             try:
@@ -848,8 +914,10 @@ def _download_wikipedia_image_parallel(url: str) -> str | None:
 
             # Out of attempts.
             if attempt == WIKI_DOWNLOAD_MAX_RETRIES:
-                print(f"  [wiki download] FAILED {status} after "
-                      f"{WIKI_DOWNLOAD_MAX_RETRIES} attempts for {url}")
+                print(
+                    f"  [wiki download] FAILED {status} after "
+                    f"{WIKI_DOWNLOAD_MAX_RETRIES} attempts for {url}"
+                )
                 return None
 
             # Honour Retry-After if present, else exponential backoff + jitter.
@@ -862,8 +930,10 @@ def _download_wikipedia_image_parallel(url: str) -> str | None:
                     except ValueError:
                         pass
             wait += random.uniform(0, 0.5)
-            print(f"  [wiki download] {status} — retry "
-                  f"{attempt}/{WIKI_DOWNLOAD_MAX_RETRIES} in {wait:.1f}s")
+            print(
+                f"  [wiki download] {status} — retry "
+                f"{attempt}/{WIKI_DOWNLOAD_MAX_RETRIES} in {wait:.1f}s"
+            )
             time.sleep(wait)
 
     with _history_lock:
@@ -878,13 +948,14 @@ def _download_wikipedia_image_parallel(url: str) -> str | None:
 # Joint scene timing helpers
 # ---------------------------------------------------------------------------
 
+
 def _load_scene_timings() -> dict[str, float]:
     """Return {script_text → runtime_seconds} from the audio-sync output."""
     p = Path(SYNCHRONIZED_SCRIPT_OUTPUT_FILE)
     print(f"\n[timings] loading scene timings from {p}")
     if not p.exists():
         print(f"[timings] FATAL: timings file missing: {p}")
-        print( "[timings]   (did run_audio_script_synchronizer run?)")
+        print("[timings]   (did run_audio_script_synchronizer run?)")
         sys.exit(1)
     timings = {k: float(v) for k, v in json.loads(p.read_text()).items()}
     print(f"[timings] loaded {len(timings)} timing entries")
@@ -906,18 +977,18 @@ def _compute_joint_stage_timing(
     total = scene_timings[script_text]
     use_transition = total >= JOINT_MIN_SCENE_DURATION_FOR_TRANSITION_SEC
     intro = JOINT_INTRO_DURATION_SEC if use_transition else 0.0
-    loop  = max(0.0, total - intro)
+    loop = max(0.0, total - intro)
 
     print(f"[joint:timings] '{script_text[:70]}'")
     print(f"[joint:timings]   total={total:.3f}s  use_transition={use_transition}")
     print(f"[joint:timings]   intro={intro:.3f}s  loop={loop:.3f}s")
 
     return {
-        "script_text":    script_text,
+        "script_text": script_text,
         "total_duration": total,
         "use_transition": use_transition,
         "intro_duration": intro,
-        "loop_duration":  loop,
+        "loop_duration": loop,
     }
 
 
@@ -928,7 +999,10 @@ def _stage_file_paths(
 ) -> tuple[Path, Path]:
     """Return (intro_path, loop_path) for one stage of a joint group."""
     intro = group_output_folder / f"stage_{stage_index + 1:02d}_of_{num_stages:02d}.mp4"
-    loop  = group_output_folder / f"stage_{stage_index + 1:02d}_of_{num_stages:02d}_loop.mp4"
+    loop = (
+        group_output_folder
+        / f"stage_{stage_index + 1:02d}_of_{num_stages:02d}_loop.mp4"
+    )
     return intro, loop
 
 
@@ -943,7 +1017,9 @@ def _build_footage_entries_for_stage(
     a single joint stage.
     """
     intro_path, loop_path = _stage_file_paths(
-        group_output_folder, stage_index, num_stages,
+        group_output_folder,
+        stage_index,
+        num_stages,
     )
 
     print(f"\n[joint:footage] stage {stage_index + 1}/{num_stages}")
@@ -959,24 +1035,32 @@ def _build_footage_entries_for_stage(
 
     if timing["use_transition"]:
         if not loop_path.exists():
-            print(f"[joint:footage] FATAL: transition stage missing loop file: {loop_path}")
+            print(
+                f"[joint:footage] FATAL: transition stage missing loop file: {loop_path}"
+            )
             sys.exit(1)
 
         entries.append({str(intro_path): round(timing["intro_duration"], 3)})
-        print(f"[joint:footage]   → intro entry: {intro_path.name}  "
-              f"trim={timing['intro_duration']:.3f}s")
+        print(
+            f"[joint:footage]   → intro entry: {intro_path.name}  "
+            f"trim={timing['intro_duration']:.3f}s"
+        )
 
         if timing["loop_duration"] > 0.01:
             entries.append({str(loop_path): round(timing["loop_duration"], 3)})
-            print(f"[joint:footage]   → loop  entry: {loop_path.name}  "
-                  f"trim={timing['loop_duration']:.3f}s")
+            print(
+                f"[joint:footage]   → loop  entry: {loop_path.name}  "
+                f"trim={timing['loop_duration']:.3f}s"
+            )
         else:
             print(f"[joint:footage]   (loop omitted — duration <= 0.01s)")
     else:
         use_path = loop_path if loop_path.exists() else intro_path
         entries.append({str(use_path): round(timing["total_duration"], 3)})
-        print(f"[joint:footage]   → static entry: {use_path.name}  "
-              f"trim={timing['total_duration']:.3f}s  (no transition: scene too short)")
+        print(
+            f"[joint:footage]   → static entry: {use_path.name}  "
+            f"trim={timing['total_duration']:.3f}s  (no transition: scene too short)"
+        )
 
     print(f"[joint:footage]   total entries for this stage: {len(entries)}")
     return entries
@@ -989,6 +1073,7 @@ def _build_footage_entries_for_stage(
 # don't care which generator produced the entries — they just integrate any
 # script_text → footage map into the master final_data list and history.
 
+
 def _merge_generated_footage_into_final_data(
     final_data: list[dict],
     generated_footage_map: dict[str, list[dict]],
@@ -1000,10 +1085,13 @@ def _merge_generated_footage_into_final_data(
     appended at the end.
     """
     print("\n" + "=" * 70)
-    print(f"[merge:{source_label}] merging {len(generated_footage_map)} entry(ies) "
-          f"into final_data")
-    print(f"[merge:{source_label}] final_data currently has "
-          f"{len(final_data)} entry(ies)")
+    print(
+        f"[merge:{source_label}] merging {len(generated_footage_map)} entry(ies) "
+        f"into final_data"
+    )
+    print(
+        f"[merge:{source_label}] final_data currently has {len(final_data)} entry(ies)"
+    )
     print("=" * 70)
 
     by_script = {entry["script_text"]: i for i, entry in enumerate(final_data)}
@@ -1017,22 +1105,28 @@ def _merge_generated_footage_into_final_data(
             old_count = len(final_data[idx].get("footage", []))
             final_data[idx]["footage"] = entries
             replaced += 1
-            print(f"[merge:{source_label}] REPLACED '{script_text[:60]}...'  "
-                  f"(was {old_count} entry(ies), now {len(entries)})")
+            print(
+                f"[merge:{source_label}] REPLACED '{script_text[:60]}...'  "
+                f"(was {old_count} entry(ies), now {len(entries)})"
+            )
             for e in entries:
                 for path, trim in e.items():
                     print(f"[merge:{source_label}]     {Path(path).name}  trim={trim}s")
         else:
             final_data.append({"script_text": script_text, "footage": entries})
             appended += 1
-            print(f"[merge:{source_label}] APPENDED '{script_text[:60]}...'  "
-                  f"({len(entries)} entry(ies))")
+            print(
+                f"[merge:{source_label}] APPENDED '{script_text[:60]}...'  "
+                f"({len(entries)} entry(ies))"
+            )
             for e in entries:
                 for path, trim in e.items():
                     print(f"[merge:{source_label}]     {Path(path).name}  trim={trim}s")
 
-    print(f"\n[merge:{source_label}] done — replaced={replaced}, appended={appended}, "
-          f"final_data size now {len(final_data)}")
+    print(
+        f"\n[merge:{source_label}] done — replaced={replaced}, appended={appended}, "
+        f"final_data size now {len(final_data)}"
+    )
     return final_data
 
 
@@ -1044,8 +1138,7 @@ def _add_local_paths_to_history(generated_footage_map: dict[str, list[dict]]) ->
     stitcher changes.
     """
     history = _load_history()
-    print(f"\n[history] augmenting history.json "
-          f"(currently {len(history)} entries)")
+    print(f"\n[history] augmenting history.json (currently {len(history)} entries)")
 
     added = 0
     skipped = 0
@@ -1060,13 +1153,16 @@ def _add_local_paths_to_history(generated_footage_map: dict[str, list[dict]]) ->
                 print(f"[history]   + identity entry for {Path(path).name}")
 
     _save_history(history)
-    print(f"[history] done — added={added}, already_present={skipped}, "
-          f"history now has {len(history)} entries")
+    print(
+        f"[history] done — added={added}, already_present={skipped}, "
+        f"history now has {len(history)} entries"
+    )
 
 
 # ===========================================================================
 # EXTERNAL CANDIDATE FETCHING (Pexels + Wikipedia)
 # ===========================================================================
+
 
 def load_stock_footage(all_scenes: dict) -> list[dict]:
     """
@@ -1093,8 +1189,10 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
             skipped_by_type[type_name] = skipped_by_type.get(type_name, 0) + 1
 
     scene_items = list(eligible.items())
-    print(f"\n[fetch] Phase A: gathering metadata for {len(scene_items)} scene(s) "
-          f"in parallel...")
+    print(
+        f"\n[fetch] Phase A: gathering metadata for {len(scene_items)} scene(s) "
+        f"in parallel..."
+    )
     if skipped_by_type:
         skipped_summary = ", ".join(f"{n} {t}" for t, n in skipped_by_type.items())
         print(f"[fetch]   (skipped {skipped_summary} — produced by local generators)")
@@ -1107,8 +1205,11 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
 
         # Explainer scenes feature ONE chosen clip; manual-placement scenes use
         # ONE chosen still. Both want a single pick spanning the full scene.
-        if search_type in STICKMAN_EXPLAIN_TYPES or search_type in MANUAL_STOCK_ADD_TYPES:
-            max_runtime = num_clips * max_runtime   # == full scene runtime
+        if (
+            search_type in STICKMAN_EXPLAIN_TYPES
+            or search_type in MANUAL_STOCK_ADD_TYPES
+        ):
+            max_runtime = num_clips * max_runtime  # == full scene runtime
             num_clips = 1
 
         print(f"\n[fetch:meta] scene[{idx}] '{script_text[:50]}...'")
@@ -1119,8 +1220,7 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
             print(f"[fetch:meta]   → using WIKIPEDIA source")
             wiki_urls = get_from_wikipedia(search_term, max_images=5)
             print(f"[fetch:meta]   wikipedia returned {len(wiki_urls)} URL(s)")
-            return (idx, script_text, num_clips, max_runtime,
-                    [], [], wiki_urls)
+            return (idx, script_text, num_clips, max_runtime, [], [], wiki_urls)
 
         # ── PEXELS path ──────────────────────────────────────────────
         print(f"[fetch:meta]   → using PEXELS source")
@@ -1133,7 +1233,9 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
             for page in range(1, 4):
                 if len(video_meta) >= 2:
                     break
-                for url, dur in _get_video_metadata(search_term, max_results=10, page=page):
+                for url, dur in _get_video_metadata(
+                    search_term, max_results=10, page=page
+                ):
                     if url in seen or dur <= 0:
                         continue
                     seen.add(url)
@@ -1151,8 +1253,7 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
             if len(image_urls) >= 3:
                 break
 
-        return (idx, script_text, num_clips, max_runtime,
-                video_meta, image_urls, [])
+        return (idx, script_text, num_clips, max_runtime, video_meta, image_urls, [])
 
     out: list[dict] = [None] * len(scene_items)  # type: ignore[list-item]
     all_tasks: list[tuple] = []
@@ -1165,13 +1266,20 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
 
     with ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as ex:
         for result in ex.map(fetch_meta_for_scene, enumerate(scene_items)):
-            (idx, script_text, num_clips, max_runtime,
-             video_meta, pexels_img_urls, wiki_img_urls) = result
+            (
+                idx,
+                script_text,
+                num_clips,
+                max_runtime,
+                video_meta,
+                pexels_img_urls,
+                wiki_img_urls,
+            ) = result
 
             out[idx] = {
-                "script_text":                  script_text,
-                "candidates":                   {"videos": [], "images": []},
-                "num_clips_needed":             num_clips,
+                "script_text": script_text,
+                "candidates": {"videos": [], "images": []},
+                "num_clips_needed": num_clips,
                 "max_runtime_per_clip_seconds": max_runtime,
             }
 
@@ -1183,8 +1291,9 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
                 all_tasks.append((idx, "images", url, round(float(max_runtime), 2)))
 
             for url in wiki_img_urls:
-                all_tasks.append((idx, "wiki_images", url,
-                                  round(float(max_runtime), 2)))
+                all_tasks.append(
+                    (idx, "wiki_images", url, round(float(max_runtime), 2))
+                )
 
     print(f"[fetch] Phase A done — {len(all_tasks)} files queued.")
 
@@ -1192,8 +1301,10 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
         return out
 
     # ── Phase B: parallel download with progress bar ──────────────────
-    print(f"[fetch] Phase B: downloading {len(all_tasks)} files "
-          f"with {DOWNLOAD_WORKERS} workers...")
+    print(
+        f"[fetch] Phase B: downloading {len(all_tasks)} files "
+        f"with {DOWNLOAD_WORKERS} workers..."
+    )
     tracker = ProgressTracker(total=len(all_tasks), label="DOWNLOADING")
 
     def download_one(task):
@@ -1219,11 +1330,10 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
     return out
 
 
-
-
 # ===========================================================================
 # STICKMAN CANDIDATE GENERATION (AI-generated, reviewed like stock stills)
 # ===========================================================================
+
 
 def generate_stickman_candidates(
     script_to_search_term: dict[str, SearchTermData],
@@ -1241,7 +1351,8 @@ def generate_stickman_candidates(
     Returns [] (and does no work) if there are no stickman scenes.
     """
     stickman_scenes = {
-        txt: data for txt, data in script_to_search_term.items()
+        txt: data
+        for txt, data in script_to_search_term.items()
         if data["search_type"] == MediaType.STICKMAN
     }
 
@@ -1257,8 +1368,10 @@ def generate_stickman_candidates(
     # don't use stickman scenes.
     from ai_generate_stickman_images import generate_stickman_images
 
-    print(f"[stickman] generating {STICKMAN_NUM_VARIANTS} variant(s) per scene "
-          f"→ {STICKMAN_OUTPUT_DIR}")
+    print(
+        f"[stickman] generating {STICKMAN_NUM_VARIANTS} variant(s) per scene "
+        f"→ {STICKMAN_OUTPUT_DIR}"
+    )
     generated = generate_stickman_images(
         prompts_file=STICKMAN_PROMPTS_FILE,
         out_dir=STICKMAN_OUTPUT_DIR,
@@ -1280,14 +1393,18 @@ def generate_stickman_candidates(
                     break
 
         if not image_paths:
-            print(f"[stickman] WARNING: no images for '{script_text[:60]}' — "
-                  f"the review GUI will have no options for this scene")
+            print(
+                f"[stickman] WARNING: no images for '{script_text[:60]}' — "
+                f"the review GUI will have no options for this scene"
+            )
             continue
 
         image_paths = [p for p in image_paths if Path(p).exists()]
         if not image_paths:
-            print(f"[stickman] WARNING: generated paths missing on disk for "
-                  f"'{script_text[:60]}' — skipping")
+            print(
+                f"[stickman] WARNING: generated paths missing on disk for "
+                f"'{script_text[:60]}' — skipping"
+            )
             continue
 
         if script_text not in scene_timings:
@@ -1299,14 +1416,18 @@ def generate_stickman_candidates(
         # choice. num_clips_needed = 1 — the reviewer picks a single image.
         image_candidates = [{p: duration} for p in image_paths]
 
-        bundles.append({
-            "script_text":                  script_text,
-            "candidates":                   {"videos": [], "images": image_candidates},
-            "num_clips_needed":             1,
-            "max_runtime_per_clip_seconds": duration,
-        })
-        print(f"[stickman]   '{script_text[:50]}' → {len(image_candidates)} "
-              f"option(s), {duration:.2f}s each")
+        bundles.append(
+            {
+                "script_text": script_text,
+                "candidates": {"videos": [], "images": image_candidates},
+                "num_clips_needed": 1,
+                "max_runtime_per_clip_seconds": duration,
+            }
+        )
+        print(
+            f"[stickman]   '{script_text[:50]}' → {len(image_candidates)} "
+            f"option(s), {duration:.2f}s each"
+        )
 
     # Register identity entries so the url→local lookup resolves these PNGs.
     history = _load_history()
@@ -1322,6 +1443,7 @@ def generate_stickman_candidates(
 
     print(f"[stickman] DONE — {len(bundles)} candidate bundle(s)")
     return bundles
+
 
 def generate_stickman_joint_candidates(
     script_to_search_term: dict[str, SearchTermData],
@@ -1345,7 +1467,8 @@ def generate_stickman_joint_candidates(
     Returns [] (and does no work) if there are no stickman-joint scenes.
     """
     joint_scenes = {
-        txt: data for txt, data in script_to_search_term.items()
+        txt: data
+        for txt, data in script_to_search_term.items()
         if data["search_type"] in STICKMAN_JOINT_TYPES
     }
 
@@ -1366,15 +1489,17 @@ def generate_stickman_joint_candidates(
     # Generate once per stickman-joint type (the file filter matches ONE
     # type-string per call). Currently a single type, but looping keeps the
     # set honest if more get added later.
-    print(f"[stickman-joint] generating {STICKMAN_JOINT_NUM_VARIANTS} variant(s) "
-          f"per scene → {STICKMAN_JOINT_OUTPUT_DIR}")
+    print(
+        f"[stickman-joint] generating {STICKMAN_JOINT_NUM_VARIANTS} variant(s) "
+        f"per scene → {STICKMAN_JOINT_OUTPUT_DIR}"
+    )
     generated: dict[str, list[str]] = {}
     for jt in STICKMAN_JOINT_TYPES:
         part = generate_stickman_images(
-            prompts_file=STICKMAN_PROMPTS_FILE,     # the real search-term file
+            prompts_file=STICKMAN_PROMPTS_FILE,  # the real search-term file
             out_dir=STICKMAN_JOINT_OUTPUT_DIR,
             num_variants=STICKMAN_JOINT_NUM_VARIANTS,
-            process_type=jt.value,                  # e.g. "stickman_joint_3_row"
+            process_type=jt.value,  # e.g. "stickman_joint_3_row"
         )
         generated.update(part)
     # generated: { script_text: [path, ...] }
@@ -1396,8 +1521,10 @@ def generate_stickman_joint_candidates(
 
         image_paths = [p for p in (image_paths or []) if Path(p).exists()]
         if not image_paths:
-            print(f"[stickman-joint] WARNING: no image generated for "
-                  f"'{txt[:60]}' — the joint compositor will fail for this scene")
+            print(
+                f"[stickman-joint] WARNING: no image generated for "
+                f"'{txt[:60]}' — the joint compositor will fail for this scene"
+            )
             continue
 
         if txt not in scene_timings:
@@ -1409,14 +1536,18 @@ def generate_stickman_joint_candidates(
         # candidate, so a single variant is all that's needed.
         image_candidates = [{p: duration} for p in image_paths]
 
-        bundles.append({
-            "script_text":                  txt,
-            "candidates":                   {"videos": [], "images": image_candidates},
-            "num_clips_needed":             1,
-            "max_runtime_per_clip_seconds": duration,
-        })
-        print(f"[stickman-joint]   '{txt[:50]}' → {len(image_candidates)} "
-              f"image(s), {duration:.2f}s each")
+        bundles.append(
+            {
+                "script_text": txt,
+                "candidates": {"videos": [], "images": image_candidates},
+                "num_clips_needed": 1,
+                "max_runtime_per_clip_seconds": duration,
+            }
+        )
+        print(
+            f"[stickman-joint]   '{txt[:50]}' → {len(image_candidates)} "
+            f"image(s), {duration:.2f}s each"
+        )
 
         # Identity entries so history.get(image_url) in the joint compositor
         # resolves these PNGs straight to disk (no download attempted).
@@ -1440,7 +1571,7 @@ def _regenerate_stickman_joint_scene(
     candidates for the review GUI's 'try again' (R). Same generator + prompt
     engineering as stickman, just the joint type/dir/variant count.
     """
-    from ai_generate_stickman_images import generate_stickman_images, _scene_stem
+    from ai_generate_stickman_images import _scene_stem, generate_stickman_images
 
     stem = _scene_stem(script_text)
     for v in range(STICKMAN_JOINT_NUM_VARIANTS):
@@ -1499,7 +1630,7 @@ def _regenerate_stickman_scene(
     actually re-renders it (it skips files that already exist); every OTHER
     stickman scene keeps its cached image.
     """
-    from ai_generate_stickman_images import generate_stickman_images, _scene_stem
+    from ai_generate_stickman_images import _scene_stem, generate_stickman_images
 
     stem = _scene_stem(script_text)
     for v in range(STICKMAN_NUM_VARIANTS):
@@ -1517,7 +1648,7 @@ def _regenerate_stickman_scene(
     )
 
     paths = generated.get(script_text)
-    if not paths:                                   # stripped-key fallback
+    if not paths:  # stripped-key fallback
         for k, v in generated.items():
             if k.strip() == script_text.strip():
                 paths = v
@@ -1530,7 +1661,7 @@ def _regenerate_stickman_scene(
     scene_timings = _load_scene_timings()
     duration = round(float(scene_timings[script_text]), 3)
 
-    history = _load_history()                       # identity entries so lookups resolve
+    history = _load_history()  # identity entries so lookups resolve
     for p in paths:
         history.setdefault(p, p)
     _save_history(history)
@@ -1577,7 +1708,7 @@ def _regenerate_ai_edit_scene(
         print(f"[regen] ai_edit produced nothing for '{edit_text[:60]}'")
         return None
 
-    save_to_cache(bundles, cand_cache)              # keep resume in sync
+    save_to_cache(bundles, cand_cache)  # keep resume in sync
     images = bundles[0].get("candidates", {}).get("images") or None
     if images:
         print(f"[regen] ai_edit '{edit_text[:50]}' → {len(images)} new option(s)")
@@ -1616,21 +1747,23 @@ def build_ai_edit_candidates_for_target(
     # Ordered descriptors (dict order == script order). Collect preceding AI
     # images for optional context as we walk.
     ordered_scenes: list[dict] = []
-    preceding_ai_images: list[str] = []   # resolved local paths, script order
+    preceding_ai_images: list[str] = []  # resolved local paths, script order
     reached_target = False
 
     for text, data in script_to_search_term.items():
         st = data["search_type"]
-        is_target = (text == target_text)
+        is_target = text == target_text
         chosen_local = chosen_by_text.get(text)
 
-        ordered_scenes.append({
-            "script_text":  text,
-            "is_edit":      is_target,                    # ONLY the target
-            "is_ai_base":   st in AI_BASE_TYPES,
-            "instruction":  data["search_term"],
-            "chosen_image": None if is_target else chosen_local,
-        })
+        ordered_scenes.append(
+            {
+                "script_text": text,
+                "is_edit": is_target,  # ONLY the target
+                "is_ai_base": st in AI_BASE_TYPES,
+                "instruction": data["search_term"],
+                "chosen_image": None if is_target else chosen_local,
+            }
+        )
 
         if is_target:
             reached_target = True
@@ -1638,9 +1771,11 @@ def build_ai_edit_candidates_for_target(
             preceding_ai_images.append(chosen_local)
 
     if not preceding_ai_images:
-        print(f"[ai_edit] WARNING: no preceding stickman/ai_edit scene before "
-              f"'{target_text[:60]}' — there's no base image to edit. Put a "
-              f"stickman (or an earlier ai_edit) ahead of it in the script.")
+        print(
+            f"[ai_edit] WARNING: no preceding stickman/ai_edit scene before "
+            f"'{target_text[:60]}' — there's no base image to edit. Put a "
+            f"stickman (or an earlier ai_edit) ahead of it in the script."
+        )
 
     # Optional extra context: the N most recent preceding AI images, EXCLUDING
     # the immediate base (preceding_ai_images[-1]) which is already the edit
@@ -1651,11 +1786,13 @@ def build_ai_edit_candidates_for_target(
 
     for sc in ordered_scenes:
         if sc["is_edit"]:
-            sc["context_images"] = context_images   # consumed by generate_ai_edits
+            sc["context_images"] = context_images  # consumed by generate_ai_edits
 
     print(f"\n[ai_edit] building target '{target_text[:60]}'")
     base_name = Path(preceding_ai_images[-1]).name if preceding_ai_images else "NONE"
-    print(f"[ai_edit]   preceding AI images: {len(preceding_ai_images)} (base = {base_name})")
+    print(
+        f"[ai_edit]   preceding AI images: {len(preceding_ai_images)} (base = {base_name})"
+    )
     print(f"[ai_edit]   context images passed: {len(context_images)}")
     for ci in context_images:
         print(f"[ai_edit]     context ← {Path(ci).name}")
@@ -1677,7 +1814,7 @@ def build_ai_edit_candidates_for_target(
         sys.exit(1)
     dur = round(float(scene_timings[target_text]), 3)
 
-    history = _load_history()           # identity entries so lookups resolve
+    history = _load_history()  # identity entries so lookups resolve
     for p in paths:
         history.setdefault(p, p)
     _save_history(history)
@@ -1686,15 +1823,19 @@ def build_ai_edit_candidates_for_target(
     # the pixellated edit. Its BASE was the CHOSEN pixellated image of the
     # preceding AI scene (resolved from final_data above), so the whole chain
     # stays in the pixel look and reflects any manual fixes you painted in.
-    pixel_images = _maybe_pixellate_entries([{p: dur} for p in paths], MediaType.AI_EDIT)
+    pixel_images = _maybe_pixellate_entries(
+        [{p: dur} for p in paths], MediaType.AI_EDIT
+    )
 
     print(f"[ai_edit]   → {len(paths)} candidate image(s), {dur:.2f}s each")
-    return [{
-        "script_text":                  target_text,
-        "candidates":                   {"videos": [], "images": pixel_images},
-        "num_clips_needed":             1,
-        "max_runtime_per_clip_seconds": dur,
-    }]
+    return [
+        {
+            "script_text": target_text,
+            "candidates": {"videos": [], "images": pixel_images},
+            "num_clips_needed": 1,
+            "max_runtime_per_clip_seconds": dur,
+        }
+    ]
 
 
 def run_ai_edit_stage(
@@ -1719,7 +1860,8 @@ def run_ai_edit_stage(
     Delete those files (or the cache dir) to force regeneration.
     """
     edit_texts = [
-        txt for txt, data in script_to_search_term.items()
+        txt
+        for txt, data in script_to_search_term.items()
         if data["search_type"] == MediaType.AI_EDIT
     ]
 
@@ -1731,16 +1873,18 @@ def run_ai_edit_stage(
         print("[ai_edit stage] no ai_edit scenes — skipping")
         return final_data
 
-    by_script    = {e["script_text"]: i for i, e in enumerate(final_data)}
+    by_script = {e["script_text"]: i for i, e in enumerate(final_data)}
     script_index = {txt: i for i, txt in enumerate(script_to_search_term)}
 
     for n, edit_text in enumerate(edit_texts, start=1):
-        idx        = script_index[edit_text]
+        idx = script_index[edit_text]
         cand_cache = _edit_candidates_cache_file(idx)
         state_file = _edit_review_state_file(idx)
 
         print("\n" + "-" * 70)
-        print(f"[ai_edit stage] ({n}/{len(edit_texts)}) scene #{idx}: '{edit_text[:60]}'")
+        print(
+            f"[ai_edit stage] ({n}/{len(edit_texts)}) scene #{idx}: '{edit_text[:60]}'"
+        )
         print("-" * 70)
 
         # Build (or load) THIS edit's candidates from the up-to-date final_data.
@@ -1762,7 +1906,9 @@ def run_ai_edit_stage(
         # Review THIS edit (blocking; returns after the user picks).
         print(f"[ai_edit stage]   launching review GUI for this edit...")
 
-        def _regen_edit(script_text: str, _t=edit_text, _cc=cand_cache) -> list[dict] | None:
+        def _regen_edit(
+            script_text: str, _t=edit_text, _cc=cand_cache
+        ) -> list[dict] | None:
             if script_text != _t:
                 return None
             return _regenerate_ai_edit_scene(
@@ -1782,8 +1928,10 @@ def run_ai_edit_stage(
         )
 
         if has_manual:
-            print(f"\n[ai_edit stage] Exiting for manual fixes (scene #{idx}). "
-                  f"Re-run to resume from here.")
+            print(
+                f"\n[ai_edit stage] Exiting for manual fixes (scene #{idx}). "
+                f"Re-run to resume from here."
+            )
             sys.exit(0)
 
         # Merge the pick so the NEXT edit can build on it.
@@ -1795,9 +1943,11 @@ def run_ai_edit_stage(
                 by_script[e["script_text"]] = len(final_data) - 1
             for item in e["footage"]:
                 for path, trim in item.items():
-                    print(f"[ai_edit stage]   ✓ picked {Path(path).name} (trim {trim}s)")
+                    print(
+                        f"[ai_edit stage]   ✓ picked {Path(path).name} (trim {trim}s)"
+                    )
 
-        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)   # checkpoint each pick
+        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)  # checkpoint each pick
 
     print("\n" + "=" * 70)
     print(f"[ai_edit stage] DONE — processed {len(edit_texts)} ai_edit scene(s)")
@@ -1808,6 +1958,7 @@ def run_ai_edit_stage(
 # ===========================================================================
 # GENERATOR: JOINT SCENES
 # ===========================================================================
+
 
 def generate_joint_scenes(
     script_to_search_term: dict[str, SearchTermData],
@@ -1829,28 +1980,31 @@ def generate_joint_scenes(
 
     print("\n" + "=" * 70)
     print("[joint scenes] STARTING generate_joint_scenes")
-    print(f"[joint scenes] script_to_search_term has {len(script_to_search_term)} entries")
+    print(
+        f"[joint scenes] script_to_search_term has {len(script_to_search_term)} entries"
+    )
     print(f"[joint scenes] candidates_data has {len(candidates_data)} entries")
-    print(f"[joint scenes] joint types registered: "
-          f"{[t.value for t in JOINT_TYPES]}")
+    print(f"[joint scenes] joint types registered: {[t.value for t in JOINT_TYPES]}")
     print("=" * 70)
 
     scene_timings = _load_scene_timings()
 
     candidates_by_text: dict[str, dict] = {c["script_text"]: c for c in candidates_data}
-    candidates_by_stripped: dict[str, dict] = {c["script_text"].strip(): c for c in candidates_data}
-    print(f"[joint scenes] candidates lookup built with {len(candidates_by_text)} entries")
-
+    candidates_by_stripped: dict[str, dict] = {
+        c["script_text"].strip(): c for c in candidates_data
+    }
+    print(
+        f"[joint scenes] candidates lookup built with {len(candidates_by_text)} entries"
+    )
 
     # Map script_text -> the image the user CHOSE in review (url or local path).
     # The compositor uses this instead of candidate[0], so edited/regenerated
     # tiles flow through correctly.
     chosen_by_text: dict[str, str | None] = {}
-    for entry in (final_data or []):
+    for entry in final_data or []:
         footage = entry.get("footage") or []
         key = next(iter(footage[0]), None) if footage else None
         chosen_by_text[entry["script_text"]] = key
-
 
     # 1) Locate all scenes whose search_type is a joint type.
     joint_scenes: list[tuple[str, SearchTermData]] = []
@@ -1866,8 +2020,10 @@ def generate_joint_scenes(
 
     joint_scenes.sort(key=lambda scene: int(scene[1]["position"]))
     for i, (txt, data) in enumerate(joint_scenes):
-        print(f"[joint scenes]   sorted[{i}]: pos={data['position']}, "
-              f"type={data['search_type'].value}, script='{txt[:60]}...'")
+        print(
+            f"[joint scenes]   sorted[{i}]: pos={data['position']}, "
+            f"type={data['search_type'].value}, script='{txt[:60]}...'"
+        )
 
     # 2) Group consecutive joints by (same search_type + contiguous position).
     grouped_joint_scenes: list[list[tuple[str, SearchTermData]]] = []
@@ -1880,8 +2036,10 @@ def generate_joint_scenes(
             previous_scene_data = scene_data
             continue
 
-        same_type     = scene_data["search_type"] == previous_scene_data["search_type"]
-        next_position = int(scene_data["position"]) == int(previous_scene_data["position"]) + 1
+        same_type = scene_data["search_type"] == previous_scene_data["search_type"]
+        next_position = (
+            int(scene_data["position"]) == int(previous_scene_data["position"]) + 1
+        )
 
         if same_type and next_position:
             current_group.append((script_text, scene_data))
@@ -1898,33 +2056,39 @@ def generate_joint_scenes(
     for gi, grp in enumerate(grouped_joint_scenes):
         positions = [s[1]["position"] for s in grp]
         joint_type = grp[0][1]["search_type"]
-        print(f"[joint scenes]   group {gi}: type={joint_type.value}, "
-              f"positions={positions}, size={len(grp)}")
+        print(
+            f"[joint scenes]   group {gi}: type={joint_type.value}, "
+            f"positions={positions}, size={len(grp)}"
+        )
 
     # 3) Generate each group + collect footage entries.
     script_text_to_footage_entries: dict[str, list[dict]] = {}
 
     for group_index, group in enumerate(grouped_joint_scenes):
         joint_type = group[0][1]["search_type"]
-        print(f"\n[joint scenes] processing group {group_index}: "
-              f"type={joint_type.value}, size={len(group)}")
+        print(
+            f"\n[joint scenes] processing group {group_index}: "
+            f"type={joint_type.value}, size={len(group)}"
+        )
 
         # Look up layout for this joint type.
         layout_positions = JOINT_LAYOUT_POSITIONS.get(joint_type)
         if not layout_positions:
-            print(f"[joint scenes] FATAL: no layout registered for "
-                  f"{joint_type.value} in JOINT_LAYOUT_POSITIONS")
+            print(
+                f"[joint scenes] FATAL: no layout registered for "
+                f"{joint_type.value} in JOINT_LAYOUT_POSITIONS"
+            )
             sys.exit(1)
 
         # Per-joint-type rendering config. Add a `case` here when adding a
         # new joint layout (and an entry in JOINT_LAYOUT_POSITIONS).
         match joint_type:
             case MediaType.JOINT_3_ROW:
-                box_percentage   = 50
-                transition       = TRANSITION_RANDOM
-                background_path  = "_BACKGROUNDS/bg_crumpled_card.mp4"
-                base_duration    = JOINT_BASE_DURATION_FALLBACK_SEC
-                remove_bg        = True
+                box_percentage = 50
+                transition = TRANSITION_RANDOM
+                background_path = "_BACKGROUNDS/bg_crumpled_card.mp4"
+                base_duration = JOINT_BASE_DURATION_FALLBACK_SEC
+                remove_bg = True
 
             case MediaType.STICKMAN_JOINT_3_ROW:
                 # Identical to JOINT_3_ROW; the ONLY difference is the tiles come
@@ -1932,16 +2096,15 @@ def generate_joint_scenes(
                 # images are line art on forced-white backgrounds, so remove_bg
                 # cuts the figure out onto the crumpled card. Flip to False if you
                 # ever want the white kept.
-                box_percentage   = 50
-                transition       = TRANSITION_RANDOM
-                background_path  = "_BACKGROUNDS/bg_crumpled_card.mp4"
-                base_duration    = JOINT_BASE_DURATION_FALLBACK_SEC
-                remove_bg        = True
+                box_percentage = 50
+                transition = TRANSITION_RANDOM
+                background_path = "_BACKGROUNDS/bg_crumpled_card.mp4"
+                base_duration = JOINT_BASE_DURATION_FALLBACK_SEC
+                remove_bg = True
 
             case _:
                 print(f"[joint scenes] FATAL: unsupported joint type: {joint_type}")
                 sys.exit(1)
-
 
         stage_timings = [
             _compute_joint_stage_timing(script_text, scene_timings)
@@ -1962,7 +2125,9 @@ def generate_joint_scenes(
         items = []
         for item_index, (script_text, _) in enumerate(group):
             if item_index >= len(layout_positions):
-                print(f"[joint scenes] FATAL: item_index {item_index} >= layout length {len(layout_positions)}")
+                print(
+                    f"[joint scenes] FATAL: item_index {item_index} >= layout length {len(layout_positions)}"
+                )
                 sys.exit(1)
 
             matching_candidate = candidates_by_text.get(script_text)
@@ -1970,11 +2135,15 @@ def generate_joint_scenes(
                 matching_candidate = candidates_by_stripped.get(script_text.strip())
 
             if not matching_candidate:
-                print(f"[joint scenes] FATAL: no matching candidate for: '{script_text}'")
+                print(
+                    f"[joint scenes] FATAL: no matching candidate for: '{script_text}'"
+                )
                 print(f"  HINT: delete {CANDIDATES_CACHE_FILE} and re-run to refresh.")
                 sys.exit(1)
 
-            image_candidates = matching_candidate.get("candidates", {}).get("images", [])
+            image_candidates = matching_candidate.get("candidates", {}).get(
+                "images", []
+            )
             if not image_candidates:
                 print(f"[joint scenes] FATAL: no image candidates for: '{script_text}'")
                 sys.exit(1)
@@ -1986,12 +2155,16 @@ def generate_joint_scenes(
             if not image_url:
                 first_image = image_candidates[0]
                 image_url = next(iter(first_image), "")
-                print(f"[joint scenes]   no review pick for '{script_text[:50]}' "
-                      f"— falling back to candidate[0]")
+                print(
+                    f"[joint scenes]   no review pick for '{script_text[:50]}' "
+                    f"— falling back to candidate[0]"
+                )
             else:
-                print(f"[joint scenes]   using reviewed pick for "
-                      f"'{script_text[:50]}': "
-                      f"{Path(image_url).name if '/' in image_url else image_url}")
+                print(
+                    f"[joint scenes]   using reviewed pick for "
+                    f"'{script_text[:50]}': "
+                    f"{Path(image_url).name if '/' in image_url else image_url}"
+                )
             if not image_url:
                 print(f"[joint scenes] FATAL: no image_url for '{script_text}'")
                 sys.exit(1)
@@ -2004,26 +2177,42 @@ def generate_joint_scenes(
             if not local_path and image_url.startswith(("http://", "https://")):
                 local_path = _download_image(image_url)
             if not local_path:
-                print(f"[joint scenes] FATAL: could not resolve image to disk: {image_url}")
+                print(
+                    f"[joint scenes] FATAL: could not resolve image to disk: {image_url}"
+                )
                 if not image_url.startswith(("http://", "https://")):
-                    print(f"  It's a LOCAL file that's gone — most likely the review-GUI")
-                    print(f"  cleanup deleted it because a STALE review decision (from when")
-                    print(f"  this scene had a different search_type) pointed elsewhere.")
-                    print(f"  Delete {CANDIDATES_CACHE_FILE} and re-run to regenerate it.")
+                    print(
+                        f"  It's a LOCAL file that's gone — most likely the review-GUI"
+                    )
+                    print(
+                        f"  cleanup deleted it because a STALE review decision (from when"
+                    )
+                    print(
+                        f"  this scene had a different search_type) pointed elsewhere."
+                    )
+                    print(
+                        f"  Delete {CANDIDATES_CACHE_FILE} and re-run to regenerate it."
+                    )
                 else:
-                    print(f"  HINT: delete {CANDIDATES_CACHE_FILE} and re-run to refresh.")
+                    print(
+                        f"  HINT: delete {CANDIDATES_CACHE_FILE} and re-run to refresh."
+                    )
                 sys.exit(1)
 
-            items.append({
-                "path":                       local_path,
-                "position":                   layout_positions[item_index],
-                "scale-fit-box-percentage":   box_percentage,
-                "transition":                 transition,
-                "removeBG":                   remove_bg,
-            })
+            items.append(
+                {
+                    "path": local_path,
+                    "position": layout_positions[item_index],
+                    "scale-fit-box-percentage": box_percentage,
+                    "transition": transition,
+                    "removeBG": remove_bg,
+                }
+            )
 
         if not items:
-            print(f"[joint scenes] FATAL: no items to composite for group {group_index}")
+            print(
+                f"[joint scenes] FATAL: no items to composite for group {group_index}"
+            )
             sys.exit(1)
 
         output_folder = Path(_CACHE_DIR) / "joint_scenes" / f"group_{group_index}"
@@ -2050,8 +2239,10 @@ def generate_joint_scenes(
             script_text_to_footage_entries[script_text] = entries
 
     print("\n" + "=" * 70)
-    print(f"[joint scenes] DONE — produced footage entries for "
-          f"{len(script_text_to_footage_entries)} stage(s)")
+    print(
+        f"[joint scenes] DONE — produced footage entries for "
+        f"{len(script_text_to_footage_entries)} stage(s)"
+    )
     print("=" * 70)
     return script_text_to_footage_entries
 
@@ -2060,10 +2251,11 @@ def generate_joint_scenes(
 # GENERATOR: READ-OUT (KINETIC TYPOGRAPHY) SCENES
 # ===========================================================================
 
+
 def generate_read_out_scenes(
     script_to_search_term: dict[str, SearchTermData],
-    candidates_data: list[dict],   # unused — registry signature uniformity
-    final_data: list[dict] | None = None,   # unused — registry signature uniformity
+    candidates_data: list[dict],  # unused — registry signature uniformity
+    final_data: list[dict] | None = None,  # unused — registry signature uniformity
 ) -> dict[str, list[dict]]:
     """
     Render a silent kinetic-typography MP4 for every scene flagged
@@ -2087,7 +2279,8 @@ def generate_read_out_scenes(
         return {}
 
     read_outs = [
-        (txt, data) for txt, data in script_to_search_term.items()
+        (txt, data)
+        for txt, data in script_to_search_term.items()
         if data["search_type"] == MediaType.READ_OUT
     ]
 
@@ -2098,8 +2291,8 @@ def generate_read_out_scenes(
     print(f"[read-out scenes] found {len(read_outs)} read-out scene(s)")
 
     # Inputs we need from the audio-sync stage.
-    scene_timings = _load_scene_timings()                 # text → duration
-    line_starts   = load_json(TIMESTAMPS_ABSOLUTE_FILE)   # text → abs start
+    scene_timings = _load_scene_timings()  # text → duration
+    line_starts = load_json(TIMESTAMPS_ABSOLUTE_FILE)  # text → abs start
 
     # Optional precise per-word timings (Whisper word-level).
     precise: dict | None = None
@@ -2107,8 +2300,10 @@ def generate_read_out_scenes(
         try:
             precise = json.loads(Path(WORD_TIMINGS_FILE).read_text())
             n_covered = sum(1 for txt, _ in read_outs if precise.get(txt))
-            print(f"[read-out scenes] loaded precise word timings "
-                  f"({n_covered}/{len(read_outs)} read-out lines covered)")
+            print(
+                f"[read-out scenes] loaded precise word timings "
+                f"({n_covered}/{len(read_outs)} read-out lines covered)"
+            )
         except Exception as exc:
             print(f"[read-out scenes] couldn't parse {WORD_TIMINGS_FILE}: {exc}")
             precise = None
@@ -2131,15 +2326,19 @@ def generate_read_out_scenes(
 
         duration = float(scene_timings[script_text])
         if duration <= 0:
-            print(f"[read-out scenes] WARNING: scene has zero/negative duration "
-                  f"({duration}s) — skipping '{script_text[:60]}'")
+            print(
+                f"[read-out scenes] WARNING: scene has zero/negative duration "
+                f"({duration}s) — skipping '{script_text[:60]}'"
+            )
             continue
 
         line_start = float(line_starts.get(script_text, 0.0))
         per_line_words = (precise or {}).get(script_text)
 
         # Build a safe filename. Strip non-alphanumerics, prefix with idx.
-        safe_stem = re.sub(r"[^a-zA-Z0-9]+", "_", script_text).strip("_")[:50] or "scene"
+        safe_stem = (
+            re.sub(r"[^a-zA-Z0-9]+", "_", script_text).strip("_")[:50] or "scene"
+        )
         output_path = str(output_dir / f"read_out_{idx:03d}_{safe_stem}.mp4")
 
         # Render slightly longer than the scene runtime so the stitcher's
@@ -2147,14 +2346,20 @@ def generate_read_out_scenes(
         # extra footage (last word stationary) is invisible after trim.
         render_duration = duration + READ_OUT_RENDER_SAFETY_PAD_SEC
 
-        print(f"\n[read-out scenes] [{idx + 1}/{len(read_outs)}] "
-              f"'{script_text[:60]}{'...' if len(script_text) > 60 else ''}'")
+        print(
+            f"\n[read-out scenes] [{idx + 1}/{len(read_outs)}] "
+            f"'{script_text[:60]}{'...' if len(script_text) > 60 else ''}'"
+        )
         print(f"[read-out scenes]   scene duration   = {duration:.3f}s")
-        print(f"[read-out scenes]   render duration  = {render_duration:.3f}s "
-              f"(+{READ_OUT_RENDER_SAFETY_PAD_SEC:.3f}s safety pad)")
+        print(
+            f"[read-out scenes]   render duration  = {render_duration:.3f}s "
+            f"(+{READ_OUT_RENDER_SAFETY_PAD_SEC:.3f}s safety pad)"
+        )
         print(f"[read-out scenes]   line_start (abs) = {line_start:.3f}s")
-        print(f"[read-out scenes]   precise words    = "
-              f"{'yes (' + str(len(per_line_words)) + ' words)' if per_line_words else 'no'}")
+        print(
+            f"[read-out scenes]   precise words    = "
+            f"{'yes (' + str(len(per_line_words)) + ' words)' if per_line_words else 'no'}"
+        )
         print(f"[read-out scenes]   → {output_path}")
 
         try:
@@ -2183,8 +2388,8 @@ def generate_read_out_scenes(
 
 def generate_map_scenes(
     script_to_search_term: dict[str, SearchTermData],
-    candidates_data: list[dict],            # unused — registry signature uniformity
-    final_data: list[dict] | None = None,   # unused — registry signature uniformity
+    candidates_data: list[dict],  # unused — registry signature uniformity
+    final_data: list[dict] | None = None,  # unused — registry signature uniformity
 ) -> dict[str, list[dict]]:
     """
     Render a highlighted map for every scene flagged MediaType.MAP and return a
@@ -2215,7 +2420,8 @@ def generate_map_scenes(
         return {}
 
     map_scenes = [
-        (txt, data) for txt, data in script_to_search_term.items()
+        (txt, data)
+        for txt, data in script_to_search_term.items()
         if data["search_type"] == MediaType.MAP
     ]
     if not map_scenes:
@@ -2241,24 +2447,32 @@ def generate_map_scenes(
 
         duration = float(scene_timings[script_text])
         if duration <= 0:
-            print(f"[map scenes] WARNING: zero/negative duration "
-                  f"({duration}s) — skipping '{script_text[:60]}'")
+            print(
+                f"[map scenes] WARNING: zero/negative duration "
+                f"({duration}s) — skipping '{script_text[:60]}'"
+            )
             continue
 
-        safe_stem = re.sub(r"[^a-zA-Z0-9]+", "_", script_text).strip("_")[:50] or "scene"
+        safe_stem = (
+            re.sub(r"[^a-zA-Z0-9]+", "_", script_text).strip("_")[:50] or "scene"
+        )
         png_path = str(output_dir / f"map_{idx:03d}_{safe_stem}.png")
         mp4_path = str(output_dir / f"map_{idx:03d}_{safe_stem}.mp4")
 
-        print(f"\n[map scenes] [{idx + 1}/{len(map_scenes)}] "
-              f"'{script_text[:60]}{'...' if len(script_text) > 60 else ''}'")
+        print(
+            f"\n[map scenes] [{idx + 1}/{len(map_scenes)}] "
+            f"'{script_text[:60]}{'...' if len(script_text) > 60 else ''}'"
+        )
         print(f"[map scenes]   place          = '{place}'")
         print(f"[map scenes]   scene duration = {duration:.3f}s")
         print(f"[map scenes]   -> {png_path}")
 
         rendered = get_map_image(place, png_path, cache_dir=MAP_GEOCODE_CACHE_DIR)
         if not rendered:
-            print(f"[map scenes] FATAL: could not render a map for '{place}' "
-                  f"(scene '{script_text[:60]}')")
+            print(
+                f"[map scenes] FATAL: could not render a map for '{place}' "
+                f"(scene '{script_text[:60]}')"
+            )
             sys.exit(1)
 
         # Bake the still into a static MP4 so the Ken Burns pass skips it and
@@ -2266,8 +2480,10 @@ def generate_map_scenes(
         try:
             _render_image_to_static_mp4(rendered, duration, mp4_path)
         except Exception as exc:
-            print(f"[map scenes] FATAL: static MP4 render failed for "
-                  f"'{script_text[:50]}': {exc}")
+            print(
+                f"[map scenes] FATAL: static MP4 render failed for "
+                f"'{script_text[:50]}': {exc}"
+            )
             sys.exit(1)
 
         footage_map[script_text] = [{mp4_path: round(duration, 3)}]
@@ -2302,7 +2518,8 @@ def generate_stickman_explain_scenes(
     print("=" * 70)
 
     explain_scenes = [
-        (txt, data) for txt, data in script_to_search_term.items()
+        (txt, data)
+        for txt, data in script_to_search_term.items()
         if data["search_type"] in STICKMAN_EXPLAIN_TYPES
     ]
     if not explain_scenes:
@@ -2321,7 +2538,7 @@ def generate_stickman_explain_scenes(
     # itself further down), make_explainer needs an on-disk file — so we MUST
     # resolve the key (URL → local via history.json) right here.
     chosen_by_text: dict[str, str | None] = {}
-    for entry in (final_data or []):
+    for entry in final_data or []:
         footage = entry.get("footage") or []
         key = next(iter(footage[0]), None) if footage else None
         chosen_by_text[entry["script_text"]] = (
@@ -2337,8 +2554,10 @@ def generate_stickman_explain_scenes(
     for idx, (script_text, _) in enumerate(explain_scenes):
         chosen = chosen_by_text.get(script_text)
         if not chosen:
-            print(f"[explain scenes] FATAL: no chosen footage in final_data for "
-                  f"'{script_text[:70]}' — was it picked in review?")
+            print(
+                f"[explain scenes] FATAL: no chosen footage in final_data for "
+                f"'{script_text[:70]}' — was it picked in review?"
+            )
             sys.exit(1)
 
         if script_text not in scene_timings:
@@ -2347,17 +2566,23 @@ def generate_stickman_explain_scenes(
 
         duration = float(scene_timings[script_text])
         if duration <= 0:
-            print(f"[explain scenes] WARNING: zero/negative duration "
-                  f"({duration}s) — skipping '{script_text[:60]}'")
+            print(
+                f"[explain scenes] WARNING: zero/negative duration "
+                f"({duration}s) — skipping '{script_text[:60]}'"
+            )
             continue
 
         render_duration = duration + STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC
 
-        safe_stem = re.sub(r"[^a-zA-Z0-9]+", "_", script_text).strip("_")[:50] or "scene"
+        safe_stem = (
+            re.sub(r"[^a-zA-Z0-9]+", "_", script_text).strip("_")[:50] or "scene"
+        )
         output_path = str(out_dir / f"explain_{idx:03d}_{safe_stem}.mp4")
 
-        print(f"\n[explain scenes] [{idx + 1}/{len(explain_scenes)}] "
-              f"'{script_text[:60]}{'...' if len(script_text) > 60 else ''}'")
+        print(
+            f"\n[explain scenes] [{idx + 1}/{len(explain_scenes)}] "
+            f"'{script_text[:60]}{'...' if len(script_text) > 60 else ''}'"
+        )
         print(f"[explain scenes]   base footage   = {chosen}")
         print(f"[explain scenes]   scene duration = {duration:.3f}s")
         print(f"[explain scenes]   render dur     = {render_duration:.3f}s")
@@ -2406,7 +2631,8 @@ def generate_text_overlay_scenes(
     print("=" * 70)
 
     overlay_scenes = [
-        (txt, data) for txt, data in script_to_search_term.items()
+        (txt, data)
+        for txt, data in script_to_search_term.items()
         if data["search_type"] in STICKMAN_TEXT_OVERLAY_TYPES
     ]
     if not overlay_scenes:
@@ -2415,7 +2641,7 @@ def generate_text_overlay_scenes(
 
     print(f"[text-overlay] found {len(overlay_scenes)} text-overlay scene(s)")
 
-    from MAKE_TEXT_OVERLAY import make_text_overlay   # lazy import
+    from MAKE_TEXT_OVERLAY import make_text_overlay  # lazy import
 
     scene_timings = _load_scene_timings()
     ordered_texts = list(script_to_search_term.keys())
@@ -2425,19 +2651,26 @@ def generate_text_overlay_scenes(
         """Nearest preceding non-overlay scene's resolved local image/video."""
         for j in range(idx - 1, -1, -1):
             prev_text = ordered_texts[j]
-            if script_to_search_term[prev_text]["search_type"] in STICKMAN_TEXT_OVERLAY_TYPES:
-                continue                                   # skip other captions
+            if (
+                script_to_search_term[prev_text]["search_type"]
+                in STICKMAN_TEXT_OVERLAY_TYPES
+            ):
+                continue  # skip other captions
             footage = (final_by_text.get(prev_text) or {}).get("footage") or []
             if not footage:
                 continue
-            key = next(iter(footage[0]), None)             # url or local path
+            key = next(iter(footage[0]), None)  # url or local path
             local = _resolve_to_local_path(key) if key else None
             if local:
-                print(f"[text-overlay]   base for '{ordered_texts[idx][:45]}' "
-                      f"← '{prev_text[:45]}' ({Path(local).name})")
+                print(
+                    f"[text-overlay]   base for '{ordered_texts[idx][:45]}' "
+                    f"← '{prev_text[:45]}' ({Path(local).name})"
+                )
                 return local
-        print(f"[text-overlay]   WARNING: no prior image for "
-              f"'{ordered_texts[idx][:45]}' — using a plain background")
+        print(
+            f"[text-overlay]   WARNING: no prior image for "
+            f"'{ordered_texts[idx][:45]}' — using a plain background"
+        )
         return None
 
     out_dir = STICKMAN_TEXT_OVERLAY_OUTPUT_DIR
@@ -2453,8 +2686,10 @@ def generate_text_overlay_scenes(
             sys.exit(1)
         duration = float(scene_timings[txt])
         if duration <= 0:
-            print(f"[text-overlay] WARNING: zero/negative duration — skipping "
-                  f"'{txt[:60]}'")
+            print(
+                f"[text-overlay] WARNING: zero/negative duration — skipping "
+                f"'{txt[:60]}'"
+            )
             continue
 
         render_duration = duration + STICKMAN_TEXT_OVERLAY_RENDER_SAFETY_PAD_SEC
@@ -2464,31 +2699,36 @@ def generate_text_overlay_scenes(
         try:
             make_text_overlay(
                 base_image_path=base_local or "",
-                text=data["search_term"],     # the caption text
+                text=data["search_term"],  # the caption text
                 output_path=output_path,
                 duration=render_duration,
-                seed=txt,                      # deterministic position/tilt per scene
+                seed=txt,  # deterministic position/tilt per scene
             )
         except Exception as exc:
             print(f"[text-overlay] FATAL: render failed for '{txt[:50]}': {exc}")
             sys.exit(1)
 
         footage_map[txt] = [{output_path: round(duration, 3)}]
-        print(f"[text-overlay]   ✓ '{txt[:50]}' → {Path(output_path).name} "
-              f"(trim {round(duration, 3)}s)")
+        print(
+            f"[text-overlay]   ✓ '{txt[:50]}' → {Path(output_path).name} "
+            f"(trim {round(duration, 3)}s)"
+        )
 
     print("\n" + "=" * 70)
     print(f"[text-overlay] DONE — produced {len(footage_map)} scene(s)")
     print("=" * 70)
     return footage_map
 
-def _extract_frame_at_timestamp(video_path: str, timestamp_sec: float,
-                                output_png: str) -> str:
+
+def _extract_frame_at_timestamp(
+    video_path: str, timestamp_sec: float, output_png: str
+) -> str:
     """Grab a single frame from `video_path` at `timestamp_sec` (the moment the
     clip stops being shown) and write it to `output_png`. Used by
     static_of_previous to freeze the last *played* frame of the previous
     scene's video. Seeks just inside the cut so we never run past the clip."""
     import shlex
+
     vp = Path(video_path)
     if not vp.exists():
         raise RuntimeError(f"video does not exist: {video_path}")
@@ -2496,11 +2736,19 @@ def _extract_frame_at_timestamp(video_path: str, timestamp_sec: float,
     # Land just inside the played window. -ss AFTER -i = accurate (decoded) seek.
     ts = max(0.0, float(timestamp_sec) - 0.05)
     cmd = [
-        "ffmpeg", "-y", "-nostdin", "-loglevel", "warning",
-        "-i", video_path,
-        "-ss", f"{ts:.3f}",
-        "-frames:v", "1",
-        "-q:v", "2",
+        "ffmpeg",
+        "-y",
+        "-nostdin",
+        "-loglevel",
+        "warning",
+        "-i",
+        video_path,
+        "-ss",
+        f"{ts:.3f}",
+        "-frames:v",
+        "1",
+        "-q:v",
+        "2",
         output_png,
     ]
     if DEBUG:
@@ -2514,15 +2762,26 @@ def _extract_frame_at_timestamp(video_path: str, timestamp_sec: float,
         # Fallback: some short/odd clips fail an interior seek — grab the very
         # last frame from end-of-file instead.
         cmd_eof = [
-            "ffmpeg", "-y", "-nostdin", "-loglevel", "warning",
-            "-sseof", "-0.1",
-            "-i", video_path,
-            "-frames:v", "1", "-q:v", "2",
+            "ffmpeg",
+            "-y",
+            "-nostdin",
+            "-loglevel",
+            "warning",
+            "-sseof",
+            "-0.1",
+            "-i",
+            video_path,
+            "-frames:v",
+            "1",
+            "-q:v",
+            "2",
             output_png,
         ]
         if DEBUG:
-            print(f"[static-prev:ffmpeg]   interior seek failed — trying EOF: "
-                  f"{shlex.join(cmd_eof)}")
+            print(
+                f"[static-prev:ffmpeg]   interior seek failed — trying EOF: "
+                f"{shlex.join(cmd_eof)}"
+            )
         result = subprocess.run(cmd_eof, capture_output=True, text=True)
         if result.returncode != 0 or not out.exists() or out.stat().st_size == 0:
             raise RuntimeError(
@@ -2531,13 +2790,16 @@ def _extract_frame_at_timestamp(video_path: str, timestamp_sec: float,
             )
     return output_png
 
-def _render_image_to_static_mp4(image_path: str, duration: float,
-                                output_path: str) -> str:
+
+def _render_image_to_static_mp4(
+    image_path: str, duration: float, output_path: str
+) -> str:
     """Bake a still into a silent, perfectly static H.264 MP4 of `duration`s
     (+ a tiny safety pad the stitcher trims). Output is forced to EVEN
     dimensions (libx264/yuv420p requires it — odd dims are what made the
     encoder fail) and verbosely logged so any failure is diagnosable."""
     import shlex
+
     from PIL import Image as _PILImage
 
     img_path = Path(image_path)
@@ -2553,29 +2815,45 @@ def _render_image_to_static_mp4(image_path: str, duration: float,
 
     render_duration = duration + MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC
     even_w, even_h = (iw // 2) * 2, (ih // 2) * 2
-    is_even = (iw % 2 == 0 and ih % 2 == 0)
+    is_even = iw % 2 == 0 and ih % 2 == 0
 
     print(f"[manual-place:ffmpeg] input  = {image_path}")
-    print(f"[manual-place:ffmpeg]   exists={img_path.exists()} size={img_bytes}B "
-          f"dims={iw}x{ih} mode={imode} "
-          f"({'even' if is_even else 'ODD -> scaling to even'})")
-    print(f"[manual-place:ffmpeg]   duration={duration:.3f}s "
-          f"pad={MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC:.3f}s "
-          f"render={render_duration:.3f}s fps={KEN_BURNS_FPS}")
+    print(
+        f"[manual-place:ffmpeg]   exists={img_path.exists()} size={img_bytes}B "
+        f"dims={iw}x{ih} mode={imode} "
+        f"({'even' if is_even else 'ODD -> scaling to even'})"
+    )
+    print(
+        f"[manual-place:ffmpeg]   duration={duration:.3f}s "
+        f"pad={MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC:.3f}s "
+        f"render={render_duration:.3f}s fps={KEN_BURNS_FPS}"
+    )
     print(f"[manual-place:ffmpeg]   target dims (even) = {even_w}x{even_h}")
 
     cmd = [
-        "ffmpeg", "-y", "-nostdin",
-        "-loglevel", "warning",
-        "-loop", "1",
-        "-framerate", str(KEN_BURNS_FPS),
-        "-i", image_path,
-        "-t", f"{render_duration:.3f}",
-        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",   # <- the fix: even dims
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        "-preset", "veryfast",
-        "-r", str(KEN_BURNS_FPS),
+        "ffmpeg",
+        "-y",
+        "-nostdin",
+        "-loglevel",
+        "warning",
+        "-loop",
+        "1",
+        "-framerate",
+        str(KEN_BURNS_FPS),
+        "-i",
+        image_path,
+        "-t",
+        f"{render_duration:.3f}",
+        "-vf",
+        "scale=trunc(iw/2)*2:trunc(ih/2)*2",  # <- the fix: even dims
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-preset",
+        "veryfast",
+        "-r",
+        str(KEN_BURNS_FPS),
         "-an",
         output_path,
     ]
@@ -2588,8 +2866,10 @@ def _render_image_to_static_mp4(image_path: str, duration: float,
 
     out_path = Path(output_path)
     out_size = out_path.stat().st_size if out_path.exists() else 0
-    print(f"[manual-place:ffmpeg]   output = {output_path} "
-          f"exists={out_path.exists()} size={out_size}B")
+    print(
+        f"[manual-place:ffmpeg]   output = {output_path} "
+        f"exists={out_path.exists()} size={out_size}B"
+    )
 
     if result.returncode != 0 or out_size == 0:
         raise RuntimeError(
@@ -2598,6 +2878,7 @@ def _render_image_to_static_mp4(image_path: str, duration: float,
             f"See ffmpeg stderr above."
         )
     return output_path
+
 
 def run_manual_image_stage(
     script_to_search_term: dict[str, "SearchTermData"],
@@ -2626,8 +2907,11 @@ def run_manual_image_stage(
     """
     manual_set = MANUAL_STOCK_ADD_TYPES | ZOOM_PREV_TYPES | STATIC_OF_PREVIOUS_TYPES
     ordered_texts = list(script_to_search_term.keys())
-    manual_texts = [t for t in ordered_texts
-                    if script_to_search_term[t]["search_type"] in manual_set]
+    manual_texts = [
+        t
+        for t in ordered_texts
+        if script_to_search_term[t]["search_type"] in manual_set
+    ]
 
     print("\n" + "=" * 70)
     print(f"[manual-img] {len(manual_texts)} derive-from-previous scene(s) to process")
@@ -2637,14 +2921,18 @@ def run_manual_image_stage(
         return final_data
 
     from MANUAL_STOCK_PLACEMENT import (
-        place_overlays_interactive, composite_overlays,
-        zoom_prev_interactive, crop_and_zoom,
-        extract_frame, Placement, CropBox,
+        CropBox,
+        Placement,
+        composite_overlays,
+        crop_and_zoom,
+        extract_frame,
+        place_overlays_interactive,
+        zoom_prev_interactive,
     )
 
     scene_timings = _load_scene_timings()
-    by_script     = {e["script_text"]: i for i, e in enumerate(final_data)}
-    script_index  = {txt: i for i, txt in enumerate(script_to_search_term)}
+    by_script = {e["script_text"]: i for i, e in enumerate(final_data)}
+    script_index = {txt: i for i, txt in enumerate(script_to_search_term)}
 
     out_dir = MANUAL_STOCK_PLACEMENT_OUTPUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -2652,28 +2940,33 @@ def run_manual_image_stage(
     def _dims(p: str) -> str:
         try:
             from PIL import Image as _I
+
             with _I.open(p) as im:
                 return f"{im.size[0]}x{im.size[1]}"
         except Exception:
             return "?x?"
 
     def _resolve_scene_still(text: str) -> str | None:
-        entry   = next((e for e in final_data if e["script_text"] == text), None)
+        entry = next((e for e in final_data if e["script_text"] == text), None)
         footage = (entry or {}).get("footage") or []
-        key     = next(iter(footage[0]), None) if footage else None
+        key = next(iter(footage[0]), None) if footage else None
         if not key:
             return None
         local = _resolve_to_local_path(key)
         if not local:
             return None
         if _classify_footage_path(local) == "video":
-            frame_png = out_dir / f"frame_{hashlib.md5(local.encode()).hexdigest()[:12]}.png"
+            frame_png = (
+                out_dir / f"frame_{hashlib.md5(local.encode()).hexdigest()[:12]}.png"
+            )
             if not (frame_png.exists() and frame_png.stat().st_size > 1024):
                 try:
                     extract_frame(local, str(frame_png))
                 except Exception as exc:
-                    print(f"[manual-img] WARNING: frame extract failed for "
-                          f"{Path(local).name}: {exc}")
+                    print(
+                        f"[manual-img] WARNING: frame extract failed for "
+                        f"{Path(local).name}: {exc}"
+                    )
                     return None
             return str(frame_png) if frame_png.exists() else None
         return local
@@ -2691,43 +2984,62 @@ def run_manual_image_stage(
         last video clip (timestamp = that clip's trim, from the JSON timings)."""
         for j in range(idx - 1, -1, -1):
             prev_text = ordered_texts[j]
-            entry   = next((e for e in final_data if e["script_text"] == prev_text), None)
+            entry = next((e for e in final_data if e["script_text"] == prev_text), None)
             footage = (entry or {}).get("footage") or []
             if not footage:
                 continue
-            last_path, last_trim = next(iter(footage[-1].items()))   # LAST clip of prev scene
+            last_path, last_trim = next(
+                iter(footage[-1].items())
+            )  # LAST clip of prev scene
             local = _resolve_to_local_path(last_path)
             if not local:
                 continue
 
             if _classify_footage_path(local) == "video":
                 key = f"{local}|{round(float(last_trim), 3)}"
-                freeze_png = out_dir / f"static_src_{hashlib.md5(key.encode()).hexdigest()[:12]}.png"
+                freeze_png = (
+                    out_dir
+                    / f"static_src_{hashlib.md5(key.encode()).hexdigest()[:12]}.png"
+                )
                 if not (freeze_png.exists() and freeze_png.stat().st_size > 1024):
                     try:
-                        _extract_frame_at_timestamp(local, float(last_trim), str(freeze_png))
+                        _extract_frame_at_timestamp(
+                            local, float(last_trim), str(freeze_png)
+                        )
                     except Exception as exc:
-                        print(f"[manual-img] WARNING: freeze-frame failed for "
-                              f"{Path(local).name}: {exc}")
+                        print(
+                            f"[manual-img] WARNING: freeze-frame failed for "
+                            f"{Path(local).name}: {exc}"
+                        )
                         continue
-                print(f"[manual-img]   static source ← '{prev_text[:45]}' "
-                      f"(VIDEO {Path(local).name}, freeze @ {float(last_trim):.2f}s)")
+                print(
+                    f"[manual-img]   static source ← '{prev_text[:45]}' "
+                    f"(VIDEO {Path(local).name}, freeze @ {float(last_trim):.2f}s)"
+                )
                 return str(freeze_png), prev_text
 
-            print(f"[manual-img]   static source ← '{prev_text[:45]}' "
-                  f"(IMAGE {Path(local).name}, reused as-is)")
+            print(
+                f"[manual-img]   static source ← '{prev_text[:45]}' "
+                f"(IMAGE {Path(local).name}, reused as-is)"
+            )
             return local, prev_text
         return None, None
 
     for n, text in enumerate(manual_texts, start=1):
-        idx   = script_index[text]
+        idx = script_index[text]
         stype = script_to_search_term[text]["search_type"]
-        kind  = ("static" if stype in STATIC_OF_PREVIOUS_TYPES
-                 else "zoom" if stype in ZOOM_PREV_TYPES
-                 else "place")
+        kind = (
+            "static"
+            if stype in STATIC_OF_PREVIOUS_TYPES
+            else "zoom"
+            if stype in ZOOM_PREV_TYPES
+            else "place"
+        )
 
         print("\n" + "-" * 70)
-        print(f"[manual-img] ({n}/{len(manual_texts)}) [{kind}] scene #{idx}: '{text[:55]}'")
+        print(
+            f"[manual-img] ({n}/{len(manual_texts)}) [{kind}] scene #{idx}: '{text[:55]}'"
+        )
         print("-" * 70)
 
         if text not in scene_timings:
@@ -2738,7 +3050,7 @@ def run_manual_image_stage(
             print(f"[manual-img] WARNING: zero duration — skipping '{text[:55]}'")
             continue
 
-        safe_stem  = re.sub(r"[^a-zA-Z0-9]+", "_", text).strip("_")[:50] or "scene"
+        safe_stem = re.sub(r"[^a-zA-Z0-9]+", "_", text).strip("_")[:50] or "scene"
         result_png = out_dir / f"manual_{kind}_{idx:03d}_{safe_stem}.png"
         output_mp4 = out_dir / f"manual_{kind}_{idx:03d}_{safe_stem}.mp4"
         print(f"[manual-img]   duration = {duration:.3f}s")
@@ -2747,37 +3059,49 @@ def run_manual_image_stage(
             # Non-interactive: reuse prev image, or freeze prev video's last frame.
             src_still, _src_text = _resolve_static_source(idx)
             if not src_still:
-                print(f"[manual-img] FATAL: no preceding media to derive a still "
-                      f"from for '{text[:60]}'. static_of_previous needs a normal "
-                      f"image/video scene before it.")
+                print(
+                    f"[manual-img] FATAL: no preceding media to derive a still "
+                    f"from for '{text[:60]}'. static_of_previous needs a normal "
+                    f"image/video scene before it."
+                )
                 sys.exit(1)
             try:
                 shutil.copyfile(src_still, str(result_png))
             except Exception as exc:
-                print(f"[manual-img] FATAL: couldn't stage still from "
-                      f"{Path(src_still).name}: {exc}")
+                print(
+                    f"[manual-img] FATAL: couldn't stage still from "
+                    f"{Path(src_still).name}: {exc}"
+                )
                 sys.exit(1)
 
         else:
             # place & zoom both use the PREVIOUS scene's image as the backdrop.
             base_still, base_text = _resolve_base(idx)
             if not base_still:
-                print(f"[manual-img] FATAL: no preceding image for '{text[:60]}'. "
-                      f"This type needs a normal scene before it whose image is "
-                      f"the backdrop.")
+                print(
+                    f"[manual-img] FATAL: no preceding image for '{text[:60]}'. "
+                    f"This type needs a normal scene before it whose image is "
+                    f"the backdrop."
+                )
                 sys.exit(1)
-            print(f"[manual-img]   base <- '{base_text[:50]}' "
-                  f"({Path(base_still).name}, {_dims(base_still)})")
+            print(
+                f"[manual-img]   base <- '{base_text[:50]}' "
+                f"({Path(base_still).name}, {_dims(base_still)})"
+            )
 
             if kind == "place":
                 overlay_still = _resolve_scene_still(text)
                 if not overlay_still:
-                    print(f"[manual-img] FATAL: no chosen stock for '{text[:60]}'. Its "
-                          f"overlay is picked in stage-1 review — did you select one? "
-                          f"(Delete {CANDIDATES_CACHE_FILE} and re-run if stale.)")
+                    print(
+                        f"[manual-img] FATAL: no chosen stock for '{text[:60]}'. Its "
+                        f"overlay is picked in stage-1 review — did you select one? "
+                        f"(Delete {CANDIDATES_CACHE_FILE} and re-run if stale.)"
+                    )
                     sys.exit(1)
-                print(f"[manual-img]   overlay = {Path(overlay_still).name} "
-                      f"({_dims(overlay_still)})")
+                print(
+                    f"[manual-img]   overlay = {Path(overlay_still).name} "
+                    f"({_dims(overlay_still)})"
+                )
 
                 state_file = out_dir / f"placement_{idx:03d}.json"
                 placements = None
@@ -2788,32 +3112,61 @@ def run_manual_image_stage(
                         # new format: {"remove_bg":.., "placements":[{...}, ...]}
                         # old format (single stamp): {"width_pct":.., "cx_frac":.., ...}
                         raw = d["placements"] if "placements" in d else [d]
-                        placements = [Placement(int(r["width_pct"]), float(r["cx_frac"]),
-                                                float(r["cy_frac"]), remove_bg) for r in raw]
-                        print(f"[manual-img]   resume: reusing {len(placements)} saved "
-                              f"placement(s)")
+                        placements = [
+                            Placement(
+                                int(r["width_pct"]),
+                                float(r["cx_frac"]),
+                                float(r["cy_frac"]),
+                                remove_bg,
+                            )
+                            for r in raw
+                        ]
+                        print(
+                            f"[manual-img]   resume: reusing {len(placements)} saved "
+                            f"placement(s)"
+                        )
                     except Exception as exc:
-                        print(f"[manual-img]   couldn't read {state_file.name} ({exc}); "
-                              f"re-opening GUI")
+                        print(
+                            f"[manual-img]   couldn't read {state_file.name} ({exc}); "
+                            f"re-opening GUI"
+                        )
                         placements = None
                 if placements is None:
                     placements = place_overlays_interactive(
-                        base_image_path=base_still, overlay_image_path=overlay_still,
-                        window_title=(f"Place '{script_to_search_term[text]['search_term']}' "
-                                      f"(scene {n}/{len(manual_texts)})"),
+                        base_image_path=base_still,
+                        overlay_image_path=overlay_still,
+                        window_title=(
+                            f"Place '{script_to_search_term[text]['search_term']}' "
+                            f"(scene {n}/{len(manual_texts)})"
+                        ),
                     )
                     if not placements:
-                        print(f"\n[manual-img] Exited without placing scene #{idx}. "
-                              f"Re-run to resume.")
+                        print(
+                            f"\n[manual-img] Exited without placing scene #{idx}. "
+                            f"Re-run to resume."
+                        )
                         sys.exit(0)
-                    state_file.write_text(json.dumps({
-                        "remove_bg": placements[0].remove_bg,
-                        "placements": [{"width_pct": p.width_pct, "cx_frac": p.cx_frac,
-                                        "cy_frac": p.cy_frac} for p in placements],
-                    }, indent=2))
+                    state_file.write_text(
+                        json.dumps(
+                            {
+                                "remove_bg": placements[0].remove_bg,
+                                "placements": [
+                                    {
+                                        "width_pct": p.width_pct,
+                                        "cx_frac": p.cx_frac,
+                                        "cy_frac": p.cy_frac,
+                                    }
+                                    for p in placements
+                                ],
+                            },
+                            indent=2,
+                        )
+                    )
                 print(f"[manual-img]   stamps = {len(placements)}")
                 try:
-                    composite_overlays(base_still, overlay_still, placements, str(result_png))
+                    composite_overlays(
+                        base_still, overlay_still, placements, str(result_png)
+                    )
                 except Exception as exc:
                     print(f"[manual-img] FATAL: composite failed: {exc}")
                     sys.exit(1)
@@ -2824,10 +3177,16 @@ def run_manual_image_stage(
                 if state_file.exists():
                     try:
                         d = json.loads(state_file.read_text())
-                        crop = CropBox(int(d["width_pct"]), float(d["cx_frac"]), float(d["cy_frac"]))
+                        crop = CropBox(
+                            int(d["width_pct"]),
+                            float(d["cx_frac"]),
+                            float(d["cy_frac"]),
+                        )
                         print(f"[manual-img]   resume: reusing saved crop box")
                     except Exception as exc:
-                        print(f"[manual-img]   couldn't read {state_file.name} ({exc}); re-opening GUI")
+                        print(
+                            f"[manual-img]   couldn't read {state_file.name} ({exc}); re-opening GUI"
+                        )
                         crop = None
                 if crop is None:
                     crop = zoom_prev_interactive(
@@ -2835,18 +3194,29 @@ def run_manual_image_stage(
                         window_title=f"Zoom into previous image (scene {n}/{len(manual_texts)})",
                     )
                     if crop is None:
-                        print(f"\n[manual-img] Exited without zooming scene #{idx}. Re-run to resume.")
+                        print(
+                            f"\n[manual-img] Exited without zooming scene #{idx}. Re-run to resume."
+                        )
                         sys.exit(0)
-                    state_file.write_text(json.dumps({
-                        "width_pct": crop.width_pct, "cx_frac": crop.cx_frac,
-                        "cy_frac": crop.cy_frac}, indent=2))
+                    state_file.write_text(
+                        json.dumps(
+                            {
+                                "width_pct": crop.width_pct,
+                                "cx_frac": crop.cx_frac,
+                                "cy_frac": crop.cy_frac,
+                            },
+                            indent=2,
+                        )
+                    )
                 try:
                     crop_and_zoom(base_still, crop, str(result_png))
                 except Exception as exc:
                     print(f"[manual-img] FATAL: crop/zoom failed: {exc}")
                     sys.exit(1)
 
-        print(f"[manual-img]   result = {Path(result_png).name} ({_dims(str(result_png))})")
+        print(
+            f"[manual-img]   result = {Path(result_png).name} ({_dims(str(result_png))})"
+        )
         try:
             _render_image_to_static_mp4(str(result_png), duration, str(output_mp4))
         except Exception as exc:
@@ -2861,7 +3231,7 @@ def run_manual_image_stage(
             by_script[text] = len(final_data) - 1
         _add_local_paths_to_history({text: entries})
         save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
-        print(f"[manual-img]   OK {Path(output_mp4).name} (trim {round(duration,3)}s)")
+        print(f"[manual-img]   OK {Path(output_mp4).name} (trim {round(duration, 3)}s)")
 
     print("\n" + "=" * 70)
     print(f"[manual-img] DONE — processed {len(manual_texts)} scene(s)")
@@ -2881,13 +3251,16 @@ def run_manual_image_stage(
 # Note: a single generator can handle multiple MediaTypes — generate_joint_scenes
 # already does, dispatching internally based on which types are in JOINT_TYPES.
 
-LOCAL_FOOTAGE_GENERATORS: dict[str, Callable[
-    [dict[str, SearchTermData], list[dict]],
-    dict[str, list[dict]],
-]] = {
-    "joint":    generate_joint_scenes,    # handles every type in JOINT_TYPES
-    "read_out": generate_read_out_scenes, # handles MediaType.READ_OUT
-    "map":      generate_map_scenes,      # handles MediaType.MAP
+LOCAL_FOOTAGE_GENERATORS: dict[
+    str,
+    Callable[
+        [dict[str, SearchTermData], list[dict]],
+        dict[str, list[dict]],
+    ],
+] = {
+    "joint": generate_joint_scenes,  # handles every type in JOINT_TYPES
+    "read_out": generate_read_out_scenes,  # handles MediaType.READ_OUT
+    "map": generate_map_scenes,  # handles MediaType.MAP
 }
 
 
@@ -2919,13 +3292,16 @@ def run_all_local_generators(
 
         for script_text in produced:
             if script_text in combined:
-                print(f"[generators] WARNING: '{script_text[:60]}' already produced by "
-                      f"another generator — overwriting with {name}")
+                print(
+                    f"[generators] WARNING: '{script_text[:60]}' already produced by "
+                    f"another generator — overwriting with {name}"
+                )
         combined.update(produced)
         print(f"[generators] ← {name} produced {len(produced)} entry(ies)")
 
     print(f"\n[generators] all generators done — {len(combined)} total entry(ies)")
     return combined
+
 
 # ===========================================================================
 # KEN BURNS EFFECT FOR STATIC IMAGES
@@ -2935,40 +3311,41 @@ def run_all_local_generators(
 # style motion before being handed to the stitcher. Each (image, effect,
 # duration) combo is cached as kb-<md5>.mp4 so re-runs skip re-encoding.
 
+
 class KenBurnsEffect(Enum):
-    ZOOM_IN_CENTER     = "zoom_in_center"
-    ZOOM_OUT_CENTER    = "zoom_out_center"
-    PAN_LEFT_TO_RIGHT  = "pan_left_to_right"
-    PAN_RIGHT_TO_LEFT  = "pan_right_to_left"
+    ZOOM_IN_CENTER = "zoom_in_center"
+    ZOOM_OUT_CENTER = "zoom_out_center"
+    PAN_LEFT_TO_RIGHT = "pan_left_to_right"
+    PAN_RIGHT_TO_LEFT = "pan_right_to_left"
     TILT_BOTTOM_TO_TOP = "tilt_bottom_to_top"
     TILT_TOP_TO_BOTTOM = "tilt_top_to_bottom"
-    ZOOM_IN_PAN_LR     = "zoom_in_pan_lr"
-    ZOOM_IN_PAN_RL     = "zoom_in_pan_rl"
-    ZOOM_OUT_PAN_LR    = "zoom_out_pan_lr"
-    ZOOM_OUT_PAN_RL    = "zoom_out_pan_rl"
+    ZOOM_IN_PAN_LR = "zoom_in_pan_lr"
+    ZOOM_IN_PAN_RL = "zoom_in_pan_rl"
+    ZOOM_OUT_PAN_LR = "zoom_out_pan_lr"
+    ZOOM_OUT_PAN_RL = "zoom_out_pan_rl"
 
 
 # Probabilities must sum to ~1.0. random.choices handles normalisation
 # internally so small rounding is fine.
 KEN_BURNS_EFFECT_PROBABILITIES: dict[KenBurnsEffect, float] = {
-    KenBurnsEffect.ZOOM_IN_CENTER:     0.28,
-    KenBurnsEffect.ZOOM_OUT_CENTER:    0.22,
-    KenBurnsEffect.PAN_LEFT_TO_RIGHT:  0.14,
-    KenBurnsEffect.PAN_RIGHT_TO_LEFT:  0.12,
+    KenBurnsEffect.ZOOM_IN_CENTER: 0.28,
+    KenBurnsEffect.ZOOM_OUT_CENTER: 0.22,
+    KenBurnsEffect.PAN_LEFT_TO_RIGHT: 0.14,
+    KenBurnsEffect.PAN_RIGHT_TO_LEFT: 0.12,
     KenBurnsEffect.TILT_BOTTOM_TO_TOP: 0.06,
     KenBurnsEffect.TILT_TOP_TO_BOTTOM: 0.05,
-    KenBurnsEffect.ZOOM_IN_PAN_LR:     0.04,
-    KenBurnsEffect.ZOOM_IN_PAN_RL:     0.04,
-    KenBurnsEffect.ZOOM_OUT_PAN_LR:    0.03,
-    KenBurnsEffect.ZOOM_OUT_PAN_RL:    0.02,
+    KenBurnsEffect.ZOOM_IN_PAN_LR: 0.04,
+    KenBurnsEffect.ZOOM_IN_PAN_RL: 0.04,
+    KenBurnsEffect.ZOOM_OUT_PAN_LR: 0.03,
+    KenBurnsEffect.ZOOM_OUT_PAN_RL: 0.02,
 }
 
 # Rendering parameters — tweak these to taste.
-KEN_BURNS_OUTPUT_RESOLUTION:    tuple[int, int] = (1920, 1080)
-KEN_BURNS_WORKING_RESOLUTION:   tuple[int, int] = (4000, 2250)  # 1.78 aspect, oversampled
-KEN_BURNS_ZOOM_DELTA:           float = 0.05   # 5% of frame
-KEN_BURNS_PAN_DELTA:            float = 0.05   # 5% of working dim
-KEN_BURNS_FPS:                  int   = 30
+KEN_BURNS_OUTPUT_RESOLUTION: tuple[int, int] = (1920, 1080)
+KEN_BURNS_WORKING_RESOLUTION: tuple[int, int] = (4000, 2250)  # 1.78 aspect, oversampled
+KEN_BURNS_ZOOM_DELTA: float = 0.05  # 5% of frame
+KEN_BURNS_PAN_DELTA: float = 0.05  # 5% of working dim
+KEN_BURNS_FPS: int = 30
 KEN_BURNS_RENDER_SAFETY_PAD_SEC: float = 0.08  # same trick as read-out scenes
 
 KEN_BURNS_CACHE_DIR = Path(f"{_CACHE_DIR}/ken_burns")
@@ -3001,6 +3378,7 @@ def _pick_ken_burns_effect(seed_string: str) -> KenBurnsEffect:
     weights = list(KEN_BURNS_EFFECT_PROBABILITIES.values())
     return rng.choices(effects, weights=weights, k=1)[0]
 
+
 def _build_ken_burns_filter(effect: KenBurnsEffect, duration: float) -> str:
     """
     Build the ffmpeg -vf chain for `effect` over `duration` seconds.
@@ -3013,13 +3391,13 @@ def _build_ken_burns_filter(effect: KenBurnsEffect, duration: float) -> str:
     Easing:    smoothstep on `on/(tf-1)` clamped to [0,1]  (safety pad
                frames at the end hold the final position stationary).
     """
-    out_w, out_h   = KEN_BURNS_OUTPUT_RESOLUTION
+    out_w, out_h = KEN_BURNS_OUTPUT_RESOLUTION
     over_w, over_h = KEN_BURNS_WORKING_RESOLUTION
-    fps            = KEN_BURNS_FPS
-    z_delta        = KEN_BURNS_ZOOM_DELTA          # 0.05
-    pan_z          = 1 + KEN_BURNS_PAN_DELTA       # 1.05 — baseline zoom
-                                                   # for pan-only effects so
-                                                   # there's room to move
+    fps = KEN_BURNS_FPS
+    z_delta = KEN_BURNS_ZOOM_DELTA  # 0.05
+    pan_z = 1 + KEN_BURNS_PAN_DELTA  # 1.05 — baseline zoom
+    # for pan-only effects so
+    # there's room to move
 
     # Total animation frames — clamped to ≥2 so on/(tf-1) is safe.
     tf = max(2, int(round(duration * fps)))
@@ -3032,8 +3410,8 @@ def _build_ken_burns_filter(effect: KenBurnsEffect, duration: float) -> str:
 
     # Visible window in input space is (iw/zoom, ih/zoom).
     # x/y are the top-left corner of that window in input coords.
-    cx, cy       = "(iw-iw/zoom)/2", "(ih-ih/zoom)/2"
-    max_x, max_y = "(iw-iw/zoom)",   "(ih-ih/zoom)"
+    cx, cy = "(iw-iw/zoom)/2", "(ih-ih/zoom)/2"
+    max_x, max_y = "(iw-iw/zoom)", "(ih-ih/zoom)"
 
     match effect:
         case KenBurnsEffect.ZOOM_IN_CENTER:
@@ -3066,28 +3444,31 @@ def _build_ken_burns_filter(effect: KenBurnsEffect, duration: float) -> str:
     # Cover-fit to oversampled canvas; gives zoompan plenty of pixels to
     # crop from when zoomed in. force_original_aspect_ratio=increase scales
     # up so both dims meet/exceed the target, then crop trims the excess.
-    prep = (f"scale={over_w}:{over_h}:force_original_aspect_ratio=increase,"
-            f"crop={over_w}:{over_h},setsar=1")
+    prep = (
+        f"scale={over_w}:{over_h}:force_original_aspect_ratio=increase,"
+        f"crop={over_w}:{over_h},setsar=1"
+    )
 
     # d=1 → each input frame produces exactly 1 output frame. Combined with
     # `-loop 1 -framerate fps -i image -t duration` at the CLI level, this
     # gives us a clean monotonic `on` from 0 to duration*fps.
-    zp = (f"zoompan=z='{z}':x='{x}':y='{y}'"
-          f":d=1:s={out_w}x{out_h}:fps={fps}")
+    zp = f"zoompan=z='{z}':x='{x}':y='{y}':d=1:s={out_w}x{out_h}:fps={fps}"
 
     return f"{prep},{zp}"
 
 
-def _ken_burns_cache_path(image_path: str, effect: KenBurnsEffect,
-                          duration: float) -> Path:
+def _ken_burns_cache_path(
+    image_path: str, effect: KenBurnsEffect, duration: float
+) -> Path:
     """Stable cache filename keyed on (image, effect, duration)."""
     key = f"{image_path}|{effect.value}|{round(duration, 3)}"
     h = hashlib.md5(key.encode()).hexdigest()[:16]
     return KEN_BURNS_CACHE_DIR / f"kb-{h}.mp4"
 
 
-def _render_ken_burns_clip(image_path: str, effect: KenBurnsEffect,
-                           duration: float) -> str:
+def _render_ken_burns_clip(
+    image_path: str, effect: KenBurnsEffect, duration: float
+) -> str:
     """
     Render a Ken Burns MP4 from `image_path`. Caches by (image, effect, duration).
     Returns the output path (str).
@@ -3101,26 +3482,38 @@ def _render_ken_burns_clip(image_path: str, effect: KenBurnsEffect,
         return str(output_path)
 
     render_duration = duration + KEN_BURNS_RENDER_SAFETY_PAD_SEC
-    filter_str = _build_ken_burns_filter(effect, duration)   # ← was render_duration
+    filter_str = _build_ken_burns_filter(effect, duration)  # ← was render_duration
 
     cmd = [
-        "ffmpeg", "-y",
-        "-loop", "1",
-        "-framerate", str(KEN_BURNS_FPS),
-        "-i", image_path,
-        "-t", f"{render_duration:.3f}",
-        "-vf", filter_str,
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        "-preset", "veryfast",
-        "-r", str(KEN_BURNS_FPS),
+        "ffmpeg",
+        "-y",
+        "-loop",
+        "1",
+        "-framerate",
+        str(KEN_BURNS_FPS),
+        "-i",
+        image_path,
+        "-t",
+        f"{render_duration:.3f}",
+        "-vf",
+        filter_str,
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-preset",
+        "veryfast",
+        "-r",
+        str(KEN_BURNS_FPS),
         "-an",
         str(output_path),
     ]
 
     if DEBUG:
-        print(f"  [ken-burns render] {Path(image_path).name} "
-              f"effect={effect.value} dur={duration:.2f}s -> {output_path.name}")
+        print(
+            f"  [ken-burns render] {Path(image_path).name} "
+            f"effect={effect.value} dur={duration:.2f}s -> {output_path.name}"
+        )
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
@@ -3224,8 +3617,10 @@ def apply_ken_burns_to_final_data(
                 local_path = _resolve_to_local_path(path)
                 if not local_path:
                     print(f"\n[ken-burns] WARNING: can't resolve to disk: {path}")
-                    print(f"[ken-burns]   (not a URL in history.json AND not a "
-                          f"valid local path) — keeping original entry")
+                    print(
+                        f"[ken-burns]   (not a URL in history.json AND not a "
+                        f"valid local path) — keeping original entry"
+                    )
                     new_item[path] = trim
                     n_skipped_missing += 1
                     tracker.tick()
@@ -3236,8 +3631,10 @@ def apply_ken_burns_to_final_data(
                 try:
                     mp4_path = _render_ken_burns_clip(local_path, effect, duration)
                 except Exception as exc:
-                    print(f"\n[ken-burns] ERROR rendering {local_path}: {exc} "
-                          f"— keeping original entry")
+                    print(
+                        f"\n[ken-burns] ERROR rendering {local_path}: {exc} "
+                        f"— keeping original entry"
+                    )
                     new_item[path] = trim
                     n_failed += 1
                     tracker.tick()
@@ -3251,8 +3648,10 @@ def apply_ken_burns_to_final_data(
         entry["footage"] = new_footage
 
     tracker.finish()
-    print(f"[ken-burns] DONE — rendered={n_rendered}, "
-          f"skipped_missing={n_skipped_missing}, failed={n_failed}")
+    print(
+        f"[ken-burns] DONE — rendered={n_rendered}, "
+        f"skipped_missing={n_skipped_missing}, failed={n_failed}"
+    )
     return final_data, path_remap
 
 
@@ -3296,11 +3695,12 @@ PIXELLATE_AI_TYPES: set[MediaType] = {
 }
 
 # Forwarded to pixellate_image. Smaller grid = chunkier pixels.
-PIXELLATE_GRID_WIDTH:  int = 400
+PIXELLATE_GRID_WIDTH: int = 400
 PIXELLATE_GRID_HEIGHT: int = 200
-PIXELLATE_TOLERANCE:   int = 80
+PIXELLATE_TOLERANCE: int = 80
 
 PIXELLATE_CACHE_DIR = Path(f"{_CACHE_DIR}/pixellated")
+
 
 def _pixellate_cache_path(image_path: str) -> Path:
     """Stable cache filename keyed on (image, grid, tolerance)."""
@@ -3340,13 +3740,15 @@ def _maybe_pixellate_entries(
         new_entry: dict = {}
         for path, trim in entry.items():
             if not _is_image_path(path):
-                new_entry[path] = trim                 # videos / other → leave
+                new_entry[path] = trim  # videos / other → leave
                 continue
 
             local_path = _resolve_to_local_path(path)
             if not local_path:
-                print(f"[pixellate] WARNING: can't resolve to disk: {path} "
-                      f"— keeping original")
+                print(
+                    f"[pixellate] WARNING: can't resolve to disk: {path} "
+                    f"— keeping original"
+                )
                 new_entry[path] = trim
                 continue
 
@@ -3369,8 +3771,10 @@ def _maybe_pixellate_entries(
                         tolerance=PIXELLATE_TOLERANCE,
                     )
                 except Exception as exc:
-                    print(f"[pixellate] ERROR pixellating {local_path}: {exc} "
-                          f"— keeping original")
+                    print(
+                        f"[pixellate] ERROR pixellating {local_path}: {exc} "
+                        f"— keeping original"
+                    )
                     new_entry[path] = trim
                     continue
 
@@ -3411,9 +3815,184 @@ def pixellate_candidate_bundles(
     if n:
         print(f"[pixellate] pre-review: pixellated AI candidates in {n} bundle(s)")
 
+
+# ===========================================================================
+# CINEMATIC COLOUR GRADING (unified "shot on film at golden hour" look)
+# ===========================================================================
+# Runs as a pass over final_data right BEFORE Ken Burns. Stills are graded once
+# (one cheap ffmpeg image op) and then KB animates the already-graded still;
+# stock videos + the stock/wiki explainer & joint composites + manual stock
+# placements are graded in place. The whole look lives in COLOUR_GRADE_ETC.py
+# (one ffmpeg filter chain, identical for images and videos) so every piece of
+# stock ends up part of the same graded "collection".
+#
+# Scope:
+#   TOGGLE_STOCK_COLOUR_GRADING_ETC=False  -> nothing is graded.
+#   APPLY_COLOUR_GRADING_TO_ALL=True       -> EVERY scene is graded.
+#   otherwise                              -> only "real-world stock" scenes,
+#                                             i.e. COLOUR_GRADE_STOCK_TYPES.
+#
+# Graded output is cached by (source file, preset+algorithm fingerprint) so
+# re-runs are instant and changing the preset/algorithm transparently re-grades.
+
+# "Real-world stock" = every type that fetches external candidates (Pexels
+# videos+images, Wikipedia stills, the stock/wiki explainer composites, joint
+# collages built from stock, manual stock placement). Defined off
+# NEEDS_EXTERNAL_CANDIDATES so any new stock type is covered automatically. AI
+# stickman / ai_edit / read-out / maps / pure text overlays are intentionally
+# excluded so the film look doesn't fight the illustrated/synthetic styling —
+# flip APPLY_COLOUR_GRADING_TO_ALL to grade those too. To drop a specific stock
+# type (e.g. JOINT_3_ROW), subtract it from this set.
+COLOUR_GRADE_STOCK_TYPES: set[MediaType] = set(NEEDS_EXTERNAL_CANDIDATES)
+
+COLOUR_GRADE_CACHE_DIR = Path(f"{_CACHE_DIR}/colour_graded")
+
+
+def _colour_grade_cache_path(local_path: str, fingerprint: str, is_video: bool) -> Path:
+    """Stable cache filename keyed on (source file, grade fingerprint)."""
+    clean = local_path.split("?", 1)[0]
+    ext = ".mp4" if is_video else (Path(clean).suffix.lower() or ".jpg")
+    h = hashlib.md5(f"{local_path}|{fingerprint}".encode()).hexdigest()[:16]
+    return COLOUR_GRADE_CACHE_DIR / f"cg-{fingerprint}-{h}{ext}"
+
+
+def apply_colour_grading_to_final_data(
+    final_data: list[dict],
+    script_to_search_term: dict[str, SearchTermData],
+) -> tuple[list[dict], dict[str, str]]:
+    """
+    Give the CHOSEN footage one unified cinematic film grade.
+
+    Walks final_data and, for every grade-eligible scene, replaces each image /
+    video footage entry with a graded copy (cached). Eligibility is decided per
+    scene from its MediaType (COLOUR_GRADE_STOCK_TYPES / APPLY_COLOUR_GRADING_TO_ALL).
+
+    Returns (final_data, path_remap) where path_remap is {old_key: graded_path}
+    so the caller can register identity entries in history.json.
+    """
+    print("\n" + "=" * 70)
+    print("[colour-grade] CINEMATIC GRADE over final_data")
+    print(
+        f"[colour-grade] enabled={TOGGLE_STOCK_COLOUR_GRADING_ETC} "
+        f"all={APPLY_COLOUR_GRADING_TO_ALL} preset={STOCK_COLOUR_GRADE_PRESET!r}"
+    )
+    print("=" * 70)
+
+    if not TOGGLE_STOCK_COLOUR_GRADING_ETC:
+        print("[colour-grade] TOGGLE_STOCK_COLOUR_GRADING_ETC=False — skipping")
+        return final_data, {}
+
+    try:
+        fingerprint = COLOUR_GRADE_ETC.preset_fingerprint(STOCK_COLOUR_GRADE_PRESET)
+    except KeyError as exc:
+        print(f"[colour-grade] {exc} — skipping (fix STOCK_COLOUR_GRADE_PRESET)")
+        return final_data, {}
+
+    def _eligible(script_text: str) -> bool:
+        if APPLY_COLOUR_GRADING_TO_ALL:
+            return True
+        st = script_to_search_term.get(script_text, {}).get("search_type")
+        return st in COLOUR_GRADE_STOCK_TYPES
+
+    # Pre-scan so the progress bar has an accurate total.
+    to_grade = 0
+    for entry in final_data:
+        if not _eligible(entry.get("script_text", "")):
+            continue
+        for footage_item in entry.get("footage", []):
+            for path in footage_item:
+                if _classify_footage_path(path) in ("image", "video"):
+                    to_grade += 1
+
+    if to_grade == 0:
+        print("[colour-grade] no eligible footage in final_data — nothing to do")
+        return final_data, {}
+
+    print(
+        f"[colour-grade] grading {to_grade} footage file(s)  "
+        f"[stock types: {sorted(t.value for t in COLOUR_GRADE_STOCK_TYPES)}]"
+    )
+    COLOUR_GRADE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    tracker = ProgressTracker(total=to_grade, label="COLOUR GRADE")
+    path_remap: dict[str, str] = {}
+    n_graded = n_cached = n_skipped = n_failed = 0
+
+    for entry in final_data:
+        eligible = _eligible(entry.get("script_text", ""))
+        new_footage: list[dict] = []
+        for footage_item in entry.get("footage", []):
+            new_item: dict = {}
+            for path, trim in footage_item.items():
+                kind = _classify_footage_path(path)
+                if not eligible or kind not in ("image", "video"):
+                    new_item[path] = trim
+                    continue
+
+                local_path = _resolve_to_local_path(path)
+                if not local_path:
+                    print(
+                        f"\n[colour-grade] WARNING: can't resolve to disk: {path} "
+                        f"— keeping original"
+                    )
+                    new_item[path] = trim
+                    n_skipped += 1
+                    tracker.tick()
+                    continue
+
+                is_vid = kind == "video"
+                out = _colour_grade_cache_path(local_path, fingerprint, is_vid)
+                if out.exists() and out.stat().st_size > 1024:
+                    n_cached += 1
+                else:
+                    try:
+                        COLOUR_GRADE_ETC.grade_media(
+                            local_path,
+                            str(out),
+                            preset=STOCK_COLOUR_GRADE_PRESET,
+                        )
+                        n_graded += 1
+                    except Exception as exc:
+                        print(
+                            f"\n[colour-grade] ERROR grading {local_path}: {exc} "
+                            f"— keeping original"
+                        )
+                        new_item[path] = trim
+                        n_failed += 1
+                        tracker.tick()
+                        continue
+
+                new_item[str(out)] = trim
+                path_remap[path] = str(out)
+                tracker.tick()
+            new_footage.append(new_item)
+        entry["footage"] = new_footage
+
+    tracker.finish()
+    print(
+        f"[colour-grade] DONE — graded={n_graded}, cached={n_cached}, "
+        f"skipped={n_skipped}, failed={n_failed}"
+    )
+    return final_data, path_remap
+
+
+def _add_colour_graded_paths_to_history(path_remap: dict[str, str]) -> None:
+    """Identity entries so the stitcher's url→local lookup finds graded files."""
+    if not path_remap:
+        return
+    history = _load_history()
+    added = 0
+    for new_path in path_remap.values():
+        if new_path not in history:
+            history[new_path] = new_path
+            added += 1
+    _save_history(history)
+    print(f"[colour-grade] added {added} identity entry(ies) to history.json")
+
+
 # ===========================================================================
 # AUDIO EVENTS
 # ===========================================================================
+
 
 def build_audio_events_map(
     script_to_search_term: dict[str, SearchTermData],
@@ -3430,8 +4009,9 @@ def build_audio_events_map(
     print("\n" + "=" * 70)
     print("[audio events] BUILDING audio events map")
     print(f"[audio events] {len(script_to_search_term)} scene(s) to process")
-    print(f"[audio events] hardcoded SFX_VOLUME={SFX_VOLUME}, "
-          f"MUSIC_VOLUME={MUSIC_VOLUME}")
+    print(
+        f"[audio events] hardcoded SFX_VOLUME={SFX_VOLUME}, MUSIC_VOLUME={MUSIC_VOLUME}"
+    )
     print("=" * 70)
 
     out: dict[str, list[dict]] = {}
@@ -3442,7 +4022,9 @@ def build_audio_events_map(
     for script_text, scene_data in script_to_search_term.items():
         events: list[dict] = []
         short = script_text[:60]
-        print(f"\n[audio events] scene: '{short}{'...' if len(script_text) > 60 else ''}'")
+        print(
+            f"\n[audio events] scene: '{short}{'...' if len(script_text) > 60 else ''}'"
+        )
 
         search_type = scene_data.get("search_type")
 
@@ -3452,25 +4034,31 @@ def build_audio_events_map(
         if not _is_none(user_sfx):
             timing = scene_data.get("sfx_timing", "loop_start")
             sfx_path = str(SOUND_EFFECTS_DIR / user_sfx)
-            events.append({
-                "type":   "sfx",
-                "path":   sfx_path,
-                "timing": timing,
-                "_debug": f"user-defined sfx '{user_sfx}'",
-            })
+            events.append(
+                {
+                    "type": "sfx",
+                    "path": sfx_path,
+                    "timing": timing,
+                    "_debug": f"user-defined sfx '{user_sfx}'",
+                }
+            )
             print(f"[audio events]   + SFX (user): {user_sfx} @ {timing}")
         else:
             if search_type in JOINT_TYPE_SFX_MAP:
                 default = JOINT_TYPE_SFX_MAP[search_type]
                 sfx_path = str(SOUND_EFFECTS_DIR / default["path"])
-                events.append({
-                    "type":   "sfx",
-                    "path":   sfx_path,
-                    "timing": default["timing"],
-                    "_debug": f"auto-injected for type {search_type.value}",
-                })
-                print(f"[audio events]   + SFX (auto for {search_type.value}): "
-                      f"{default['path']} @ {default['timing']}")
+                events.append(
+                    {
+                        "type": "sfx",
+                        "path": sfx_path,
+                        "timing": default["timing"],
+                        "_debug": f"auto-injected for type {search_type.value}",
+                    }
+                )
+                print(
+                    f"[audio events]   + SFX (auto for {search_type.value}): "
+                    f"{default['path']} @ {default['timing']}"
+                )
             else:
                 print(f"[audio events]   (no SFX for this scene)")
 
@@ -3485,15 +4073,18 @@ def build_audio_events_map(
             fade = fade_raw
 
             music_path = str(SOUND_EFFECTS_DIR / user_music)
-            events.append({
-                "type":     "music",
-                "path":     music_path,
-                "timing":   "scene_start",
-                "duration": trim,
-                "fade_out": fade,
-                "_debug":   (f"user-defined music '{user_music}' "
-                             f"(trim={trim}, fade={fade}s)"),
-            })
+            events.append(
+                {
+                    "type": "music",
+                    "path": music_path,
+                    "timing": "scene_start",
+                    "duration": trim,
+                    "fade_out": fade,
+                    "_debug": (
+                        f"user-defined music '{user_music}' (trim={trim}, fade={fade}s)"
+                    ),
+                }
+            )
             print(f"[audio events]   + MUSIC: {user_music} trim={trim} fade={fade}s")
         else:
             print(f"[audio events]   (no music for this scene)")
@@ -3511,6 +4102,7 @@ def build_audio_events_map(
 # ===========================================================================
 # MISC
 # ===========================================================================
+
 
 def additional_steps_save_for_later():
     # Custom images, Ken Burns effects, etc.
@@ -3540,6 +4132,7 @@ def split_text_into_sections(section):
 # MAIN  –  ORCHESTRATOR
 # ===========================================================================
 
+
 def main() -> None:
     """
     Runs the full pipeline from raw script to finished video.
@@ -3552,7 +4145,9 @@ def main() -> None:
     # 1) Break into scenes / load search-term map
     print("====================================================================")
     print("Breaking into scenes...")
-    scriptTextToPexelSearch: dict[str, SearchTermData] = load_json(LINE_INDEX_TO_SEARCH_TERM_FILE)
+    scriptTextToPexelSearch: dict[str, SearchTermData] = load_json(
+        LINE_INDEX_TO_SEARCH_TERM_FILE
+    )
     # Convert string search_type to MediaType enum. (Flat schema — no
     # variant field any more; the type encodes everything.)
     for key, value in scriptTextToPexelSearch.items():
@@ -3560,14 +4155,14 @@ def main() -> None:
             value["search_type"] = MediaType(value["search_type"])
         except ValueError:
             valid = ", ".join(t.value for t in MediaType)
-            print(f"ERROR: unknown search_type {value['search_type']!r} "
-                  f"on scene '{key[:60]}'")
+            print(
+                f"ERROR: unknown search_type {value['search_type']!r} "
+                f"on scene '{key[:60]}'"
+            )
             print(f"       valid values: {valid}")
             sys.exit(1)
     print("!!!!!!script text to pexel search:")
     print(scriptTextToPexelSearch)
-
-
 
     # 1.4) Tighten the narration BEFORE anything time-based runs. The cutdown
     #      removes dead-air + adds the sentence transitions, writing
@@ -3587,15 +4182,21 @@ def main() -> None:
         force=FORCE_AUDIO_CUTDOWN,
     )
     if os.path.normpath(str(processed_wav)) != os.path.normpath(SCRIPT_AUDIO_FILE):
-        print(f"  ! cutdown wrote {processed_wav}, but the pipeline expects "
-              f"{SCRIPT_AUDIO_FILE} — check PROCESSED_AUDIO_DIR / the stem.")
+        print(
+            f"  ! cutdown wrote {processed_wav}, but the pipeline expects "
+            f"{SCRIPT_AUDIO_FILE} — check PROCESSED_AUDIO_DIR / the stem."
+        )
         sys.exit(1)
     print(f"  ✓ pipeline narration: {SCRIPT_AUDIO_FILE}")
 
     # 1.5) Audio synchronisation — produces line timings + (optionally) per-word timings
-    run_audio_script_synchronizer(SCRIPT_AUDIO_FILE, LINE_INDEX_TO_SEARCH_TERM_FILE,
-                                  SYNCHRONIZED_SCRIPT_OUTPUT_FILE, TIMESTAMPS_ABSOLUTE_FILE,
-                                  AUDIO_START_DELAY_SECONDS)
+    run_audio_script_synchronizer(
+        SCRIPT_AUDIO_FILE,
+        LINE_INDEX_TO_SEARCH_TERM_FILE,
+        SYNCHRONIZED_SCRIPT_OUTPUT_FILE,
+        TIMESTAMPS_ABSOLUTE_FILE,
+        AUDIO_START_DELAY_SECONDS,
+    )
 
     # 2) Fetch external candidates (Pexels + Wikipedia) — only for types in
     #    NEEDS_EXTERNAL_CANDIDATES. Other types are produced purely locally.
@@ -3616,18 +4217,23 @@ def main() -> None:
         stickman_candidates = generate_stickman_candidates(scriptTextToPexelSearch)
         if stickman_candidates:
             candidates_data.extend(stickman_candidates)
-            print(f"[main] added {len(stickman_candidates)} stickman candidate "
-                  f"bundle(s) to the review set")
+            print(
+                f"[main] added {len(stickman_candidates)} stickman candidate "
+                f"bundle(s) to the review set"
+            )
 
         # AI stickman tiles for stickman_joint scenes — same downstream flow as
         # JOINT_3_ROW (these bundles feed the joint compositor) but the tiles
         # are AI renders, not Pexels stills.
-        stickman_joint_candidates = generate_stickman_joint_candidates(scriptTextToPexelSearch)
+        stickman_joint_candidates = generate_stickman_joint_candidates(
+            scriptTextToPexelSearch
+        )
         if stickman_joint_candidates:
             candidates_data.extend(stickman_joint_candidates)
-            print(f"[main] added {len(stickman_joint_candidates)} stickman-joint "
-                  f"candidate bundle(s) to the review set")
-
+            print(
+                f"[main] added {len(stickman_joint_candidates)} stickman-joint "
+                f"candidate bundle(s) to the review set"
+            )
 
         # Stickman bundles are appended, so re-sort the review list into SCRIPT
         # order. We use each scene's position in the search-term file (its dict
@@ -3640,7 +4246,9 @@ def main() -> None:
         )
 
         save_to_cache(candidates_data, CANDIDATES_CACHE_FILE)
-        print(f"💾 Cached {len(candidates_data)} candidate bundle(s) to {CANDIDATES_CACHE_FILE}.")
+        print(
+            f"💾 Cached {len(candidates_data)} candidate bundle(s) to {CANDIDATES_CACHE_FILE}."
+        )
 
     # ── Pixellate AI candidates BEFORE review ────────────────────────────
     # In-memory, AFTER the cache load/fetch (so it applies on cache hits too)
@@ -3654,8 +4262,10 @@ def main() -> None:
     print("\n=== SCRIPT → CANDIDATE MEDIA ===")
     for entry in candidates_data:
         print(f"\nSCRIPT: {entry['script_text']}")
-        print(f"  needs {entry.get('num_clips_needed', 1)} clip(s), "
-              f"each ≤ {entry.get('max_runtime_per_clip_seconds', 0):.2f}s")
+        print(
+            f"  needs {entry.get('num_clips_needed', 1)} clip(s), "
+            f"each ≤ {entry.get('max_runtime_per_clip_seconds', 0):.2f}s"
+        )
         cands = entry.get("candidates", {}) or {}
         print("  VIDEOS:")
         for item in cands.get("videos", []):
@@ -3676,19 +4286,26 @@ def main() -> None:
     #     review's cleanup would delete the "unchosen" local AI tiles, which
     #     (unlike Pexels URLs) can't be re-downloaded. They re-enter final_data
     #     via the generator-merge step (2.6) afterwards.
-    _excluded_from_review = {MediaType.AI_EDIT, MediaType.ZOOM_PREV_IMG, MediaType.STATIC_OF_PREVIOUS}
+    _excluded_from_review = {
+        MediaType.AI_EDIT,
+        MediaType.ZOOM_PREV_IMG,
+        MediaType.STATIC_OF_PREVIOUS,
+    }
     non_edit_candidates = [
-        c for c in candidates_data
+        c
+        for c in candidates_data
         if scriptTextToPexelSearch.get(c["script_text"], {}).get("search_type")
-           not in _excluded_from_review
+        not in _excluded_from_review
     ]
 
     _stickman_texts = {
-        t for t, d in scriptTextToPexelSearch.items()
+        t
+        for t, d in scriptTextToPexelSearch.items()
         if d.get("search_type") == MediaType.STICKMAN
     }
     _stickman_joint_texts = {
-        t for t, d in scriptTextToPexelSearch.items()
+        t
+        for t, d in scriptTextToPexelSearch.items()
         if d.get("search_type") in STICKMAN_JOINT_TYPES
     }
     _regenerable_stage1 = _stickman_texts | _stickman_joint_texts
@@ -3698,7 +4315,9 @@ def main() -> None:
         if st == MediaType.STICKMAN:
             return _regenerate_stickman_scene(script_text, scriptTextToPexelSearch)
         if st in STICKMAN_JOINT_TYPES:
-            return _regenerate_stickman_joint_scene(script_text, scriptTextToPexelSearch)
+            return _regenerate_stickman_joint_scene(
+                script_text, scriptTextToPexelSearch
+            )
         return None
 
     final_data, has_manual = run_media_review(
@@ -3729,7 +4348,6 @@ def main() -> None:
                 print(f"  ✓ {url}  (trim: {trim}s)")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-
     # 2.57)
     additional_steps_save_for_later()
 
@@ -3745,7 +4363,9 @@ def main() -> None:
     if generated_footage_map:
         print("\n[main] local footage produced — integrating into final_data")
         final_data = _merge_generated_footage_into_final_data(
-            final_data, generated_footage_map, source_label="local-generators",
+            final_data,
+            generated_footage_map,
+            source_label="local-generators",
         )
         _add_local_paths_to_history(generated_footage_map)
 
@@ -3757,7 +4377,9 @@ def main() -> None:
             print(f"\nSCRIPT: {entry['script_text']}")
             for item in entry["footage"]:
                 for path_or_url, trim in item.items():
-                    label = Path(path_or_url).name if "/" in path_or_url else path_or_url
+                    label = (
+                        Path(path_or_url).name if "/" in path_or_url else path_or_url
+                    )
                     print(f"  ✓ {label}  (trim: {trim}s)")
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     else:
@@ -3775,11 +4397,15 @@ def main() -> None:
     if explain_footage_map:
         print("\n[main] explainer footage produced — integrating into final_data")
         final_data = _merge_generated_footage_into_final_data(
-            final_data, explain_footage_map, source_label="stickman-explain",
+            final_data,
+            explain_footage_map,
+            source_label="stickman-explain",
         )
         _add_local_paths_to_history(explain_footage_map)
         save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
-        print(f"💾 Updated final_data with explainer footage → {FINAL_SCRIPT_AND_CLIPS}")
+        print(
+            f"💾 Updated final_data with explainer footage → {FINAL_SCRIPT_AND_CLIPS}"
+        )
     else:
         print("\n[main] no explainer scenes; final_data unchanged")
 
@@ -3794,14 +4420,17 @@ def main() -> None:
     if overlay_footage_map:
         print("\n[main] text-overlay footage produced — integrating into final_data")
         final_data = _merge_generated_footage_into_final_data(
-            final_data, overlay_footage_map, source_label="text-overlay",
+            final_data,
+            overlay_footage_map,
+            source_label="text-overlay",
         )
         _add_local_paths_to_history(overlay_footage_map)
         save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
-        print(f"💾 Updated final_data with text-overlay footage → {FINAL_SCRIPT_AND_CLIPS}")
+        print(
+            f"💾 Updated final_data with text-overlay footage → {FINAL_SCRIPT_AND_CLIPS}"
+        )
     else:
         print("\n[main] no text-overlay scenes; final_data unchanged")
-
 
     # 2.64) Manual stock placement: composite each MANUAL_STOCK_ADD_TO_PREVIOUS
     #       scene's chosen still onto the PREVIOUS scene's image at a clicked
@@ -3813,7 +4442,19 @@ def main() -> None:
     )
     save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
 
-
+    # 2.648) Cinematic colour grade — give all STOCK footage one unified
+    #        "shot on film at golden hour" look BEFORE Ken Burns, so stills are
+    #        graded once (then KB animates the graded still) and stock videos /
+    #        composites are graded in place. Toggle via
+    #        TOGGLE_STOCK_COLOUR_GRADING_ETC / APPLY_COLOUR_GRADING_TO_ALL.
+    final_data, colour_grade_remap = apply_colour_grading_to_final_data(
+        final_data,
+        scriptTextToPexelSearch,
+    )
+    if colour_grade_remap:
+        _add_colour_graded_paths_to_history(colour_grade_remap)
+        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
+        print(f"💾 Updated final_data with graded footage → {FINAL_SCRIPT_AND_CLIPS}")
 
     # 2.65) Convert remaining static images in final_data to Ken Burns MP4s.
     #       Joint/read-out outputs are already MP4s by this point, so only
@@ -3829,7 +4470,9 @@ def main() -> None:
             print(f"\nSCRIPT: {entry['script_text']}")
             for item in entry["footage"]:
                 for path_or_url, trim in item.items():
-                    label = Path(path_or_url).name if "/" in path_or_url else path_or_url
+                    label = (
+                        Path(path_or_url).name if "/" in path_or_url else path_or_url
+                    )
                     print(f"  ✓ {label}  (trim: {trim}s)")
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
@@ -3863,8 +4506,6 @@ def main() -> None:
         MUSIC_VOLUME,
     )
 
-
-
     # so that our terminal doesn't mess up! (so i can still see what I'm typing...)
     subprocess.run(["stty", "sane"])
 
@@ -3881,16 +4522,14 @@ if __name__ == "__main__":
 # ==== OTHER THINGS MAYBE USEFUL DOWN THE LINE ===
 # ================================================
 
+
 def splitSceneIntoPowerpointSlideImages():
-    twotest="But where exactly in the world did this tea originate"
+    twotest = "But where exactly in the world did this tea originate"
 
     ai_request = f"Split this sentence into the different images that would make up this slide on my powerpoint. Identify the key nouns and visual elements. Just simple bullet point: \n{twotest}"
 
     response2 = ollama.chat(
-        model="qwen2.5:7b",
-        messages=[
-            {"role": "user", "content": ai_request}
-        ]
+        model="qwen2.5:7b", messages=[{"role": "user", "content": ai_request}]
     )
 
     reply2 = response2["message"]["content"]
@@ -3899,10 +4538,7 @@ def splitSceneIntoPowerpointSlideImages():
     ai_request2 = f"Strip out any ai fulff, explanations, headings or follow up questions: give me just a csv of identified key terms. nothing else: \n{reply2}"
 
     response3 = ollama.chat(
-        model="qwen2.5:7b",
-        messages=[
-            {"role": "user", "content": ai_request2}
-        ]
+        model="qwen2.5:7b", messages=[{"role": "user", "content": ai_request2}]
     )
     reply3 = response3["message"]["content"]
     print(reply3)
@@ -3923,8 +4559,7 @@ def determineIfStockVideo():
     """
 
         response4 = ollama.chat(
-            model="qwen2.5:7b",
-            messages=[{"role": "user", "content": ai_request}]
+            model="qwen2.5:7b", messages=[{"role": "user", "content": ai_request}]
         )
 
         reply4 = response4["message"]["content"].strip()
