@@ -2,29 +2,24 @@ find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/out
 
 
 ------------------------------------------------------------------------------------------------------------------
-NEXT:
-- maps integration for place names
-    - either the whole map
-    - or map with a pointer on 
-    - or even layer the map at a slight angle over whatever was already on the screen... (perhaps better for a quick mention of a place before scene switch? (Wait no that will be basically every time!)
-
-so in the script_to_search_term.json, if the search type is 'map'... 
-(same for the mediatype map in the code...)
-then it will use the search term as the place to search for...
-
-or it'll intelligently determine whether it is showing a county or place or country etc. 
-if its a country, it shows the whole world map, with then that country highlighted.. and/or a label on on it.
-if its a county/state etc. it'll ideally show that relative to the map of the country..
-same for towns / villages / cities.. show that relative to the country...
-
-so im imagining open street map or something similar.. or maybe even wikipedia potentially as i know they have maps.. but ill leave that up to you..
-
-------------------------------------------------------------------------------------------------------------------
 THEN:
 - Add the 'shot on film a golden hour' appearance to all the stock...
     ... light vingette etc.
     ... colour graded... etc.
     chromatic aberration ??
+    so they all look like part of the same collection...
+    and got that nice movie type appearance..
+
+
+Hmmmm...
+maybe a test first that gives a few variations that I can pick from??
+
+
+Also, make this toggleable via a CONSTANT in the main.py file... like 'TOGGLE_STOCK_COLOUR_GRADING_ETC'
+
+TODO
+- make a final list of what affects I actually want to apply to the stock...
+
 
 ------------------------------------------------------------------------------------------------------------------
 
