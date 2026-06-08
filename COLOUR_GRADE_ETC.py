@@ -2,6 +2,32 @@
 COLOUR_GRADE_ETC
 ================
 
+
+--------------------
+Want to add postprocessing to all stock images...
+this will be done by a new file.. COLOUR_GRADE_ETC.py
+
+
+Here is the affects I want you to add to all the stock (both videos, and images... that are stock... )
+Apply a unified cinematic film LUT (e.g., Kodak 2383 or Fujifilm Eterna style)
+Apply a warm "golden hour" color temperature and tint shift
+Apply a cinematic S-curve contrast adjustment
+Apply soft highlight rolloff to smooth bright areas
+Apply subtle pro-mist glow or bloom to highlights
+Apply cinematic split-toning (warm highlights, cool/teal shadows)
+Apply a soft light vignette to frame edges
+Apply lifted blacks for a softer, less-digital shadow look
+Apply fine cinematic sharpening for a crisp, high-end film feel
+
+- Add the 'shot on film a golden hour' appearance to all the stock...
+    ... light vingette etc.
+    ... colour graded... etc.
+    chromatic aberration ??
+    so they all look like part of the same collection...
+    and got that nice movie type appearance..
+
+--------------------
+
 Give every piece of STOCK footage (Pexels videos + images, Wikipedia stills,
 explainer-stock composites, …) one unified "shot on film at golden hour"
 cinematic look, so the whole video feels like a single graded collection.
@@ -28,10 +54,10 @@ The look is a stack of cinematic moves:
   9. fine cinematic sharpening                                       [unsharp]
  10. subtle film grain                                               [noise]
 
-There is ONE unified look (no variations) — a Kodak 2383 print vibe, enriched
-with the dreamy bloom / lifted blacks / subtle lens character of a vintage
-golden grade and a stronger teal-shadow / warm-highlight split, pushed a little
-harder so it reads clearly against the source.
+There is ONE unified look (no variations) — a warm Kodak 2383 print vibe with a
+teal-shadow / warm-highlight split. It stays CRISP: no chromatic aberration
+(that read as a dizzy red/cyan "3D glasses" fringe), and only a whisper of bloom
+and black-lift, so it reads clearly without looking blurry or faded.
 
 Public API
 ----------
@@ -58,7 +84,7 @@ import hashlib
 import json
 import subprocess
 import sys
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 # Bump when the filter-building algorithm changes, to invalidate caches.
@@ -119,39 +145,50 @@ class GradeConfig:
 # ---------------------------------------------------------------------------
 # THE LOOK — one unified cinematic grade (no variations to pick from).
 #
-# Built on a Kodak 2383 print vibe (the favourite), enriched with the parts that
-# worked best from the runners-up: the dreamy pro-mist bloom, lifted blacks and
-# subtle lens character (chromatic aberration) of "vintage golden", plus the
-# stronger teal-shadow / warm-highlight split of "teal & orange". Every move is
-# pushed a little harder than the originals so the grade is clearly noticeable
-# against the source while still reading as filmic, not heavy-handed.
+# A warm Kodak 2383 print vibe (the favourite) with a "teal & orange" split.
+# Deliberately NO chromatic aberration — it created a dizzy red/cyan "3D glasses"
+# fringe at the edges. Bloom and black-lift are kept to a whisper, and blacks
+# stay deep, so the result is warm and filmic but CRISP — not blurry or faded.
+#
+# ONE dial to rule them all: GRADE_INTENSITY scales every effect at once.
+#   1.00 = full look,  0.65 = ~35% weaker (current),  0.0 = no grade.
+# Tweak just this number to make the whole grade stronger or subtler.
 # ---------------------------------------------------------------------------
 
-FINAL_GRADE = GradeConfig(
-    name="cinematic_film",
-    # subtle lens character (from "vintage golden")
-    chromatic_aberration=True,
-    ca_shift=2,
-    # warm golden-hour white balance — a touch warmer than stock Kodak
-    warmth=0.135,
-    # punchy cinematic S-curve + soft, less-digital blacks + highlight rolloff
-    contrast=0.25,
-    lifted_black=0.055,
-    highlight_rolloff=0.06,
-    # stronger teal shadows / warm highlights (from "teal & orange")
-    split_shadow_teal=0.085,
-    split_highlight_warm=0.085,
-    # rich (but not garish) Kodak colour
-    saturation=1.10,
-    # dreamy pro-mist glow on the highlights (from "vintage golden")
-    bloom=0.30,
-    bloom_sigma=12,
-    bloom_threshold=0.62,
-    # framing + crisp high-end film feel + fine grain
-    vignette=0.36,
-    sharpen=0.75,
-    grain=5,
-)
+GRADE_INTENSITY = 0.65
+
+
+def _build_final_grade(k: float) -> GradeConfig:
+    """The one look, with every effect strength scaled by `k` (1.0 = full)."""
+    return GradeConfig(
+        name="cinematic_film",
+        # OFF: chromatic aberration is what looked like 3D-glasses fringing.
+        chromatic_aberration=False,
+        # warm golden-hour white balance
+        warmth=0.12 * k,
+        # punchy cinematic S-curve; keep blacks deep so it never looks faded
+        contrast=0.22 * k,
+        lifted_black=0.02 * k,
+        highlight_rolloff=0.03 * k,
+        # teal shadows / warm highlights (the "teal & orange" split)
+        split_shadow_teal=0.07 * k,
+        split_highlight_warm=0.07 * k,
+        # rich (but not garish) Kodak colour. Saturation is centred on 1.0, so
+        # scale only the distance from neutral.
+        saturation=1.0 + (1.08 - 1.0) * k,
+        # only a whisper of pro-mist glow, on the brightest highlights only, so
+        # the image stays sharp instead of hazy/blurry
+        bloom=0.10 * k,
+        bloom_sigma=8,  # bloom SHAPE, not strength — left fixed
+        bloom_threshold=0.72,  # highlight knee, not strength — left fixed
+        # framing + crisp high-end film feel + fine grain
+        vignette=0.28 * k,
+        sharpen=0.70 * k,
+        grain=4 * k,
+    )
+
+
+FINAL_GRADE = _build_final_grade(GRADE_INTENSITY)
 
 # Kept as a dict for API / cache-key compatibility, but there is only ONE look.
 PRESETS: dict[str, GradeConfig] = {FINAL_GRADE.name: FINAL_GRADE}
@@ -163,10 +200,11 @@ def list_presets() -> list[str]:
     return list(PRESETS)
 
 
-def _resolve_config(preset: str | None, config: GradeConfig | None) -> GradeConfig:
+def _resolve_config(_preset: str | None, config: GradeConfig | None) -> GradeConfig:
     # One unified look now: an explicit `config` still wins, but any preset name
     # (including legacy names like "kodak_2383") resolves to the single final
-    # grade — there are no variations to choose between anymore.
+    # grade — there are no variations to choose between anymore, so `_preset`
+    # is accepted for API compatibility and otherwise ignored.
     if config is not None:
         return config
     return FINAL_GRADE
@@ -607,6 +645,14 @@ def _run_standalone() -> None:
             [("BEFORE", before_still), ("AFTER", after_still)], str(sheet), cols=2
         )
         print(f"[grade]   ✓ before/after -> {sheet.relative_to(_MODULE_DIR)}")
+
+    # Drop the scratch stills so the folder holds only before/afters + outputs.
+    try:
+        import shutil
+
+        shutil.rmtree(frames_dir, ignore_errors=True)
+    except Exception:
+        pass
 
     print("\n" + "=" * 70)
     print("[grade] DONE — one folder of before/afters + graded outputs:")

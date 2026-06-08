@@ -98,7 +98,7 @@ APPLY_KEN_BURNS_AFFECT = False
 TOGGLE_STOCK_COLOUR_GRADING_ETC: bool = True
 # When True, grade EVERY scene (stickman / ai_edit / read-out / maps included),
 # not just real-world stock. Ignored unless TOGGLE_STOCK_COLOUR_GRADING_ETC.
-APPLY_COLOUR_GRADING_TO_ALL: bool = False
+APPLY_COLOUR_GRADING_TO_ALL: bool = True
 # COLOUR_GRADE_ETC now has ONE unified cinematic look (no variations); this just
 # selects it. Run `uv run COLOUR_GRADE_ETC.py` to preview before/after stills.
 STOCK_COLOUR_GRADE_PRESET: str = COLOUR_GRADE_ETC.DEFAULT_PRESET

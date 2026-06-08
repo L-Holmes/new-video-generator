@@ -1,45 +1,14 @@
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
 
 
-------------------------------------------------------------------------------------------------------------------
-Next task:
-Want to add postprocessing to all stock images...
-this will be done by a new file.. COLOUR_GRADE_ETC.py
-
-
-Here is the affects I want you to add to all the stock (both videos, and images... that are stock... )
-Apply a unified cinematic film LUT (e.g., Kodak 2383 or Fujifilm Eterna style)
-Apply a warm "golden hour" color temperature and tint shift
-Apply a cinematic S-curve contrast adjustment
-Apply soft highlight rolloff to smooth bright areas
-Apply subtle pro-mist glow or bloom to highlights
-Apply cinematic split-toning (warm highlights, cool/teal shadows)
-Apply a soft light vignette to frame edges
-Apply lifted blacks for a softer, less-digital shadow look
-Apply fine cinematic sharpening for a crisp, high-end film feel
-
-- Add the 'shot on film a golden hour' appearance to all the stock...
-    ... light vingette etc.
-    ... colour graded... etc.
-    chromatic aberration ??
-    so they all look like part of the same collection...
-    and got that nice movie type appearance..
-
-Also, make this toggleable via a CONSTANT in the main.py file... like 'TOGGLE_STOCK_COLOUR_GRADING_ETC'
-but then have another flag... 'APPLY_COLOUR_GRADING_TO_ALL' which will just apply to absolutely everything...
-
-if the new 'COLOUR_GRADE_ETC.py' file is ran itself..
-e.g. uv run COLOUR_GRADE_ETC.py
-then it should apply to the test images in:
- _TEST_IMAGES/stock-cinematic-test-stock/
- and for the test that runs when you run it directly... save outputs to temp/colour_graded_<>
+--------
+NEXT:
+Fix the words on screen thing...
 
 ------------------------------------------------------------------------------------------------------------------
-
-
-
 THEN:
 - text, arrows and presets???
+    - TODO - be more detailed on this...
 ------------------------------------------------------------------------------------------------------------------
 
 
