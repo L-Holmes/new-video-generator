@@ -36,6 +36,7 @@ if not even a fallback frame could be produced.
 
 from __future__ import annotations
 
+import difflib
 import hashlib
 import json
 import math
@@ -60,6 +61,10 @@ MAP_USER_AGENT = (
     "(map module; personal research project; contact: logosa1960@gmail.com)"
 )
 _RATE_LIMIT_SECONDS = 1.1
+
+# Bump this to invalidate previously-cached geocodes when the matching logic
+# changes (so e.g. an old "Indonesa" -> wrong-POI cache is refreshed).
+_GEOCODE_CACHE_VERSION = 2
 
 # Where the world-countries GeoJSON lives once downloaded. Kept next to this
 # module (not under a per-project CACHE dir) so it's fetched ONCE and shared
@@ -99,6 +104,11 @@ COLOR_LABEL_HALO = (255, 255, 255)  # text outline for legibility
 # LANCZOS so polygon edges + text come out smooth (PIL has no native AA for
 # polygons). 2 is a good quality/speed balance.
 SUPERSAMPLE = 2
+
+# Drop the Google-Maps-style pin on AREA features (countries / regions) too,
+# not just on point-places. Either way the NAME label always sits ABOVE the
+# highlighted feature so it never covers it. Set False for pins on cities only.
+MAP_PIN_ON_AREAS: bool = True
 
 # Candidate bold fonts for the place-name label (first that loads wins).
 _FONT_CANDIDATES = [
@@ -351,14 +361,130 @@ def _classify(item: dict) -> str:
     return "region" if geom.get("type") in ("Polygon", "MultiPolygon") else "place"
 
 
-def _geocode(search_term: str, cache_dir: Path | str | None = None) -> dict | None:
+# OSM "category" values that are points of interest (companies, buildings,
+# shops, quarries, …) rather than the geographic place a map scene means. We
+# demote these when ranking so a typo like "Indonesa" can't land on the quarry
+# "PT Harmak Indonesa" instead of the country.
+_POI_CATEGORIES = {
+    "office",
+    "shop",
+    "amenity",
+    "tourism",
+    "leisure",
+    "building",
+    "man_made",
+    "craft",
+    "highway",
+    "railway",
+    "aeroway",
+    "landuse",
+    "historic",
+    "military",
+    "healthcare",
+    "emergency",
+    "power",
+    "barrier",
+    "club",
+}
+
+
+def _hit_score(hit: dict) -> float:
+    """Rank a Nominatim hit so real countries/regions/cities beat POIs."""
+    cat = (hit.get("category") or hit.get("class") or "").lower()
+    typ = (hit.get("type") or "").lower()
+    try:
+        score = float(hit.get("importance") or 0.0)
+    except (TypeError, ValueError):
+        score = 0.0
+
+    if cat == "boundary" and typ == "administrative":
+        score += 1.5  # countries / states / counties
+    elif cat == "place":
+        if typ == "country":
+            score += 1.6
+        elif typ in ("state", "region", "province", "county"):
+            score += 1.2
+        elif typ in ("city", "town"):
+            score += 0.8
+        elif typ in ("village", "hamlet", "suburb", "municipality", "borough"):
+            score += 0.6
+        else:
+            score += 0.3
+    elif cat in _POI_CATEGORIES:
+        score -= 1.0  # demote companies / buildings / etc.
+    return score
+
+
+def _pick_best_hit(hits: list) -> dict | None:
+    """Pick the most place-like, prominent hit (not the API's raw #1)."""
+    return max(hits, key=_hit_score) if hits else None
+
+
+def _is_low_confidence(hit: dict) -> bool:
+    """True if a hit is a POI / very obscure — i.e. probably not what was meant."""
+    cat = (hit.get("category") or hit.get("class") or "").lower()
+    typ = (hit.get("type") or "").lower()
+    try:
+        imp = float(hit.get("importance") or 0.0)
+    except (TypeError, ValueError):
+        imp = 0.0
+    geographic = (cat == "boundary" and typ == "administrative") or cat == "place"
+    return (not geographic) or imp < 0.20
+
+
+def _fuzzy_country_name(term: str, country_names: list) -> str | None:
+    """Closest known country name to `term` (repairs typos like 'Indonesa')."""
+    by_lower: dict[str, str] = {}
+    for n in country_names or []:
+        if n:
+            by_lower.setdefault(n.lower(), n)
+    matches = difflib.get_close_matches(
+        term.strip().lower(), list(by_lower), n=1, cutoff=0.84
+    )
+    return by_lower[matches[0]] if matches else None
+
+
+def _nominatim_search(query: str) -> list:
+    """One rate-limited Nominatim search; returns the raw hit list."""
+    _polite_wait()
+    try:
+        resp = _session.get(
+            NOMINATIM_URL,
+            params={
+                "q": query,
+                "format": "jsonv2",
+                "polygon_geojson": 1,
+                "polygon_threshold": 0.004,  # simplify polygons -> smaller payload
+                "addressdetails": 1,
+                "dedupe": 1,
+                "limit": 10,
+                "accept-language": "en",
+            },
+            timeout=15,
+        )
+    except Exception as exc:
+        print(f"[map:geocode] HTTP error: {exc}")
+        return []
+    if resp.status_code != 200:
+        print(f"[map:geocode] API status {resp.status_code} for '{query}'")
+        return []
+    return resp.json() or []
+
+
+def _geocode(
+    search_term: str,
+    cache_dir: Path | str | None = None,
+    country_names: list | None = None,
+) -> dict | None:
     """
     Geocode `search_term` and return a normalised dict:
 
         {ok, lat, lon, bbox, kind, name, country, country_code, geometry}
 
-    bbox is (lon_min, lat_min, lon_max, lat_max). Results are cached to disk
-    keyed by the term so re-runs never re-hit the API.
+    bbox is (lon_min, lat_min, lon_max, lat_max). Among the API's results we
+    pick the most *place-like* one (so a misspelling can't land on a company
+    POI), and if the best match still looks like junk we repair the query
+    against known country names. Results are cached to disk keyed by the term.
     """
     base = Path(cache_dir) if cache_dir else (DEFAULT_DATA_DIR / "geocode_cache")
     base.mkdir(parents=True, exist_ok=True)
@@ -368,45 +494,42 @@ def _geocode(search_term: str, cache_dir: Path | str | None = None) -> dict | No
     if cache_file.exists():
         try:
             cached = json.loads(cache_file.read_text())
+            if cached.get("_v") == _GEOCODE_CACHE_VERSION:
+                print(
+                    f"[map:geocode] cache hit for '{search_term}' "
+                    f"→ kind={cached.get('kind')}"
+                )
+                return cached
             print(
-                f"[map:geocode] cache hit for '{search_term}' "
-                f"→ kind={cached.get('kind')}"
+                f"[map:geocode] stale cache for '{search_term}' "
+                f"(v{cached.get('_v')}) — refreshing"
             )
-            return cached
         except Exception:
             pass
 
     print(f"[map:geocode] querying Nominatim for '{search_term}'")
-    _polite_wait()
-    try:
-        resp = _session.get(
-            NOMINATIM_URL,
-            params={
-                "q": search_term,
-                "format": "jsonv2",
-                "polygon_geojson": 1,
-                "addressdetails": 1,
-                "limit": 1,
-                "accept-language": "en",
-            },
-            timeout=15,
-        )
-    except Exception as exc:
-        print(f"[map:geocode] HTTP error: {exc}")
-        return None
+    best = _pick_best_hit(_nominatim_search(search_term))
 
-    if resp.status_code != 200:
-        print(f"[map:geocode] API status {resp.status_code} for '{search_term}'")
-        return None
+    # Typo / junk guard: if the best match is a POI (or nothing matched), repair
+    # the query against known country names — e.g. "Indonesa" -> "Indonesia".
+    if best is None or _is_low_confidence(best):
+        corrected = _fuzzy_country_name(search_term, country_names or [])
+        if corrected and corrected.lower() != search_term.strip().lower():
+            print(
+                f"[map:geocode] '{search_term}' unmatched/junk "
+                f"— retrying as '{corrected}'"
+            )
+            alt = _pick_best_hit(_nominatim_search(corrected))
+            if alt and (best is None or _hit_score(alt) > _hit_score(best)):
+                best = alt
 
-    hits = resp.json() or []
-    if not hits:
-        print(f"[map:geocode] no results for '{search_term}'")
-        result = {"ok": False, "query": search_term}
+    if not best:
+        print(f"[map:geocode] no usable results for '{search_term}'")
+        result = {"_v": _GEOCODE_CACHE_VERSION, "ok": False, "query": search_term}
         cache_file.write_text(json.dumps(result))
         return result
 
-    item = hits[0]
+    item = best
     address = item.get("address", {}) or {}
 
     bbox = None
@@ -424,6 +547,7 @@ def _geocode(search_term: str, cache_dir: Path | str | None = None) -> dict | No
     )
 
     result = {
+        "_v": _GEOCODE_CACHE_VERSION,
         "ok": True,
         "lat": float(item["lat"]),
         "lon": float(item["lon"]),
@@ -675,7 +799,8 @@ def get_map_image(
     out.parent.mkdir(parents=True, exist_ok=True)
 
     features = _load_world_features(data_dir)
-    geo = _geocode(search_term, cache_dir)
+    country_names = [f["name"] for f in features if f.get("name")]
+    geo = _geocode(search_term, cache_dir, country_names=country_names)
 
     render_w, render_h = width * supersample, height * supersample
     border_w = max(1, render_h // 1100)
@@ -721,8 +846,17 @@ def get_map_image(
                 COLOR_HIGHLIGHT_LN,
                 highlight_w,
             )
-        _label_geometry(
-            draw, proj, highlight_geom, geo["lon"], geo["lat"], geo["name"], label_font
+        _annotate(
+            draw,
+            proj,
+            name=geo["name"],
+            font=label_font,
+            pin_r=pin_r,
+            render_w=render_w,
+            render_h=render_h,
+            point=(geo["lon"], geo["lat"]),
+            geometry=highlight_geom,
+            draw_pin=MAP_PIN_ON_AREAS,
         )
 
     else:
@@ -763,38 +897,99 @@ def get_map_image(
                 COLOR_HIGHLIGHT_LN,
                 highlight_w,
             )
-            _label_geometry(
+            _annotate(
                 draw,
                 proj,
-                geo["geometry"],
-                geo["lon"],
-                geo["lat"],
-                geo["name"],
-                label_font,
+                name=geo["name"],
+                font=label_font,
+                pin_r=pin_r,
+                render_w=render_w,
+                render_h=render_h,
+                point=(geo["lon"], geo["lat"]),
+                geometry=geo["geometry"],
+                draw_pin=MAP_PIN_ON_AREAS,
             )
         else:
-            px, py = proj(geo["lon"], geo["lat"])
-            _draw_pin(draw, px, py, pin_r)
-            _draw_label(
-                draw, px, py - 2.9 * pin_r, geo["name"], label_font, anchor="mb"
+            _annotate(
+                draw,
+                proj,
+                name=geo["name"],
+                font=label_font,
+                pin_r=pin_r,
+                render_w=render_w,
+                render_h=render_h,
+                point=(geo["lon"], geo["lat"]),
+                geometry=None,
+                draw_pin=True,
             )
 
     return _finish(img, out, width, height)
 
 
-def _label_geometry(
-    draw, proj, geometry, fallback_lon, fallback_lat, text, font
+def _annotate(
+    draw,
+    proj,
+    *,
+    name,
+    font,
+    pin_r,
+    render_w,
+    render_h,
+    point=None,
+    geometry=None,
+    draw_pin=True,
 ) -> None:
-    """Place a centred label at the geometry's bbox centre (or a point)."""
-    if geometry:
+    """
+    Drop a Google-Maps-style pin on the feature and place its NAME label just
+    ABOVE the whole feature, never on top of it (clamped to stay on-screen).
+
+    `point` (lon, lat) positions the pin; `geometry`, when given, is used to
+    find the feature's top edge so the label clears the entire highlight.
+    """
+    if point is not None:
+        px, py = proj(point[0], point[1])
+    elif geometry is not None:
+        gb = _geom_bbox(geometry)
+        if not gb:
+            return
+        px, py = proj((gb[0] + gb[2]) / 2, (gb[1] + gb[3]) / 2)
+    else:
+        return
+
+    if draw_pin:
+        _draw_pin(draw, px, py, pin_r)
+
+    # Pixels the label must clear: the pin AND (for areas) the highlighted shape.
+    obstacle_top = py - (2.7 * pin_r if draw_pin else 0.0)
+    obstacle_bottom = py
+    center_x = px
+    if geometry is not None:
         gb = _geom_bbox(geometry)
         if gb:
-            lon_c, lat_c = (gb[0] + gb[2]) / 2, (gb[1] + gb[3]) / 2
-            x, y = proj(lon_c, lat_c)
-            _draw_label(draw, x, y, text, font, anchor="mm")
-            return
-    x, y = proj(fallback_lon, fallback_lat)
-    _draw_label(draw, x, y, text, font, anchor="mm")
+            cx = (gb[0] + gb[2]) / 2
+            obstacle_top = min(obstacle_top, proj(cx, gb[3])[1])  # north edge
+            obstacle_bottom = max(obstacle_bottom, proj(cx, gb[1])[1])  # south edge
+            center_x = proj(cx, gb[3])[0]
+
+    stroke = max(2, int(getattr(font, "size", render_h * 0.05)) // 7)
+    left, top, right, bottom = draw.textbbox(
+        (0, 0), name, font=font, stroke_width=stroke
+    )
+    text_w, text_h = right - left, bottom - top
+
+    gap = max(pin_r * 0.8, render_h * 0.012)
+    margin = render_h * 0.025
+
+    if obstacle_top - gap - text_h >= margin:
+        y, anchor = obstacle_top - gap, "mb"  # preferred: above
+    elif obstacle_bottom + gap + text_h <= render_h - margin:
+        y, anchor = obstacle_bottom + gap, "mt"  # fallback: below
+    else:
+        y, anchor = max(margin + text_h, obstacle_top - gap), "mb"
+
+    half = text_w / 2 + margin
+    x = min(max(center_x, half), render_w - half)
+    _draw_label(draw, x, y, name, font, anchor)
 
 
 def _finish(img: Image.Image, out: Path, width: int, height: int) -> str | None:
@@ -815,7 +1010,14 @@ def _finish(img: Image.Image, out: Path, width: int, height: int) -> str | None:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    terms = sys.argv[1:] or ["Indonesia", "Bavaria", "Kyoto", "Brazil"]
+    terms = sys.argv[1:] or [
+        "Indonesia",
+        "Brazil",
+        "Bavaria",
+        "Kyoto",
+        "Lancashire, England",
+        "Hoddlesden, England",
+    ]
     test_dir = DEFAULT_DATA_DIR / "test_output"
     test_dir.mkdir(parents=True, exist_ok=True)
     for t in terms:
