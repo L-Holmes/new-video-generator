@@ -101,7 +101,7 @@
   },
   "If you were a European merchant, getting it meant": {
     "search_term": "old European merchant ship painting",
-    "search_type": "read_out",
+    "search_type": "zoom_prev_img",",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",

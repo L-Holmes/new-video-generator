@@ -155,7 +155,7 @@ class GradeConfig:
 # Tweak just this number to make the whole grade stronger or subtler.
 # ---------------------------------------------------------------------------
 
-GRADE_INTENSITY = 0.65
+GRADE_INTENSITY = 0.4
 
 
 def _build_final_grade(k: float) -> GradeConfig:

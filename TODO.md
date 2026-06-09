@@ -1,9 +1,6 @@
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
 
 
---------
-NEXT:
-Fix the words on screen thing...
 
 ------------------------------------------------------------------------------------------------------------------
 THEN:
@@ -170,6 +167,16 @@ Then:
 --> perhaps for now just manually tag the lists? not sure how i'd do this!
     -> type=stock (default)
     -> type=row(3)::1 (first element of a row three) -> validatoin ensures that there are three of these in a row...
+
+
+--------
+
+NEXT:
+Fix the words on screen thing...
+    - i wonder if we could add a manaul thing, seperately, like 'generate_manaul_timings.py'
+    --> where it plays the audio at like 0.5x speed, and then every time there is a word, the user clicks (or presses enter or space), or if you press backspace, it will rewind back to the prevoius word.
+    --> ideally it would also show the words on screen, and highlight the one you're up to (since we have access to the script and the input audio...)
+    or is this just annoying...
 
 -----------------
 
