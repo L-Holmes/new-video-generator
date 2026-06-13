@@ -5,42 +5,6 @@ find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/out
 
 # 5:30pm ...
 
-
-I want to cut down main.py, and extract any specialised functionality into their own files, whilst also reducing reused / similar code...
-I already have a few files:
-
-
-/009 󰌠  AUDIO_SCRIPT_SYNCHRONIZER.py
-/049 󰌠  COLOUR_GRADE_ETC.py
-/029 󰌠  GET_FROM_WIKIPEDIA.py
-/025 󰌠  GET_MAP.py
-/039 󰌠  JOINT_IMAGE_CREATOR.py
-/041 󰘦  JUSTSTOCKFOOTAGEstickman_script_to_search_term.json
-/015 󰌠  MAKE_EXPLAINER_IMAGE.py
-/027 󰌠  MAKE_TEXT_OVERLAY.py
-/038 󰌠  MANUAL_STOCK_PLACEMENT.py
-/031 󰌠  PIXELLATE.py
-/013   README.md
-/048 󰌠  REMOVE_BACKGROUND.py
-/060 󰌠  SCRIPT_AUDIO_CUTDOWN_AND_PROCESS.py
-/058 󰌠  STITCH_TOGETHER.py
-/030 󰌠  STOCK_FOOTAGE_REVIEW.py
-
-But i want to extract more 'utility' type functions into new files, and cut down main.py such that it is more of an orchestrator, using tools.
-
-Please extract logic into their own functions, and merge any shared logic into shared things so that we can cut down on repeated logic and lines of code...
-
-
-
-Please identify which logic can be extracted into their own files.
-then tell me what to delete.
-
-
-
-
-
-# 
-
 I'm adding a new mediatype: 'decorate previous'...
 
 should work similar to:
@@ -116,6 +80,32 @@ THEN:
 
 ------------------------------------------------------------------------------------------------------------------
 
+THEN:
+
+Ability to add a date on screen in like the top right or something, when a date is mentioned... 
+
+------------------------------------------------------------------------------------------------------------------
+
+Grid background (2 or 3 variations)
+---> then two, up to five pictures layered on top, like a collage, each slightly rotated
+(Perhaps also with slight box shadow etc. to look like it's been placed there...) 
+
+------------------------------------------------------------------------------------------------------------------
+
+Same picture, but then rotate it / move it somewhere else into eh generic background, synced with how you're speaking.. 
+
+------------------------------------------------------------------------------------------------------------------
+THEN:
+for when a map is shown...
+
+
+Add ability to show a map when:
+- place names mentioned..
+- if there are two or more places names, determine if they are close. If they are, show a single map..
+- ==> Ideally I want to mark where is is on the map... If it's a country, show world map, if it's a county/town/city, show national map... Etc. and have a marker of the place I'm after...
+- (if it can't be done automatically, ask user to click where it should go, then add a pin and then text of what the place is called...) 
+
+------------------------------------------------------------------------------------------------------------------
 
 Other ideas:
 - Create seperate foreground and background, then add parallax effect?
@@ -374,3 +364,114 @@ FABLE TODO
                 - e.g. like an array of arrays of correct answers...
                 - so then hte user just adds a new array with the correct answer (i.e. because the sentence splitter outputs arrays...)
             - and make it easy to search for... e.g. so that the user can easily just search for the sentence and be at the right place
+
+
+
+
+----------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
+
+
+BETTER STOCK NOTES:
+
+
+Zoom cuts. 
+
+### edit
+Slow zoom in/out
+Subtle handheld shake
+Push-ins
+Parallax effect
+Speed ramps
+Tiny rotation/drift
+
+### cut down
+- trim.
+
+### layer graphics on top
+captions
+arrows
+circles
+HUD graphics
+maps
+animated text
+UI overlays
+charts
+motion tracking labels
+
+
+### relevant sound effects
+
+whooshes
+ambient city noise
+keyboard clicks
+camera shutter sounds
+bass hits
+risers
+transition impacts
+
+### colour grade everything into one style
+one LUT,
+one grade,
+one contrast style.
+(Try equal: contrast, saturation, white balance, etc.)
+
+### add subtle imperfections / changes to not look like every other stock footage
+E.g.(?)
+film grain
+blur
+chromatic aberration
+bloom
+halation
+light leaks
+motion blur
+...
+
+### cropping
+crop tighter
+reframe subjects
+create closeups
+
+### speed manipulation
+slow motion for emotional moments
+hyperlapse speedups
+freeze frames
+reverse cuts
+speed ramps
+E.g. 100% → 300% → freeze → text appears
+
+### combine multiple related clips in sequence
+E.g. not just computer.. 
+But monitor, keyboard, typing, hard drive, etc.. 
+
+### transittions sparingly
+hard cuts
+motion blur cuts
+whip pans
+light directional transitions
+
+### masks and depth(?!?!)
+Put text BEHIND objects
+Foreground blur layers
+Duplicate subject cutouts
+Fake depth
+
+### cut visual changes to music????
+Cut:
+zooms,
+transitions,
+text pops,
+flashes,
+clip changes
+
+
+----------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
+
+
+
+seperate character from background:
+- Meta segment anything 2 ????
+???
