@@ -74,7 +74,7 @@ APPLY_KEN_BURNS_AFFECT = False
 # COLOUR_GRADE_STAGE module for the full machinery.
 #
 # Preview / pick a look first:   uv run COLOUR_GRADE_ETC.py
-TOGGLE_STOCK_COLOUR_GRADING_ETC: bool = False
+TOGGLE_STOCK_COLOUR_GRADING_ETC: bool = True
 # When True, grade EVERY scene (stickman / ai_edit / read-out / maps included),
 # not just real-world stock. Ignored unless TOGGLE_STOCK_COLOUR_GRADING_ETC.
 APPLY_COLOUR_GRADING_TO_ALL: bool = False
