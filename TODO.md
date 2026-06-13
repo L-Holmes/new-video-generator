@@ -1,16 +1,93 @@
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
 
-
-
 ------------------------------------------------------------------------------------------------------------------
+
+
+# 5:30pm ...
+
+
+I want to cut down main.py, and extract any specialised functionality into their own files, whilst also reducing reused / similar code...
+I already have a few files:
+
+
+/009 󰌠  AUDIO_SCRIPT_SYNCHRONIZER.py
+/049 󰌠  COLOUR_GRADE_ETC.py
+/029 󰌠  GET_FROM_WIKIPEDIA.py
+/025 󰌠  GET_MAP.py
+/039 󰌠  JOINT_IMAGE_CREATOR.py
+/041 󰘦  JUSTSTOCKFOOTAGEstickman_script_to_search_term.json
+/015 󰌠  MAKE_EXPLAINER_IMAGE.py
+/027 󰌠  MAKE_TEXT_OVERLAY.py
+/038 󰌠  MANUAL_STOCK_PLACEMENT.py
+/031 󰌠  PIXELLATE.py
+/013   README.md
+/048 󰌠  REMOVE_BACKGROUND.py
+/060 󰌠  SCRIPT_AUDIO_CUTDOWN_AND_PROCESS.py
+/058 󰌠  STITCH_TOGETHER.py
+/030 󰌠  STOCK_FOOTAGE_REVIEW.py
+
+But i want to extract more 'utility' type functions into new files, and cut down main.py such that it is more of an orchestrator, using tools.
+
+Please extract logic into their own functions, and merge any shared logic into shared things so that we can cut down on repeated logic and lines of code...
+
+
+
+Please identify which logic can be extracted into their own files.
+then tell me what to delete.
+
+
+
+
+
+# 
+
+I'm adding a new mediatype: 'decorate previous'...
+
+should work similar to:
+MANUAL_STOCK_ADD_TO_PREVIOUS and ZOOM_PREV_IMG in that they get an editting thing with the previous picture on screen.
+they have three tools:
+- Add text
+    - Click 'add text'.
+    - A sort of text box appears where they type their text, and then press 'enter' or click a 'text ready to place' button which appears
+    - Then the text appears, and they can increase or decrease font size using the same plus or minus method that we already have.
+    - Also, when in text place mode, an 'edit text' button appears. if clicked, then the text box opens up again. 
+        - this can be clicked even after placing the text! in which case, after clicking 'text ready to place', it will then continue as usual allowing them to choose where to put the text.
+            (but ideally the size will be retained from previous)
+    - to note: use the same font as is used by STICKMAN_TEXT_OVERLAY
+        - don't mind if the true font affect only appears after placing it on screen, if thats too hard to render the appearance of..
+- there will be a final 'finish edits and move on' button as well..
+
+
+THEN:
+
+
+Lets now extend that by adding another clickable option.
+- add arrow
+    - first the arrow appears with a spinner so that they can choose the direction the arrow is pointing.
+    - then size of arrow is controled sing the usual plus minus etc.
+    - then the user clicks on screen where they want to place the arrow.
+        - again, ideally it would be in the same pixellated style that the text is in...
+- add highlight (slightly increase the brighteness of the touched pixels, then *sublty* darkens everything else once its done
+    - they get a sort of circle paintbrush to do this. they can change the size of it using the same plus or minus method as MANUAL_STOCK_ADD_TO_PREVIOUS and ZOOM_PREV_IMG, again reuse functionality!
+
+
+
+
 THEN:
 - text, arrows and presets???
     - TODO - be more detailed on this...
+    my own editor... similar to the existing image placement...
+    - but instead of an image... i can do:
+        - text
+        - arrows 
+        - maybe one or two other presets that may be useful to youtube video creation!
+
 ------------------------------------------------------------------------------------------------------------------
 
 
 THEN:
-- same as previous, but rotated/flipped???
+new type:
+- same as previous thing, but rotated/flipped???
 
 ------------------------------------------------------------------------------------------------------------------
 
@@ -279,3 +356,21 @@ TODO LATER:
 - bigger, brighter, moving...
 
 5) ==> reuse library of icons...
+
+
+---------------
+
+FABLE TODO
+- create full automated test suite
+--> including for the sentence splitter...
+    - For the first iteration:
+        1) generate an example test with lots of variation in sentences
+        2) run it through the current sentence splitter
+        3) assign the outputs of the current sentence splitter as the expected results for the test (so theoretically, after the first run, all tests will pass
+            --> but instead of having the test be the whole thing, make it split into sentences... so each sentence is its own test
+        4) But here's the key additon:
+            - make it easy to add variations to passing tests... so each test can have multiple correct answers...
+            - but it must be easy for the coder to add new passing examples.. so make that very easy to understand..
+                - e.g. like an array of arrays of correct answers...
+                - so then hte user just adds a new array with the correct answer (i.e. because the sentence splitter outputs arrays...)
+            - and make it easy to search for... e.g. so that the user can easily just search for the sentence and be at the right place
