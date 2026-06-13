@@ -2,9 +2,9 @@
   "remove_bg": true,
   "placements": [
     {
-      "width_pct": 10,
-      "cx_frac": 0.5824561403508772,
-      "cy_frac": 0.2776315789473684
+      "width_pct": 30,
+      "cx_frac": 0.6041666666666666,
+      "cy_frac": 0.36334913112164297
     }
   ]
 }
