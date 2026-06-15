@@ -1,3 +1,20 @@
+------------
+
+add feature:
+- remove all background, place on white background
+- highlight the subject, ever-so-slightly darken the background
+- make the subject jiggle slightly -> output at mp4
+- add a parallax effect
+- add a soft shadow around the subject
+- make background monochrome
+- add animated light sweeps / glow accents around edges of the segmented subjec
+- bokeh simulation - slight gaussian blur to background.
+- animated glow blur that slowly pulses glow around the subject
+- create a “depth blur rack focus” effect where focus subtly shifts across layers
+
+------------
+
+
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
 
 ----
