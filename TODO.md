@@ -1,36 +1,12 @@
 
 
 
-Change 'remove a part (draw line)' to 'Reduce selected area (manual draw)'
-change 'extend selected area (draw)' to 'Extend selected area (manual draw)' 
-
-Also, add this to the bottom of the docstring:
-TESTING:
-uv run OBJECT_SEPERATION.py stickman-CACHE/stock_footage/wiki-img-e33fdcc1b657.jpg
-...
-
-Also:
-Add a new edit affect:
-    - remove all background, place on white background
-
-
-
 
 ------------
 
-add feature:
-- remove all background, place on white background
-- highlight the subject, ever-so-slightly darken the background
-- make the subject jiggle slightly -> output at mp4
-- add a parallax effect
-- add a soft shadow around the subject
-- make background monochrome
-- add animated light sweeps / glow accents around edges of the segmented subjec
-- bokeh simulation - slight gaussian blur to background.
-- animated glow blur that slowly pulses glow around the subject
-- create a “depth blur rack focus” effect where focus subtly shifts across layers
-
+# 6:40pm
 then integrate into main as a new media type...
+
 
 ------------
 
