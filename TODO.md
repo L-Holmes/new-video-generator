@@ -1,3 +1,21 @@
+
+
+
+Change 'remove a part (draw line)' to 'Reduce selected area (manual draw)'
+change 'extend selected area (draw)' to 'Extend selected area (manual draw)' 
+
+Also, add this to the bottom of the docstring:
+TESTING:
+uv run OBJECT_SEPERATION.py stickman-CACHE/stock_footage/wiki-img-e33fdcc1b657.jpg
+...
+
+Also:
+Add a new edit affect:
+    - remove all background, place on white background
+
+
+
+
 ------------
 
 add feature:
@@ -12,6 +30,8 @@ add feature:
 - animated glow blur that slowly pulses glow around the subject
 - create a “depth blur rack focus” effect where focus subtly shifts across layers
 
+then integrate into main as a new media type...
+
 ------------
 
 
@@ -24,28 +44,8 @@ tell me where to add stuff in an idiot proof way. before and after....
 ------------------------------------------------------------------------------------------------------------------
 
 
-# 5:30pm ...
-
-
-Lets now extend that by adding another clickable option.
-- add highlight (slightly increase the brighteness of the touched pixels, then *sublty* darkens everything else once its done
-    - after clicking the 'add highlight' they get to draw a sort of box around the area that they want highlighting. Using their mouse so once they let go of left click the box is drawn.
-
-???????????????
-- blurs and highlights?
-    - same as previous I assume, but then blur/darken/shadow or highlight effects? 
-
-circles?
-highlighter lines?
-
-THEN:
-- text, arrows and presets???
-    - TODO - be more detailed on this...
-    my own editor... similar to the existing image placement...
-    - but instead of an image... i can do:
-        - text
-        - arrows 
-        - maybe one or two other presets that may be useful to youtube video creation!
+decorator:
+- Circles
 
 ------------------------------------------------------------------------------------------------------------------
 
