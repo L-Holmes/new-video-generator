@@ -309,6 +309,7 @@ def main() -> None:
         MediaType.AI_EDIT,
         MediaType.ZOOM_PREV_IMG,
         MediaType.STATIC_OF_PREVIOUS,
+        MediaType.DECORATE_PREVIOUS,
     }
     non_edit_candidates = [
         c

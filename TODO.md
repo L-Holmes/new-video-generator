@@ -1,41 +1,25 @@
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
 
+----
+
+tell me where to add stuff in an idiot proof way. before and after....
+
 ------------------------------------------------------------------------------------------------------------------
 
 
 # 5:30pm ...
 
-I'm adding a new mediatype: 'decorate previous'...
-
-should work similar to:
-MANUAL_STOCK_ADD_TO_PREVIOUS and ZOOM_PREV_IMG in that they get an editting thing with the previous picture on screen.
-they have three tools:
-- Add text
-    - Click 'add text'.
-    - A sort of text box appears where they type their text, and then press 'enter' or click a 'text ready to place' button which appears
-    - Then the text appears, and they can increase or decrease font size using the same plus or minus method that we already have.
-    - Also, when in text place mode, an 'edit text' button appears. if clicked, then the text box opens up again. 
-        - this can be clicked even after placing the text! in which case, after clicking 'text ready to place', it will then continue as usual allowing them to choose where to put the text.
-            (but ideally the size will be retained from previous)
-    - to note: use the same font as is used by STICKMAN_TEXT_OVERLAY
-        - don't mind if the true font affect only appears after placing it on screen, if thats too hard to render the appearance of..
-- there will be a final 'finish edits and move on' button as well..
-
-
-THEN:
-
 
 Lets now extend that by adding another clickable option.
-- add arrow
-    - first the arrow appears with a spinner so that they can choose the direction the arrow is pointing.
-    - then size of arrow is controled sing the usual plus minus etc.
-    - then the user clicks on screen where they want to place the arrow.
-        - again, ideally it would be in the same pixellated style that the text is in...
 - add highlight (slightly increase the brighteness of the touched pixels, then *sublty* darkens everything else once its done
-    - they get a sort of circle paintbrush to do this. they can change the size of it using the same plus or minus method as MANUAL_STOCK_ADD_TO_PREVIOUS and ZOOM_PREV_IMG, again reuse functionality!
+    - after clicking the 'add highlight' they get to draw a sort of box around the area that they want highlighting. Using their mouse so once they let go of left click the box is drawn.
 
+???????????????
+- blurs and highlights?
+    - same as previous I assume, but then blur/darken/shadow or highlight effects? 
 
-
+circles?
+highlighter lines?
 
 THEN:
 - text, arrows and presets???
@@ -50,39 +34,16 @@ THEN:
 
 
 THEN:
-new type:
-- same as previous thing, but rotated/flipped???
-
-------------------------------------------------------------------------------------------------------------------
-
-
-THEN:
 - repeated things for common things:
     - questoins (question mark comes on screen)
+    - Ability to add a date on screen in like the top right or something, when a date is mentioned... 
     - etc. 
     - (need to make a big list here!)
-- synced music
-    - have a theme, switch to different footage on the beats of a song??
 
 ------------------------------------------------------------------------------------------------------------------
 THEN:
 - actually create the rules... for when to add certain scenes / sound effects etc.
     - don't shy away from it compadre!
-
-------------------------------------------------------------------------------------------------------------------
-
-THEN:
-- make the code better
-    - take things out of main that should be in their own seperate files...
-    - to note: before seperating out, will want to first seperate in-place in the main file itself. -- i.e. thing slike when update the json are called etc... or updates to different things or reviews that happen in the middle...
-    --> straighten all that out...
-
-
-------------------------------------------------------------------------------------------------------------------
-
-THEN:
-
-Ability to add a date on screen in like the top right or something, when a date is mentioned... 
 
 ------------------------------------------------------------------------------------------------------------------
 
@@ -92,40 +53,33 @@ Grid background (2 or 3 variations)
 
 ------------------------------------------------------------------------------------------------------------------
 
-Same picture, but then rotate it / move it somewhere else into eh generic background, synced with how you're speaking.. 
-
-------------------------------------------------------------------------------------------------------------------
 THEN:
 for when a map is shown...
 
 
 Add ability to show a map when:
 - place names mentioned..
-- if there are two or more places names, determine if they are close. If they are, show a single map..
+- show both places on the same map
+    - but create two pictures...
+        - so actually, this will be a new media type... 'addanothermappoint'... (?)
 - ==> Ideally I want to mark where is is on the map... If it's a country, show world map, if it's a county/town/city, show national map... Etc. and have a marker of the place I'm after...
 - (if it can't be done automatically, ask user to click where it should go, then add a pin and then text of what the place is called...) 
 
 ------------------------------------------------------------------------------------------------------------------
 
 Other ideas:
-- Create seperate foreground and background, then add parallax effect?
 - stock fallback
     - (if all the stock is just rubbish... do i allow backup of generate ai image?)
-- speed ramps:
-    - 100% -> 150% for boring middle section, snap back to 100% on beat. Great for walking, clouds, city timelapses.
 - 2 to 3 brand colours? (for like labels.. text .. arrows.. stock.. etc.)
-- blurs and highlights?
-    - same as previous I assume, but then blur/darken/shadow or highlight effects? 
 - highlighting layered things
     - like adding shaddow...
     - gaussian blur whatever that is...
     - etc.
 - slight rotation for layered things...
     - hmmm . yeah so either layer on prexisting background
+    - would this be a variation of the 3 row???
 - maybe transitions etc. for when I place something in a scene manually?? 
     - (even if i place multiple items in a scene? - e.g. adding 5 coins... could have default it adds them one by one, cutting one after the other... (unless the length of the clip isn't long enough?)
-- character reactions library
-    - Reuse a small library of stickman poses: thinking, pointing, shocked, shrug. Trigger by sentiment of line.
 - graphs / bars / ...
     - Counter animations
     Numbers tick up, bar fills, pie chart draws on. Perfect for stats you mention.
@@ -475,3 +429,18 @@ clip changes
 seperate character from background:
 - Meta segment anything 2 ????
 ???
+- Create seperate foreground and background, then add parallax effect?
+
+
+
+- synced music
+    - have a theme, switch to different footage on the beats of a song??
+
+
+
+    - speed ramps:
+    - 100% -> 150% for boring middle section, snap back to 100% on beat. Great for walking, clouds, city timelapses.
+
+
+    - character reactions library
+    - Reuse a small library of stickman poses: thinking, pointing, shocked, shrug. Trigger by sentiment of line.

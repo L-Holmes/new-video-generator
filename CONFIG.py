@@ -252,6 +252,12 @@ class MediaType(Enum):
     MANUAL_STOCK_ADD_TO_PREVIOUS = "manual_stock_add_to_previous"  # place this scene's chosen still onto the PREVIOUS scene's image (manual click/size)
     ZOOM_PREV_IMG = "zoom_prev_img"  # derive this scene's image by cropping/zooming into the PREVIOUS scene's image
     STATIC_OF_PREVIOUS = "static_of_previous"  # reuse prev image, OR freeze prev video's last *played* frame
+    DECORATE_PREVIOUS = "decorate_previous"  # interactive: draw text (and future tools) onto the PREVIOUS scene's image
+
+ # near MANUAL_STOCK_ADD_TYPES / ZOOM_PREV_TYPES / STATIC_OF_PREVIOUS_TYPES:
+DECORATE_PREVIOUS_TYPES: set[MediaType] = {MediaType.DECORATE_PREVIOUS}
+DECORATE_PREVIOUS_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_previous")
+DECORATE_PREVIOUS_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 
 class SearchTermData(TypedDict):
@@ -368,6 +374,10 @@ ZOOM_PREV_TYPES: set[MediaType] = {MediaType.ZOOM_PREV_IMG}
 STATIC_OF_PREVIOUS_TYPES: set[MediaType] = {MediaType.STATIC_OF_PREVIOUS}
 MANUAL_STOCK_PLACEMENT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/manual_stock_placement")
 MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC: float = 0.08
+
+DECORATE_PREVIOUS_TYPES: set[MediaType] = {MediaType.DECORATE_PREVIOUS}
+DECORATE_PREVIOUS_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_previous")
+DECORATE_PREVIOUS_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 # ===========================================================================
 # JOINT SCENE LAYOUTS

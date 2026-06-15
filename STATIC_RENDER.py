@@ -24,6 +24,7 @@ from CACHE_IO import (
 from CONFIG import (
     CANDIDATES_CACHE_FILE,
     DEBUG,
+    DECORATE_PREVIOUS_TYPES,
     FINAL_SCRIPT_AND_CLIPS,
     MANUAL_STOCK_ADD_TYPES,
     MANUAL_STOCK_PLACEMENT_OUTPUT_DIR,
@@ -222,7 +223,12 @@ def run_manual_image_stage(
     re-opening the GUI; delete one to redo that scene. STATIC_OF_PREVIOUS has
     no GUI, so it's just recomputed each run (cheap + deterministic).
     """
-    manual_set = MANUAL_STOCK_ADD_TYPES | ZOOM_PREV_TYPES | STATIC_OF_PREVIOUS_TYPES
+    manual_set = (
+        MANUAL_STOCK_ADD_TYPES
+        | ZOOM_PREV_TYPES
+        | STATIC_OF_PREVIOUS_TYPES
+        | DECORATE_PREVIOUS_TYPES
+    )
     ordered_texts = list(script_to_search_term.keys())
     manual_texts = [
         t
@@ -246,6 +252,13 @@ def run_manual_image_stage(
         place_overlays_interactive,
         zoom_prev_interactive,
     )
+    from DECORATE_PREVIOUS import (
+        composite_text_decorations,
+        decorate_prev_interactive,
+        dump_decos,
+        load_decos,
+    )
+    from dataclasses import asdict
 
     scene_timings = _load_scene_timings()
     by_script = {e["script_text"]: i for i, e in enumerate(final_data)}
@@ -346,7 +359,9 @@ def run_manual_image_stage(
         idx = script_index[text]
         stype = script_to_search_term[text]["search_type"]
         kind = (
-            "static"
+            "decorate"
+            if stype in DECORATE_PREVIOUS_TYPES
+            else "static"
             if stype in STATIC_OF_PREVIOUS_TYPES
             else "zoom"
             if stype in ZOOM_PREV_TYPES
@@ -372,7 +387,57 @@ def run_manual_image_stage(
         output_mp4 = out_dir / f"manual_{kind}_{idx:03d}_{safe_stem}.mp4"
         print(f"[manual-img]   duration = {duration:.3f}s")
 
-        if kind == "static":
+        if kind == "decorate":
+            # Interactive: draw text onto the PREVIOUS scene's image. Needs the
+            # previous backdrop only (no overlay still). Resume via decorate_<idx>.json.
+            base_still, base_text = _resolve_base(idx)
+            if not base_still:
+                print(
+                    f"[manual-img] FATAL: no preceding image for '{text[:60]}'. "
+                    f"decorate_previous needs a normal scene before it whose "
+                    f"image is the backdrop."
+                )
+                sys.exit(1)
+            print(
+                f"[manual-img]   base <- '{base_text[:50]}' "
+                f"({Path(base_still).name}, {_dims(base_still)})"
+            )
+
+            state_file = out_dir / f"decorate_{idx:03d}.json"
+            decos = None
+            if state_file.exists():
+                try:
+                    raw = json.loads(state_file.read_text())
+                    decos = load_decos(raw)
+                    print(f"[manual-img]   resume: reusing {len(decos)} saved text(s)")
+                except Exception as exc:
+                    print(
+                        f"[manual-img]   couldn't read {state_file.name} ({exc}); "
+                        f"re-opening GUI"
+                    )
+                    decos = None
+            if decos is None:
+                decos = decorate_prev_interactive(
+                    base_image_path=base_still,
+                    window_title=f"Decorate previous image (scene {n}/{len(manual_texts)})",
+                )
+                if decos is None:
+                    print(
+                        f"\n[manual-img] Exited without decorating scene #{idx}. "
+                        f"Re-run to resume."
+                    )
+                    sys.exit(0)
+                state_file.write_text(
+                    json.dumps(dump_decos(decos), indent=2)
+                )
+            print(f"[manual-img]   texts = {len(decos)}")
+            try:
+                composite_text_decorations(base_still, decos, str(result_png))
+            except Exception as exc:
+                print(f"[manual-img] FATAL: decorate composite failed: {exc}")
+                sys.exit(1)
+
+        elif kind == "static":
             # Non-interactive: reuse prev image, or freeze prev video's last frame.
             src_still, _src_text = _resolve_static_source(idx)
             if not src_still:
