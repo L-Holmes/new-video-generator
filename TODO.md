@@ -9,10 +9,6 @@ tell me where to add stuff in an idiot proof way. before and after....
 
 
 3:40pn;
-- rmeove the 'text ready to be placed' thing..  
-    - Should just automatically be ready to place as soon as there are > 0 letters (if < 1, obviously not)
-    - and so the text size should also show if there are > 0 letters... (exculding whitespace of course!)
-
 - Highlighter?
 
 repeated things for common things.
@@ -32,13 +28,21 @@ what automated things can I detect just from the script though? Like;
     - In Km/[american units]
 - Monetary amounts
     - In £ [and euros / USD / yen...]
-- 
-
-------------------------------------------------------------------------------------------------------------------
 
 
-THEN:
+----------------------------------
 
+    THEN:
+for when a map is shown...
+
+
+Add ability to show a map when:
+- place names mentioned..
+- show both places on the same map
+    - but create two pictures...
+        - so actually, this will be a new media type... 'addanothermappoint'... (?)
+- ==> Ideally I want to mark where is is on the map... If it's a country, show world map, if it's a county/town/city, show national map... Etc. and have a marker of the place I'm after...
+- (if it can't be done automatically, ask user to click where it should go, then add a pin and then text of what the place is called...) 
 ------------------------------------------------------------------------------------------------------------------
 THEN:
 - actually create the rules... for when to add certain scenes / sound effects etc.
@@ -52,17 +56,6 @@ Grid background (2 or 3 variations)
 
 ------------------------------------------------------------------------------------------------------------------
 
-THEN:
-for when a map is shown...
-
-
-Add ability to show a map when:
-- place names mentioned..
-- show both places on the same map
-    - but create two pictures...
-        - so actually, this will be a new media type... 'addanothermappoint'... (?)
-- ==> Ideally I want to mark where is is on the map... If it's a country, show world map, if it's a county/town/city, show national map... Etc. and have a marker of the place I'm after...
-- (if it can't be done automatically, ask user to click where it should go, then add a pin and then text of what the place is called...) 
 
 ------------------------------------------------------------------------------------------------------------------
 
@@ -94,14 +87,6 @@ Comic panel grid
 
 ------------------------------------------------------------------------------------------------------------------
 
-------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------
-hmmm
-
-
-
-
-------------------------------------------------------------------------------------------------------------------
 
 # ALL OTHER NOTES:
 
