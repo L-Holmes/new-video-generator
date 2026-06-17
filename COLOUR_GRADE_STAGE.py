@@ -20,11 +20,11 @@ from CONFIG import (
     _CACHE_DIR,
     APPLY_COLOUR_GRADING_TO_ALL,
     MediaType,
-    NEEDS_EXTERNAL_CANDIDATES,
     STOCK_COLOUR_GRADE_PRESET,
     SearchTermData,
     TOGGLE_STOCK_COLOUR_GRADING_ETC,
     ProgressTracker,
+    MEDIA_PROPERTIES,
 )
 
 
@@ -56,7 +56,9 @@ from CONFIG import (
 # excluded so the film look doesn't fight the illustrated/synthetic styling —
 # flip APPLY_COLOUR_GRADING_TO_ALL to grade those too. To drop a specific stock
 # type (e.g. JOINT_3_ROW), subtract it from this set.
-COLOUR_GRADE_STOCK_TYPES: set[MediaType] = set(NEEDS_EXTERNAL_CANDIDATES)
+COLOUR_GRADE_STOCK_TYPES: set[MediaType] = {
+    mt for mt, p in MEDIA_PROPERTIES.items() if p.needs_external_candidates
+}
 
 COLOUR_GRADE_CACHE_DIR = Path(f"{_CACHE_DIR}/colour_graded")
 

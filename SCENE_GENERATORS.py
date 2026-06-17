@@ -28,7 +28,6 @@ from CONFIG import (
     CANDIDATES_CACHE_FILE,
     JOINT_BASE_DURATION_FALLBACK_SEC,
     JOINT_LAYOUT_POSITIONS,
-    JOINT_TYPES,
     MAP_ENABLE,
     MAP_GEOCODE_CACHE_DIR,
     MAP_OUTPUT_DIR,
@@ -36,14 +35,14 @@ from CONFIG import (
     READ_OUT_RENDER_SAFETY_PAD_SEC,
     STICKMAN_EXPLAIN_OUTPUT_DIR,
     STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC,
-    STICKMAN_EXPLAIN_TYPES,
     STICKMAN_TEXT_OVERLAY_OUTPUT_DIR,
     STICKMAN_TEXT_OVERLAY_RENDER_SAFETY_PAD_SEC,
-    STICKMAN_TEXT_OVERLAY_TYPES,
     TIMESTAMPS_ABSOLUTE_FILE,
     WORD_TIMINGS_FILE,
     MediaType,
     SearchTermData,
+    MEDIA_PROPERTIES,
+    media_props,
 )
 from DOWNLOADS import _download_image
 from GET_MAP import get_map_image
@@ -83,7 +82,7 @@ def generate_joint_scenes(
         f"[joint scenes] script_to_search_term has {len(script_to_search_term)} entries"
     )
     print(f"[joint scenes] candidates_data has {len(candidates_data)} entries")
-    print(f"[joint scenes] joint types registered: {[t.value for t in JOINT_TYPES]}")
+    print(f"[joint scenes] joint types registered: " f"{[mt.value for mt, p in MEDIA_PROPERTIES.items() if p.is_joint]}")
     print("=" * 70)
 
     scene_timings = _load_scene_timings()
@@ -108,7 +107,7 @@ def generate_joint_scenes(
     # 1) Locate all scenes whose search_type is a joint type.
     joint_scenes: list[tuple[str, SearchTermData]] = []
     for script_text, scene_data in script_to_search_term.items():
-        if scene_data["search_type"] not in JOINT_TYPES:
+        if not media_props(scene_data["search_type"]).is_joint:
             continue
         joint_scenes.append((script_text, scene_data))
 
@@ -619,7 +618,7 @@ def generate_stickman_explain_scenes(
     explain_scenes = [
         (txt, data)
         for txt, data in script_to_search_term.items()
-        if data["search_type"] in STICKMAN_EXPLAIN_TYPES
+        if media_props(data["search_type"]).is_stickman_explain
     ]
     if not explain_scenes:
         print("[explain scenes] no explainer scenes — returning empty map")
@@ -732,7 +731,7 @@ def generate_text_overlay_scenes(
     overlay_scenes = [
         (txt, data)
         for txt, data in script_to_search_term.items()
-        if data["search_type"] in STICKMAN_TEXT_OVERLAY_TYPES
+        if media_props(data["search_type"]).is_text_overlay
     ]
     if not overlay_scenes:
         print("[text-overlay] no text-overlay scenes — returning empty map")
@@ -750,10 +749,9 @@ def generate_text_overlay_scenes(
         """Nearest preceding non-overlay scene's resolved local image/video."""
         for j in range(idx - 1, -1, -1):
             prev_text = ordered_texts[j]
-            if (
+            if media_props(
                 script_to_search_term[prev_text]["search_type"]
-                in STICKMAN_TEXT_OVERLAY_TYPES
-            ):
+            ).is_text_overlay:
                 continue  # skip other captions
             footage = (final_by_text.get(prev_text) or {}).get("footage") or []
             if not footage:

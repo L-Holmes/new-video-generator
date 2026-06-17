@@ -151,7 +151,7 @@
   },
   "single ship full of nutmeg,": {
     "search_term": "single tall ship ocean treasure",
-    "search_type": "stock",
+    "search_type": "object_generate",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",

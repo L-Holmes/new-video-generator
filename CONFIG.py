@@ -19,6 +19,7 @@ import time
 from enum import Enum
 from pathlib import Path
 from typing import TypedDict
+from dataclasses import dataclass
 
 import requests
 
@@ -253,9 +254,82 @@ class MediaType(Enum):
     ZOOM_PREV_IMG = "zoom_prev_img"  # derive this scene's image by cropping/zooming into the PREVIOUS scene's image
     STATIC_OF_PREVIOUS = "static_of_previous"  # reuse prev image, OR freeze prev video's last *played* frame
     DECORATE_PREVIOUS = "decorate_previous"  # interactive: draw text (and future tools) onto the PREVIOUS scene's image
+    OBJECT_GENERATE = "object_generate"  # fetch a stock IMAGE, edit it in the OBJECT_SEPERATION editor (bg separation + effects), use the edited result
+
+
+
+# ===========================================================================
+# PER-TYPE PROPERTY TABLE  —  SINGLE SOURCE OF TRUTH
+# ===========================================================================
+# One row of booleans per MediaType. Everything in the codebase reads these
+# via media_props(x).<flag>; there are NO separate classification sets to keep
+# in sync. _validate_media_map() refuses to import if a type is unlisted, so a
+# new MediaType is one obvious place to fill in.
+@dataclass(frozen=True)
+class MediaProperties:
+    # ── external raw material ───────────────────────────────────────────
+    needs_external_candidates: bool = False  # fetch Pexels/Wikipedia before generation
+    uses_wikipedia: bool = False             # ...and that fetch is Wikipedia, not Pexels
+    image_only: bool = False                 # fetch a STILL only (no stock video); one pick spans the scene
+    # ── compositors / generators ────────────────────────────────────────
+    is_joint: bool = False                   # joint compositor (needs a JOINT_LAYOUT_POSITIONS entry)
+    is_stickman_joint: bool = False          # ...and its tiles are AI stickman renders, not Pexels stills
+    is_ai_base: bool = False                 # valid base image for an ai_edit walk-back
+    is_stickman_explain: bool = False        # chosen clip composited onto a board base
+    is_text_overlay: bool = False            # caption on the PREVIOUS scene's image
+    # ── derive-from-previous image stages ───────────────────────────────
+    is_manual_stock_add: bool = False
+    is_zoom_prev: bool = False
+    is_static_of_previous: bool = False
+    is_decorate_previous: bool = False
+    is_object_generate: bool = False         # edit the chosen still in the OBJECT_SEPERATION editor
+
+
+# DO NOT WRAP NY LINES
+MEDIA_PROPERTIES: dict[MediaType, MediaProperties] = {
+    MediaType.STOCK: MediaProperties(needs_external_candidates=True),
+    MediaType.WIKIPEDIA: MediaProperties(needs_external_candidates=True, uses_wikipedia=True),
+    MediaType.JOINT_3_ROW: MediaProperties(needs_external_candidates=True, is_joint=True),
+    MediaType.READ_OUT: MediaProperties(),
+    MediaType.MAP: MediaProperties(),
+    MediaType.STICKMAN: MediaProperties(is_ai_base=True),
+    MediaType.AI_EDIT: MediaProperties(is_ai_base=True),
+    MediaType.STICKMAN_EXPLAIN_STOCK: MediaProperties( needs_external_candidates=True, is_stickman_explain=True),
+    MediaType.STICKMAN_EXPLAIN_WIKIPEDIA: MediaProperties( needs_external_candidates=True, uses_wikipedia=True, is_stickman_explain=True),
+    MediaType.STICKMAN_TEXT_OVERLAY: MediaProperties(is_text_overlay=True),
+    MediaType.STICKMAN_JOINT_3_ROW: MediaProperties(is_joint=True, is_stickman_joint=True),
+    MediaType.MANUAL_STOCK_ADD_TO_PREVIOUS: MediaProperties( needs_external_candidates=True, image_only=True, is_manual_stock_add=True),
+    MediaType.ZOOM_PREV_IMG: MediaProperties(is_zoom_prev=True),
+    MediaType.STATIC_OF_PREVIOUS: MediaProperties(is_static_of_previous=True),
+    MediaType.DECORATE_PREVIOUS: MediaProperties(is_decorate_previous=True),
+    MediaType.OBJECT_GENERATE: MediaProperties( needs_external_candidates=True, image_only=True, is_object_generate=True),
+}
+
+
+def _validate_media_map() -> None:
+    """Refuse to import if MEDIA_PROPERTIES and MediaType drift apart."""
+    defined, expected = set(MEDIA_PROPERTIES), set(MediaType)
+    if defined != expected:
+        raise RuntimeError(
+            "MEDIA_PROPERTIES is out of sync with MediaType!\n"
+            f"  missing definitions for: {expected - defined}\n"
+            f"  extra definitions for:   {defined - expected}"
+        )
+
+
+_validate_media_map()  # runs on import
+
+_DEFAULT_PROPS = MediaProperties()
+
+
+def media_props(mt: "MediaType | None") -> MediaProperties:
+    """Property row for a MediaType. Unknown/None → an all-False default row, so
+    `media_props(x).some_flag` is always safe (mirrors the old `x in SOME_SET`,
+    which was also False for unknown values)."""
+    return MEDIA_PROPERTIES.get(mt, _DEFAULT_PROPS)
+
 
  # near MANUAL_STOCK_ADD_TYPES / ZOOM_PREV_TYPES / STATIC_OF_PREVIOUS_TYPES:
-DECORATE_PREVIOUS_TYPES: set[MediaType] = {MediaType.DECORATE_PREVIOUS}
 DECORATE_PREVIOUS_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_previous")
 DECORATE_PREVIOUS_RENDER_SAFETY_PAD_SEC: float = 0.08
 
@@ -265,29 +339,6 @@ class SearchTermData(TypedDict):
     search_type: MediaType
     position: str
 
-
-# Which MediaTypes need external candidates (Pexels / Wikipedia / …) fetched
-# before generation runs. Anything not in this set is produced purely from
-# script text + timing data by its registered generator.
-NEEDS_EXTERNAL_CANDIDATES: set[MediaType] = {
-    MediaType.STOCK,
-    MediaType.WIKIPEDIA,
-    MediaType.JOINT_3_ROW,
-    MediaType.STICKMAN_EXPLAIN_STOCK,
-    MediaType.STICKMAN_EXPLAIN_WIKIPEDIA,
-    MediaType.MANUAL_STOCK_ADD_TO_PREVIOUS,
-}
-
-# Which MediaTypes are handled by the joint compositor. Add new joint
-# layouts here AND to JOINT_LAYOUT_POSITIONS below.
-JOINT_TYPES: set[MediaType] = {MediaType.JOINT_3_ROW, MediaType.STICKMAN_JOINT_3_ROW}
-
-# Which MediaTypes pull their candidates from Wikipedia instead of Pexels.
-# Everything else in NEEDS_EXTERNAL_CANDIDATES goes via Pexels.
-WIKIPEDIA_TYPES: set[MediaType] = {
-    MediaType.WIKIPEDIA,
-    MediaType.STICKMAN_EXPLAIN_WIKIPEDIA,
-}
 
 
 # ===========================================================================
@@ -314,7 +365,6 @@ STICKMAN_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_scenes")
 # Stickman-joint scenes reuse the AI stickman generator to produce the TILES
 # that feed the joint compositor (instead of Pexels stills). The compositor
 # only ever consumes the first image per scene, so we generate 1 variant.
-STICKMAN_JOINT_TYPES: set[MediaType] = {MediaType.STICKMAN_JOINT_3_ROW}
 STICKMAN_JOINT_NUM_VARIANTS: int = 1
 STICKMAN_JOINT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_joint_scenes")
 
@@ -329,18 +379,6 @@ AI_EDIT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/ai_edit_scenes")
 # There may be fewer than this available (or none) — best effort.
 AI_EDIT_CONTEXT_NUM_IMAGES: int = 3
 
-# Which MediaTypes count as a valid base for an ai_edit (walk-back eligibility).
-AI_BASE_TYPES: set[MediaType] = {MediaType.STICKMAN, MediaType.AI_EDIT}
-
-
-# Explainer scenes: a chosen stock/wiki clip composited onto an Einstein board
-# base AFTER review. Stock-explain pulls from Pexels; wiki-explain from
-# Wikipedia (already wired via NEEDS_EXTERNAL_CANDIDATES + WIKIPEDIA_TYPES above).
-STICKMAN_EXPLAIN_TYPES: set[MediaType] = {
-    MediaType.STICKMAN_EXPLAIN_STOCK,
-    MediaType.STICKMAN_EXPLAIN_WIKIPEDIA,
-}
-
 STICKMAN_EXPLAIN_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_explain_scenes")
 STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC: float = 0.08
 
@@ -349,7 +387,6 @@ STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC: float = 0.08
 # composited onto the PREVIOUS scene's chosen image. Synthesised AFTER review
 # + explainer (so any prior scene type resolves) and BEFORE Ken Burns. Not
 # fetched, not AI-generated, not reviewed.
-STICKMAN_TEXT_OVERLAY_TYPES: set[MediaType] = {MediaType.STICKMAN_TEXT_OVERLAY}
 STICKMAN_TEXT_OVERLAY_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/text_overlay_scenes")
 STICKMAN_TEXT_OVERLAY_RENDER_SAFETY_PAD_SEC: float = 0.08
 
@@ -369,15 +406,21 @@ STICKMAN_CONTEXT_NUM_IMAGES: int = 3
 # only — see load_stock_footage). Then a SEPARATE stage (after all picks are
 # made) lets the user click where on the PREVIOUS scene's image to drop it.
 # Output is a static MP4 so the Ken Burns pass leaves the placement untouched.
-MANUAL_STOCK_ADD_TYPES: set[MediaType] = {MediaType.MANUAL_STOCK_ADD_TO_PREVIOUS}
-ZOOM_PREV_TYPES: set[MediaType] = {MediaType.ZOOM_PREV_IMG}
-STATIC_OF_PREVIOUS_TYPES: set[MediaType] = {MediaType.STATIC_OF_PREVIOUS}
 MANUAL_STOCK_PLACEMENT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/manual_stock_placement")
 MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC: float = 0.08
 
-DECORATE_PREVIOUS_TYPES: set[MediaType] = {MediaType.DECORATE_PREVIOUS}
 DECORATE_PREVIOUS_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_previous")
 DECORATE_PREVIOUS_RENDER_SAFETY_PAD_SEC: float = 0.08
+
+# ===========================================================================
+# OBJECT GENERATE (stock image -> object-separation editor -> edited media)
+# ===========================================================================
+# The scene's OWN still is fetched IMAGE-ONLY + picked in normal stage-1 review
+# (same as MANUAL_STOCK_ADD_TO_PREVIOUS). A separate stage (after picks) opens
+# the chosen image in the OBJECT_SEPERATION editor; the edited result replaces
+# the scene's footage. A still flows through colour-grade + Ken Burns like any
+# image; an MP4 (animated effect) is left as-is.
+OBJECT_GENERATE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/object_generate_scenes")
 
 # ===========================================================================
 # JOINT SCENE LAYOUTS
@@ -396,6 +439,14 @@ JOINT_LAYOUT_POSITIONS: dict[MediaType, list[list[int]]] = {
         [75, 50],
     ],
 }
+
+def _validate_joint_layouts() -> None:
+    missing = {mt for mt, p in MEDIA_PROPERTIES.items() if p.is_joint and mt not in JOINT_LAYOUT_POSITIONS}
+    if missing:
+        raise RuntimeError(f"is_joint types missing a JOINT_LAYOUT_POSITIONS entry: {missing}")
+
+
+_validate_joint_layouts()
 
 
 # ===========================================================================

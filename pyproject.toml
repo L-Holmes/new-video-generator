@@ -22,9 +22,10 @@ dependencies = [
     "fal-client>=1.0.0",
     "num2words>=0.5",
     "pydub>=0.25",
-    "onnxruntime", 
+    "onnxruntime",
     "audioop-lts<1.0; python_version >= '3.13'",
     "faster-whisper>=1.0",
+    "ultralytics>=8.4.68",
 ]
 
 [dependency-groups]

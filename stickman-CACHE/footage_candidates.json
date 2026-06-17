@@ -202,14 +202,7 @@
     {
         "script_text": "single ship full of nutmeg,",
         "candidates": {
-            "videos": [
-                {
-                    "https://videos.pexels.com/video-files/34228530/14506265_3840_2160_60fps.mp4": 1.32
-                },
-                {
-                    "https://videos.pexels.com/video-files/5703392/5703392-uhd_3840_2160_30fps.mp4": 1.32
-                }
-            ],
+            "videos": [],
             "images": [
                 {
                     "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32

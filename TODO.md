@@ -1,16 +1,4 @@
 
-
-
-
-------------
-
-# 6:40pm
-then integrate into main as a new media type...
-
-
-------------
-
-
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
 
 ----
@@ -20,18 +8,36 @@ tell me where to add stuff in an idiot proof way. before and after....
 ------------------------------------------------------------------------------------------------------------------
 
 
-decorator:
-- Circles
+3:40pn;
+- rmeove the 'text ready to be placed' thing..  
+    - Should just automatically be ready to place as soon as there are > 0 letters (if < 1, obviously not)
+    - and so the text size should also show if there are > 0 letters... (exculding whitespace of course!)
+
+- Highlighter?
+
+repeated things for common things.
+i.e.
+what automated things can I detect just from the script though? Like;
+- questoins (question mark comes on screen)
+        - sentence with a question mark in it, gets a question mark on screen.
+- date on screen in like the top right or something, when a date is mentioned... 
+    - sentences that have dates, get that date on screen.
+    - (or just a year)
+    _- (do i do a timeline???)
+- Times
+    - analogue clock on screen!?!??!?
+- Percentages
+    - animated bar / bar chart etc
+- Measurements / distances
+    - In Km/[american units]
+- Monetary amounts
+    - In £ [and euros / USD / yen...]
+- 
 
 ------------------------------------------------------------------------------------------------------------------
 
 
 THEN:
-- repeated things for common things:
-    - questoins (question mark comes on screen)
-    - Ability to add a date on screen in like the top right or something, when a date is mentioned... 
-    - etc. 
-    - (need to make a big list here!)
 
 ------------------------------------------------------------------------------------------------------------------
 THEN:
@@ -437,3 +443,22 @@ seperate character from background:
 
     - character reactions library
     - Reuse a small library of stickman poses: thinking, pointing, shocked, shrug. Trigger by sentiment of line.
+
+
+
+-----
+could we make it a bit more straight foreward for media types?
+Like instead we have a sort of struct representing things like 'needs external candidates' etc.
+and instead of the current media types struct, we literally define the keys which are the media types, and then a map to a struct?
+e.g.
+{
+    STOCK:MediaType(True, False,True,False,False),
+    WIKIPEDIA:MediaType(True, False,True,False,False),
+    ...
+}
+ACTUALLY NO - thats just an object with extra steps!
+but don't want database.. or csv.. or anything not hardcoded...
+
+but don't want the over abstration that comes with objects...
+
+

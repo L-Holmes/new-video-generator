@@ -1,10 +1,10 @@
 {
-  "https://images.pexels.com/photos/7303850/pexels-photo-7303850.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": "stickman-CACHE/stock_footage/pexels-img-a44f8ea79932.jpeg",
   "https://images.pexels.com/photos/33316024/pexels-photo-33316024.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": "stickman-CACHE/stock_footage/pexels-img-8441f5c26fb0.jpeg",
+  "https://images.pexels.com/photos/4778354/pexels-photo-4778354.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": "stickman-CACHE/stock_footage/pexels-img-80e146e6f302.jpeg",
   "https://upload.wikimedia.org/wikipedia/commons/c/c6/Gold_bullion_2.jpg": "stickman-CACHE/stock_footage/wiki-img-e33fdcc1b657.jpg",
-  "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": "stickman-CACHE/stock_footage/pexels-img-bb5f070a7f4f.jpeg",
   "https://videos.pexels.com/video-files/30550542/13086247_1920_1080_30fps.mp4": "stickman-CACHE/stock_footage/pexels-2af8bf2ce08b.mp4",
-  "https://videos.pexels.com/video-files/31974302/13624646_1920_1080_30fps.mp4": "stickman-CACHE/stock_footage/pexels-53e81000b50e.mp4",
+  "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": "stickman-CACHE/stock_footage/pexels-img-bb5f070a7f4f.jpeg",
+  "https://videos.pexels.com/video-files/5046216/5046216-hd_1920_1080_24fps.mp4": "stickman-CACHE/stock_footage/pexels-5ca00fcf9d23.mp4",
   "stickman-CACHE/stickman_scenes/It_costs_about_4bbd4da1_0.png": "stickman-CACHE/stickman_scenes/It_costs_about_4bbd4da1_0.png",
   "stickman-CACHE/stickman_scenes/But_in_the_1600s_this_little_wrinkled_se_7a926f46_0.png": "stickman-CACHE/stickman_scenes/But_in_the_1600s_this_little_wrinkled_se_7a926f46_0.png",
   "stickman-CACHE/stickman_scenes/sailing_for_months_surviving_25508570_0.png": "stickman-CACHE/stickman_scenes/sailing_for_months_surviving_25508570_0.png",
@@ -25,6 +25,7 @@
   "stickman-CACHE/pixellated/px-c3cb695b546591eb.png": "stickman-CACHE/pixellated/px-c3cb695b546591eb.png",
   "stickman-CACHE/ai_edit_scenes/two_dollars_f96ee347_0.png": "stickman-CACHE/ai_edit_scenes/two_dollars_f96ee347_0.png",
   "stickman-CACHE/pixellated/px-a230214e9c5f6898.png": "stickman-CACHE/pixellated/px-a230214e9c5f6898.png",
+  "stickman-CACHE/object_generate_scenes/scene_015/sep-edit-pexels-img-bb5f070a7f4f.mp4": "stickman-CACHE/object_generate_scenes/scene_015/sep-edit-pexels-img-bb5f070a7f4f.mp4",
   "stickman-CACHE/joint_scenes/group_0/stage_01_of_03_loop.mp4": "stickman-CACHE/joint_scenes/group_0/stage_01_of_03_loop.mp4",
   "stickman-CACHE/joint_scenes/group_0/stage_02_of_03_loop.mp4": "stickman-CACHE/joint_scenes/group_0/stage_02_of_03_loop.mp4",
   "stickman-CACHE/joint_scenes/group_0/stage_03_of_03.mp4": "stickman-CACHE/joint_scenes/group_0/stage_03_of_03.mp4",
@@ -37,10 +38,10 @@
   "stickman-CACHE/manual_stock_placement/manual_zoom_005_single_most_contested_resource_on_the_planet.mp4": "stickman-CACHE/manual_stock_placement/manual_zoom_005_single_most_contested_resource_on_the_planet.mp4",
   "stickman-CACHE/manual_stock_placement/manual_zoom_010_If_you_were_a_European_merchant_getting_it_meant.mp4": "stickman-CACHE/manual_stock_placement/manual_zoom_010_If_you_were_a_European_merchant_getting_it_meant.mp4",
   "stickman-CACHE/manual_stock_placement/manual_static_016_you_were_set_for_life.mp4": "stickman-CACHE/manual_stock_placement/manual_static_016_you_were_set_for_life.mp4",
-  "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-cd4f8f0bcafad513.jpeg": "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-cd4f8f0bcafad513.jpeg",
+  "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-6c4e1dd34084fac2.jpeg": "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-6c4e1dd34084fac2.jpeg",
   "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-a77d082f0631cf44.mp4": "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-a77d082f0631cf44.mp4",
   "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-5773908223cf290d.mp4": "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-5773908223cf290d.mp4",
   "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-5b9ee485c1aa1e61.mp4": "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-5b9ee485c1aa1e61.mp4",
   "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-0f21d5ec6ffb1bf4.mp4": "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-0f21d5ec6ffb1bf4.mp4",
-  "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-de3c186cd0365946.jpeg": "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-de3c186cd0365946.jpeg"
+  "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-5c43d15c0edbef1e.mp4": "stickman-CACHE/colour_graded/cg-fe9fed2e5cf2-5c43d15c0edbef1e.mp4"
 }

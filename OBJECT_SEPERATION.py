@@ -57,6 +57,7 @@ TESTING
 
 import os
 import sys
+import threading
 
 try:
     import tkinter as tk
@@ -112,6 +113,8 @@ class ObjectSeparator(tk.Tk):
 
         # selection state
         self.model = None
+        self._model_ready = False
+        self._model_error = None
         self.points = []
         self.labels = []
         self.click_masks = []
@@ -133,6 +136,7 @@ class ObjectSeparator(tk.Tk):
         self.mode = "select"
         self.show_result = False
         self.anim_style = None        # None or one of ANIM_DEFS keys
+        self.saved_path = None        # set on finish; returned by run_editor
         self._stroke_img = []
         self._stroke_canvas = []
         self.undo_stack = []
@@ -142,6 +146,11 @@ class ObjectSeparator(tk.Tk):
         self._build_ui()
         self.canvas.bind("<Configure>", lambda e: self._render())
         self.after(50, self._render)
+        # Load the model in the background so the first-run download + init
+        # never freezes the window (which looks like a hang).
+        self.status.set("Loading MobileSAM (first run downloads ~40 MB)...")
+        threading.Thread(target=self._prewarm_model, daemon=True).start()
+        self.after(300, self._poll_model)
 
     # ------------------------------------------------------------------ UI
     def _build_ui(self):
@@ -532,25 +541,47 @@ class ObjectSeparator(tk.Tk):
         self.status.set("Undid the last step.")
 
     # -------------------------------------------------------- segmentation
-    def _load_model(self):
-        if self.model is None:
-            self.status.set("Loading MobileSAM (first run downloads ~40 MB)...")
-            self.config(cursor="watch")
-            self.update_idletasks()
+    def _prewarm_model(self):
+        """Runs in a background thread — must NOT touch Tk widgets. Loads the
+        model (downloading weights on first run) and reports back via plain
+        flags that _poll_model (main thread) checks."""
+        try:
             from ultralytics import SAM
             self.model = SAM(MODEL_NAME)
+            self._model_ready = True
+        except Exception as exc:
+            self._model_error = str(exc)
+
+    def _poll_model(self):
+        if self._model_error is not None and self._model_error != "__shown__":
             self.config(cursor="")
-        return self.model
+            self.status.set("Model failed to load — see the dialog.")
+            messagebox.showerror(
+                "Model error",
+                "Could not load MobileSAM:\n"
+                f"{self._model_error}\n\n"
+                "If you launched this from the pipeline (main.py), the editor "
+                "runs in the PROJECT environment, which needs the dependency "
+                "installed once:\n\n    uv add ultralytics",
+            )
+            self._model_error = "__shown__"
+            return
+        if self._model_ready:
+            self.status.set("Model ready. Click an object to begin.")
+            return
+        self.after(300, self._poll_model)
 
     def _segment_click(self, x, y, subtract):
         if subtract and self.object_mask is None:
             self.status.set("Select something first, then Shift+Click to remove.")
             return
-        try:
-            model = self._load_model()
-        except Exception as exc:
-            messagebox.showerror("Model error", f"Could not load model:\n{exc}")
+        if self.model is None:
+            if self._model_error not in (None, "__shown__"):
+                self._poll_model()   # surface the error dialog
+            else:
+                self.status.set("Model still loading — one moment...")
             return
+        model = self.model
 
         self.status.set("Segmenting...")
         self.config(cursor="watch")
@@ -1090,7 +1121,8 @@ class ObjectSeparator(tk.Tk):
             self.update_idletasks()
             if not self._render_animation(out_path):
                 return
-            messagebox.showinfo("Saved", f"Saved video to:\n{out_path}")
+            print(f"[object-separation] saved video -> {out_path}")
+            self.saved_path = out_path
             self.destroy()
             return
 
@@ -1105,18 +1137,26 @@ class ObjectSeparator(tk.Tk):
         except (KeyError, OSError):
             out_path = os.path.splitext(out_path)[0] + ".png"
             result.save(out_path)
-        messagebox.showinfo("Saved", f"Saved to:\n{out_path}")
+        print(f"[object-separation] saved -> {out_path}")
+        self.saved_path = out_path
         self.destroy()
 
 
 # --------------------------------------------------------------- entry points
-def run_editor(image_path: str, output_dir: str = None) -> None:
-    """output_dir=None -> ./temp/sep-edit-<name>; otherwise saves there."""
+def run_editor(image_path: str, output_dir: str = None) -> "str | None":
+    """Open the editor; return the saved file path (an image, or an .mp4 if an
+    animated effect was armed), or None if the window was closed without
+    finishing.
+
+    output_dir=None -> ./temp/sep-edit-<name>; otherwise saves there.
+    """
     if not os.path.isfile(image_path):
         raise FileNotFoundError(image_path)
     if output_dir is None:
         output_dir = os.path.join(os.getcwd(), "temp")
-    ObjectSeparator(image_path, output_dir).mainloop()
+    app = ObjectSeparator(image_path, output_dir)
+    app.mainloop()
+    return getattr(app, "saved_path", None)
 
 
 def main(argv=None) -> int:
@@ -1139,4 +1179,3 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

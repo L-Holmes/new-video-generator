@@ -63,8 +63,8 @@ from CONFIG import (
     SCRIPT_AUDIO_FILE,
     SCRIPT_FILE,
     SFX_VOLUME,
-    STICKMAN_JOINT_TYPES,
     SYNCHRONIZED_SCRIPT_OUTPUT_FILE,
+    media_props,
     TIMESTAMPS_ABSOLUTE_FILE,
     MediaType,
     SearchTermData,
@@ -78,6 +78,7 @@ from SCENE_GENERATORS import (
     run_all_local_generators,
 )
 from STATIC_RENDER import run_manual_image_stage
+from OBJECT_GENERATE_STAGE import run_object_generate_stage
 from TIMING_MERGE import integrate_generated_footage
 
 # ===========================================================================
@@ -326,7 +327,7 @@ def main() -> None:
     _stickman_joint_texts = {
         t
         for t, d in scriptTextToPexelSearch.items()
-        if d.get("search_type") in STICKMAN_JOINT_TYPES
+        if media_props(d.get("search_type")).is_stickman_joint
     }
     _regenerable_stage1 = _stickman_texts | _stickman_joint_texts
 
@@ -334,7 +335,7 @@ def main() -> None:
         st = scriptTextToPexelSearch.get(script_text, {}).get("search_type")
         if st == MediaType.STICKMAN:
             return _regenerate_stickman_scene(script_text, scriptTextToPexelSearch)
-        if st in STICKMAN_JOINT_TYPES:
+        if media_props(st).is_stickman_joint:
             return _regenerate_stickman_joint_scene(
                 script_text, scriptTextToPexelSearch
             )
@@ -367,6 +368,17 @@ def main() -> None:
             for url, trim in item.items():
                 print(f"  ✓ {url}  (trim: {trim}s)")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+    # 2.56) object_generate scenes — edit each scene's CHOSEN stock image in
+    #       the OBJECT_SEPERATION editor (background separation + effects), then
+    #       use the edited result. After review/ai_edit (needs the pick) and
+    #       before the derive-from-previous stages (so a later scene can point
+    #       at this edited image) and before colour-grade / Ken Burns (a still
+    #       is graded + KB-animated like any image; an MP4 export is left as-is).
+    final_data = run_object_generate_stage(
+        script_to_search_term=scriptTextToPexelSearch,
+        final_data=final_data,
+    )
 
     # 2.57)
     additional_steps_save_for_later()

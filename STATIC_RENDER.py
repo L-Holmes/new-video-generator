@@ -24,14 +24,11 @@ from CACHE_IO import (
 from CONFIG import (
     CANDIDATES_CACHE_FILE,
     DEBUG,
-    DECORATE_PREVIOUS_TYPES,
     FINAL_SCRIPT_AND_CLIPS,
-    MANUAL_STOCK_ADD_TYPES,
     MANUAL_STOCK_PLACEMENT_OUTPUT_DIR,
     MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC,
-    STATIC_OF_PREVIOUS_TYPES,
-    ZOOM_PREV_TYPES,
     SearchTermData,
+    media_props,
 )
 from KEN_BURNS import KEN_BURNS_FPS
 from TIMING_MERGE import _load_scene_timings
@@ -223,17 +220,16 @@ def run_manual_image_stage(
     re-opening the GUI; delete one to redo that scene. STATIC_OF_PREVIOUS has
     no GUI, so it's just recomputed each run (cheap + deterministic).
     """
-    manual_set = (
-        MANUAL_STOCK_ADD_TYPES
-        | ZOOM_PREV_TYPES
-        | STATIC_OF_PREVIOUS_TYPES
-        | DECORATE_PREVIOUS_TYPES
-    )
+    def _is_manual_image_type(mt) -> bool:
+        p = media_props(mt)
+        return (p.is_manual_stock_add or p.is_zoom_prev
+                or p.is_static_of_previous or p.is_decorate_previous)
+
     ordered_texts = list(script_to_search_term.keys())
     manual_texts = [
         t
         for t in ordered_texts
-        if script_to_search_term[t]["search_type"] in manual_set
+        if _is_manual_image_type(script_to_search_term[t]["search_type"])
     ]
 
     print("\n" + "=" * 70)
@@ -358,13 +354,14 @@ def run_manual_image_stage(
     for n, text in enumerate(manual_texts, start=1):
         idx = script_index[text]
         stype = script_to_search_term[text]["search_type"]
+        sp = media_props(stype)
         kind = (
             "decorate"
-            if stype in DECORATE_PREVIOUS_TYPES
+            if sp.is_decorate_previous
             else "static"
-            if stype in STATIC_OF_PREVIOUS_TYPES
+            if sp.is_static_of_previous
             else "zoom"
-            if stype in ZOOM_PREV_TYPES
+            if sp.is_zoom_prev
             else "place"
         )
 

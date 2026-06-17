@@ -23,22 +23,20 @@ import requests
 from CACHE_IO import _load_history, _save_history
 from CONFIG import (
     DOWNLOAD_WORKERS,
-    MANUAL_STOCK_ADD_TYPES,
     MAX_CLIP_SECONDS,
-    NEEDS_EXTERNAL_CANDIDATES,
     PEXELS_API_KEY,
-    STICKMAN_EXPLAIN_TYPES,
     SYNCHRONIZED_SCRIPT_OUTPUT_FILE,
     STOCK_FOOTAGE_CACHE_DIR,
     WIKI_DOWNLOAD_BASE_BACKOFF_SEC,
     WIKI_DOWNLOAD_MAX_RETRIES,
-    WIKIPEDIA_TYPES,
     ProgressTracker,
+    media_props,
     _history_lock,
     _http_session,
     _wiki_download_semaphore,
     _wiki_session,
 )
+
 from GET_FROM_WIKIPEDIA import get_from_wikipedia
 
 import json
@@ -397,7 +395,7 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
     skipped_by_type: dict[str, int] = {}
     for k, v in all_scenes.items():
         st = v.get("search_type")
-        if st in NEEDS_EXTERNAL_CANDIDATES:
+        if media_props(st).needs_external_candidates:
             eligible[k] = v
         else:
             type_name = st.value if hasattr(st, "value") else str(st)
@@ -416,14 +414,10 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
         idx, (script_text, scene_data) = idx_and_scene
         search_term = scene_data["search_term"]
         search_type = scene_data["search_type"]
+        props = media_props(search_type)
         num_clips, max_runtime = _get_num_stock_images(script_text)
 
-        # Explainer scenes feature ONE chosen clip; manual-placement scenes use
-        # ONE chosen still. Both want a single pick spanning the full scene.
-        if (
-            search_type in STICKMAN_EXPLAIN_TYPES
-            or search_type in MANUAL_STOCK_ADD_TYPES
-        ):
+        if props.is_stickman_explain or props.is_manual_stock_add or props.is_object_generate:
             max_runtime = num_clips * max_runtime  # == full scene runtime
             num_clips = 1
 
@@ -431,7 +425,7 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
         print(f"[fetch:meta]   search='{search_term}', type={search_type.value}")
 
         # ── WIKIPEDIA path ───────────────────────────────────────────
-        if search_type in WIKIPEDIA_TYPES:
+        if props.uses_wikipedia:
             print(f"[fetch:meta]   → using WIKIPEDIA source")
             wiki_urls = get_from_wikipedia(search_term, max_images=5)
             print(f"[fetch:meta]   wikipedia returned {len(wiki_urls)} URL(s)")
@@ -441,8 +435,8 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
         print(f"[fetch:meta]   → using PEXELS source")
 
         video_meta: list[tuple[str, float]] = []
-        # manual_stock_add_to_previous places a STILL, so never fetch clips for it.
-        fetch_videos = search_type not in MANUAL_STOCK_ADD_TYPES
+        # image_only types use a STILL only — never fetch stock video for them.
+        fetch_videos = not props.image_only
         seen: set[str] = set()
         if fetch_videos:
             for page in range(1, 4):

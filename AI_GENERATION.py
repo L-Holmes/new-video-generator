@@ -24,7 +24,6 @@ from CACHE_IO import (
 )
 from CONFIG import (
     _CACHE_DIR,
-    AI_BASE_TYPES,
     FINAL_SCRIPT_AND_CLIPS,
     HISTORY_FILE,
     AI_EDIT_CONTEXT_NUM_IMAGES,
@@ -34,11 +33,12 @@ from CONFIG import (
     STICKMAN_CONTEXT_NUM_IMAGES,
     STICKMAN_JOINT_NUM_VARIANTS,
     STICKMAN_JOINT_OUTPUT_DIR,
-    STICKMAN_JOINT_TYPES,
     STICKMAN_NUM_VARIANTS,
     STICKMAN_OUTPUT_DIR,
     STICKMAN_PROMPTS_FILE,
     SearchTermData,
+    MEDIA_PROPERTIES,
+    media_props
 )
 from PIXELLATE_STAGE import _maybe_pixellate_entries
 from STOCK_FOOTAGE_REVIEW import run_media_review
@@ -185,7 +185,7 @@ def generate_stickman_joint_candidates(
     joint_scenes = {
         txt: data
         for txt, data in script_to_search_term.items()
-        if data["search_type"] in STICKMAN_JOINT_TYPES
+        if media_props(data["search_type"]).is_stickman_joint
     }
 
     print("\n" + "=" * 70)
@@ -210,7 +210,7 @@ def generate_stickman_joint_candidates(
         f"per scene → {STICKMAN_JOINT_OUTPUT_DIR}"
     )
     generated: dict[str, list[str]] = {}
-    for jt in STICKMAN_JOINT_TYPES:
+    for jt in (mt for mt, p in MEDIA_PROPERTIES.items() if p.is_stickman_joint):
         part = generate_stickman_images(
             prompts_file=STICKMAN_PROMPTS_FILE,  # the real search-term file
             out_dir=STICKMAN_JOINT_OUTPUT_DIR,
@@ -475,7 +475,7 @@ def build_ai_edit_candidates_for_target(
             {
                 "script_text": text,
                 "is_edit": is_target,  # ONLY the target
-                "is_ai_base": st in AI_BASE_TYPES,
+                "is_ai_base": media_props(st).is_ai_base,
                 "instruction": data["search_term"],
                 "chosen_image": None if is_target else chosen_local,
             }
@@ -483,7 +483,7 @@ def build_ai_edit_candidates_for_target(
 
         if is_target:
             reached_target = True
-        elif not reached_target and st in AI_BASE_TYPES and chosen_local:
+        elif not reached_target and media_props(st).is_ai_base and chosen_local:
             preceding_ai_images.append(chosen_local)
 
     if not preceding_ai_images:
