@@ -34,8 +34,7 @@ rm -rf CACHE-spices/ && rm -rf
 
 prerequs;
 ```
-uv sync
-uv run python -m spacy download en_core_web_sm
+uv sync && uv run python -m spacy download en_core_web_sm
 ```
 
 

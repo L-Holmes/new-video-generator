@@ -37,20 +37,12 @@ USAGE
 -----
     >>> from sentence_splitter import split_text_into_sections
     >>> split_text_into_sections("The fast cat sat on the comfortable mat")
-    [Chunk(text='The fast cat sat', ids=[]), Chunk(text='on the comfortable mat', ids=[])]
-
-DATA SHAPE
-----------
-The pipeline no longer passes bare lists of sentence strings around.  Instead
-it passes an *ordered map* — a plain list (so order is preserved and duplicate
-texts are allowed) whose entries each map a phrase-line of text to a list of
-integer ids.  See the ``Chunk`` / ``ChunkMap`` definitions and ``merge_chunks``
-below.  The id-list is a placeholder and is **always empty for now**.
+    ['The fast cat sat', 'on the comfortable mat']
 """
 from __future__ import annotations
 
 import re
-from typing import List, NamedTuple, Set, Optional, Tuple
+from typing import List, Set, Optional, Tuple
 
 import spacy
 from spacy.tokens import Doc, Span, Token
@@ -67,51 +59,6 @@ VERSION = "v17-2026-05-12"
 # split_text_into_sections() is called.  Can also be enabled per-call
 # via split_text_into_sections(text, debug=True).
 SINGLE_RUN_DEBUG = False
-
-
-# =============================================================================
-# CHUNK — the unit that flows through the post-processing pipeline
-# =============================================================================
-# The pipeline used to pass plain lists of sentence strings around, e.g.
-#     ["the big dog", "jumped over", "the fox"]
-# It now passes an *ordered map* instead — a list (so order is preserved and
-# duplicate texts are allowed) whose entries each map a phrase-line of text to
-# a list of integer ids:
-#     [Chunk("the big dog", []), Chunk("jumped over", []), Chunk("the fox", [])]
-#
-# Because ``Chunk`` is a NamedTuple it ALSO behaves like a plain (key, value)
-# pair — you can unpack it (``text, ids = chunk``) or index it
-# (``chunk[0]`` / ``chunk[1]``) — so the structure reads exactly as "an array,
-# each item mapping a string to an int list".
-#
-# The ``ids`` list is a placeholder for per-line metadata and is ALWAYS EMPTY
-# for now.  The invariants the rest of the code maintains:
-#   • SPLITTING prose into more lines creates additional Chunks, each with its
-#     own fresh (empty) ids list — never a shared/aliased list.
-#   • MERGING two Chunks into one concatenates their ids lists — and that
-#     concatenation happens in exactly one place: ``merge_chunks`` below.
-class Chunk(NamedTuple):
-    text: str          # the visible phrase-line (the map "key")
-    ids: List[int]     # integer ids for this line (the map "value"); empty for now
-
-
-# Type alias for the ordered map itself: a list of (text, ids) entries.
-ChunkMap = List[Chunk]
-
-
-def merge_chunks(a: Chunk, b: Chunk, sep: str = " ") -> Chunk:
-    """Merge two chunk-map entries into a single entry.
-
-    • The texts are joined with *sep* (a single space by default; callers pass
-      ``sep=""`` when gluing bare punctuation onto the previous line) and the
-      result is stripped of surrounding whitespace.
-    • The two id-lists are concatenated into a brand-new list.
-
-    Plain concatenation is deliberately the only behaviour for now — this
-    function is the single choke-point through which all id-list merging flows,
-    so any future smarter logic (dedup, re-mapping, …) only has to change here.
-    """
-    return Chunk((a.text + sep + b.text).strip(), list(a.ids) + list(b.ids))
 
 
 # =============================================================================
@@ -640,28 +587,22 @@ def _content_count(doc: Doc, lo: int, hi: int) -> int:
 
 # --- debug helpers ---------------------------------------------------------
 
-def _splits_to_chunks_list(doc: Doc, splits: Set[int]) -> ChunkMap:
-    """Build an ordered chunk-map from a splits set (for debug display).
-
-    Each chunk derived straight from the splits is "new", so it gets its own
-    fresh (empty) ids list."""
+def _splits_to_chunks_list(doc: Doc, splits: Set[int]) -> List[str]:
+    """Build list of chunk texts from a splits set (for debug display)."""
     idx = sorted(splits)
-    chunks: ChunkMap = []
+    chunks: List[str] = []
     for i in range(len(idx) - 1):
         text = doc[idx[i]:idx[i + 1]].text.strip()
         if text:
-            chunks.append(Chunk(text, []))
+            chunks.append(text)
     return chunks
 
 
-def _format_chunks_debug(chunks: ChunkMap) -> str:
-    """Format an ordered chunk-map with '|||' separators for debug display.
-
-    Only the text half of each entry is shown — the ids are always empty for
-    now, so printing them would just be noise."""
+def _format_chunks_debug(chunks: List[str]) -> str:
+    """Format a chunk list with '|||' separators for debug display."""
     if not chunks:
         return "[]"
-    return '["' + '" ||| "'.join(c.text for c in chunks) + '"]'
+    return '["' + '" ||| "'.join(chunks) + '"]'
 
 
 def _debug_print_stage(name: str, was_applied: bool,
@@ -669,7 +610,7 @@ def _debug_print_stage(name: str, was_applied: bool,
     """Print one line of debug output for a pipeline stage.
 
     *doc_or_chunks* is either a tuple ``(doc, splits)`` (for rule stages)
-    or a ``ChunkMap`` of (text, ids) entries (for post-processing stages).
+    or a plain ``List[str]`` of chunk texts (for post-processing stages).
     """
     status = "TRUE" if was_applied else "FALSE"
     bang = " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" if was_applied else ""
@@ -5464,8 +5405,8 @@ def _throwaway_direction(doc: Doc, lo: int, hi: int) -> str:
     return "bwd"
 
 
-def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]],
-                  protected: Optional[Set[int]] = None) -> Tuple[ChunkMap, List[Tuple[int, int]]]:
+def _fuse_orphans(doc: Doc, chunks: List[str], chunk_spans: List[Tuple[int, int]],
+                  protected: Optional[Set[int]] = None) -> Tuple[List[str], List[Tuple[int, int]]]:
     """
     Post-merge pass that fixes orphan single-content-word lines.
 
@@ -5480,8 +5421,6 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
 
     The chunks list and the chunk_spans list are aligned: chunk_spans[k]
     gives the (lo, hi) token range that produced chunks[k] (post-merge).
-    `chunks` is the ordered chunk-map; every fusion below goes through
-    `merge_chunks`, so the two entries' id-lists are concatenated.
 
     Patterns we fuse:
 
@@ -5532,12 +5471,11 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
         toks = _content_tokens(lo, hi)
         return toks[0] if toks else None
 
-    out: ChunkMap            = []
+    out: List[str]            = []
     out_spans: List[Tuple[int, int]] = []
     i = 0
     while i < len(chunks):
-        cur = chunks[i]
-        cur_text = cur.text
+        cur_text = chunks[i]
         cur_lo, cur_hi = chunk_spans[i]
         cur_content = _content_tokens(cur_lo, cur_hi)
 
@@ -5552,7 +5490,7 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
             if out:
                 # if previous ends in sentence-final punct, append after that
                 # punct (e.g. "Yep." + "..." → "Yep...")
-                out[-1] = merge_chunks(out[-1], cur, sep="")
+                out[-1] = out[-1] + cur_text
                 out_spans[-1] = (out_spans[-1][0], cur_hi)
                 i += 1
                 continue
@@ -5570,7 +5508,8 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
             nxt_lo, nxt_hi = chunk_spans[i + 1]
             first = _first_content_tok(nxt_lo, nxt_hi)
             if first is not None and first.tag_ in REL_TAGS:
-                out.append(merge_chunks(cur, chunks[i + 1], sep=" "))
+                fused = (cur_text + " " + chunks[i + 1]).strip()
+                out.append(fused)
                 out_spans.append((cur_lo, nxt_hi))
                 i += 2
                 continue
@@ -5597,7 +5536,7 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
                     and prev_last.pos_ in {"ADP", "PART"}
                     and any(prev_last.head.i == t.i or prev_last.head in t.subtree
                             for t in doc[cur_lo:cur_hi])):
-                out[-1] = merge_chunks(out[-1], cur, sep=" ")
+                out[-1] = (out[-1] + " " + cur_text).strip()
                 out_spans[-1] = (prev_lo, cur_hi)
                 i += 1
                 continue
@@ -5613,7 +5552,8 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
             # Guard: don't fuse across a protected boundary
             if any(nxt_lo <= c.i < nxt_hi for c in verb.children) \
                     and cur_hi not in protected:
-                out.append(merge_chunks(cur, chunks[i + 1], sep=" "))
+                fused = (cur_text + " " + chunks[i + 1]).strip()
+                out.append(fused)
                 out_spans.append((cur_lo, nxt_hi))
                 i += 2
                 continue
@@ -5625,21 +5565,22 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
                 and cur_content[0].pos_ == "DET"
                 and cur_hi not in protected):
             nxt_lo, nxt_hi = chunk_spans[i + 1]
-            out.append(merge_chunks(cur, chunks[i + 1], sep=" "))
+            fused = (cur_text + " " + chunks[i + 1]).strip()
+            out.append(fused)
             out_spans.append((cur_lo, nxt_hi))
             i += 2
             continue
 
-        out.append(cur)
+        out.append(cur_text)
         out_spans.append((cur_lo, cur_hi))
         i += 1
     return out, out_spans
 
 
 def _post_merge_unvisualisable(doc: Doc,
-                               chunks: ChunkMap,
+                               chunks: List[str],
                                chunk_spans: List[Tuple[int, int]],
-                               protected: Set[int]) -> Tuple[ChunkMap, List[Tuple[int, int]]]:
+                               protected: Set[int]) -> Tuple[List[str], List[Tuple[int, int]]]:
     """
     Final pass: any chunk that is NOT visualisable on its own gets re-glued
     to a neighbour. A "visualisable" chunk has at least one NOUN / PROPN /
@@ -5671,11 +5612,6 @@ def _post_merge_unvisualisable(doc: Doc,
         • if there is no previous chunk OR the left boundary is protected
           (and the orphan isn't substantive), glue FORWARD
         • if BOTH boundaries are protected, leave alone
-
-    `chunks` is the ordered chunk-map.  Every glue routes through
-    `merge_chunks` (concatenating the two entries' id-lists).  The DET-steal
-    is a boundary shift rather than a split or merge, so each of the two
-    affected lines simply keeps its own ids while only its text is re-derived.
     """
     if len(chunks) <= 1:
         return chunks, chunk_spans
@@ -5685,14 +5621,14 @@ def _post_merge_unvisualisable(doc: Doc,
         print(f"  [post-merge-unvis] INPUT chunks:")
         for i, (c, (lo, hi)) in enumerate(zip(chunks, chunk_spans)):
             vis = _has_visualisable_content(doc, lo, hi)
-            print(f"    [{i}] '{c.text}' span={lo}:{hi} visualisable={vis} "
+            print(f"    [{i}] '{c}' span={lo}:{hi} visualisable={vis} "
                   f"lo_protected={lo in protected} hi_protected={hi in protected}")
 
     for _iter in range(10):
         target_idx: Optional[int] = None
 
         for i, (lo, hi) in enumerate(chunk_spans):
-            text = chunks[i].text.strip()
+            text = chunks[i].strip()
             if not text:
                 continue
             if _has_visualisable_content(doc, lo, hi):
@@ -5728,11 +5664,9 @@ def _post_merge_unvisualisable(doc: Doc,
             if j > nxt_lo and _has_visualisable_content(doc, j, nxt_hi):
                 new_chunks = list(chunks)
                 new_spans  = list(chunk_spans)
-                # boundary shift: re-derive each side's text but keep its ids
-                new_chunks[i]     = Chunk(doc[lo:j].text.strip(), chunks[i].ids)
+                new_chunks[i]     = doc[lo:j].text.strip()
                 new_spans[i]      = (lo, j)
-                new_chunks[i + 1] = Chunk(doc[j:nxt_hi].text.strip(),
-                                          chunks[i + 1].ids)
+                new_chunks[i + 1] = doc[j:nxt_hi].text.strip()
                 new_spans[i + 1]  = (j, nxt_hi)
                 chunks      = new_chunks
                 chunk_spans = new_spans
@@ -5756,7 +5690,7 @@ def _post_merge_unvisualisable(doc: Doc,
             prev_lo, prev_hi = chunk_spans[i - 1]
             new_chunks = list(chunks)
             new_spans  = list(chunk_spans)
-            new_chunks[i - 1] = merge_chunks(chunks[i - 1], chunks[i], sep=" ")
+            new_chunks[i - 1] = (chunks[i - 1] + " " + chunks[i]).strip()
             new_spans[i - 1]  = (prev_lo, hi)
             del new_chunks[i]
             del new_spans[i]
@@ -5766,7 +5700,7 @@ def _post_merge_unvisualisable(doc: Doc,
             nxt_lo, nxt_hi = chunk_spans[i + 1]
             new_chunks = list(chunks)
             new_spans  = list(chunk_spans)
-            new_chunks[i] = merge_chunks(chunks[i], chunks[i + 1], sep=" ")
+            new_chunks[i] = (chunks[i] + " " + chunks[i + 1]).strip()
             new_spans[i]  = (lo, nxt_hi)
             del new_chunks[i + 1]
             del new_spans[i + 1]
@@ -5778,14 +5712,14 @@ def _post_merge_unvisualisable(doc: Doc,
     if DEBUG_PMV:
         print(f"  [post-merge-unvis] OUTPUT chunks:")
         for i, c in enumerate(chunks):
-            print(f"    [{i}] '{c.text}'")
+            print(f"    [{i}] '{c}'")
 
     return chunks, chunk_spans
 
 
 def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
                        protected: Optional[Set[int]] = None
-                       ) -> Tuple[ChunkMap, List[Tuple[int, int]]]:
+                       ) -> Tuple[List[str], List[Tuple[int, int]]]:
     """
     Apply the smart head-aware merge.
 
@@ -5806,12 +5740,8 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
     "Which... | sounds familiar." cannot collapse into one chunk even if
     "Which..." passes the throwaway test.
 
-    Returns (chunks, spans) where `chunks` is the ordered chunk-map (each entry
-    a (text, ids) Chunk) and spans[k] is the (lo, hi) token range that produced
-    chunks[k] — needed by _fuse_orphans for structural decisions.  This stage
-    builds the chunks straight from the raw spans, so every entry starts with a
-    fresh, empty ids list; whenever two are glued together the merge routes
-    through `merge_chunks`, concatenating their (currently empty) id-lists.
+    Returns (chunks, spans) where spans[k] is the (lo, hi) token range that
+    produced chunks[k] — needed by _fuse_orphans for structural decisions.
     """
     DEBUG_MT = True
     if DEBUG_MT:
@@ -5824,10 +5754,9 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
 
     if protected is None:
         protected = set()
-    out: ChunkMap = []
+    out: List[str] = []
     out_spans: List[Tuple[int, int]] = []
     fwd_buf = ""
-    fwd_ids: List[int] = []            # ids of throwaways accumulated in fwd_buf
     fwd_lo: Optional[int] = None      # token index where the forward buffer began
 
     for lo, hi in raw:
@@ -5851,21 +5780,20 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
                                            | {","})
                                     for c in text)
                 if is_pure_punct and out:
-                    out[-1] = merge_chunks(out[-1], Chunk(text, []), sep="")
+                    out[-1] = (out[-1] + text).strip()
                     out_spans[-1] = (out_spans[-1][0], hi)
                     continue
-                out.append(Chunk((fwd_buf + text).strip(), list(fwd_ids)))
+                out.append((fwd_buf + text).strip())
                 start_lo = fwd_lo if fwd_lo is not None else lo
                 out_spans.append((start_lo, hi))
                 fwd_buf = ""
-                fwd_ids = []
                 fwd_lo  = None
                 continue
 
             direction = _throwaway_direction(doc, lo, hi)
 
             # don't glue across sentence boundaries — go forward instead
-            if direction == "bwd" and out and out[-1].text and out[-1].text[-1] in HARD_PUNCT:
+            if direction == "bwd" and out and out[-1] and out[-1][-1] in HARD_PUNCT:
                 # EXCEPTION: pure-punctuation orphans (closing quotes,
                 # trailing punctuation) glue BACKWARD even if previous
                 # chunk ends in HARD_PUNCT — they belong attached to
@@ -5891,44 +5819,40 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
             # quote (it closes a parenthetical containing the quote).
             if (direction == "fwd" and out
                     and len(text) <= 2 and any(d in text for d in DASH_PUNCT)
-                    and out[-1].text.rstrip() and out[-1].text.rstrip()[-1] in CLOSE_QUOTES):
+                    and out[-1].rstrip() and out[-1].rstrip()[-1] in CLOSE_QUOTES):
                 direction = "bwd"
             if direction == "bwd" and out:
-                out[-1] = merge_chunks(out[-1], Chunk(text, []), sep=" ")
+                out[-1] = (out[-1] + " " + text).strip()
                 out_spans[-1] = (out_spans[-1][0], hi)
             elif direction == "keep":
-                out.append(Chunk((fwd_buf + text).strip(), list(fwd_ids)))
+                out.append((fwd_buf + text).strip())
                 start_lo = fwd_lo if fwd_lo is not None else lo
                 out_spans.append((start_lo, hi))
                 fwd_buf = ""
-                fwd_ids = []
                 fwd_lo  = None
             else:
                 if fwd_lo is None:
                     fwd_lo = lo
                 fwd_buf += text + " "
-                # this throwaway is a brand-new chunk: its ids start empty
         else:
-            out.append(Chunk((fwd_buf + text).strip(), list(fwd_ids)))
+            out.append((fwd_buf + text).strip())
             start_lo = fwd_lo if fwd_lo is not None else lo
             out_spans.append((start_lo, hi))
             fwd_buf = ""
-            fwd_ids = []
             fwd_lo  = None
 
     if fwd_buf:
         if out:
-            out[-1] = merge_chunks(out[-1], Chunk(fwd_buf.strip(), list(fwd_ids)),
-                                   sep=" ")
+            out[-1] = (out[-1] + " " + fwd_buf).strip()
             out_spans[-1] = (out_spans[-1][0], len(doc))
         else:
-            out.append(Chunk(fwd_buf.strip(), list(fwd_ids)))
+            out.append(fwd_buf.strip())
             out_spans.append((fwd_lo if fwd_lo is not None else 0, len(doc)))
 
     if DEBUG_MT:
         print(f"  [merge-throwaways] OUTPUT chunks:")
         for i, c in enumerate(out):
-            print(f"    [{i}] '{c.text}'")
+            print(f"    [{i}] '{c}'")
 
     return out, out_spans
 
@@ -6032,15 +5956,10 @@ _ANTI_PIPELINE: List[tuple] = [
 # MAIN ENTRY-POINT
 # =============================================================================
 
-def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
+def split_text_into_sections(text: str, debug: bool = False) -> List[str]:
     """
-    Split *text* into phrase-sized sections suitable for kinetic typography,
-    captions, or YouTube-style on-screen text.
-
-    Returns an ordered chunk-map: a list of ``Chunk`` entries, each pairing a
-    phrase-line of text with a list of integer ids (the ids list is a
-    placeholder and is always empty for now).  To recover the plain strings,
-    read ``c.text`` for each entry — e.g. ``[c.text for c in result]``.
+    Split *text* into a list of phrase-sized sections suitable for kinetic
+    typography, captions, or YouTube-style on-screen text.
 
     Pipeline:
        1) strip markdown headings
@@ -6075,7 +5994,7 @@ def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
     # ---- show original text in debug mode -----------------------------------
     if is_debug:
         print("Original: ")
-        print(f'    {_format_chunks_debug([Chunk(text.strip(), [])])}')
+        print(f'    {_format_chunks_debug([text.strip()])}')
         print()
 
     # ---- positive rules (add splits) ----------------------------------------
@@ -6124,15 +6043,13 @@ def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
     raw_text = [doc[lo:hi].text.strip() for lo, hi in raw]
     raw_text = [t for t in raw_text if t]
     merged, merged_spans = _merge_throwaways(doc, raw, protected)
-    # Chunk is a NamedTuple (always truthy), so filter on the .text field.
-    merged_clean = [c for c in merged if c.text]
+    merged_clean = [c for c in merged if c]
     if is_debug:
         _debug_print_stage("merge_throwaways",
-                           raw_text != [c.text for c in merged_clean],
-                           merged_clean)
+                           raw_text != merged_clean, merged_clean)
 
     # filter empties while keeping spans aligned
-    pairs = [(c, s) for c, s in zip(merged, merged_spans) if c.text]
+    pairs = [(c, s) for c, s in zip(merged, merged_spans) if c]
     if not pairs:
         return []
     merged, merged_spans = [p[0] for p in pairs], [p[1] for p in pairs]
@@ -6162,9 +6079,7 @@ def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
 def _run_test(text: str) -> None:
     print(f"\nBEFORE:\n{text}")
     print("\nAFTER:")
-    # split_text_into_sections now returns an ordered chunk-map; pull the text
-    # half of each (text, ids) entry for display.
-    print("\n".join(c.text for c in split_text_into_sections(text)))
+    print("\n".join(split_text_into_sections(text)))
     print("-" * 30)
 
 
