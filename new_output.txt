@@ -1,0 +1,347 @@
+======================================================================
+SENTENCE SPLITTER — STAGE-BY-STAGE DEBUG
+======================================================================
+
+Original: 
+    ["The empire state building is really big."]
+
+==> rule_hard_punct (FALSE)
+    ["The empire state building is really big."]
+==> rule_dashes (FALSE)
+    ["The empire state building is really big."]
+==> rule_ellipsis (FALSE)
+    ["The empire state building is really big."]
+==> rule_pre_ellipsis_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_quotes (FALSE)
+    ["The empire state building is really big."]
+==> rule_brackets (FALSE)
+    ["The empire state building is really big."]
+==> rule_initial_adverbial_comma (FALSE)
+    ["The empire state building is really big."]
+==> rule_comma_split (FALSE)
+    ["The empire state building is really big."]
+==> rule_comma_list_extension (FALSE)
+    ["The empire state building is really big."]
+==> rule_long_subord_comma (FALSE)
+    ["The empire state building is really big."]
+==> rule_long_clause_comma (FALSE)
+    ["The empire state building is really big."]
+==> rule_appositive_comma (FALSE)
+    ["The empire state building is really big."]
+==> rule_clause_starters (FALSE)
+    ["The empire state building is really big."]
+==> rule_but_or_coord (FALSE)
+    ["The empire state building is really big."]
+==> rule_verb_clause (FALSE)
+    ["The empire state building is really big."]
+==> rule_long_lead_in (FALSE)
+    ["The empire state building is really big."]
+==> rule_long_preps (FALSE)
+    ["The empire state building is really big."]
+==> rule_pp_intro_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_terminal_of_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_noun_lists (FALSE)
+    ["The empire state building is really big."]
+==> rule_first_list_item_split (FALSE)
+    ["The empire state building is really big."]
+==> rule_bare_noun_lists (FALSE)
+    ["The empire state building is really big."]
+==> rule_list_quantifiers (FALSE)
+    ["The empire state building is really big."]
+==> rule_entity_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_numeric_intro_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_post_entity_split (FALSE)
+    ["The empire state building is really big."]
+==> rule_currency_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_imperative_start (FALSE)
+    ["The empire state building is really big."]
+==> rule_and_or_clause (FALSE)
+    ["The empire state building is really big."]
+==> rule_terminal_descriptor (FALSE)
+    ["The empire state building is really big."]
+==> rule_terminal_adj_coord (FALSE)
+    ["The empire state building is really big."]
+==> rule_adjective_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_numeric_phrase_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_numeric_approximator_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_participle_split (FALSE)
+    ["The empire state building is really big."]
+==> rule_progressive_split (FALSE)
+    ["The empire state building is really big."]
+==> rule_copula_attr_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_pron_participle_pp_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_terminal_pp_after_copula (FALSE)
+    ["The empire state building is really big."]
+==> rule_phrasal_object_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_infinitive_split (FALSE)
+    ["The empire state building is really big."]
+==> rule_prep_object_reveal (FALSE)
+    ["The empire state building is really big."]
+==> rule_transition_adverb (FALSE)
+    ["The empire state building is really big."]
+==> rule_sconj_hang (FALSE)
+    ["The empire state building is really big."]
+==> rule_copula_reveal_split (TRUE) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ["The empire state building is" ||| "really big."]
+==> rule_possession_reveal_split (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> rule_creation_reveal_split (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> rule_perception_reveal_split (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> rule_spatial_prep_reveal_split (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> rule_result_clause_reveal_split (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> rule_equation_reveal_split (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> rule_and_visualisables_split (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> rule_title_appositive_verb_split (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> rule_terminal_specifier_reveal (FALSE)
+    ["The empire state building is" ||| "really big."]
+
+==> anti_rule_compound_ne (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_aux_main_verb (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_hyphen_compound (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_possessive (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_phrasal_particle (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_numeric_unit (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_det_head (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_inside_quote (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_inside_bracket (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_frozen_bigram (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_adj_noun (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_to_infinitive (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_numeric_range (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_no_split_before_comma (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_currency_glued (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_num_unit (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_neg_modifier (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_compound_noun (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_markdown_emphasis (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_short_sentence (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_verb_to_verb (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_verb_to_dem_pron (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_orphan_measure_tail (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_content_starved (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> anti_rule_split_before_sconj (FALSE)
+    ["The empire state building is" ||| "really big."]
+
+  [protected split indices: [8]]
+
+=== POST-PROCESSING ===
+
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'The empire state building is' span=0:5 is_throwaway=False lo_protected=False hi_protected=False
+    [1] 'really big.' span=5:8 is_throwaway=False lo_protected=False hi_protected=True
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'The empire state building is'
+    [1] 'really big.'
+==> merge_throwaways (FALSE)
+    ["The empire state building is" ||| "really big."]
+==> fuse_orphans (FALSE)
+    ["The empire state building is" ||| "really big."]
+  [post-merge-unvis] INPUT chunks:
+    [0] 'The empire state building is' span=0:5 visualisable=True lo_protected=False hi_protected=False
+    [1] 'really big.' span=5:8 visualisable=True lo_protected=False hi_protected=True
+  [post-merge-unvis] OUTPUT chunks:
+    [0] 'The empire state building is'
+    [1] 'really big.'
+==> post_merge_unvisualisable (FALSE)
+    ["The empire state building is" ||| "really big."]
+
+======================================================================
+FINAL RESULT:
+======================================================================
+  1. Chunk(text='The empire state building is', ids=[42])
+  2. Chunk(text='really big.', ids=[])
+
+---------------
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'I hate the word' span=0:4 is_throwaway=False lo_protected=False hi_protected=True
+    [1] 'several' span=4:5 is_throwaway=False lo_protected=True hi_protected=False
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'I hate the word'
+    [1] 'several'
+  [post-merge-unvis] INPUT chunks:
+    [0] 'I hate the word' span=0:4 visualisable=True lo_protected=False hi_protected=True
+    [1] 'several' span=4:5 visualisable=False lo_protected=True hi_protected=False
+  [post-merge-unvis] OUTPUT chunks:
+    [0] 'I hate the word'
+    [1] 'several'
+<--->
+BEFORE: I hate the word several
+AFTER: [Chunk(text='I hate the word', ids=[52]), Chunk(text='several', ids=[])]
+  [prep-obj] SKIP at idx 6: prep 'of' followed by ADJ 'giant'
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'She was disgusted' span=0:3 is_throwaway=False lo_protected=False hi_protected=False
+    [1] 'by the thought of the giant panda' span=3:10 is_throwaway=False lo_protected=False hi_protected=False
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'She was disgusted'
+    [1] 'by the thought of the giant panda'
+  [post-merge-unvis] INPUT chunks:
+    [0] 'She was disgusted' span=0:3 visualisable=True lo_protected=False hi_protected=False
+    [1] 'by the thought of the giant panda' span=3:10 visualisable=True lo_protected=False hi_protected=False
+  [post-merge-unvis] OUTPUT chunks:
+    [0] 'She was disgusted'
+    [1] 'by the thought of the giant panda'
+<--->
+BEFORE: She was disgusted by the thought of the giant panda
+AFTER: [Chunk(text='She was disgusted', ids=[12]), Chunk(text='by the thought of the giant panda', ids=[])]
+  [prep-obj] SKIP at idx 6: prep 'of' followed by ADJ 'wet'
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'I can’t stand the texture of wet cardboard' span=0:9 is_throwaway=False lo_protected=False hi_protected=False
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'I can’t stand the texture of wet cardboard'
+<--->
+BEFORE: I can’t stand the texture of wet cardboard
+AFTER: [Chunk(text='I can’t stand the texture of wet cardboard', ids=[])]
+  [prep-obj] SKIP at idx 7: prep 'of' followed by ADJ 'old'
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'She was oddly comforted' span=0:4 is_throwaway=False lo_protected=False hi_protected=False
+    [1] 'by' span=4:5 is_throwaway=True lo_protected=False hi_protected=False
+    [2] 'the smell of old library books' span=5:11 is_throwaway=False lo_protected=False hi_protected=False
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'She was oddly comforted by'
+    [1] 'the smell of old library books'
+  [post-merge-unvis] INPUT chunks:
+    [0] 'She was oddly comforted by' span=0:5 visualisable=True lo_protected=False hi_protected=False
+    [1] 'the smell of old library books' span=5:11 visualisable=True lo_protected=False hi_protected=False
+  [post-merge-unvis] OUTPUT chunks:
+    [0] 'She was oddly comforted by'
+    [1] 'the smell of old library books'
+<--->
+BEFORE: She was oddly comforted by the smell of old library books
+AFTER: [Chunk(text='She was oddly comforted by', ids=[1000, 12, 14]), Chunk(text='the smell of old library books', ids=[])]
+  [approx-num] SKIP at idx 3: next not numeric
+  [prep-obj] SKIP at idx 6: prep 'of' followed by ADJ 'underwater'
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'He felt uneasy about the idea of underwater escalators' span=0:9 is_throwaway=False lo_protected=False hi_protected=False
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'He felt uneasy about the idea of underwater escalators'
+<--->
+BEFORE: He felt uneasy about the idea of underwater escalators
+AFTER: [Chunk(text='He felt uneasy about the idea of underwater escalators', ids=[])]
+  [prep-obj] SKIP at idx 6: prep 'of' followed by ADJ 'tiny'
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'They were delighted' span=0:3 is_throwaway=False lo_protected=False hi_protected=False
+    [1] 'by the sight of tiny, perfectly round pebbles' span=3:12 is_throwaway=False lo_protected=False hi_protected=False
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'They were delighted'
+    [1] 'by the sight of tiny, perfectly round pebbles'
+  [post-merge-unvis] INPUT chunks:
+    [0] 'They were delighted' span=0:3 visualisable=True lo_protected=False hi_protected=False
+    [1] 'by the sight of tiny, perfectly round pebbles' span=3:12 visualisable=True lo_protected=False hi_protected=False
+  [post-merge-unvis] OUTPUT chunks:
+    [0] 'They were delighted'
+    [1] 'by the sight of tiny, perfectly round pebbles'
+<--->
+BEFORE: They were delighted by the sight of tiny, perfectly round pebbles
+AFTER: [Chunk(text='They were delighted', ids=[12]), Chunk(text='by the sight of tiny, perfectly round pebbles', ids=[])]
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'My friend hates' span=0:3 is_throwaway=False lo_protected=False hi_protected=False
+    [1] 'the sound of people chewing' span=3:8 is_throwaway=False lo_protected=False hi_protected=False
+    [2] 'gum loudly' span=8:10 is_throwaway=False lo_protected=False hi_protected=False
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'My friend hates'
+    [1] 'the sound of people chewing'
+    [2] 'gum loudly'
+  [post-merge-unvis] INPUT chunks:
+    [0] 'My friend hates' span=0:3 visualisable=True lo_protected=False hi_protected=False
+    [1] 'the sound of people chewing' span=3:8 visualisable=True lo_protected=False hi_protected=False
+    [2] 'gum loudly' span=8:10 visualisable=True lo_protected=False hi_protected=False
+  [post-merge-unvis] OUTPUT chunks:
+    [0] 'My friend hates'
+    [1] 'the sound of people chewing'
+    [2] 'gum loudly'
+<--->
+BEFORE: My friend hates the sound of people chewing gum loudly
+AFTER: [Chunk(text='My friend hates', ids=[12]), Chunk(text='the sound of people chewing', ids=[29]), Chunk(text='gum loudly', ids=[])]
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'The teacher was amused' span=0:4 is_throwaway=False lo_protected=False hi_protected=False
+    [1] 'by the chaos of a dropped box of ping‑pong balls' span=4:14 is_throwaway=False lo_protected=False hi_protected=False
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'The teacher was amused'
+    [1] 'by the chaos of a dropped box of ping‑pong balls'
+  [post-merge-unvis] INPUT chunks:
+    [0] 'The teacher was amused' span=0:4 visualisable=True lo_protected=False hi_protected=False
+    [1] 'by the chaos of a dropped box of ping‑pong balls' span=4:14 visualisable=True lo_protected=False hi_protected=False
+  [post-merge-unvis] OUTPUT chunks:
+    [0] 'The teacher was amused'
+    [1] 'by the chaos of a dropped box of ping‑pong balls'
+<--->
+BEFORE: The teacher was amused by the chaos of a dropped box of ping‑pong balls
+AFTER: [Chunk(text='The teacher was amused', ids=[12]), Chunk(text='by the chaos of a dropped box of ping‑pong balls', ids=[])]
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'I felt strangely inspired' span=0:4 is_throwaway=False lo_protected=False hi_protected=False
+    [1] 'by the glow of a vending machine at' span=4:12 is_throwaway=False lo_protected=False hi_protected=False
+    [2] 'night' span=12:13 is_throwaway=False lo_protected=False hi_protected=False
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'I felt strangely inspired'
+    [1] 'by the glow of a vending machine at'
+    [2] 'night'
+  [post-merge-unvis] INPUT chunks:
+    [0] 'I felt strangely inspired' span=0:4 visualisable=True lo_protected=False hi_protected=False
+    [1] 'by the glow of a vending machine at' span=4:12 visualisable=True lo_protected=False hi_protected=False
+    [2] 'night' span=12:13 visualisable=True lo_protected=False hi_protected=False
+  [post-merge-unvis] OUTPUT chunks:
+    [0] 'I felt strangely inspired'
+    [1] 'by the glow of a vending machine at'
+    [2] 'night'
+<--->
+BEFORE: I felt strangely inspired by the glow of a vending machine at night
+AFTER: [Chunk(text='I felt strangely inspired', ids=[12]), Chunk(text='by the glow of a vending machine at', ids=[15]), Chunk(text='night', ids=[])]
+  [prep-obj] SKIP at idx 7: prep 'of' followed by ADJ 'lukewarm'
+  [merge-throwaways] INPUT raw chunks:
+    [0] 'Her brother was disgusted' span=0:4 is_throwaway=False lo_protected=False hi_protected=False
+    [1] 'by the thought of lukewarm scrambled eggs' span=4:11 is_throwaway=False lo_protected=False hi_protected=False
+  [merge-throwaways] OUTPUT chunks:
+    [0] 'Her brother was disgusted'
+    [1] 'by the thought of lukewarm scrambled eggs'
+  [post-merge-unvis] INPUT chunks:
+    [0] 'Her brother was disgusted' span=0:4 visualisable=True lo_protected=False hi_protected=False
+    [1] 'by the thought of lukewarm scrambled eggs' span=4:11 visualisable=True lo_protected=False hi_protected=False
+  [post-merge-unvis] OUTPUT chunks:
+    [0] 'Her brother was disgusted'
+    [1] 'by the thought of lukewarm scrambled eggs'
+<--->
+BEFORE: Her brother was disgusted by the thought of lukewarm scrambled eggs
+AFTER: [Chunk(text='Her brother was disgusted', ids=[12]), Chunk(text='by the thought of lukewarm scrambled eggs', ids=[])]

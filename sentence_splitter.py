@@ -50,7 +50,7 @@ below.  The id-list is a placeholder and is **always empty for now**.
 from __future__ import annotations
 
 import re
-from typing import List, NamedTuple, Set, Optional, Tuple
+from typing import Dict, List, NamedTuple, Set, Optional, Tuple
 
 import spacy
 from spacy.tokens import Doc, Span, Token
@@ -99,19 +99,271 @@ class Chunk(NamedTuple):
 ChunkMap = List[Chunk]
 
 
-def merge_chunks(a: Chunk, b: Chunk, sep: str = " ") -> Chunk:
+def merge_chunks(a: Chunk, b: Chunk, sep: str = " ",
+                 rule: Optional[int] = None) -> Chunk:
     """Merge two chunk-map entries into a single entry.
 
     • The texts are joined with *sep* (a single space by default; callers pass
       ``sep=""`` when gluing bare punctuation onto the previous line) and the
       result is stripped of surrounding whitespace.
-    • The two id-lists are concatenated into a brand-new list.
+    • The id-lists are combined LEFT-half-first, then RIGHT-half, and the
+      *rule* id of the merge itself (if given) is inserted at the FRONT:
 
-    Plain concatenation is deliberately the only behaviour for now — this
-    function is the single choke-point through which all id-list merging flows,
-    so any future smarter logic (dedup, re-mapping, …) only has to change here.
+          merged.ids  =  [rule]  +  a.ids  +  b.ids
+
+      This follows the project-wide convention that the most-recently-applied
+      rule sits at the front of the list.  Pass `rule` as the merging-rule id
+      (1000+) of the glue operation being performed; omit it (None) to just
+      combine the two halves without recording a merge.
+
+    This is the single choke-point through which all id-list merging flows, so
+    any future smarter logic (dedup, re-mapping, …) only has to change here.
     """
-    return Chunk((a.text + sep + b.text).strip(), list(a.ids) + list(b.ids))
+    merged_ids = ([rule] if rule is not None else []) + list(a.ids) + list(b.ids)
+    return Chunk((a.text + sep + b.text).strip(), merged_ids)
+
+
+# =============================================================================
+# RULE_DESCRIPTIONS — decode a chunk's `ids` into human-readable phrases
+# =============================================================================
+# This is the lookup table we use to make sense of a Chunk's `ids`: every
+# integer that ends up in a Chunk.ids list is a "rule id", and this map turns
+# it back into a plain-English description of WHAT that rule spotted in the
+# line — written so anyone can read it, no grammar jargon required.
+#
+# Reading the examples:
+#   • For SPLITTING rules, "|" marks where the rule puts the line break, e.g.
+#     'The dog jumped.' | 'The man ran.'  means the rule split between them.
+#   • For MERGING rules, "+" shows the two pieces being joined and "→" shows
+#     the result, e.g.  'is' + 'big' → 'is big'.
+#
+# NUMBERING SCHEME (matches the "RULE n" headers above each function):
+#   • Rules 0 and 0.5  → the two PRE-PROCESSING passes (strip_markdown /
+#     normalise_punct).  They reshape raw text and never create a split, so
+#     they are deliberately NOT in this map.
+#   • 1–55             → the SPLITTING rules (the positive pipeline).  Numbers
+#     1–21 and 23–52 are the original header numbers, kept verbatim.  22 is an
+#     unused gap in the historical numbering and is intentionally left absent.
+#     53–55 are newly assigned (the "after the existing ones" slots) to the
+#     three splitting rules that the codebase never gave a number.
+#   • 1000+            → the MERGING rules (the post-processing glue passes:
+#     _merge_throwaways / _fuse_orphans / _post_merge_unvisualisable).  They
+#     start at 1000 so a merge id can never be confused with a split id.
+RULE_DESCRIPTIONS: Dict[int, str] = {
+    # ---- SPLITTING RULES (positive pipeline) --------------------------------
+    1:  "the line ends with . ! ? ; or : — "
+        "e.g. 'The dog jumped.' | 'The man ran.'",
+    2:  "a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
+    3:  "the line ends on a '...' or '…' — e.g. 'and then...' | 'silence'",
+    4:  "the dramatic phrase right before a '...' gets its own line — "
+        "e.g. 'the driest place on Earth' | '...'",
+    5:  "a phrase in quotation marks gets its own line — "
+        "e.g. she yelled | 'stop right there'",
+    6:  "an aside in (brackets) gets its own line — "
+        "e.g. 'the house' | '(built in 1920)' | 'was old'",
+    7:  "a scene-setting opener that ends in a comma — "
+        "e.g. 'In the morning,' | 'we left'",
+    8:  "a comma that separates two clauses or list items — "
+        "e.g. 'she ran,' | 'he walked'",
+    9:  "a comma that introduces a 'who / which / that...' description — "
+        "e.g. 'the dog,' | 'which was huge'",
+    10: "a joining word like 'when', 'because', 'which' or 'that' starts a "
+        "new part — e.g. 'he left' | 'because it rained'",
+    11: "a 'but' or 'or' after a long first part — "
+        "e.g. 'we tried for hours' | 'but it failed'",
+    12: "one complete action has finished and the next begins — "
+        "e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+    13: "a very long wind-up finally reaches its main verb (a safety net for "
+        "run-on sentences) — e.g. 'the tall man in the long red coat' | 'walked in'",
+    14: "a long 'in / on / at / with...' phrase — "
+        "e.g. 'she hid' | 'beneath the old wooden floor'",
+    15: "a run of things listed with no verb between them — "
+        "e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+    16: "another 'thing, the thing, the thing' list that the usual list-finder "
+        "misses — e.g. 'the red car' | 'the blue truck'",
+    17: "a wrap-up word like 'all', 'both', 'each' or 'every' right after a "
+        "list — e.g. 'cars, trucks, bikes' | 'all sped past'",
+    18: "a name worth a dramatic reveal — a person, place, date or amount — "
+        "e.g. 'a valley called' | 'Wadi Al-Hitan'",
+    19: "an amount of money gets its own line — e.g. 'it costs' | '$800,000'",
+    20: "a short command on its own — e.g. 'Stop.' | 'Look around.'",
+    21: "an 'and' or 'or' joining two complete sentences — "
+        "e.g. 'she sang' | 'and he danced'",
+    # 22 — intentionally unused (historical gap in the numbering)
+    23: "a describing word revealed in the middle of a sentence — "
+        "e.g. 'the water that was' | 'freezing cold'",
+    24: "a sentence ending on a number or amount — "
+        "e.g. 'the whales vanished' | 'millions of years ago'",
+    25: "an extra comma-list pattern the basic comma rule misses — "
+        "e.g. 'soaked,' | 'frozen,' | 'exhausted'",
+    26: "a long 'if / when / because...' opener that ends in a comma — "
+        "e.g. 'if you already know the answer,' | 'you can skip ahead'",
+    27: "a sentence ending on a pair of describing words — "
+        "e.g. 'the place felt' | 'calm and alien'",
+    28: "a chunky 'of / in / with...' phrase stuffed with nouns and no verb — "
+        "e.g. 'a tale' | 'of kings and battles'",
+    29: "an '-ing' or '-ed' word that introduces what comes next — "
+        "e.g. 'revealing' | 'a hidden cave'",
+    30: "after a place or name, the 'in / on / at...' that says WHERE splits "
+        "off — e.g. 'Alvord Desert' | 'in Oregon'",
+    31: "a comma after a long, meaty clause — "
+        "e.g. 'after searching the whole house for hours,' | 'they gave up'",
+    32: "a 'to do something' inside a long sentence — "
+        "e.g. 'they travelled for days' | 'to reach the coast'",
+    33: "a sentence ending on an 'of ...' phrase — "
+        "e.g. 'one of the driest' | 'climates on Earth'",
+    34: "an 'is / was ...-ing' action in progress — "
+        "e.g. 'the crowd was' | 'slowly gathering'",
+    35: "an 'is / looks / feels...' followed by the thing it describes — "
+        "e.g. 'the sky is' | 'a deep burning red'",
+    36: "an 'it / them + -ing/-ed' description after a small word like 'of' — "
+        "e.g. 'the feeling' | 'of being watched'",
+    37: "a sentence ending on a describing word plus an 'in / on / for...' "
+        "phrase — e.g. 'the road is straight' | 'for absurd distances'",
+    38: "a two-word verb (like 'set up', 'sped past') and the thing it acts "
+        "on — e.g. 'they set up' | 'a huge tent'",
+    39: "the thing after a preposition gets its own line — "
+        "e.g. 'shapes appeared' | 'in the rock'",
+    40: "a scene-change word like 'then', 'later' or 'suddenly' — "
+        "e.g. 'they waited' | 'then everything changed'",
+    41: "a joining word like 'as', 'while' or 'if' left hanging as a "
+        "cliffhanger — e.g. 'it works' | 'because'",
+    42: "'X is / looks / becomes Y' — split to reveal the Y — "
+        "e.g. 'the desert becomes' | 'a frozen wasteland'",
+    43: "'X has / owns / contains Y' — split to reveal the Y — "
+        "e.g. 'the valley holds' | 'ancient whale bones'",
+    44: "'X made / built / created Y' — split to reveal the Y — "
+        "e.g. 'the river carved' | 'a deep canyon'",
+    45: "'X saw / found / knew Y' — split to reveal the Y — "
+        "e.g. 'scientists discovered' | 'fossil skeletons'",
+    46: "'X moves through / into / across Y' — split to reveal the place — "
+        "e.g. 'water flowed' | 'across the plain'",
+    47: "'so / such / more ... that / than ...' — split right before the "
+        "payoff — e.g. 'so flat' | 'that satellites use it'",
+    48: "'X means / equals / stands for Y' — split to reveal the meaning — "
+        "e.g. 'the name means' | 'Valley of the Whales'",
+    49: "an 'and' / 'or' sitting between two picture-able things — "
+        "e.g. 'dunes' | 'and blistering heat'",
+    50: "after a title-name like 'Alaric the Goth', split before the verb — "
+        "e.g. 'Alaric the Goth' | 'invaded Rome'",
+    51: "the first item of a list gets its own line too — "
+        "e.g. 'dunes,' | 'heat, and silence'",
+    52: "a sentence ending on a label that explains the thing just named — "
+        "e.g. 'they found bones' | 'the remains of a whale'",
+    # 53–55 — newly numbered (formerly unnumbered splitting rules)
+    53: "a number or date right at the start of a sentence — "
+        "e.g. 'In 1946,' | 'everything changed'",
+    54: "the sentence ends on a describing word or phrase that paints the "
+        "picture — e.g. 'the water was' | 'freezing cold'",
+    55: "a roughly-this-much amount like 'nearly 500' or 'about two miles' — "
+        "e.g. 'it stretched' | 'for nearly 100 miles'",
+
+    # ---- MERGING RULES (post-processing glue passes) ------------------------
+    1000: "a tiny leftover bit (like 'and' or 'the') is attached to the line "
+          "BEFORE it, where it belongs — "
+          "e.g. 'the curious child' + 'and' → 'the curious child and'",
+    1001: "a tiny leftover bit is attached to the line AFTER it, where it "
+          "belongs — e.g. 'is' + 'big' → 'is big'",
+    1002: "a lonely piece of punctuation ('...', a dash, a stray quote) is "
+          "stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+    1003: "a lone noun is reunited with the 'that / which...' description that "
+          "follows it — e.g. 'regions' + 'that are now dry' → "
+          "'regions that are now dry'",
+    1004: "a short scrap is joined back to the 'to / of / with...' word it "
+          "completes — e.g. 'it costs about' + 'two dollars' → "
+          "'it costs about two dollars'",
+    1005: "a lone '-ing / -ed' verb is reunited with the thing it acts on — "
+          "e.g. 'revealing' + 'evidence' → 'revealing evidence'",
+    1006: "a stranded 'the / a / this' is joined to its noun — "
+          "e.g. 'the' + 'mountain' → 'the mountain'",
+    1007: "a 'the / a' is pulled back from the next line onto a wordy "
+          "connector, so the next line can start on a real word — "
+          "e.g. 'but what if' + 'the' (from 'the planet') → "
+          "'but what if the' | 'planet'",
+    1008: "a line with nothing you could picture is folded into the line "
+          "BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+    1009: "a line with nothing you could picture is folded into the line "
+          "AFTER it — e.g. 'but' + 'the dog runs' → 'but the dog runs'",
+}
+
+
+def describe_rule(rule_id: int) -> str:
+    """Return the human-readable description for a rule id (see
+    RULE_DESCRIPTIONS), or a clear placeholder if the id is unknown."""
+    return RULE_DESCRIPTIONS.get(rule_id, f"<unknown rule id {rule_id}>")
+
+
+# =============================================================================
+# SPLIT-RULE ID WIRING  —  which positive rules currently record their id
+# =============================================================================
+# Maps a positive-pipeline rule's *function name* to the id it stamps onto a
+# chunk when it creates a split (see RULE_DESCRIPTIONS for the numbers and what
+# each one means).
+#
+# ALL splitting rules are now wired (1–55, with 22 being the intentional gap in
+# the historical numbering).  When a rule introduces a split, the LEFT piece of
+# that split records the rule's id (the recording machinery lives in
+# split_text_into_sections()).  A boundary is credited to the FIRST rule (in
+# pipeline order) that introduces it; later rules that would land on the same
+# boundary leave it unchanged, since the split already exists.
+_SPLIT_RULE_IDS: Dict[str, int] = {
+    "rule_hard_punct":                  1,
+    "rule_dashes":                      2,
+    "rule_ellipsis":                    3,
+    "rule_pre_ellipsis_reveal":         4,
+    "rule_quotes":                      5,
+    "rule_brackets":                    6,
+    "rule_initial_adverbial_comma":     7,
+    "rule_comma_split":                 8,
+    "rule_appositive_comma":            9,
+    "rule_clause_starters":             10,
+    "rule_but_or_coord":                11,
+    "rule_verb_clause":                 12,
+    "rule_long_lead_in":                13,
+    "rule_long_preps":                  14,
+    "rule_noun_lists":                  15,
+    "rule_bare_noun_lists":             16,
+    "rule_list_quantifiers":            17,
+    "rule_entity_reveal":               18,
+    "rule_currency_reveal":             19,
+    "rule_imperative_start":            20,
+    "rule_and_or_clause":               21,
+    # 22 — intentional gap (no rule owns this number)
+    "rule_adjective_reveal":            23,
+    "rule_numeric_phrase_reveal":       24,
+    "rule_comma_list_extension":        25,
+    "rule_long_subord_comma":           26,
+    "rule_terminal_adj_coord":          27,
+    "rule_pp_intro_reveal":             28,
+    "rule_participle_split":            29,
+    "rule_post_entity_split":           30,
+    "rule_long_clause_comma":           31,
+    "rule_infinitive_split":            32,
+    "rule_terminal_of_reveal":          33,
+    "rule_progressive_split":           34,
+    "rule_copula_attr_reveal":          35,
+    "rule_pron_participle_pp_reveal":   36,
+    "rule_terminal_pp_after_copula":    37,
+    "rule_phrasal_object_reveal":       38,
+    "rule_prep_object_reveal":          39,
+    "rule_transition_adverb":           40,
+    "rule_sconj_hang":                  41,
+    "rule_copula_reveal_split":         42,
+    "rule_possession_reveal_split":     43,
+    "rule_creation_reveal_split":       44,
+    "rule_perception_reveal_split":     45,
+    "rule_spatial_prep_reveal_split":   46,
+    "rule_result_clause_reveal_split":  47,
+    "rule_equation_reveal_split":       48,
+    "rule_and_visualisables_split":     49,
+    "rule_title_appositive_verb_split": 50,
+    "rule_first_list_item_split":       51,
+    "rule_terminal_specifier_reveal":   52,
+    # 53–55 — the three rules the codebase never gave a header number
+    "rule_numeric_intro_reveal":        53,
+    "rule_terminal_descriptor":         54,
+    "rule_numeric_approximator_reveal": 55,
+}
 
 
 # =============================================================================
@@ -5552,7 +5804,7 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
             if out:
                 # if previous ends in sentence-final punct, append after that
                 # punct (e.g. "Yep." + "..." → "Yep...")
-                out[-1] = merge_chunks(out[-1], cur, sep="")
+                out[-1] = merge_chunks(out[-1], cur, sep="", rule=1002)
                 out_spans[-1] = (out_spans[-1][0], cur_hi)
                 i += 1
                 continue
@@ -5570,7 +5822,7 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
             nxt_lo, nxt_hi = chunk_spans[i + 1]
             first = _first_content_tok(nxt_lo, nxt_hi)
             if first is not None and first.tag_ in REL_TAGS:
-                out.append(merge_chunks(cur, chunks[i + 1], sep=" "))
+                out.append(merge_chunks(cur, chunks[i + 1], sep=" ", rule=1003))
                 out_spans.append((cur_lo, nxt_hi))
                 i += 2
                 continue
@@ -5597,7 +5849,7 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
                     and prev_last.pos_ in {"ADP", "PART"}
                     and any(prev_last.head.i == t.i or prev_last.head in t.subtree
                             for t in doc[cur_lo:cur_hi])):
-                out[-1] = merge_chunks(out[-1], cur, sep=" ")
+                out[-1] = merge_chunks(out[-1], cur, sep=" ", rule=1004)
                 out_spans[-1] = (prev_lo, cur_hi)
                 i += 1
                 continue
@@ -5613,7 +5865,7 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
             # Guard: don't fuse across a protected boundary
             if any(nxt_lo <= c.i < nxt_hi for c in verb.children) \
                     and cur_hi not in protected:
-                out.append(merge_chunks(cur, chunks[i + 1], sep=" "))
+                out.append(merge_chunks(cur, chunks[i + 1], sep=" ", rule=1005))
                 out_spans.append((cur_lo, nxt_hi))
                 i += 2
                 continue
@@ -5625,7 +5877,7 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
                 and cur_content[0].pos_ == "DET"
                 and cur_hi not in protected):
             nxt_lo, nxt_hi = chunk_spans[i + 1]
-            out.append(merge_chunks(cur, chunks[i + 1], sep=" "))
+            out.append(merge_chunks(cur, chunks[i + 1], sep=" ", rule=1006))
             out_spans.append((cur_lo, nxt_hi))
             i += 2
             continue
@@ -5728,8 +5980,13 @@ def _post_merge_unvisualisable(doc: Doc,
             if j > nxt_lo and _has_visualisable_content(doc, j, nxt_hi):
                 new_chunks = list(chunks)
                 new_spans  = list(chunk_spans)
-                # boundary shift: re-derive each side's text but keep its ids
-                new_chunks[i]     = Chunk(doc[lo:j].text.strip(), chunks[i].ids)
+                # boundary shift (merge id 1007): a determiner moves from the
+                # next line onto this one.  Following the "rule goes on the left
+                # part" convention, the RECEIVER (this line, which keeps the
+                # left boundary and gains the determiner) records 1007 at the
+                # front of its ids; the donor line keeps its own ids unchanged.
+                new_chunks[i]     = Chunk(doc[lo:j].text.strip(),
+                                          [1007] + list(chunks[i].ids))
                 new_spans[i]      = (lo, j)
                 new_chunks[i + 1] = Chunk(doc[j:nxt_hi].text.strip(),
                                           chunks[i + 1].ids)
@@ -5756,7 +6013,9 @@ def _post_merge_unvisualisable(doc: Doc,
             prev_lo, prev_hi = chunk_spans[i - 1]
             new_chunks = list(chunks)
             new_spans  = list(chunk_spans)
-            new_chunks[i - 1] = merge_chunks(chunks[i - 1], chunks[i], sep=" ")
+            # non-visualisable line folded backward into the previous → 1008
+            new_chunks[i - 1] = merge_chunks(chunks[i - 1], chunks[i],
+                                             sep=" ", rule=1008)
             new_spans[i - 1]  = (prev_lo, hi)
             del new_chunks[i]
             del new_spans[i]
@@ -5766,7 +6025,9 @@ def _post_merge_unvisualisable(doc: Doc,
             nxt_lo, nxt_hi = chunk_spans[i + 1]
             new_chunks = list(chunks)
             new_spans  = list(chunk_spans)
-            new_chunks[i] = merge_chunks(chunks[i], chunks[i + 1], sep=" ")
+            # non-visualisable line folded forward into the next → 1009
+            new_chunks[i] = merge_chunks(chunks[i], chunks[i + 1],
+                                         sep=" ", rule=1009)
             new_spans[i]  = (lo, nxt_hi)
             del new_chunks[i + 1]
             del new_spans[i + 1]
@@ -5784,7 +6045,8 @@ def _post_merge_unvisualisable(doc: Doc,
 
 
 def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
-                       protected: Optional[Set[int]] = None
+                       protected: Optional[Set[int]] = None,
+                       split_provenance: Optional[Dict[int, List[int]]] = None
                        ) -> Tuple[ChunkMap, List[Tuple[int, int]]]:
     """
     Apply the smart head-aware merge.
@@ -5808,11 +6070,23 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
 
     Returns (chunks, spans) where `chunks` is the ordered chunk-map (each entry
     a (text, ids) Chunk) and spans[k] is the (lo, hi) token range that produced
-    chunks[k] — needed by _fuse_orphans for structural decisions.  This stage
-    builds the chunks straight from the raw spans, so every entry starts with a
-    fresh, empty ids list; whenever two are glued together the merge routes
-    through `merge_chunks`, concatenating their (currently empty) id-lists.
+    chunks[k] — needed by _fuse_orphans for structural decisions.
+
+    IDS: this is where a freshly-built chunk first gets its `ids` list.  A
+    chunk's starting ids come from `split_provenance` keyed on its RIGHT edge
+    (`hi`) — i.e. the splitting rule(s) that created that boundary (the chunk is
+    the LEFT side of that split, which is the half that records the rule).  When
+    fragments are glued together the merge routes through `merge_chunks` with
+    the relevant merging-rule id:
+      • throwaway glued backward            → 1000
+      • throwaway(s) buffered then glued forward onto the next chunk → 1001
+      • bare punctuation glued backward     → 1002
     """
+    if protected is None:
+        protected = set()
+    if split_provenance is None:
+        split_provenance = {}
+
     DEBUG_MT = True
     if DEBUG_MT:
         print(f"  [merge-throwaways] INPUT raw chunks:")
@@ -5822,20 +6096,39 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
             print(f"    [{i}] '{text}' span={lo}:{hi} is_throwaway={is_tw} "
                   f"lo_protected={lo in protected} hi_protected={hi in protected}")
 
-    if protected is None:
-        protected = set()
     out: ChunkMap = []
     out_spans: List[Tuple[int, int]] = []
     fwd_buf = ""
     fwd_ids: List[int] = []            # ids of throwaways accumulated in fwd_buf
     fwd_lo: Optional[int] = None      # token index where the forward buffer began
 
+    def _emit(text: str, base_ids: List[int]) -> Chunk:
+        # Build a fresh chunk for a non-throwaway / kept span.  If a forward
+        # buffer of throwaways is waiting, they attach onto the FRONT of this
+        # chunk — a forward merge — recorded as rule 1001 (merge id at front,
+        # then the buffered fragments' ids, then this chunk's own split ids).
+        if fwd_buf:
+            return Chunk((fwd_buf + text).strip(),
+                         [1001] + list(fwd_ids) + list(base_ids))
+        return Chunk(text.strip(), list(base_ids))
+
     for lo, hi in raw:
         text = doc[lo:hi].text.strip()
         if not text:
             continue
 
+        # the splitting rule(s) that created this span's right edge
+        here_ids = list(split_provenance.get(hi, []))
+
         if _is_throwaway_span(doc, lo, hi):
+            # Is this throwaway made entirely of punctuation (a stray quote,
+            # dash, ellipsis, comma)?  Such fragments are re-attached as
+            # "stray punctuation" (merge id 1002) rather than as a content
+            # leftover like 'and'/'the' (merge id 1000).
+            is_pure_punct = all(c in (HARD_PUNCT | ANY_QUOTE | DASH_PUNCT
+                                       | OPEN_BRACKETS | CLOSE_BRACKETS
+                                       | {","})
+                                for c in text)
             # NEW: respect protected boundaries.
             left_protected  = lo in protected
             right_protected = hi in protected
@@ -5846,15 +6139,12 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
                 # backward onto the previous chunk because they carry no
                 # content and reading them alone makes no sense.
                 # Fixes 'X."' / '"' becoming '"' on its own line.
-                is_pure_punct = all(c in (HARD_PUNCT | ANY_QUOTE | DASH_PUNCT
-                                           | OPEN_BRACKETS | CLOSE_BRACKETS
-                                           | {","})
-                                    for c in text)
                 if is_pure_punct and out:
-                    out[-1] = merge_chunks(out[-1], Chunk(text, []), sep="")
+                    out[-1] = merge_chunks(out[-1], Chunk(text, here_ids),
+                                           sep="", rule=1002)
                     out_spans[-1] = (out_spans[-1][0], hi)
                     continue
-                out.append(Chunk((fwd_buf + text).strip(), list(fwd_ids)))
+                out.append(_emit(text, here_ids))
                 start_lo = fwd_lo if fwd_lo is not None else lo
                 out_spans.append((start_lo, hi))
                 fwd_buf = ""
@@ -5871,10 +6161,6 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
                 # chunk ends in HARD_PUNCT — they belong attached to
                 # the sentence-final punctuation, not on their own line.
                 # Fixes 'X.' / '"' becoming one chunk: 'X."'
-                is_pure_punct = all(c in (HARD_PUNCT | ANY_QUOTE | DASH_PUNCT
-                                           | OPEN_BRACKETS | CLOSE_BRACKETS
-                                           | {","})
-                                    for c in text)
                 if not is_pure_punct:
                     direction = "fwd"
 
@@ -5894,10 +6180,13 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
                     and out[-1].text.rstrip() and out[-1].text.rstrip()[-1] in CLOSE_QUOTES):
                 direction = "bwd"
             if direction == "bwd" and out:
-                out[-1] = merge_chunks(out[-1], Chunk(text, []), sep=" ")
+                # backward glue: stray punctuation → 1002, content bit → 1000
+                bwd_rule = 1002 if is_pure_punct else 1000
+                out[-1] = merge_chunks(out[-1], Chunk(text, here_ids),
+                                       sep=" ", rule=bwd_rule)
                 out_spans[-1] = (out_spans[-1][0], hi)
             elif direction == "keep":
-                out.append(Chunk((fwd_buf + text).strip(), list(fwd_ids)))
+                out.append(_emit(text, here_ids))
                 start_lo = fwd_lo if fwd_lo is not None else lo
                 out_spans.append((start_lo, hi))
                 fwd_buf = ""
@@ -5907,9 +6196,11 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
                 if fwd_lo is None:
                     fwd_lo = lo
                 fwd_buf += text + " "
-                # this throwaway is a brand-new chunk: its ids start empty
+                # buffer this throwaway's own split ids (left half of the
+                # eventual forward merge, applied when _emit runs)
+                fwd_ids = fwd_ids + here_ids
         else:
-            out.append(Chunk((fwd_buf + text).strip(), list(fwd_ids)))
+            out.append(_emit(text, here_ids))
             start_lo = fwd_lo if fwd_lo is not None else lo
             out_spans.append((start_lo, hi))
             fwd_buf = ""
@@ -5918,8 +6209,10 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
 
     if fwd_buf:
         if out:
+            # leftover forward buffer with nowhere ahead to attach → glue it
+            # backward onto the last line (a backward merge → rule 1000)
             out[-1] = merge_chunks(out[-1], Chunk(fwd_buf.strip(), list(fwd_ids)),
-                                   sep=" ")
+                                   sep=" ", rule=1000)
             out_spans[-1] = (out_spans[-1][0], len(doc))
         else:
             out.append(Chunk(fwd_buf.strip(), list(fwd_ids)))
@@ -6072,6 +6365,14 @@ def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
     }
     protected: Set[int] = set()
 
+    # Split provenance: maps each split position → the list of splitting-rule
+    # ids that created it, most-recent-first (so the newest rule is at the
+    # front, matching the convention used everywhere else).  Only rules listed
+    # in _SPLIT_RULE_IDS record anything — for now that's just rule_hard_punct
+    # (id 1).  This drives the initial `ids` stamped onto each freshly-built
+    # chunk in _merge_throwaways.
+    split_provenance: Dict[int, List[int]] = {}
+
     # ---- show original text in debug mode -----------------------------------
     if is_debug:
         print("Original: ")
@@ -6085,8 +6386,15 @@ def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
             new = fn(doc, splits)
         else:
             new = fn(doc)
-        was_applied = bool(new - prev)
+        added = new - prev          # positions this rule introduced just now
+        was_applied = bool(added)
         splits |= new
+        # record provenance for the splitting rules that are wired up
+        rid = _SPLIT_RULE_IDS.get(name)
+        if rid is not None:
+            for pos in added:
+                # newest rule goes to the FRONT of the position's id-list
+                split_provenance[pos] = [rid] + split_provenance.get(pos, [])
         # track protected (big-punct) splits
         if name in PROTECTED_RULE_NAMES:
             protected |= new
@@ -6108,6 +6416,14 @@ def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
     splits |= {0, len(doc)}
     splits |= protected
 
+    # Keep provenance only for positions that survived as real INTERIOR
+    # boundaries (an anti-rule may have removed some; the sentinels 0 and
+    # len(doc) are not real divisions and never carry a split-rule id).
+    split_provenance = {
+        pos: rules for pos, rules in split_provenance.items()
+        if pos in splits and 0 < pos < len(doc)
+    }
+
     if is_debug:
         print()
         print(f"  [protected split indices: {sorted(protected)}]")
@@ -6123,7 +6439,8 @@ def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
     # -- merge throwaways --
     raw_text = [doc[lo:hi].text.strip() for lo, hi in raw]
     raw_text = [t for t in raw_text if t]
-    merged, merged_spans = _merge_throwaways(doc, raw, protected)
+    merged, merged_spans = _merge_throwaways(doc, raw, protected,
+                                             split_provenance)
     # Chunk is a NamedTuple (always truthy), so filter on the .text field.
     merged_clean = [c for c in merged if c.text]
     if is_debug:
