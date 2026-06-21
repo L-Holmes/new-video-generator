@@ -71,6 +71,7 @@ from CONFIG import (
 )
 from DOWNLOADS import load_stock_footage
 from KEN_BURNS import apply_ken_burns_to_final_data
+from ADD_RELEVANT_OVERLAYS import apply_relevant_overlays_to_final_data
 from PIXELLATE_STAGE import pixellate_candidate_bundles
 from SCENE_GENERATORS import (
     generate_stickman_explain_scenes,
@@ -471,6 +472,24 @@ def main() -> None:
         save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
         print(f"💾 Updated final_data with Ken Burns MP4s → {FINAL_SCRIPT_AND_CLIPS}")
         _dump_final(final_data, "POST-KEN-BURNS")
+
+    # 2.66) Auto-detected overlays — small FIXED corner badges (question mark,
+    #       metric/imperial measurement chips) burned onto each scene's final
+    #       footage. Runs AFTER Ken Burns so a badge never pans/zooms/crops with
+    #       the image; handles both stills (PIL composite) and videos (ffmpeg
+    #       overlay, motion preserved). Detection is per json section: '?' in the
+    #       text → question chip; a measurement that STARTS the section (≤1
+    #       leading word) → metric/imperial chip. First chip → top-left, second →
+    #       top-right; a STICKMAN_TEXT_OVERLAY's own corner is left free.
+    final_data, overlays_remap = apply_relevant_overlays_to_final_data(
+        final_data,
+        scriptTextToPexelSearch,
+    )
+    if overlays_remap:
+        add_path_remap_to_history(overlays_remap, label="auto-overlays")
+        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
+        print(f"💾 Updated final_data with auto-overlays → {FINAL_SCRIPT_AND_CLIPS}")
+        _dump_final(final_data, "POST-AUTO-OVERLAYS")
 
     # 2.7) Build audio events (SFX + music) and persist for the stitcher
     print("====================================================================")

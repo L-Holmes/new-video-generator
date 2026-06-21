@@ -1,57 +1,5 @@
 
 
-
-
-
-WILL HAVE TO WATHC OUT FOR WHAT WE DO WHEN FURTHER SPLITTING, AND MERGING? LIKE WHERE DO THE EXISTING NUMBERS GO?
-    -> DO THE NEW NUMBERS GET PUT IN LEFT SIDE OR RIGHT SIDE?!?!
-
-add that map?
-Add just for the first rule?
-then for the rest of the rules???
-
-----
-
-Is it a list?
-- Rule of 'x' = 50%
-- ...
-
-Everything else;
-- stock
-
-
-Then have a map from the number to the "rule" as a string. 
-E.g. "
-
-
-- so initially each one will have a number of the rule that split it...
-- But then what about rejoining etc!?!?
-
-I think I should then rewrite it in rust... 
-
-
-
-
---------
-
-
-update this code to:
-instead of passing arrays of sentences around, it passes an ordered map (basically an  array), except each item maps to an integer list. For now, the int list will always be empty. Ensure when doing extra splits we create additional lists of course... and obviously if we merge two 'keys' into one, then obviously we then merge the lists togther (have a function specifically for doing that... but for now literally just concatenate)
-
-e.g.
-Before:
-["the big  dog", "jumped over", "the fox"]
-
-After:
-[ 
-"the big dog": [],
-"jumped over":[],
-"the fox":[]
-] 
-
-
-
-
 ----------
 
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
@@ -65,24 +13,6 @@ tell me where to add stuff in an idiot proof way. before and after....
 
 3:40pn;
 - Highlighter?
-
-repeated things for common things.
-i.e.
-what automated things can I detect just from the script though? Like;
-- questoins (question mark comes on screen)
-        - sentence with a question mark in it, gets a question mark on screen.
-- date on screen in like the top right or something, when a date is mentioned... 
-    - sentences that have dates, get that date on screen.
-    - (or just a year)
-    _- (do i do a timeline???)
-- Times
-    - analogue clock on screen!?!??!?
-- Percentages
-    - animated bar / bar chart etc
-- Measurements / distances
-    - In Km/[american units]
-- Monetary amounts
-    - In £ [and euros / USD / yen...]
 
 
 ----------------------------------
