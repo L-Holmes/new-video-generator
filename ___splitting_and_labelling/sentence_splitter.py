@@ -39,6 +39,14 @@ USAGE
     >>> split_text_into_sections("The fast cat sat on the comfortable mat")
     [Chunk(text='The fast cat sat', ids=[]), Chunk(text='on the comfortable mat', ids=[])]
 
+    v18.1: downstream consumers that need per-line facts (entities, opener
+    flag, keywords, list membership...) should use the richer API instead:
+
+    >>> from sentence_splitter import split_text_into_sections_with_meta
+    >>> split_text_into_sections_with_meta("In Egypt, whales turned to stone")
+    [ChunkWithMeta(text='In Egypt,', ids=[7], meta={'opener': True,
+        'ents': [{'text': 'Egypt', 'label': 'GPE'}], ...}), ...]
+
 DATA SHAPE
 ----------
 The pipeline no longer passes bare lists of sentence strings around.  Instead
@@ -59,7 +67,7 @@ from spacy.tokens import Doc, Span, Token
 # === VERSION marker — change me when shipping a new revision ===========
 # The user can check this at runtime: `from sentence_splitter import VERSION`.
 # If it doesn't match the version you expect, they're running stale code.
-VERSION = "v18-2026-07-02"
+VERSION = "v18.1-2026-07-02"
 
 
  # === SINGLE-RUN DEBUG FLAG ================================================
@@ -6873,15 +6881,13 @@ _ANTI_PIPELINE: List[tuple] = [
 # MAIN ENTRY-POINT
 # =============================================================================
 
-def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
-    """
-    Split *text* into phrase-sized sections suitable for kinetic typography,
-    captions, or YouTube-style on-screen text.
+def _split_core(text: str, debug: bool = False):
+    """The full split pipeline.  Returns (doc, chunks, chunk_spans) so callers
+    that need token-level information (the with-meta API below) can have it.
+    Most callers want the thin public wrappers underneath instead.
 
-    Returns an ordered chunk-map: a list of ``Chunk`` entries, each pairing a
-    phrase-line of text with a list of integer ids (the ids list is a
-    placeholder and is always empty for now).  To recover the plain strings,
-    read ``c.text`` for each entry — e.g. ``[c.text for c in result]``.
+    Splits *text* into phrase-sized sections suitable for kinetic typography,
+    captions, or YouTube-style on-screen text.
 
     Pipeline:
        1) strip markdown headings
@@ -7002,7 +7008,7 @@ def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
     # filter empties while keeping spans aligned
     pairs = [(c, s) for c, s in zip(merged, merged_spans) if c.text]
     if not pairs:
-        return []
+        return doc, [], []
     merged, merged_spans = [p[0] for p in pairs], [p[1] for p in pairs]
 
     # -- fuse orphans --
@@ -7020,7 +7026,138 @@ def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
         _debug_print_stage("post_merge_unvisualisable",
                            prev_chunks != fused, fused)
 
-    return fused
+    return doc, fused, fused_spans
+
+
+# =============================================================================
+# PUBLIC API  —  two views of the same pipeline
+# =============================================================================
+
+def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
+    """Split *text* into phrase-lines.  Returns the classic ordered chunk-map:
+    a list of ``Chunk(text, ids)`` entries (unpackable as ``text, ids = c``).
+    This is the stable, backwards-compatible API — nothing about its return
+    shape changed in v18.1."""
+    _doc, chunks, _spans = _split_core(text, debug)
+    return chunks
+
+
+class ChunkWithMeta(NamedTuple):
+    """A phrase-line plus everything downstream consumers keep re-deriving
+    with regexes: the spaCy-grounded facts about the line.  Returned by
+    split_text_into_sections_with_meta().  ``meta`` keys:
+
+      opener            bool   — line starts a new sentence
+      ents              list   — [{"text": ..., "label": ...}] spaCy entities
+                                 overlapping this line (GPE/PERSON/MONEY/...)
+      keywords          list   — content words in order (nouns, proper nouns,
+                                 numbers, strong adjectives, strong verbs) —
+                                 ready-made search-term material
+      has_visualisable  bool   — the splitter's own picture-ability test
+      has_number        bool   — any numeric token
+      has_money         bool   — MONEY entity or currency symbol
+      in_quote          bool   — any quotation mark inside the line
+      n_tokens          int    — non-punct token count
+      span              [lo,hi]— token indices into the parsed doc (debugging)
+      list              None | {"group": g, "index": i, "size": n} — set when
+                                 this line is one item of a detected list run
+    """
+    text: str
+    ids: List[int]
+    meta: Dict[str, object]
+
+
+def split_text_into_sections_with_meta(text: str,
+                                       debug: bool = False
+                                       ) -> List["ChunkWithMeta"]:
+    """Like split_text_into_sections, but each line also carries a ``meta``
+    dict of spaCy-grounded facts (see ChunkWithMeta).  This is the API the
+    SPLIT_AND_LABEL pipeline consumes — it means the media-type decision code
+    never has to re-detect entities/places/openers with regexes."""
+    doc, chunks, spans = _split_core(text, debug)
+    metas = _build_chunks_meta(doc, chunks, spans)
+    return [ChunkWithMeta(c.text, list(c.ids), m)
+            for c, m in zip(chunks, metas)]
+
+
+# Rule ids that mark a chunk as an item of a list run (see _build_chunks_meta).
+_LIST_RULE_IDS = {15, 16, 25, 51}
+
+
+def _build_chunks_meta(doc: Doc, chunks: ChunkMap,
+                       spans: List[Tuple[int, int]]) -> List[Dict[str, object]]:
+    """Compute the per-line ``meta`` dicts from the parsed doc + final spans.
+
+    Runs AFTER all merging, over the final chunk spans, so it never has to
+    care about the split/merge machinery — it just reads facts off the doc.
+    """
+    metas: List[Dict[str, object]] = []
+    for (lo, hi) in spans:
+        opener = (lo == 0
+                  or bool(doc[lo].is_sent_start)
+                  or doc[lo - 1].text in HARD_PUNCT)
+        ents = [{"text": e.text, "label": e.label_}
+                for e in doc.ents if e.start < hi and e.end > lo]
+        keywords: List[str] = []
+        seen: Set[str] = set()
+        for t in doc[lo:hi]:
+            if t.is_punct or t.is_space:
+                continue
+            keep = False
+            if t.pos_ in {"NOUN", "PROPN", "NUM"}:
+                keep = True
+            elif t.pos_ == "ADJ" and t.lemma_.lower() not in WEAK_ADJ_LEMMAS:
+                keep = True
+            elif (t.pos_ == "VERB"
+                    and t.lemma_.lower() not in WEAK_VERB_LEMMAS
+                    and t.text.lower() not in WEAK_VERB_FORMS):
+                keep = True
+            if keep:
+                low = t.text.lower()
+                if low not in seen:
+                    seen.add(low)
+                    keywords.append(low)
+        metas.append({
+            "opener": opener,
+            "ents": ents,
+            "keywords": keywords,
+            "has_visualisable": _has_visualisable_content(doc, lo, hi),
+            "has_number": any(t.like_num or t.pos_ == "NUM"
+                              for t in doc[lo:hi]),
+            "has_money": any(t.ent_type_ == "MONEY" or t.text in CURRENCY_SYMS
+                             for t in doc[lo:hi]),
+            "in_quote": any(t.text in ANY_QUOTE for t in doc[lo:hi]),
+            "n_tokens": sum(1 for t in doc[lo:hi]
+                            if not t.is_punct and not t.is_space),
+            "span": [lo, hi],
+            "list": None,
+        })
+
+    # ---- list grouping ------------------------------------------------------
+    # A chunk's ids record the rule that created the boundary at its END, so
+    # in a 3-item list the first two items carry the list-rule id and the
+    # LAST item usually carries the sentence-end id instead.  We therefore
+    # extend every tagged run by one chunk — that trailing chunk is the final
+    # list item.  (Heuristic: if the run is instead followed by a plain
+    # continuation, that continuation gets pulled into the group; acceptable,
+    # since visually it still belongs to the same beat.)
+    i, group_id, n = 0, -1, len(chunks)
+    while i < n:
+        if set(chunks[i].ids) & _LIST_RULE_IDS:
+            j = i
+            while j < n and set(chunks[j].ids) & _LIST_RULE_IDS:
+                j += 1
+            if j < n:
+                j += 1                       # pull in the final list item
+            group_id += 1
+            size = j - i
+            for k in range(i, j):
+                metas[k]["list"] = {"group": group_id,
+                                    "index": k - i, "size": size}
+            i = j
+        else:
+            i += 1
+    return metas
 
 
 # =============================================================================
