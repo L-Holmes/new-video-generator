@@ -13,10 +13,10 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-import COLOUR_GRADE_ETC
+from ___visuals import COLOUR_GRADE_ETC
 
-from CACHE_IO import _classify_footage_path, _resolve_to_local_path
-from CONFIG import (
+from ___visuals.CACHE_IO import _classify_footage_path, _resolve_to_local_path
+from ___visuals.CONFIG import (
     _CACHE_DIR,
     APPLY_COLOUR_GRADING_TO_ALL,
     MediaType,

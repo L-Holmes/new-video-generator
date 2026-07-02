@@ -45,8 +45,8 @@ import asyncio, pathlib
 
 import fal_client
 
-import ai_generate_stickman_images as sg
-from ai_generate_stickman_images import (
+import ___visuals.ai_generate_stickman_images as sg
+from ___visuals.ai_generate_stickman_images import (
     _call_flux_to_file, _scene_stem, _write_placeholder,
     REF_IMAGES, STYLE_PREFIX, STYLE_SUFFIX, CONCURRENCY,
 )

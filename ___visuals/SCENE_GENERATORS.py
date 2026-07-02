@@ -22,8 +22,8 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from CACHE_IO import _resolve_to_local_path, load_json
-from CONFIG import (
+from ___visuals.CACHE_IO import _resolve_to_local_path, load_json
+from ___visuals.CONFIG import (
     _CACHE_DIR,
     CANDIDATES_CACHE_FILE,
     JOINT_BASE_DURATION_FALLBACK_SEC,
@@ -44,17 +44,17 @@ from CONFIG import (
     MEDIA_PROPERTIES,
     media_props,
 )
-from DOWNLOADS import _download_image
-from GET_MAP import get_map_image
-from JOINT_IMAGE_CREATOR import TRANSITION_RANDOM
-from JOINT_IMAGE_CREATOR import composite as create_joint_scene
-from STATIC_RENDER import _render_image_to_static_mp4
-from TIMING_MERGE import (
+from ___visuals.DOWNLOADS import _download_image
+from ___visuals.GET_MAP import get_map_image
+from ___visuals.JOINT_IMAGE_CREATOR import TRANSITION_RANDOM
+from ___visuals.JOINT_IMAGE_CREATOR import composite as create_joint_scene
+from ___visuals.STATIC_RENDER import _render_image_to_static_mp4
+from ___visuals.TIMING_MERGE import (
     _build_footage_entries_for_stage,
     _compute_joint_stage_timing,
     _load_scene_timings,
 )
-from WORDS_ON_SCREEN import WordRenderConfig, render_scene_to_video
+from ___visuals.WORDS_ON_SCREEN import WordRenderConfig, render_scene_to_video
 
 
 # === BEGIN verbatim move from main.py (scene generators) ===
@@ -627,7 +627,7 @@ def generate_stickman_explain_scenes(
     print(f"[explain scenes] found {len(explain_scenes)} explainer scene(s)")
 
     # Lazy import keeps the PIL/ffmpeg-only dep out of runs that don't use it.
-    from MAKE_EXPLAINER_IMAGE import make_explainer
+    from ___visuals.MAKE_EXPLAINER_IMAGE import make_explainer
 
     scene_timings = _load_scene_timings()
 
@@ -739,7 +739,7 @@ def generate_text_overlay_scenes(
 
     print(f"[text-overlay] found {len(overlay_scenes)} text-overlay scene(s)")
 
-    from MAKE_TEXT_OVERLAY import make_text_overlay  # lazy import
+    from ___visuals.MAKE_TEXT_OVERLAY import make_text_overlay  # lazy import
 
     scene_timings = _load_scene_timings()
     ordered_texts = list(script_to_search_term.keys())

@@ -80,13 +80,13 @@ from tkinter import messagebox
 
 # Reuse the display-fit + frame-extract helpers + Pillow resample shim from the
 # sibling manual stage so the two GUIs behave identically.
-from MANUAL_STOCK_PLACEMENT import _RESAMPLE, _fit_display, extract_frame
+from ___visuals.MANUAL_STOCK_PLACEMENT import _RESAMPLE, _fit_display, extract_frame
 
 # Reuse the EXACT font discovery + pixelation from the words-on-screen renderer
 # so decorations match STICKMAN_TEXT_OVERLAY. Fallbacks keep this file usable
 # on its own (no circular import: WORDS_ON_SCREEN doesn't import this module).
 try:
-    from WORDS_ON_SCREEN import _find_pixel_font, _find_font, _pixelate_image
+    from ___visuals.WORDS_ON_SCREEN import _find_pixel_font, _find_font, _pixelate_image
 except Exception:                                              # pragma: no cover
     def _find_pixel_font():
         return None

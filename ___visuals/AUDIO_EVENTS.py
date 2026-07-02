@@ -6,7 +6,7 @@ resolving per-scene `sfx` overrides and the joint-type auto-injected defaults.
 from __future__ import annotations
 
 
-from CONFIG import (
+from ___visuals.CONFIG import (
     JOINT_TYPE_SFX_MAP,
     MUSIC_VOLUME,
     SFX_VOLUME,

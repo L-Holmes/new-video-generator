@@ -42,13 +42,13 @@ from pathlib import Path
 
 from PIL import Image
 
-from CACHE_IO import _is_image_path, _resolve_to_local_path
-from CONFIG import _CACHE_DIR, DEBUG, ProgressTracker, media_props
+from ___visuals.CACHE_IO import _is_image_path, _resolve_to_local_path
+from ___visuals.CONFIG import _CACHE_DIR, DEBUG, ProgressTracker, media_props
 
 # Reuse the EXACT caption renderer + deterministic position picker from the
 # Fireship-style text overlay, so badges match that look AND so we can recompute
 # which corner an existing STICKMAN_TEXT_OVERLAY caption is sitting in.
-from MAKE_TEXT_OVERLAY import (
+from ___visuals.MAKE_TEXT_OVERLAY import (
     FPS,
     FRAME_H,
     FRAME_W,

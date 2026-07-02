@@ -30,22 +30,22 @@ from pathlib import Path
 
 import ollama
 
-from AI_GENERATION import (
+from ___visuals.AI_GENERATION import (
     _regenerate_stickman_joint_scene,
     _regenerate_stickman_scene,
     generate_stickman_candidates,
     generate_stickman_joint_candidates,
     run_ai_edit_stage,
 )
-from AUDIO_EVENTS import build_audio_events_map
-from CACHE_IO import (
+from ___visuals.AUDIO_EVENTS import build_audio_events_map
+from ___visuals.CACHE_IO import (
     add_path_remap_to_history,
     load_from_cache,
     load_json,
     save_to_cache,
 )
-from COLOUR_GRADE_STAGE import apply_colour_grading_to_final_data
-from CONFIG import (
+from ___visuals.COLOUR_GRADE_STAGE import apply_colour_grading_to_final_data
+from ___visuals.CONFIG import (
     _CACHE_DIR,
     AUDIO_CUTDOWN_WHISPER_MODEL,
     AUDIO_EVENTS_FILE,
@@ -69,26 +69,26 @@ from CONFIG import (
     MediaType,
     SearchTermData,
 )
-from DOWNLOADS import load_stock_footage
-from KEN_BURNS import apply_ken_burns_to_final_data
-from ADD_RELEVANT_OVERLAYS import apply_relevant_overlays_to_final_data
-from PIXELLATE_STAGE import pixellate_candidate_bundles
-from SCENE_GENERATORS import (
+from ___visuals.DOWNLOADS import load_stock_footage
+from ___visuals.KEN_BURNS import apply_ken_burns_to_final_data
+from ___visuals.ADD_RELEVANT_OVERLAYS import apply_relevant_overlays_to_final_data
+from ___visuals.PIXELLATE_STAGE import pixellate_candidate_bundles
+from ___visuals.SCENE_GENERATORS import (
     generate_stickman_explain_scenes,
     generate_text_overlay_scenes,
     run_all_local_generators,
 )
-from STATIC_RENDER import run_manual_image_stage
-from OBJECT_GENERATE_STAGE import run_object_generate_stage
-from TIMING_MERGE import integrate_generated_footage
+from ___visuals.STATIC_RENDER import run_manual_image_stage
+from ___visuals.OBJECT_GENERATE_STAGE import run_object_generate_stage
+from ___visuals.TIMING_MERGE import integrate_generated_footage
 
 # ===========================================================================
 # IMPORTS - LOCAL (external pipeline stages driven directly by main)
 # ===========================================================================
-from AUDIO_SCRIPT_SYNCHRONIZER import run as run_audio_script_synchronizer
-from SCRIPT_AUDIO_CUTDOWN_AND_PROCESS import run as run_audio_cutdown
-from STITCH_TOGETHER import stitch_together_video
-from STOCK_FOOTAGE_REVIEW import run_media_review
+from ___visuals.AUDIO_SCRIPT_SYNCHRONIZER import run as run_audio_script_synchronizer
+from ___visuals.SCRIPT_AUDIO_CUTDOWN_AND_PROCESS import run as run_audio_cutdown
+from ___visuals.STITCH_TOGETHER import stitch_together_video
+from ___visuals.STOCK_FOOTAGE_REVIEW import run_media_review
 
 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 print("running main")

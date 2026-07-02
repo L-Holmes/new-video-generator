@@ -1,0 +1,2980 @@
+{
+  "If you open": {
+    "ids": [
+      12
+    ],
+    "opener": true,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "your kitchen cupboard right now, you probably have": {
+    "ids": [
+      12
+    ],
+    "opener": false,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "a jar\nof": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "nutmeg.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "It costs": {
+    "ids": [
+      18
+    ],
+    "opener": true,
+    "why": [
+      "18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.99,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.3,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.4375
+    }
+  },
+  "about two dollars.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "But in the 1600s,": {
+    "ids": [
+      1001,
+      18,
+      7
+    ],
+    "opener": true,
+    "why": [
+      "1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.99,
+      "joint_3_row": 0.05,
+      "read_out": 0.4,
+      "map": 0.3,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.005,
+      "object_generate": 0.4375
+    }
+  },
+  "this little wrinkled seed was": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "the single most contested resource on": {
+    "ids": [
+      39
+    ],
+    "opener": false,
+    "why": [
+      "39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "the planet.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "It was worth more than": {
+    "ids": [
+      15
+    ],
+    "opener": true,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.2
+    }
+  },
+  "its weight in gold.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "Nutmeg only grew": {
+    "ids": [
+      12
+    ],
+    "opener": true,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "in one place on Earth:": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.15,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "The Banda Islands.": {
+    "ids": [
+      1
+    ],
+    "opener": true,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.6325,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "A tiny,": {
+    "ids": [
+      7
+    ],
+    "opener": true,
+    "why": [
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.2,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.02,
+      "decorate_previous": 0.005,
+      "object_generate": 0.12
+    }
+  },
+  "incredibly remote volcanic archipelago in": {
+    "ids": [
+      24
+    ],
+    "opener": false,
+    "why": [
+      "24: a sentence ending on a number or amount — e.g. 'the whales vanished' | 'millions of years ago'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.12,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "modern-day Indonesia. If you were a": {
+    "ids": [
+      1008,
+      1,
+      1007,
+      15
+    ],
+    "opener": false,
+    "why": [
+      "1008: a line with nothing you could picture is folded into the line BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "1007: a 'the / a' is pulled back from the next line onto a wordy connector, so the next line can start on a real word — e.g. 'but what if' + 'the' (from 'the planet') → 'but what if the' | 'planet'",
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.8,
+      "read_out": 0.36,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "European merchant, getting": {
+    "ids": [
+      12
+    ],
+    "opener": false,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "it meant": {
+    "ids": [
+      45
+    ],
+    "opener": false,
+    "why": [
+      "45: 'X saw / found / knew Y' — split to reveal the Y — e.g. 'scientists discovered' | 'fossil skeletons'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.18,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.52
+    }
+  },
+  "sailing for months,": {
+    "ids": [
+      25
+    ],
+    "opener": false,
+    "why": [
+      "25: an extra comma-list pattern the basic comma rule misses — e.g. 'soaked,' | 'frozen,' | 'exhausted'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.72,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "surviving scurvy, \npirates,\nand": {
+    "ids": [
+      1005,
+      29,
+      15
+    ],
+    "opener": false,
+    "why": [
+      "1005: a lone '-ing / -ed' verb is reunited with the thing it acts on — e.g. 'revealing' + 'evidence' → 'revealing evidence'",
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.16,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "shipwrecks.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "But if you made it back with a": {
+    "ids": [
+      1008,
+      12,
+      1007,
+      15
+    ],
+    "opener": true,
+    "why": [
+      "1008: a line with nothing you could picture is folded into the line BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "1007: a 'the / a' is pulled back from the next line onto a wordy connector, so the next line can start on a real word — e.g. 'but what if' + 'the' (from 'the planet') → 'but what if the' | 'planet'",
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.45,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.035,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "single ship full of": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "nutmeg,": {
+    "ids": [
+      26
+    ],
+    "opener": false,
+    "why": [
+      "26: a long 'if / when / because...' opener that ends in a comma — e.g. 'if you already know the answer,' | 'you can skip ahead'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.336,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "you were set for": {
+    "ids": [
+      29
+    ],
+    "opener": false,
+    "why": [
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "life.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "The Dutch and": {
+    "ids": [
+      15
+    ],
+    "opener": true,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.8,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "the British fought bloody,": {
+    "ids": [
+      7
+    ],
+    "opener": false,
+    "why": [
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.16,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.15
+    }
+  },
+  "brutal wars over these tiny islands.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "In fact,": {
+    "ids": [
+      7
+    ],
+    "opener": true,
+    "why": [
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.2,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.02,
+      "decorate_previous": 0.005,
+      "object_generate": 0.12
+    }
+  },
+  "to secure a monopoly on nutmeg,": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "the Dutch formally traded": {
+    "ids": [
+      12
+    ],
+    "opener": false,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.3125
+    }
+  },
+  "a different island they owned to": {
+    "ids": [
+      39
+    ],
+    "opener": false,
+    "why": [
+      "39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "the British.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "That island was Manhattan.": {
+    "ids": [
+      1
+    ],
+    "opener": true,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.6325,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "Yep...": {
+    "ids": [
+      3
+    ],
+    "opener": true,
+    "why": [
+      "3: the line ends on a '...' or '…' — e.g. 'and then...' | 'silence'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.035,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.005,
+      "object_generate": 0.15
+    }
+  },
+  "New York City was traded for nutmeg.": {
+    "ids": [
+      1
+    ],
+    "opener": true,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.6325,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "The entire map of the modern world was quite literally drawn": {
+    "ids": [
+      12
+    ],
+    "opener": true,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "by people desperately looking for": {
+    "ids": [
+      29
+    ],
+    "opener": false,
+    "why": [
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "a cheaper way to flavor their dinner.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "Because before global shipping, geography dictated your diet.": {
+    "ids": [
+      1
+    ],
+    "opener": true,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.6325,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.2
+    }
+  },
+  "Take black pepper.": {
+    "ids": [
+      1
+    ],
+    "opener": true,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.6325,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.2
+    }
+  },
+  "Today, it’s on": {
+    "ids": [
+      1000,
+      12,
+      14
+    ],
+    "opener": true,
+    "why": [
+      "1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.4,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "every restaurant table in the world.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "But originally, the black pepper vine was": {
+    "ids": [
+      1009,
+      7,
+      42
+    ],
+    "opener": true,
+    "why": [
+      "1009: a line with nothing you could picture is folded into the line AFTER it — e.g. 'but' + 'the dog runs' → 'but the dog runs'",
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "42: 'X is / looks / becomes Y' — split to reveal the Y — e.g. 'the desert becomes' | 'a frozen wasteland'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.45,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.035,
+      "decorate_previous": 0.02,
+      "object_generate": 0.52
+    }
+  },
+  "entirely native to": {
+    "ids": [
+      14
+    ],
+    "opener": false,
+    "why": [
+      "14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "the \nMalabar Coast": {
+    "ids": [
+      30
+    ],
+    "opener": false,
+    "why": [
+      "30: after a place or name, the 'in / on / at...' that says WHERE splits off — e.g. 'Alvord Desert' | 'in Oregon'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.39,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.99,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.15
+    }
+  },
+  "of India, \nspecifically Kerala.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "To get to Europe,": {
+    "ids": [
+      7
+    ],
+    "opener": true,
+    "why": [
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.2,
+      "map": 0.36,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.02,
+      "decorate_previous": 0.005,
+      "object_generate": 0.15
+    }
+  },
+  "it had to pass through dozens of middlemen—": {
+    "ids": [
+      2
+    ],
+    "opener": false,
+    "why": [
+      "2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "Arab traders,\n   Venetian merchants—": {
+    "ids": [
+      2
+    ],
+    "opener": false,
+    "why": [
+      "2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.3125
+    }
+  },
+  "each jacking up": {
+    "ids": [
+      29
+    ],
+    "opener": false,
+    "why": [
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "the price.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "It was so valuable that when": {
+    "ids": [
+      10
+    ],
+    "opener": true,
+    "why": [
+      "10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.4,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.005,
+      "object_generate": 0.12
+    }
+  },
+  "Alaric the Goth": {
+    "ids": [
+      50
+    ],
+    "opener": false,
+    "why": [
+      "50: after a title-name like 'Alaric the Goth', split before the verb — e.g. 'Alaric the Goth' | 'invaded Rome'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.99,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.375
+    }
+  },
+  "laid siege to Rome in": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.15,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "the year 410,": {
+    "ids": [
+      31
+    ],
+    "opener": false,
+    "why": [
+      "31: a comma after a long, meaty clause — e.g. 'after searching the whole house for hours,' | 'they gave up'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.32,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "his ransom demand to": {
+    "ids": [
+      32
+    ],
+    "opener": false,
+    "why": [
+      "32: a 'to do something' inside a long sentence — e.g. 'they travelled for days' | 'to reach the coast'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.1,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "spare the city wasn't just gold and": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "silver.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "He demanded —": {
+    "ids": [
+      1002,
+      12,
+      2
+    ],
+    "opener": true,
+    "why": [
+      "1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.3,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.015,
+      "static_of_previous": 0.025,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "and received —": {
+    "ids": [
+      1002,
+      12,
+      2
+    ],
+    "opener": false,
+    "why": [
+      "1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.24,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "three thousand pounds of black pepper.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "And because Europe was": {
+    "ids": [
+      1001,
+      18,
+      42
+    ],
+    "opener": true,
+    "why": [
+      "1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "42: 'X is / looks / becomes Y' — split to reveal the Y — e.g. 'the desert becomes' | 'a frozen wasteland'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.99,
+      "joint_3_row": 0.05,
+      "read_out": 0.4,
+      "map": 0.3,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.02,
+      "object_generate": 0.65
+    }
+  },
+  "so entirely disconnected \nfrom where": {
+    "ids": [
+      10
+    ],
+    "opener": false,
+    "why": [
+      "10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.32,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "these spices actually grew,": {
+    "ids": [
+      8
+    ],
+    "opener": false,
+    "why": [
+      "8: a comma that separates two clauses or list items — e.g. 'she ran,' | 'he walked'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.18
+    }
+  },
+  "the merchants who controlled the trade simply made things up to keep": {
+    "ids": [
+      42
+    ],
+    "opener": false,
+    "why": [
+      "42: 'X is / looks / becomes Y' — split to reveal the Y — e.g. 'the desert becomes' | 'a frozen wasteland'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.52
+    }
+  },
+  "the prices high.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "Cinnamon comes from": {
+    "ids": [
+      1000,
+      12,
+      14
+    ],
+    "opener": true,
+    "why": [
+      "1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.4,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "the inner bark of a specific tree native to": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "Sri Lanka.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "But for centuries,": {
+    "ids": [
+      7
+    ],
+    "opener": true,
+    "why": [
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.2,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.02,
+      "decorate_previous": 0.005,
+      "object_generate": 0.12
+    }
+  },
+  "Arab traders told": {
+    "ids": [
+      12
+    ],
+    "opener": false,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "the Greeks and": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "Romans that": {
+    "ids": [
+      10
+    ],
+    "opener": false,
+    "why": [
+      "10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.32,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "cinnamon was gathered \nby": {
+    "ids": [
+      29
+    ],
+    "opener": false,
+    "why": [
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "giant, terrifying birds": {
+    "ids": [
+      10
+    ],
+    "opener": false,
+    "why": [
+      "10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.32,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "who used the spice \nto": {
+    "ids": [
+      32
+    ],
+    "opener": false,
+    "why": [
+      "32: a 'to do something' inside a long sentence — e.g. 'they travelled for days' | 'to reach the coast'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.1,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "build their nests on": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "sheer, unclimbable cliffs.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "The traders claimed": {
+    "ids": [
+      12
+    ],
+    "opener": true,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "they had to leave heavy chunks of meat out for": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "the birds,": {
+    "ids": [
+      31
+    ],
+    "opener": false,
+    "why": [
+      "31: a comma after a long, meaty clause — e.g. 'after searching the whole house for hours,' | 'they gave up'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.32,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "who would carry the meat": {
+    "ids": [
+      39
+    ],
+    "opener": false,
+    "why": [
+      "39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "to their nests,": {
+    "ids": [
+      25
+    ],
+    "opener": false,
+    "why": [
+      "25: an extra comma-list pattern the basic comma rule misses — e.g. 'soaked,' | 'frozen,' | 'exhausted'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.72,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "collapsing them, and sending": {
+    "ids": [
+      29
+    ],
+    "opener": false,
+    "why": [
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "the cinnamon tumbling down.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "It was complete nonsense.": {
+    "ids": [
+      1001,
+      35,
+      1
+    ],
+    "opener": true,
+    "why": [
+      "1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "35: an 'is / looks / feels...' followed by the thing it describes — e.g. 'the sky is' | 'a deep burning red'",
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.6325,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.4,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.048,
+      "object_generate": 0.3
+    }
+  },
+  "But the Europeans believed it,": {
+    "ids": [
+      7
+    ],
+    "opener": true,
+    "why": [
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.2,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.02,
+      "decorate_previous": 0.005,
+      "object_generate": 0.15
+    }
+  },
+  "and happily paid": {
+    "ids": [
+      12
+    ],
+    "opener": false,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "the monster-bird premium.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "By the late 1400s,": {
+    "ids": [
+      1001,
+      18,
+      7
+    ],
+    "opener": true,
+    "why": [
+      "1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.99,
+      "joint_3_row": 0.05,
+      "read_out": 0.4,
+      "map": 0.3,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.005,
+      "object_generate": 0.4375
+    }
+  },
+  "European powers were sick of paying": {
+    "ids": [
+      29
+    ],
+    "opener": false,
+    "why": [
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "these markups.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "So, they started sailing": {
+    "ids": [
+      29
+    ],
+    "opener": true,
+    "why": [
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.038,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.35
+    }
+  },
+  "west,": {
+    "ids": [
+      25
+    ],
+    "opener": false,
+    "why": [
+      "25: an extra comma-list pattern the basic comma rule misses — e.g. 'soaked,' | 'frozen,' | 'exhausted'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.72,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "looking for": {
+    "ids": [
+      29
+    ],
+    "opener": false,
+    "why": [
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "a backdoor to": {
+    "ids": [
+      39
+    ],
+    "opener": false,
+    "why": [
+      "39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "India.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "Which brings us to Christopher Columbus.": {
+    "ids": [
+      1
+    ],
+    "opener": true,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.6325,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.15,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "Columbus lands in": {
+    "ids": [
+      39
+    ],
+    "opener": true,
+    "why": [
+      "39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "the Americas,": {
+    "ids": [
+      7
+    ],
+    "opener": false,
+    "why": [
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.16,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.15
+    }
+  },
+  "thinks he's in": {
+    "ids": [
+      1000,
+      45,
+      15
+    ],
+    "opener": false,
+    "why": [
+      "1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "45: 'X saw / found / knew Y' — split to reveal the Y — e.g. 'scientists discovered' | 'fossil skeletons'",
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.18,
+      "joint_3_row": 0.8,
+      "read_out": 0.32,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.52
+    }
+  },
+  "India,\nand is desperately looking for": {
+    "ids": [
+      29
+    ],
+    "opener": false,
+    "why": [
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "black pepper to justify the cost of his voyage.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "He doesn't find it.": {
+    "ids": [
+      1
+    ],
+    "opener": true,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.6325,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.2
+    }
+  },
+  "But he does find": {
+    "ids": [
+      45
+    ],
+    "opener": true,
+    "why": [
+      "45: 'X saw / found / knew Y' — split to reveal the Y — e.g. 'scientists discovered' | 'fossil skeletons'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.18,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.52
+    }
+  },
+  "a completely unrelated,": {
+    "ids": [
+      7
+    ],
+    "opener": false,
+    "why": [
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.16,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "violently spicy red fruit native to": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "Mesoamerica.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "He calls them\"": {
+    "ids": [
+      1002,
+      5,
+      5
+    ],
+    "opener": true,
+    "why": [
+      "1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.7,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.025,
+      "decorate_previous": 0.015,
+      "object_generate": 0.12
+    }
+  },
+  "peppers\"": {
+    "ids": [
+      1002,
+      5,
+      5
+    ],
+    "opener": false,
+    "why": [
+      "1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.56,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "to make his investors happy.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "And unlike the fussy black pepper vines of India,": {
+    "ids": [
+      1001,
+      14,
+      8
+    ],
+    "opener": true,
+    "why": [
+      "1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'",
+      "8: a comma that separates two clauses or list items — e.g. 'she ran,' | 'he walked'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.6325,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.4,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.005,
+      "object_generate": 0.225
+    }
+  },
+  "these new\"": {
+    "ids": [
+      1002,
+      5,
+      5
+    ],
+    "opener": false,
+    "why": [
+      "1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.56,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "chili peppers\"": {
+    "ids": [
+      1002,
+      5,
+      5
+    ],
+    "opener": false,
+    "why": [
+      "1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.56,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  },
+  "grew almost anywhere.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "Within fifty years,": {
+    "ids": [
+      1001,
+      18,
+      7
+    ],
+    "opener": true,
+    "why": [
+      "1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.99,
+      "joint_3_row": 0.05,
+      "read_out": 0.4,
+      "map": 0.3,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.005,
+      "object_generate": 0.4375
+    }
+  },
+  "they had spread across": {
+    "ids": [
+      1000,
+      39,
+      29
+    ],
+    "opener": false,
+    "why": [
+      "1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.32,
+      "map": 0.12,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.35
+    }
+  },
+  "the globe,\n       completely revolutionizing": {
+    "ids": [
+      12
+    ],
+    "opener": false,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "the cuisines of": {
+    "ids": [
+      33
+    ],
+    "opener": false,
+    "why": [
+      "33: a sentence ending on an 'of ...' phrase — e.g. 'one of the driest' | 'climates on Earth'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.1,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.3
+    }
+  },
+  "India,": {
+    "ids": [
+      8
+    ],
+    "opener": false,
+    "why": [
+      "8: a comma that separates two clauses or list items — e.g. 'she ran,' | 'he walked'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.18
+    }
+  },
+  "China, and": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "Southeast Asia.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.208,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "So the next time you season your food,\n   look at": {
+    "ids": [
+      10
+    ],
+    "opener": true,
+    "why": [
+      "10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.4,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.03,
+      "decorate_previous": 0.005,
+      "object_generate": 0.12
+    }
+  },
+  "what you’re holding.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "You aren't just holding": {
+    "ids": [
+      12
+    ],
+    "opener": true,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "dried bark and": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "seeds.": {
+    "ids": [
+      1
+    ],
+    "opener": false,
+    "why": [
+      "1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "You are holding": {
+    "ids": [
+      12
+    ],
+    "opener": true,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.1,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.005,
+      "zoom_prev_img": 0.005,
+      "static_of_previous": 0.005,
+      "decorate_previous": 0.005,
+      "object_generate": 0.25
+    }
+  },
+  "the remnants of": {
+    "ids": [
+      33
+    ],
+    "opener": false,
+    "why": [
+      "33: a sentence ending on an 'of ...' phrase — e.g. 'one of the driest' | 'climates on Earth'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.1,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.3
+    }
+  },
+  "global monopolies,\n   the fall of": {
+    "ids": [
+      33
+    ],
+    "opener": false,
+    "why": [
+      "33: a sentence ending on an 'of ...' phrase — e.g. 'one of the driest' | 'climates on Earth'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.1,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.3
+    }
+  },
+  "empires,\n   and": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "the reason": {
+    "ids": [
+      15
+    ],
+    "opener": false,
+    "why": [
+      "15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.8,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.2
+    }
+  },
+  "the map of the world looks": {
+    "ids": [
+      12
+    ],
+    "opener": false,
+    "why": [
+      "12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'"
+    ],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "joint_3_row": 0.05,
+      "read_out": 0.08,
+      "map": 0.05,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.25
+    }
+  },
+  "the way it does today.": {
+    "ids": [],
+    "opener": false,
+    "why": [],
+    "media_type_probabilities": {
+      "stock": 0.25,
+      "wikipedia": 0.06,
+      "joint_3_row": 0.03,
+      "read_out": 0.064,
+      "map": 0.04,
+      "manual_stock_add_to_previous": 0.42,
+      "zoom_prev_img": 0.42,
+      "static_of_previous": 0.5,
+      "decorate_previous": 0.42,
+      "object_generate": 0.12
+    }
+  }
+}

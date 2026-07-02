@@ -13,7 +13,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from CACHE_IO import (
+from ___visuals.CACHE_IO import (
     _edit_candidates_cache_file,
     _edit_review_state_file,
     _load_history,
@@ -22,7 +22,7 @@ from CACHE_IO import (
     load_from_cache,
     save_to_cache,
 )
-from CONFIG import (
+from ___visuals.CONFIG import (
     _CACHE_DIR,
     FINAL_SCRIPT_AND_CLIPS,
     HISTORY_FILE,
@@ -40,9 +40,9 @@ from CONFIG import (
     MEDIA_PROPERTIES,
     media_props
 )
-from PIXELLATE_STAGE import _maybe_pixellate_entries
-from STOCK_FOOTAGE_REVIEW import run_media_review
-from TIMING_MERGE import _load_scene_timings
+from ___visuals.PIXELLATE_STAGE import _maybe_pixellate_entries
+from ___visuals.STOCK_FOOTAGE_REVIEW import run_media_review
+from ___visuals.TIMING_MERGE import _load_scene_timings
 
 
 # === BEGIN verbatim move from main.py (AI generation) ===

@@ -15,13 +15,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from CACHE_IO import (
+from ___visuals.CACHE_IO import (
     _classify_footage_path,
     _resolve_to_local_path,
     add_local_paths_to_history,
     save_to_cache,
 )
-from CONFIG import (
+from ___visuals.CONFIG import (
     CANDIDATES_CACHE_FILE,
     DEBUG,
     FINAL_SCRIPT_AND_CLIPS,
@@ -30,8 +30,8 @@ from CONFIG import (
     SearchTermData,
     media_props,
 )
-from KEN_BURNS import KEN_BURNS_FPS
-from TIMING_MERGE import _load_scene_timings
+from ___visuals.KEN_BURNS import KEN_BURNS_FPS
+from ___visuals.TIMING_MERGE import _load_scene_timings
 
 
 # === BEGIN verbatim move from main.py (static render + manual stage) ===
@@ -239,7 +239,7 @@ def run_manual_image_stage(
         print("[manual-img] none — skipping")
         return final_data
 
-    from MANUAL_STOCK_PLACEMENT import (
+    from ___visuals.MANUAL_STOCK_PLACEMENT import (
         CropBox,
         Placement,
         composite_overlays,
@@ -248,7 +248,7 @@ def run_manual_image_stage(
         place_overlays_interactive,
         zoom_prev_interactive,
     )
-    from DECORATE_PREVIOUS import (
+    from ___visuals.DECORATE_PREVIOUS import (
         composite_text_decorations,
         decorate_prev_interactive,
         dump_decos,

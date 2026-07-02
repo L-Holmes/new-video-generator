@@ -50,7 +50,7 @@ from PIL import Image, ImageDraw, ImageFont
 # so captions match its look. WORDS_ON_SCREEN does not import this module, so
 # there's no circular import. Fallbacks keep this file usable on its own.
 try:
-    from WORDS_ON_SCREEN import _find_pixel_font, _find_font, _pixelate_image
+    from ___visuals.WORDS_ON_SCREEN import _find_pixel_font, _find_font, _pixelate_image
 except Exception:                                              # pragma: no cover
     def _find_pixel_font():
         return None

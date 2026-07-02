@@ -23,19 +23,19 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from CACHE_IO import (
+from ___visuals.CACHE_IO import (
     _classify_footage_path,
     _resolve_to_local_path,
     add_local_paths_to_history,
     save_to_cache,
 )
-from CONFIG import (
+from ___visuals.CONFIG import (
     FINAL_SCRIPT_AND_CLIPS,
     OBJECT_GENERATE_OUTPUT_DIR,
     SearchTermData,
     media_props,
 )
-from TIMING_MERGE import _load_scene_timings
+from ___visuals.TIMING_MERGE import _load_scene_timings
 
 
 def _resolve_scene_still(text: str, final_data: list[dict]) -> "str | None":
@@ -81,7 +81,7 @@ def run_object_generate_stage(
 
     # Imported lazily so the rest of the pipeline doesn't pull in Tk / the
     # editor unless this stage actually runs.
-    from OBJECT_SEPERATION import run_editor
+    from ___visuals.OBJECT_SEPERATION import run_editor
 
     scene_timings = _load_scene_timings()
     by_script = {e["script_text"]: i for i, e in enumerate(final_data)}

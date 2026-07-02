@@ -26,6 +26,7 @@ dependencies = [
     "audioop-lts<1.0; python_version >= '3.13'",
     "faster-whisper>=1.0",
     "ultralytics>=8.4.68",
+    "click>=8.4.1",
 ]
 
 [dependency-groups]

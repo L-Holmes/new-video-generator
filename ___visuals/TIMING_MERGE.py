@@ -12,8 +12,8 @@ import json
 import sys
 from pathlib import Path
 
-from CACHE_IO import add_local_paths_to_history, save_to_cache
-from CONFIG import (
+from ___visuals.CACHE_IO import add_local_paths_to_history, save_to_cache
+from ___visuals.CONFIG import (
     FINAL_SCRIPT_AND_CLIPS,
     JOINT_INTRO_DURATION_SEC,
     JOINT_MIN_SCENE_DURATION_FOR_TRANSITION_SEC,

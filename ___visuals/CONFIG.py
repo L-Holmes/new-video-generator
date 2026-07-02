@@ -23,7 +23,7 @@ from dataclasses import dataclass
 
 import requests
 
-import COLOUR_GRADE_ETC
+from ___visuals import COLOUR_GRADE_ETC
 
 # ===========================================================================
 # GLOBAL FLAGS

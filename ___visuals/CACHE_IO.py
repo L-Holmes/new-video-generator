@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
-from CONFIG import _CACHE_DIR, HISTORY_FILE, IMAGE_EXTENSIONS, STOCK_FOOTAGE_CACHE_DIR
+from ___visuals.CONFIG import _CACHE_DIR, HISTORY_FILE, IMAGE_EXTENSIONS, STOCK_FOOTAGE_CACHE_DIR
 
 
 # ===========================================================================

@@ -20,8 +20,8 @@ from pathlib import Path
 
 import requests
 
-from CACHE_IO import _load_history, _save_history
-from CONFIG import (
+from ___visuals.CACHE_IO import _load_history, _save_history
+from ___visuals.CONFIG import (
     DOWNLOAD_WORKERS,
     MAX_CLIP_SECONDS,
     PEXELS_API_KEY,
@@ -37,7 +37,7 @@ from CONFIG import (
     _wiki_session,
 )
 
-from GET_FROM_WIKIPEDIA import get_from_wikipedia
+from ___visuals.GET_FROM_WIKIPEDIA import get_from_wikipedia
 
 import json
 

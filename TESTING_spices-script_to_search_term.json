@@ -1,0 +1,1382 @@
+{
+  "If you open": {
+    "search_term": "open",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "your kitchen cupboard right now, you probably have": {
+    "search_term": "add kitchen cupboard right probably to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "a jar\nof": {
+    "search_term": "jar",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "nutmeg.": {
+    "search_term": "jar",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "It costs": {
+    "search_term": "costs",
+    "search_type": "wikipedia",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "about two dollars.": {
+    "search_term": "costs",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "But in the 1600s,": {
+    "search_term": "1600s",
+    "search_type": "wikipedia",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "this little wrinkled seed was": {
+    "search_term": "1600s",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the single most contested resource on": {
+    "search_term": "add single contested resource to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the planet.": {
+    "search_term": "1600s",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "It was worth more than": {
+    "search_term": "worth",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "its weight in gold.": {
+    "search_term": "worth",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Nutmeg only grew": {
+    "search_term": "nutmeg only grew",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "in one place on Earth:": {
+    "search_term": "nutmeg only grew",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "The Banda Islands.": {
+    "search_term": "banda islands",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "A tiny,": {
+    "search_term": "tiny",
+    "search_type": "read_out",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "incredibly remote volcanic archipelago in": {
+    "search_term": "add incredibly remote volcanic archipelago to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "modern-day Indonesia. If you were a": {
+    "search_term": "modern-day indonesia",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "European merchant, getting": {
+    "search_term": "modern-day indonesia",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "it meant": {
+    "search_term": "meant",
+    "search_type": "object_generate",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "sailing for months,": {
+    "search_term": "meant",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "surviving scurvy, \npirates,\nand": {
+    "search_term": "surviving scurvy pirates",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "shipwrecks.": {
+    "search_term": "add shipwrecks to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "But if you made it back with a": {
+    "search_term": "made back",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "single ship full of": {
+    "search_term": "single ship full",
+    "search_type": "joint_3_row",
+    "position": "2",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "nutmeg,": {
+    "search_term": "single ship full",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "you were set for": {
+    "search_term": "add set to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "life.": {
+    "search_term": "single ship full",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "The Dutch and": {
+    "search_term": "dutch",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the British fought bloody,": {
+    "search_term": "dutch",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "brutal wars over these tiny islands.": {
+    "search_term": "dutch",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "In fact,": {
+    "search_term": "fact",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "to secure a monopoly on nutmeg,": {
+    "search_term": "fact",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the Dutch formally traded": {
+    "search_term": "add dutch formally traded to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "a different island they owned to": {
+    "search_term": "add different island owned to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the British.": {
+    "search_term": "fact",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "That island was Manhattan.": {
+    "search_term": "island manhattan",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Yep...": {
+    "search_term": "yep",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "New York City was traded for nutmeg.": {
+    "search_term": "new york city traded nutmeg",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "The entire map of the modern world was quite literally drawn": {
+    "search_term": "entire map modern world quite literally",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "by people desperately looking for": {
+    "search_term": "entire map modern world quite literally",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "a cheaper way to flavor their dinner.": {
+    "search_term": "entire map modern world quite literally",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Because before global shipping, geography dictated your diet.": {
+    "search_term": "because before global shipping geography dictated",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Take black pepper.": {
+    "search_term": "take black pepper",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Today, it’s on": {
+    "search_term": "today s",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "every restaurant table in the world.": {
+    "search_term": "add restaurant table world to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "But originally, the black pepper vine was": {
+    "search_term": "originally black pepper vine",
+    "search_type": "object_generate",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "entirely native to": {
+    "search_term": "entirely native",
+    "search_type": "object_generate",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the \nMalabar Coast": {
+    "search_term": "malabar coast",
+    "search_type": "map",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "of India, \nspecifically Kerala.": {
+    "search_term": "malabar coast",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "To get to Europe,": {
+    "search_term": "get europe",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "it had to pass through dozens of middlemen—": {
+    "search_term": "get europe",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Arab traders,\n   Venetian merchants—": {
+    "search_term": "get europe",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "each jacking up": {
+    "search_term": "add jacking to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the price.": {
+    "search_term": "get europe",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "It was so valuable that when": {
+    "search_term": "valuable",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Alaric the Goth": {
+    "search_term": "alaric goth",
+    "search_type": "wikipedia",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "laid siege to Rome in": {
+    "search_term": "laid siege rome",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the year 410,": {
+    "search_term": "laid siege rome",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "his ransom demand to": {
+    "search_term": "laid siege rome",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "spare the city wasn't just gold and": {
+    "search_term": "add spare city wasn't gold to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "silver.": {
+    "search_term": "laid siege rome",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "He demanded —": {
+    "search_term": "demanded",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "and received —": {
+    "search_term": "demanded",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "three thousand pounds of black pepper.": {
+    "search_term": "demanded",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "And because Europe was": {
+    "search_term": "because europe",
+    "search_type": "wikipedia",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "so entirely disconnected \nfrom where": {
+    "search_term": "because europe",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "these spices actually grew,": {
+    "search_term": "because europe",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the merchants who controlled the trade simply made things up to keep": {
+    "search_term": "because europe",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the prices high.": {
+    "search_term": "add prices high to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Cinnamon comes from": {
+    "search_term": "cinnamon comes",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the inner bark of a specific tree native to": {
+    "search_term": "cinnamon comes",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Sri Lanka.": {
+    "search_term": "cinnamon comes",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "But for centuries,": {
+    "search_term": "centuries",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Arab traders told": {
+    "search_term": "add arab traders told to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the Greeks and": {
+    "search_term": "greeks",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Romans that": {
+    "search_term": "greeks",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "cinnamon was gathered \nby": {
+    "search_term": "greeks",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "giant, terrifying birds": {
+    "search_term": "greeks",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "who used the spice \nto": {
+    "search_term": "greeks",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "build their nests on": {
+    "search_term": "greeks",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "sheer, unclimbable cliffs.": {
+    "search_term": "greeks",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "The traders claimed": {
+    "search_term": "traders claimed",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "they had to leave heavy chunks of meat out for": {
+    "search_term": "leave heavy chunks meat",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the birds,": {
+    "search_term": "leave heavy chunks meat",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "who would carry the meat": {
+    "search_term": "leave heavy chunks meat",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "to their nests,": {
+    "search_term": "nests",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "collapsing them, and sending": {
+    "search_term": "nests",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the cinnamon tumbling down.": {
+    "search_term": "nests",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "It was complete nonsense.": {
+    "search_term": "complete nonsense",
+    "search_type": "read_out",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "But the Europeans believed it,": {
+    "search_term": "europeans believed",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "and happily paid": {
+    "search_term": "europeans believed",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the monster-bird premium.": {
+    "search_term": "europeans believed",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "By the late 1400s,": {
+    "search_term": "late 1400s",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "European powers were sick of paying": {
+    "search_term": "late 1400s",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "these markups.": {
+    "search_term": "late 1400s",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "So, they started sailing": {
+    "search_term": "started sailing",
+    "search_type": "object_generate",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "west,": {
+    "search_term": "west",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "looking for": {
+    "search_term": "west",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "a backdoor to": {
+    "search_term": "west",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "India.": {
+    "search_term": "west",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Which brings us to Christopher Columbus.": {
+    "search_term": "brings us christopher columbus",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Columbus lands in": {
+    "search_term": "columbus lands",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the Americas,": {
+    "search_term": "columbus lands",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "thinks he's in": {
+    "search_term": "columbus lands",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "India,\nand is desperately looking for": {
+    "search_term": "india desperately looking",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "black pepper to justify the cost of his voyage.": {
+    "search_term": "india desperately looking",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "He doesn't find it.": {
+    "search_term": "doesn't find",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "But he does find": {
+    "search_term": "find",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "a completely unrelated,": {
+    "search_term": "find",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "violently spicy red fruit native to": {
+    "search_term": "find",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Mesoamerica.": {
+    "search_term": "find",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "He calls them\"": {
+    "search_term": "calls",
+    "search_type": "read_out",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "peppers\"": {
+    "search_term": "add peppers to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "to make his investors happy.": {
+    "search_term": "find",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "And unlike the fussy black pepper vines of India,": {
+    "search_term": "unlike fussy black pepper vines india",
+    "search_type": "read_out",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "these new\"": {
+    "search_term": "add new to previous",
+    "search_type": "manual_stock_add_to_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "chili peppers\"": {
+    "search_term": "chili peppers",
+    "search_type": "read_out",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "grew almost anywhere.": {
+    "search_term": "find",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Within fifty years,": {
+    "search_term": "within fifty years",
+    "search_type": "wikipedia",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "they had spread across": {
+    "search_term": "within fifty years",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the globe,\n       completely revolutionizing": {
+    "search_term": "within fifty years",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the cuisines of": {
+    "search_term": "within fifty years",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "India,": {
+    "search_term": "within fifty years",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "China, and": {
+    "search_term": "within fifty years",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "Southeast Asia.": {
+    "search_term": "within fifty years",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "So the next time you season your food,\n   look at": {
+    "search_term": "next time season food look",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "what you’re holding.": {
+    "search_term": "re holding",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "You aren't just holding": {
+    "search_term": "aren't holding",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "dried bark and": {
+    "search_term": "dried bark",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "seeds.": {
+    "search_term": "dried bark",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "You are holding": {
+    "search_term": "holding",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the remnants of": {
+    "search_term": "holding",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "global monopolies,\n   the fall of": {
+    "search_term": "holding",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "empires,\n   and": {
+    "search_term": "empires",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the reason": {
+    "search_term": "empires",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the map of the world looks": {
+    "search_term": "empires",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  },
+  "the way it does today.": {
+    "search_term": "empires",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0
+  }
+}

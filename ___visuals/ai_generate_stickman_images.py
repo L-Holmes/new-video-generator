@@ -38,7 +38,7 @@ load_dotenv()  # <- reads .env before fal_client uses FAL_KEY
 
 import fal_client
 from PIL import Image, ImageDraw, ImageFont
-from ai__postprocess import deai_postprocess, save_clean
+from ___visuals.ai__postprocess import deai_postprocess, save_clean
 
 # -- Reference images for style grounding --------------------------------
 REF_IMAGES = [
