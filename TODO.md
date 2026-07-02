@@ -1,3 +1,7 @@
+everything has been moved to ___visuals/  now...
+so update all the imports!
+
+
 ----------
 
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
@@ -47,7 +51,8 @@ Goal:
     - Takes the input script
     - Passes it through the sentence splitter 
     - It then takes that, and looks at all of the numbers representing which things it split on
-    - It then uses those values to build a map (which we can save as CACHE-WEIGHTS-spices.json);
+    - It then uses those values to build a map (which we can save as <prefix>-CACHE/split-and-lable/WEIGHTS-spices.json);
+        - NOTE: we get the prefix from the input script name. e.g. script-spices.txt (prefix would be 'spices'
         - mapping each split entry to all of the possible 'effects'.. e.g.;
             [text]:{
                 {
@@ -83,6 +88,11 @@ Goal:
 - We get an output:
     - script_to_search_term.json
 
+
+so create a new file;
+SPLIT_AND_LABEL.py...
+
+
 IMPORTANT:
 - please use your best intelligence to determine the baseline conversion / weights / mappings etc. (i can adjust later manually if needed!)
 
@@ -93,6 +103,13 @@ TO NOTE:
 ALSO TO NOTE:
 - mention the toggling of the AI stuff... which we'll leave as 'False' for now...
 
+
+
+make it so when its ran directly (e.g. uv run SPLIT_AND_LABEL.py) that it tests using script-spices.wav...
+    - BUT WHEN RAN LOCALLY ALWAYS RUN IN TESTING MODE! 
+
+
+If any of the cache files already exist... just skip the step and fetch the cache!
 
 
 TODO:

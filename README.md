@@ -174,3 +174,12 @@ animation story time| odd1stout  | x |  y
 
 uv run python -m spacy download en_core_web_sm
 uv run python -m pytest test_sentence_splitter.py -v
+
+
+-------------
+
+Two main code folders are;
+
+
+/048 󰉋  ___splitting_and_labelling/
+/005 󰉋  ___visuals/
