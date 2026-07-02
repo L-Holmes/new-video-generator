@@ -1,7 +1,7 @@
 """
 sentence_splitter.py
 ====================
-VERSION: v17  (post-merge unvisualisable rewrite, aggressive iteration)
+VERSION: v18  (comparison / exception / pivot / agent / SFX reveal rules)
 
 Split prose into short, scannable phrase-lines for visual presentation —
 captions, kinetic typography, slide-decks, animation cues, YouTube videos.
@@ -59,7 +59,7 @@ from spacy.tokens import Doc, Span, Token
 # === VERSION marker — change me when shipping a new revision ===========
 # The user can check this at runtime: `from sentence_splitter import VERSION`.
 # If it doesn't match the version you expect, they're running stale code.
-VERSION = "v17-2026-05-12"
+VERSION = "v18-2026-07-02"
 
 
  # === SINGLE-RUN DEBUG FLAG ================================================
@@ -141,11 +141,13 @@ def merge_chunks(a: Chunk, b: Chunk, sep: str = " ",
 #   • Rules 0 and 0.5  → the two PRE-PROCESSING passes (strip_markdown /
 #     normalise_punct).  They reshape raw text and never create a split, so
 #     they are deliberately NOT in this map.
-#   • 1–55             → the SPLITTING rules (the positive pipeline).  Numbers
+#   • 1–60             → the SPLITTING rules (the positive pipeline).  Numbers
 #     1–21 and 23–52 are the original header numbers, kept verbatim.  22 is an
 #     unused gap in the historical numbering and is intentionally left absent.
 #     53–55 are newly assigned (the "after the existing ones" slots) to the
 #     three splitting rules that the codebase never gave a number.
+#     56–60 are the v18 additions: comparison reveal, exception reveal,
+#     discourse-pivot hook, passive-agent reveal, and SFX beat.
 #   • 1000+            → the MERGING rules (the post-processing glue passes:
 #     _merge_throwaways / _fuse_orphans / _post_merge_unvisualisable).  They
 #     start at 1000 so a merge id can never be confused with a split id.
@@ -169,7 +171,7 @@ RULE_DESCRIPTIONS: Dict[int, str] = {
         "e.g. 'the dog,' | 'which was huge'",
     10: "a joining word like 'when', 'because', 'which' or 'that' starts a "
         "new part — e.g. 'he left' | 'because it rained'",
-    11: "a 'but' or 'or' after a long first part — "
+    11: "a 'but', 'or', 'so' or 'yet' after a long first part — "
         "e.g. 'we tried for hours' | 'but it failed'",
     12: "one complete action has finished and the next begins — "
         "e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
@@ -257,6 +259,17 @@ RULE_DESCRIPTIONS: Dict[int, str] = {
         "picture — e.g. 'the water was' | 'freezing cold'",
     55: "a roughly-this-much amount like 'nearly 500' or 'about two miles' — "
         "e.g. 'it stretched' | 'for nearly 100 miles'",
+    # 56–60 — v18 additions
+    56: "a comparison with 'like' / 'as if' / 'resembling' — cut to the "
+        "compared image — e.g. 'it looked' | 'like a graveyard of giants'",
+    57: "an exception reveal with 'except' or 'apart from' — cut to the one "
+        "thing left out — e.g. 'everything burned' | 'except one house'",
+    58: "a retention hook like 'here's the thing' or 'which brings us to' "
+        "gets its own beat — e.g. 'here's the thing' | 'the map was wrong'",
+    59: "the doer in a passive 'by ...' phrase — cut to who or what did it — "
+        "e.g. 'it was discovered' | 'by a local farmer'",
+    60: "a sound word like 'boom' or 'crash' stands alone as an SFX sync "
+        "point — e.g. 'and then' | 'boom' | 'the roof came down'",
 
     # ---- MERGING RULES (post-processing glue passes) ------------------------
     1000: "a tiny leftover bit (like 'and' or 'the') is attached to the line "
@@ -300,7 +313,7 @@ def describe_rule(rule_id: int) -> str:
 # chunk when it creates a split (see RULE_DESCRIPTIONS for the numbers and what
 # each one means).
 #
-# ALL splitting rules are now wired (1–55, with 22 being the intentional gap in
+# ALL splitting rules are now wired (1–60, with 22 being the intentional gap in
 # the historical numbering).  When a rule introduces a split, the LEFT piece of
 # that split records the rule's id (the recording machinery lives in
 # split_text_into_sections()).  A boundary is credited to the FIRST rule (in
@@ -363,6 +376,12 @@ _SPLIT_RULE_IDS: Dict[str, int] = {
     "rule_numeric_intro_reveal":        53,
     "rule_terminal_descriptor":         54,
     "rule_numeric_approximator_reveal": 55,
+    # 56–60 — v18 additions
+    "rule_comparison_reveal":           56,
+    "rule_exception_reveal":            57,
+    "rule_discourse_pivot":             58,
+    "rule_passive_agent_reveal":        59,
+    "rule_sfx_beat":                    60,
 }
 
 
@@ -1113,10 +1132,12 @@ PERCEPTION_REALIZE_LEMMAS = {
     "understand", "grasp", "comprehend",
 }
 
-# Think — opinion / supposition.
+# Think — opinion / supposition.  v18: + picture/envision/visualise —
+# direct-address imagery cues ("picture a wall of water ten stories tall").
 PERCEPTION_THINK_LEMMAS = {
     "think", "believe", "suspect", "assume", "suppose", "reckon",
     "imagine", "guess",
+    "picture", "envision", "visualize", "visualise",
 }
 
 # Know / mean / imply — knowledge & signification.
@@ -1129,10 +1150,21 @@ PERCEPTION_REVEAL_LEMMAS = {
     "reveal", "show", "demonstrate", "expose", "disclose",
 }
 
-# Say — speech-act introducers.
+# Say — speech-act introducers.  v18: + swear/insist/warn/whisper/promise —
+# unquoted claims ("locals swear the lights move on their own").
 PERCEPTION_SAY_LEMMAS = {
     "say", "claim", "argue", "declare", "announce", "report",
     "state", "mention", "admit", "confess",
+    "swear", "insist", "warn", "whisper", "promise",
+}
+
+# Sense — v18: non-visual sensory perception ("you can hear the ice
+# cracking", "watch the tide swallow the road").  The copular uses of
+# "feel"/"smell"/"taste" ("feels cold") take acomp, not dobj/ccomp, so
+# _has_substantial_complement keeps them out of RULE 45 automatically —
+# only the transitive perception uses fire.
+PERCEPTION_SENSE_LEMMAS = {
+    "hear", "overhear", "watch", "smell", "taste", "sense", "feel",
 }
 
 ALL_PERCEPTION_LEMMAS = (PERCEPTION_SEE_LEMMAS
@@ -1141,7 +1173,81 @@ ALL_PERCEPTION_LEMMAS = (PERCEPTION_SEE_LEMMAS
                          | PERCEPTION_THINK_LEMMAS
                          | PERCEPTION_KNOW_LEMMAS
                          | PERCEPTION_REVEAL_LEMMAS
-                         | PERCEPTION_SAY_LEMMAS)
+                         | PERCEPTION_SAY_LEMMAS
+                         | PERCEPTION_SENSE_LEMMAS)
+
+
+# =============================================================================
+# v18 LEXICONS + TUNABLES  (RULES 56–60)
+# =============================================================================
+
+# --- RULE 56 — comparison reveal ------------------------------------------
+# Resemblance verbs whose dobj IS the compared image ("resembles a giant
+# ribcage").  Kept tiny; "look/seem/appear like" is handled via the
+# ADP-'like' branch, not here.
+COMPARISON_RESEMBLE_LEMMAS = {"resemble", "mimic", "mirror"}
+
+COMPARISON_SENT_MIN = 7      # min non-punct tokens in sentence
+COMPARISON_LEAD_MIN = 2      # min tokens since last split before the marker
+
+# --- RULE 57 — exception reveal -------------------------------------------
+# Single-token exception markers.  "besides" is deliberately absent — its
+# discourse use ("Besides, ...") dominates in scripts.
+EXCEPTION_SINGLE_MARKERS = {"except", "excluding"}
+# Two-token exception markers, matched on (token, next_token) lowercase.
+EXCEPTION_BIGRAMS = {
+    ("apart", "from"), ("aside", "from"),
+    ("other", "than"), ("save", "for"),
+}
+EXCEPTION_SENT_MIN = 5
+EXCEPTION_LEAD_MIN = 2
+
+# --- RULE 58 — discourse pivot / retention hook ---------------------------
+# Fixed multi-word retention hooks.  Matched on lowercase token sequences
+# (spaCy tokenizes "here's" as "here" + "'s"; smart apostrophes are
+# normalised in the matcher).  Purely lexical by design — these are
+# script-writing idioms, not grammar.
+DISCOURSE_PIVOT_PHRASES: List[Tuple[str, ...]] = [
+    ("here", "'s", "the", "thing"),  ("here", "is", "the", "thing"),
+    ("here", "'s", "the", "catch"),  ("here", "is", "the", "catch"),
+    ("here", "'s", "the", "kicker"), ("here", "is", "the", "kicker"),
+    ("here", "'s", "why"),           ("here", "is", "why"),
+    ("which", "brings", "us", "to"), ("which", "brings", "me", "to"),
+    ("believe", "it", "or", "not"),
+    ("long", "story", "short"),
+    ("it", "gets", "worse"), ("it", "gets", "better"),
+    ("it", "gets", "weirder"), ("it", "gets", "stranger"),
+    ("as", "a", "result"),
+    ("in", "other", "words"),
+    ("wait", "for", "it"),
+    ("but", "wait"),
+    ("plot", "twist"),
+    ("fun", "fact"),
+    ("spoiler", "alert"),
+    ("get", "this"),        # extra guard in the rule: must be clause-final
+]
+# Pre-sorted longest-first so the matcher prefers the longest hook at
+# any position ("here's the thing" beats a hypothetical ("here", "'s")).
+DISCOURSE_PIVOT_PHRASES.sort(key=len, reverse=True)
+
+DISCOURSE_PIVOT_MIN_TAIL = 2   # non-punct tokens needed after the hook
+                               # before we also split AFTER it
+
+# --- RULE 59 — passive agent reveal ---------------------------------------
+AGENT_REVEAL_SENT_MIN = 6
+AGENT_REVEAL_LEAD_MIN = 3
+
+# --- RULE 60 — SFX / onomatopoeia beat -------------------------------------
+# Sound-effect words that earn their own line when used BARE (no determiner,
+# no subject, no object — "and then boom the roof came down").  Noun uses
+# ("the crash"), verb uses ("cars crash", "snap a photo") and compounds
+# ("crash site", "pop culture") are filtered structurally in the rule.
+SFX_WORDS = {
+    "boom", "kaboom", "bang", "crash", "smash", "bam", "wham", "pow",
+    "whoosh", "woosh", "swoosh", "thud", "thump", "snap", "crack",
+    "pop", "buzz", "roar", "splash", "slam", "screech", "clang",
+    "crunch", "zap", "thwack", "clunk",
+}
 
 
 # =============================================================================
@@ -1813,14 +1919,19 @@ def rule_clause_starters(doc: Doc, splits: Set[int]) -> Set[int]:
 
 
 # -----------------------------------------------------------------------------
-# RULE 11 — COORDINATING "BUT" / "OR" WITH LONG LEAD-IN
-# CCONJ "but" / "or" between clauses gets a split before it when the lead-up
-# is substantial.  ("and" handled separately by RULE 21.)
+# RULE 11 — COORDINATING "BUT" / "OR" / "SO" / "YET" WITH LONG LEAD-IN
+# CCONJ "but" / "or" / "so" / "yet" between clauses gets a split before it
+# when the lead-up is substantial.  ("and" handled separately by RULE 21.)
+# v18: added "so" / "yet" — result and contrast pivots that were previously
+# unhandled without a comma ("the dam broke so the valley flooded").  The
+# POS gate keeps intensifier-"so" ("so flat" — ADV) and temporal-"yet"
+# ("not yet" — ADV) out, and sentence-initial "So, ..." never has enough
+# lead-in to fire.
 # -----------------------------------------------------------------------------
 def rule_but_or_coord(doc: Doc, splits: Set[int]) -> Set[int]:
     out = set()
     for t in doc:
-        if t.pos_ != "CCONJ" or t.lower_ not in {"but", "or"}:
+        if t.pos_ != "CCONJ" or t.lower_ not in {"but", "or", "so", "yet"}:
             continue
         prev = _prev_split(splits | out, t.i)
         if t.i - prev > MIN_LEAD_FOR_BUT_OR:
@@ -4251,7 +4362,10 @@ def rule_creation_reveal_split(doc: Doc, splits: Set[int]) -> Set[int]:
 #   • KNOW:    know, mean, signify, imply, indicate, suggest
 #   • REVEAL:  reveal, show, demonstrate, expose, disclose
 #   • SAY:     say, claim, argue, declare, announce, report, state,
-#              mention, admit, confess
+#              mention, admit, confess, swear, insist, warn, whisper, promise
+#   • SENSE:   hear, overhear, watch, smell, taste, sense, feel  (v18 —
+#              copular "feels cold" is filtered out automatically because
+#              acomp is not a substantial dobj/ccomp complement)
 #
 # DISAMBIGUATION:
 #   • Verb must be VERB pos (not auxiliary use)
@@ -5007,6 +5121,434 @@ def rule_terminal_specifier_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
             continue
         out.add(last.i)
     return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 56 — COMPARISON REVEAL  (v18)
+#
+# Splits at a comparison marker so the compared IMAGE gets its own line.
+# This is a deliberate gap-filler: rule_clause_starters explicitly skips
+# "like"/"as" after a verb/adj (they read as verb+complement, not a new
+# clause), "like" is excluded from the spatial-prep whitelist, and
+# rule_prep_object_reveal is gated at 12+ token sentences — so similes,
+# the single most cut-worthy visual in narration, previously fell through.
+#
+# Three branches:
+#   (a) resemblance VERBS ("resembles", "mimics", "mirrors") with a
+#       substantial dobj → split AFTER the verb (+ any negation), matching
+#       the Family 2/3/4 convention.
+#   (b) "as if" / "as though" → split AFTER the frozen bigram (a split
+#       before "as" would be wiped by anti_rule_split_before_sconj, and a
+#       split inside the bigram by anti_rule_frozen_bigram — so the bigram
+#       clings backward as a cliffhanger: 'it moved as if' | 'it was
+#       breathing').
+#   (c) "like" / "unlike" as ADP → split BEFORE the marker so the whole
+#       simile is the line ('it looked' | 'like a graveyard of giants').
+#       When "like" parses as SCONJ (clausal simile), split AFTER it
+#       instead — same cliffhanger reasoning as (b).
+#
+# DISAMBIGUATION:
+#   • approximator "like 500 people" (next non-DET token is numeric) → skip
+#   • discourse filler "like, honestly" (dep intj/discourse) → skip
+#   • bare-pronoun payload "like it" → skip
+#   • sentence-initial "Like most deserts, ..." → skip (rule 7 owns the
+#     comma boundary there)
+#   • payload must contain a noun; single-token payloads allowed only when
+#     terminal ("shattered like | glass." mirrors rule 39's terminal logic)
+#
+# Examples that FIRE:
+#   "From above it looked | like a graveyard of giants."
+#   "The whole valley resembles | a fossilised ocean floor."
+#   "The ground moved as if | something underneath was breathing."
+#   "A landscape unlike | anything else on Earth."
+#
+# Examples that DON'T FIRE:
+#   "Looks like rain."                    (short sentence)
+#   "There were like 500 people there."   (approximator use)
+#   "I like the desert."                  (VERB 'like', not ADP/SCONJ)
+#   "It felt like it."                    (bare-pronoun payload)
+# -----------------------------------------------------------------------------
+def rule_comparison_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+
+        # ---- (a) resemblance verbs --------------------------------------
+        if t.pos_ == "VERB" and t.lemma_.lower() in COMPARISON_RESEMBLE_LEMMAS:
+            if t.dep_ in {"aux", "auxpass"}:
+                continue
+            if sent_ntok < COMPARISON_SENT_MIN:
+                continue
+            if t.i == t.sent.start:
+                continue
+            if not _is_substantial_dobj(t):
+                continue
+            # split lands after any negation, matching Families 2/3/4
+            neg_offset = 0
+            k = t.i + 1
+            while k < len(doc) and (doc[k].dep_ == "neg"
+                                    or doc[k].lower_ in NEGATION_TOKENS):
+                neg_offset += 1
+                k += 1
+            if t.i + 1 + neg_offset < len(doc):
+                out.add(t.i + 1 + neg_offset)
+            continue
+
+        # ---- (b) "as if" / "as though" ----------------------------------
+        if (t.lower_ == "as" and t.i + 1 < len(doc)
+                and doc[t.i + 1].lower_ in {"if", "though"}):
+            if sent_ntok < COMPARISON_SENT_MIN:
+                continue
+            prev = _prev_split(splits | out, t.i)
+            if t.i - prev < COMPARISON_LEAD_MIN:
+                continue
+            clause_start = t.i + 2
+            nxt = _next_split(splits | out, clause_start, len(doc))
+            if nxt - clause_start < 3:
+                continue
+            if not _has_visualisable_content(doc, clause_start, nxt):
+                continue
+            out.add(clause_start)
+            continue
+
+        # ---- (c) "like" / "unlike" --------------------------------------
+        if t.lower_ not in {"like", "unlike"}:
+            continue
+        if t.pos_ not in {"ADP", "SCONJ"}:
+            continue
+        if t.dep_ in {"intj", "discourse"}:
+            continue
+        if sent_ntok < COMPARISON_SENT_MIN:
+            continue
+        if t.i == t.sent.start:
+            continue
+        # approximator use: "like 500 people"
+        j = t.i + 1
+        while j < len(doc) and doc[j].pos_ == "DET":
+            j += 1
+        if j < len(doc) and (doc[j].like_num or doc[j].pos_ == "NUM"):
+            continue
+        prev = _prev_split(splits | out, t.i)
+        if t.i - prev < COMPARISON_LEAD_MIN:
+            continue
+
+        if t.pos_ == "SCONJ":
+            # clausal simile — cliffhanger split AFTER the marker
+            # (a split before an SCONJ would be wiped by
+            #  anti_rule_split_before_sconj anyway)
+            nxt = _next_split(splits | out, t.i + 1, len(doc))
+            if nxt - (t.i + 1) < 3:
+                continue
+            if not _has_visualisable_content(doc, t.i + 1, nxt):
+                continue
+            out.add(t.i + 1)
+            continue
+
+        # ADP branch — the simile PP is the line
+        pobj = next((c for c in t.children if c.dep_ in {"pobj", "obj"}), None)
+        if pobj is None:
+            continue
+        subtree = list(pobj.subtree)
+        if pobj.pos_ == "PRON" and len(subtree) == 1:
+            continue                       # "like it" — not an image
+        n_nouns = sum(1 for x in subtree
+                      if x.pos_ in {"NOUN", "PROPN"})
+        if n_nouns < 1:
+            continue
+        if len(subtree) < 2 and pobj.pos_ != "PROPN":
+            # single common noun — allow only as a terminal reveal
+            # ("shattered like | glass."), mirroring rule 39
+            last_noun_i = max((x.i for x in t.sent
+                               if x.pos_ in {"NOUN", "PROPN", "NUM"}),
+                              default=-1)
+            if pobj.i != last_noun_i:
+                continue
+        out.add(t.i)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 57 — EXCEPTION REVEAL  (v18)
+#
+# Splits BEFORE an exception marker so the one-thing-left-out gets its own
+# line — the classic twist beat ("every house burned | except one").
+#
+# Markers:
+#   • single: except, excluding
+#   • bigram: apart from, aside from, other than, save for
+#   ("besides" is deliberately excluded — its discourse use dominates.)
+#
+# Existing coverage this fills a hole in: "except" isn't in the spatial-prep
+# whitelist (RULE 46), and rule_prep_object_reveal needs 12+ token sentences
+# — but exception twists live in SHORT sentences.
+#
+# DISAMBIGUATION:
+#   • marker followed directly by punctuation → skip (discourse use)
+#   • payload span must be picture-able (_has_visualisable_content)
+#   • when the marker parses as SCONJ ("except that he lied"), the split
+#     goes AFTER it (cliffhanger; a split before an SCONJ would be wiped
+#     by anti_rule_split_before_sconj)
+#
+# Examples that FIRE:
+#   "Everything burned | except one house."
+#   "The valley is empty | apart from the bones."
+#   "Nothing moves out here | other than the wind."
+#
+# Examples that DON'T FIRE:
+#   "Except me."                          (no lead-in)
+#   "Besides, nobody asked."              (marker not in set)
+# -----------------------------------------------------------------------------
+def rule_exception_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        marker_start: Optional[int] = None
+        marker_end:   Optional[int] = None
+        nxt_lower = doc[t.i + 1].lower_ if t.i + 1 < len(doc) else ""
+        if (t.lower_, nxt_lower) in EXCEPTION_BIGRAMS:
+            marker_start, marker_end = t.i, t.i + 2
+        elif (t.lower_ in EXCEPTION_SINGLE_MARKERS
+                and t.pos_ in {"ADP", "SCONJ", "VERB"}):
+            marker_start, marker_end = t.i, t.i + 1
+        if marker_start is None:
+            continue
+        if t.i == t.sent.start:
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < EXCEPTION_SENT_MIN:
+            continue
+        prev = _prev_split(splits | out, marker_start)
+        if marker_start - prev < EXCEPTION_LEAD_MIN:
+            continue
+        # discourse use ("besides," style) — marker straight into punctuation
+        if marker_end >= len(doc) or doc[marker_end].is_punct:
+            continue
+        # payload must paint a picture
+        nxt = _next_split(splits | out, marker_end, len(doc))
+        if not _has_visualisable_content(doc, marker_end, nxt):
+            continue
+        if t.pos_ == "SCONJ":
+            out.add(marker_end)      # "except that" clings back as cliffhanger
+        else:
+            out.add(marker_start)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 58 — DISCOURSE PIVOT / RETENTION HOOK  (v18)
+#
+# Gives fixed script-writing hooks their own beat: split BEFORE the hook
+# and (when enough content follows) AFTER it, so lines like "here's the
+# thing" or "but wait" sit alone as a visual pause / zoom / text-pop cue.
+#
+# This is the one deliberately LEXICAL rule in the positive pipeline —
+# these phrases are retention idioms, not grammar, so POS/DEP can't find
+# them.  The phrase list lives in DISCOURSE_PIVOT_PHRASES.
+#
+# MATCHING:
+#   • lowercase token-sequence match, longest phrase first
+#   • smart apostrophes normalised ("here’s" ≡ "here's")
+#   • all phrase tokens must sit inside one sentence
+#   • preceded by DET/ADJ/NUM/NOUN/PROPN → skip ("a fun fact about...",
+#     "the plot twist was..." — noun uses, not hooks)
+#   • ("get","this") additionally requires clause-final position
+#     ("get this:" yes / "you get this feeling" no)
+#   • an ADP "of" straight after the hook is pulled onto the hook line
+#     ("as a result of" | "years of pressure")
+#   • a comma straight after the hook clings back onto it
+#
+# Examples that FIRE:
+#   "Here's the thing | the map was wrong."
+#   "But wait | it gets worse | the second dam was already cracking."
+#   "Which brings us to | the strangest part."
+#
+# Examples that DON'T FIRE:
+#   "A fun fact about whales."            (preceded by DET — noun use)
+#   "You get this feeling of dread."      (not clause-final)
+# -----------------------------------------------------------------------------
+def rule_discourse_pivot(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+
+    def _low(tok: Token) -> str:
+        return tok.lower_.replace("\u2019", "'")
+
+    i = 0
+    while i < len(doc):
+        matched_len = 0
+        for phrase in DISCOURSE_PIVOT_PHRASES:      # longest-first
+            n = len(phrase)
+            if i + n > len(doc):
+                continue
+            if tuple(_low(doc[i + k]) for k in range(n)) != phrase:
+                continue
+            # whole phrase inside one sentence
+            if doc[i].sent != doc[i + n - 1].sent:
+                continue
+            # noun-use guard: "a fun fact", "the plot twist"
+            if i > 0 and doc[i - 1].pos_ in {"DET", "ADJ", "NUM",
+                                             "NOUN", "PROPN"}:
+                continue
+            # "get this" must be clause-final ("get this:" / "get this.")
+            if phrase == ("get", "this"):
+                after = i + n
+                if after < len(doc) and not doc[after].is_punct:
+                    continue
+            matched_len = n
+            break
+        if not matched_len:
+            i += 1
+            continue
+
+        # split BEFORE the hook
+        if i > doc[i].sent.start:
+            out.add(i)
+
+        # split AFTER the hook
+        j = i + matched_len
+        if j < len(doc) and doc[j].lower_ == "of" and doc[j].pos_ == "ADP":
+            j += 1                       # "as a result of" | payload
+        if j < len(doc):
+            sent_end = doc[i].sent.end
+            tail = sum(1 for x in doc[j:sent_end] if not x.is_punct)
+            if tail >= DISCOURSE_PIVOT_MIN_TAIL:
+                if doc[j].text == ",":
+                    out.add(j + 1)       # comma clings back onto the hook
+                elif not doc[j].is_punct:
+                    out.add(j)
+        i += matched_len
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 59 — PASSIVE AGENT REVEAL  (v18)
+#
+# Splits BEFORE the "by ..." agent phrase of a passive so the doer gets
+# its own line — cut from the deed to whoever/whatever did it:
+# "it was discovered | by a local farmer".
+#
+# Existing coverage this fills a hole in: "by" isn't in the spatial-prep
+# whitelist (RULE 46), and rule_prep_object_reveal only reaches it in
+# 12+ token sentences — agent reveals live in short punchy ones.
+#
+# DETECTION (structural):
+#   • token "by" with POS=ADP, and EITHER dep=agent, OR its head verb has
+#     an auxpass child ("was discovered by ..."), OR its head is a bare
+#     VBN participle (reduced passive: "a valley carved by glaciers")
+#   • pobj subtree must contain a NOUN/PROPN/NUM; bare pronouns skipped
+#   • single-token pobj allowed only for PROPN ("painted by | Vermeer")
+#   • DATE/TIME pobj skipped ("finished by Friday" is a deadline, not
+#     an agent)
+#
+# Examples that FIRE:
+#   "The skeletons were uncovered | by a passing camel herder."
+#   "A canyon carved | by ten million years of floods."
+#
+# Examples that DON'T FIRE:
+#   "It was seen by them."                (bare pronoun)
+#   "The report is due by Friday."        (DATE — deadline use)
+#   "She sat by the window."              (no passive context)
+# -----------------------------------------------------------------------------
+def rule_passive_agent_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.lower_ != "by" or t.pos_ != "ADP":
+            continue
+        head = t.head
+        is_agent = (t.dep_ == "agent"
+                    or any(c.dep_ == "auxpass" for c in head.children)
+                    or head.tag_ == "VBN")
+        if not is_agent:
+            continue
+        pobj = next((c for c in t.children if c.dep_ in {"pobj", "obj"}), None)
+        if pobj is None:
+            continue
+        if pobj.ent_type_ in {"DATE", "TIME"}:
+            continue                     # deadline use ("by Friday")
+        subtree = list(pobj.subtree)
+        if pobj.pos_ == "PRON" and len(subtree) == 1:
+            continue                     # "by them"
+        n_content = sum(1 for x in subtree
+                        if x.pos_ in {"NOUN", "PROPN", "NUM"})
+        if n_content < 1:
+            continue
+        if len(subtree) < 2 and pobj.pos_ != "PROPN":
+            continue
+        sent_ntok = sum(1 for x in t.sent if not x.is_punct)
+        if sent_ntok < AGENT_REVEAL_SENT_MIN:
+            continue
+        prev = _prev_split(splits | out, t.i)
+        if t.i - prev < AGENT_REVEAL_LEAD_MIN:
+            continue
+        out.add(t.i)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 60 — SFX / ONOMATOPOEIA BEAT  (v18)
+#
+# A bare sound word ("boom", "crash", "snap") gets its own line — an SFX
+# sync point for the edit: 'and then' | 'boom' | 'the roof came down'.
+#
+# Because most SFX words double as nouns and verbs, detection requires the
+# word to be used BARE:
+#   • no det / poss / amod / compound / nummod child  (not "the crash",
+#     "a loud bang")
+#   • no dobj / nsubj / nsubjpass child                (not "snap a photo",
+#     "cars crash")
+#   • no phrasal particle child                        (not "pop up",
+#     "snap out of it")
+#   • not itself a compound modifier, and next token not a NOUN/PROPN
+#     (not "crash site", "pop culture", "boom box")
+#   • previous token not DET/ADJ/NUM/ADP/PART or possessive
+#
+# The one-word line this creates contains no canonical "content" and would
+# normally be eaten by the throwaway-merging pass — so this rule is listed
+# in PROTECTED_RULE_NAMES: its boundaries survive anti-rules AND merges,
+# exactly like quotes and brackets do.
+#
+# A comma straight after the SFX word clings back onto it ("boom," ends
+# the line) so no line ever starts with a bare comma.
+#
+# Examples that FIRE:
+#   "And then | boom | the roof came down."
+#   "One wrong step and | crack | the ice gives way."
+#
+# Examples that DON'T FIRE:
+#   "The crash killed the market."        (det child — noun use)
+#   "She snapped a photo."                (dobj — verb use)
+#   "Pop culture moved on."               (compound — next token NOUN)
+# -----------------------------------------------------------------------------
+def rule_sfx_beat(doc: Doc) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.lower_ not in SFX_WORDS:
+            continue
+        blocked_child_deps = ({"det", "poss", "amod", "compound", "nummod",
+                               "dobj", "obj", "nsubj", "nsubjpass"}
+                              | PARTICLE_DEPS)
+        if any(c.dep_ in blocked_child_deps for c in t.children):
+            continue
+        if t.dep_ == "compound":
+            continue
+        nxt_i = t.i + 1
+        if nxt_i < len(doc) and doc[nxt_i].pos_ in {"NOUN", "PROPN"}:
+            continue
+        if t.i > 0:
+            prv = doc[t.i - 1]
+            if prv.pos_ in {"DET", "ADJ", "NUM", "ADP", "PART"}:
+                continue
+            if prv.tag_ in {"PRP$", "POS"}:
+                continue
+        # split BEFORE the SFX word
+        if t.i > 0:
+            out.add(t.i)
+        # split AFTER it (comma clings back)
+        if nxt_i < len(doc):
+            if doc[nxt_i].text == ",":
+                out.add(nxt_i + 1)
+            elif not doc[nxt_i].is_punct:
+                out.add(nxt_i)
+    return out
+
 
 # =============================================================================
 # ANTI-RULES  —  return indices to *remove* from the splits set.
@@ -6288,6 +6830,12 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_and_visualisables_split",   rule_and_visualisables_split,   True), 
     ("rule_title_appositive_verb_split", rule_title_appositive_verb_split, True), 
     ("rule_terminal_specifier_reveal", rule_terminal_specifier_reveal, True), 
+    # ---- v18 additions (RULES 56–60) ----------------------------------------
+    ("rule_comparison_reveal",       rule_comparison_reveal,       True),
+    ("rule_exception_reveal",        rule_exception_reveal,        True),
+    ("rule_discourse_pivot",         rule_discourse_pivot,         True),
+    ("rule_passive_agent_reveal",    rule_passive_agent_reveal,    True),
+    ("rule_sfx_beat",                rule_sfx_beat,                False),
 ]
 
 # Anti-rules: (name, function)
@@ -6361,7 +6909,10 @@ def split_text_into_sections(text: str, debug: bool = False) -> ChunkMap:
     PROTECTED_RULE_NAMES = {
         "rule_hard_punct", "rule_dashes", "rule_ellipsis",
         "rule_quotes", "rule_brackets",
-        "rule_terminal_specifier_reveal", 
+        "rule_terminal_specifier_reveal",
+        # v18: a bare SFX line ("boom") has no canonical content POS and
+        # would otherwise be eaten by the throwaway/unvisualisable merges.
+        "rule_sfx_beat",
     }
     protected: Set[int] = set()
 
@@ -6513,6 +7064,19 @@ if __name__ == "__main__":
         "So now the choice isn't \"drive or not.\"",
         "But Together... mayyyybe not.",
         "One theory suggests toxic algal blooms poisoned large groups of marine animals repeatedly over time.",
+        # NEW CASES exercising v18 RULES 56-60 + lexicon extensions
+        "From above the whole valley looked like a graveyard of giants.",
+        "The ground moved as if something underneath was breathing.",
+        "Every single house on the street burned except one.",
+        "The valley is completely empty apart from the bones.",
+        "Here's the thing the map everyone trusted was wrong.",
+        "Which brings us to the strangest part of the whole story.",
+        "The skeletons were uncovered by a passing camel herder.",
+        "A canyon carved by ten million years of flash floods.",
+        "And then boom the entire roof came down around them.",
+        "You can hear the ice cracking from a mile away.",
+        "Locals swear the lights move on their own after midnight.",
+        "The dam broke so the entire valley flooded within hours.",
     ]
     for t in cases:
         _run_test(t)
