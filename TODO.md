@@ -30,7 +30,10 @@ e.g. like;
 - If its part of the same sentence... make it a joint scene.. l w
 
 
-
+------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
 
 TODO NEXT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! (6pm)
 - next, lets have another prompt for splitting the input text...
@@ -178,7 +181,203 @@ RULE_DESCRIPTIONS: Dict[int, str] = {
 }
 
 
+
+
 ```
+
+
+========================================================================
+========================================================================
+========================================================================
+
+
+TODO THEN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! (6pm)
+ask Fable;
+
+I'm creating a sentence splitter for my youtube videos.
+It splits sentences depending on when a visual on screen should change, or be modified or have an effect applied etc. 
+e.g. 
+
+It can either split or join
+
+e.g. 
+want to split on a reveal so we can cut to what we are revealing
+e.g. 
+split on a pronoun so we can show that thing as soon as its mentioned
+e.g.
+join things that are not 'visualisable'...
+
+
+I already have a very extensive list. 
+Suggest rules that I may want to add.
+
+Here is the current structure:
+
+RULE_DESCRIPTIONS: Dict[int, str] = {
+    # ---- SPLITTING RULES (positive pipeline) --------------------------------
+    1:  "the line ends with . ! ? ; or : — "
+        "e.g. 'The dog jumped.' | 'The man ran.'",
+    2:  "a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
+    3:  "the line ends on a '...' or '…' — e.g. 'and then...' | 'silence'",
+    4:  "the dramatic phrase right before a '...' gets its own line — "
+        "e.g. 'the driest place on Earth' | '...'",
+    5:  "a phrase in quotation marks gets its own line — "
+        "e.g. she yelled | 'stop right there'",
+    6:  "an aside in (brackets) gets its own line — "
+        "e.g. 'the house' | '(built in 1920)' | 'was old'",
+    7:  "a scene-setting opener that ends in a comma — "
+        "e.g. 'In the morning,' | 'we left'",
+    8:  "a comma that separates two clauses or list items — "
+        "e.g. 'she ran,' | 'he walked'",
+    9:  "a comma that introduces a 'who / which / that...' description — "
+        "e.g. 'the dog,' | 'which was huge'",
+    10: "a joining word like 'when', 'because', 'which' or 'that' starts a "
+        "new part — e.g. 'he left' | 'because it rained'",
+    11: "a 'but' or 'or' after a long first part — "
+        "e.g. 'we tried for hours' | 'but it failed'",
+    12: "one complete action has finished and the next begins — "
+        "e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+    13: "a very long wind-up finally reaches its main verb (a safety net for "
+        "run-on sentences) — e.g. 'the tall man in the long red coat' | 'walked in'",
+    14: "a long 'in / on / at / with...' phrase — "
+        "e.g. 'she hid' | 'beneath the old wooden floor'",
+    15: "a run of things listed with no verb between them — "
+        "e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+    16: "another 'thing, the thing, the thing' list that the usual list-finder "
+        "misses — e.g. 'the red car' | 'the blue truck'",
+    17: "a wrap-up word like 'all', 'both', 'each' or 'every' right after a "
+        "list — e.g. 'cars, trucks, bikes' | 'all sped past'",
+    18: "a name worth a dramatic reveal — a person, place, date or amount — "
+        "e.g. 'a valley called' | 'Wadi Al-Hitan'",
+    19: "an amount of money gets its own line — e.g. 'it costs' | '$800,000'",
+    20: "a short command on its own — e.g. 'Stop.' | 'Look around.'",
+    21: "an 'and' or 'or' joining two complete sentences — "
+        "e.g. 'she sang' | 'and he danced'",
+    # 22 — intentionally unused (historical gap in the numbering)
+    23: "a describing word revealed in the middle of a sentence — "
+        "e.g. 'the water that was' | 'freezing cold'",
+    24: "a sentence ending on a number or amount — "
+        "e.g. 'the whales vanished' | 'millions of years ago'",
+    25: "an extra comma-list pattern the basic comma rule misses — "
+        "e.g. 'soaked,' | 'frozen,' | 'exhausted'",
+    26: "a long 'if / when / because...' opener that ends in a comma — "
+        "e.g. 'if you already know the answer,' | 'you can skip ahead'",
+    27: "a sentence ending on a pair of describing words — "
+        "e.g. 'the place felt' | 'calm and alien'",
+    28: "a chunky 'of / in / with...' phrase stuffed with nouns and no verb — "
+        "e.g. 'a tale' | 'of kings and battles'",
+    29: "an '-ing' or '-ed' word that introduces what comes next — "
+        "e.g. 'revealing' | 'a hidden cave'",
+    30: "after a place or name, the 'in / on / at...' that says WHERE splits "
+        "off — e.g. 'Alvord Desert' | 'in Oregon'",
+    31: "a comma after a long, meaty clause — "
+        "e.g. 'after searching the whole house for hours,' | 'they gave up'",
+    32: "a 'to do something' inside a long sentence — "
+        "e.g. 'they travelled for days' | 'to reach the coast'",
+    33: "a sentence ending on an 'of ...' phrase — "
+        "e.g. 'one of the driest' | 'climates on Earth'",
+    34: "an 'is / was ...-ing' action in progress — "
+        "e.g. 'the crowd was' | 'slowly gathering'",
+    35: "an 'is / looks / feels...' followed by the thing it describes — "
+        "e.g. 'the sky is' | 'a deep burning red'",
+    36: "an 'it / them + -ing/-ed' description after a small word like 'of' — "
+        "e.g. 'the feeling' | 'of being watched'",
+    37: "a sentence ending on a describing word plus an 'in / on / for...' "
+        "phrase — e.g. 'the road is straight' | 'for absurd distances'",
+    38: "a two-word verb (like 'set up', 'sped past') and the thing it acts "
+        "on — e.g. 'they set up' | 'a huge tent'",
+    39: "the thing after a preposition gets its own line — "
+        "e.g. 'shapes appeared' | 'in the rock'",
+    40: "a scene-change word like 'then', 'later' or 'suddenly' — "
+        "e.g. 'they waited' | 'then everything changed'",
+    41: "a joining word like 'as', 'while' or 'if' left hanging as a "
+        "cliffhanger — e.g. 'it works' | 'because'",
+    42: "'X is / looks / becomes Y' — split to reveal the Y — "
+        "e.g. 'the desert becomes' | 'a frozen wasteland'",
+    43: "'X has / owns / contains Y' — split to reveal the Y — "
+        "e.g. 'the valley holds' | 'ancient whale bones'",
+    44: "'X made / built / created Y' — split to reveal the Y — "
+        "e.g. 'the river carved' | 'a deep canyon'",
+    45: "'X saw / found / knew Y' — split to reveal the Y — "
+        "e.g. 'scientists discovered' | 'fossil skeletons'",
+    46: "'X moves through / into / across Y' — split to reveal the place — "
+        "e.g. 'water flowed' | 'across the plain'",
+    47: "'so / such / more ... that / than ...' — split right before the "
+        "payoff — e.g. 'so flat' | 'that satellites use it'",
+    48: "'X means / equals / stands for Y' — split to reveal the meaning — "
+        "e.g. 'the name means' | 'Valley of the Whales'",
+    49: "an 'and' / 'or' sitting between two picture-able things — "
+        "e.g. 'dunes' | 'and blistering heat'",
+    50: "after a title-name like 'Alaric the Goth', split before the verb — "
+        "e.g. 'Alaric the Goth' | 'invaded Rome'",
+    51: "the first item of a list gets its own line too — "
+        "e.g. 'dunes,' | 'heat, and silence'",
+    52: "a sentence ending on a label that explains the thing just named — "
+        "e.g. 'they found bones' | 'the remains of a whale'",
+    # 53–55 — newly numbered (formerly unnumbered splitting rules)
+    53: "a number or date right at the start of a sentence — "
+        "e.g. 'In 1946,' | 'everything changed'",
+    54: "the sentence ends on a describing word or phrase that paints the "
+        "picture — e.g. 'the water was' | 'freezing cold'",
+    55: "a roughly-this-much amount like 'nearly 500' or 'about two miles' — "
+        "e.g. 'it stretched' | 'for nearly 100 miles'",
+
+    # ---- MERGING RULES (post-processing glue passes) ------------------------
+    1000: "a tiny leftover bit (like 'and' or 'the') is attached to the line "
+          "BEFORE it, where it belongs — "
+          "e.g. 'the curious child' + 'and' → 'the curious child and'",
+    1001: "a tiny leftover bit is attached to the line AFTER it, where it "
+          "belongs — e.g. 'is' + 'big' → 'is big'",
+    1002: "a lonely piece of punctuation ('...', a dash, a stray quote) is "
+          "stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+    1003: "a lone noun is reunited with the 'that / which...' description that "
+          "follows it — e.g. 'regions' + 'that are now dry' → "
+          "'regions that are now dry'",
+    1004: "a short scrap is joined back to the 'to / of / with...' word it "
+          "completes — e.g. 'it costs about' + 'two dollars' → "
+          "'it costs about two dollars'",
+    1005: "a lone '-ing / -ed' verb is reunited with the thing it acts on — "
+          "e.g. 'revealing' + 'evidence' → 'revealing evidence'",
+    1006: "a stranded 'the / a / this' is joined to its noun — "
+          "e.g. 'the' + 'mountain' → 'the mountain'",
+    1007: "a 'the / a' is pulled back from the next line onto a wordy "
+          "connector, so the next line can start on a real word — "
+          "e.g. 'but what if' + 'the' (from 'the planet') → "
+          "'but what if the' | 'planet'",
+    1008: "a line with nothing you could picture is folded into the line "
+          "BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+    1009: "a line with nothing you could picture is folded into the line "
+          "AFTER it — e.g. 'but' + 'the dog runs' → 'but the dog runs'",
+}
+
+========================================================================
+========================================================================
+========================================================================
+========================================================================
+========================================================================
+========================================================================
+===============================================================
+THEN THEN:
+
+And how can we then best update our code such that we allow for close identification of
+[items in a list]
+[things that are wikipedia]
+[etc.]
+
+...
+I.e. adding more data... so when we pass on to [OUR NEW CODE], that the new code has more info, and is able to work better?
+
+
+
+========================================================================
+========================================================================
+========================================================================
+========================================================================
+========================================================================
+========================================================================
+===============================================================
+
+
 but then ask it to use its own judgement anyway?
 
 ---------
