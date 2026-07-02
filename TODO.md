@@ -1,5 +1,3 @@
-
-
 ----------
 
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
@@ -9,10 +7,37 @@ find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/out
 tell me where to add stuff in an idiot proof way. before and after....
 
 ------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
+# EMERGENCY FABLE BIG TASKS
+
+- The video generator!?!?
+- --> the natural language rules...
+- --> do I use it to generate a rule list??!?
+- .... I should probably get some more tests on the sentence splitter done..
+- maybe ask it to integrate that new tagging thing I added with the thing that auto generates the "what this scene should be"...
+- --> do I attempt to do it manually???
+- by having a list of rules, and then sort of weights? Which then are combined to form a calculation for the probability that each [split sentence] gets a given [type]???
+- sonin my mind.. I'm not sure if this would happen practically... But each sentence entry maps to all of the possible things, which then each have probabilities...
+
+I think I need toggle for AI generated things... Because I think ultimately... It's likely I won't want that.. 
 
 
-3:40pn;
-- Highlighter?
+Also want a toggle for if we are applying affects over existing video!
+(So e.g. 30 mins of me walking... It trims the video down to the same length as the audios and then identifies moments where it should *overlay* graphics on screen (not all the time-- only when crucial...) 
+
+Then maybe ask Claude to identify other repeatable rules (like maps for places? So I can add all those editting things in...) 
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
+
 
 
 ----------------------------------
