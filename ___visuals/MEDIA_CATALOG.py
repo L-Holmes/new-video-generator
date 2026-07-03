@@ -16,9 +16,12 @@ The model (there is no legacy layer any more):
       group    — this line is one cell of a group with its neighbours
                  (rule of n). grouping is a fact about the line, not a type.
       decorate — open the scene's finished image in the decorate editor,
-                 whose clickable tools are: draw, text/caption, zoom/crop.
-                 (what used to be zoom_previous, decorate_previous and the
-                 auto caption type are all tools of this ONE editor now.)
+                 whose clickable tools are: draw, text/caption, zoom/crop,
+                 and stamp (place pictures on it). (zoom_previous,
+                 decorate_previous, the auto caption type and the manual
+                 stock stamping are all tools of this ONE editor now.)
+      collage  — several review picks for one line, composed together
+                 (auto scatter, or stamp them yourself in the editor).
   - group_id:   lines sharing an id render as ONE group. null otherwise.
 
 To add a media type: one entry here + its enum row in CONFIG.py's
@@ -120,9 +123,18 @@ MODIFIERS: dict[str, dict] = {
         "info": "open the scene's image in the decorate editor and stack "
                 "edits with its clickable tools: draw (circles, arrows, "
                 "underlines), text/caption (big words on top — the search "
-                "term is offered as the starting text), and zoom (crop / "
-                "push in on part of the image).",
+                "term is offered as the starting text), zoom (crop / push "
+                "in on part of the image), and stamp (place extra pictures "
+                "onto it).",
         "example": "examples/decorate.png",
+    },
+    "collage": {
+        "color": "#e6c15a",
+        "info": "pick SEVERAL images for this one line in the review stage, "
+                "then choose: auto collage (they're scattered with overlaps "
+                "onto a plain background for you) or stamp it yourself (the "
+                "picks load into the decorate editor as stamps). stock only.",
+        "example": "examples/collage.png",
     },
     "group": {
         "color": "#e6c15a",
@@ -136,3 +148,6 @@ MODIFIERS: dict[str, dict] = {
 
 # Which base types accept the group modifier (they have grid layouts).
 GROUPABLE_TYPES: set[str] = {"stock", "ai_stock"}
+
+# Which base types accept the collage modifier (multi-pick in review).
+COLLAGEABLE_TYPES: set[str] = {"stock"}

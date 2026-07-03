@@ -43,3 +43,13 @@ these dispatch on the old types or hold the editor code, and were not part of th
 * ___visuals/TIMING_MERGE.py and ___visuals/AUDIO_EVENTS.py - joint timing + per-type sfx; likely small changes (JOINT_TYPE_SFX_MAP keys changed)
 * ___visuals/STOCK_FOOTAGE_REVIEW.py - only if it inspects search_type anywhere
 * ___visuals/CACHE_IO.py and ___visuals/OBJECT_GENERATE_STAGE.py - to confirm they are type-free (expected)
+
+
+## addendum - the standalone decorator + collage
+
+* ___visuals/decorator/ is the standalone generic package: run_decorator(base pic, out path, stamps=[pics], prefill_text=...) -> edited pic. it knows nothing about scenes; the pipeline adapters call it.
+* its tools: stamp and zoom are LIVE today - they reuse the proven MANUAL_STOCK_PLACEMENT GUIs (the old "add stock to previous" stamping is now a generic tool of this editor, exactly your integration idea). draw and text are two one-line hooks at the top of ___visuals/decorator/tools.py, waiting on ___visuals/DECORATE_PREVIOUS.py and ___visuals/MAKE_TEXT_OVERLAY.py.
+* ___visuals/DECORATE_STAGE.py is now the real adapter: resolves the scene's footage (first frame if video), opens the editor, bakes a static mp4.
+* collage is a MODIFIER (same reasoning as your group insight: it is still stock, just several of them on one line). stock only; cannot combine with group - the tagging tool auto-swaps whichever you toggle last.
+* ___visuals/COLLAGE_STAGE.py (stage 2.646): per collage scene you choose auto collage (___visuals/decorator/auto_collage.py scatters the picks with tilts, borders and shadows onto a plain background - deterministic per scene, headless-tested) or stamp it yourself (the picks load into the decorator as stamps on a blank card). COLLAGE_BACKGROUND in CONFIG sets the backdrop (image path, #hex, or the default card).
+* review side still needed: collage rows want MULTIPLE picks, so ___visuals/DOWNLOADS.py should set num_clips_needed for collage rows and ___visuals/STOCK_FOOTAGE_REVIEW.py must allow multi-select - both files are on the request list already.

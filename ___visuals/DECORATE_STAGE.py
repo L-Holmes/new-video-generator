@@ -1,57 +1,74 @@
 """
-DECORATE STAGE — the ONE interactive editor, reached via the `decorate`
-modifier on ANY base media type.
+DECORATE STAGE — pipeline adapter for the standalone decorator package
+(___visuals/decorator/): every scene carrying the `decorate` modifier opens
+its OWN finished footage in the ONE editor.
 
-Its clickable tools (this is the merge you asked for):
-  draw          — circles, arrows, underlines (the old decorate_previous)
-  text/caption  — big words on top; the row's search_term is offered as the
-                  starting text (the old stickman_text_overlay)
-  zoom          — crop / push in on part of the image (the old zoom_prev_img)
+Editor tools (see decorator/tools.py): stamp + zoom are LIVE today (they
+reuse the proven MANUAL_STOCK_PLACEMENT GUIs); draw + text are two one-line
+hooks away, pending ___visuals/DECORATE_PREVIOUS.py and
+___visuals/MAKE_TEXT_OVERLAY.py.
 
-Model: the modifier applies to the scene's OWN finished footage. "Zoom into
-the previous image" is therefore hold_previous + decorate (hold resolves the
-previous image as this scene's footage; the editor's zoom tool crops it) —
-exactly the "stay same as previous + edit it" default you described. The
-same editor on a stock/wikipedia/map base decorates THAT scene's image.
+Model reminder: "zoom into the previous image" = hold_previous + decorate
+(hold resolves the previous image as this scene's footage; the zoom tool
+crops it) — the stay-same-plus-edit default. On any other base the editor
+decorates THAT scene's image.
 
-Runs at stage 2.645: after every stage that decides a scene's own image
-(review / ai-edit / generators / hold / manual placement), before colour
-grade + Ken Burns. Output is a static MP4 so KB never crops the drawings.
-
-STATUS — WIRING PENDING:
-The editor GUI itself lives in files not shared in this session:
-    ___visuals/DECORATE_PREVIOUS.py   (draw/text editor)
-    ___visuals/STATIC_RENDER.py       (previous-frame + still→MP4 plumbing)
-    ___visuals/MAKE_TEXT_OVERLAY.py   (the caption renderer to reuse)
-plus ___visuals/MANUAL_STOCK_PLACEMENT.py (already shared — crop_and_zoom /
-_SizeBox / extract_frame are the zoom + sizing building blocks).
-Send those files and this stage becomes the unified editor. Until then it
-prints exactly which scenes are waiting and leaves footage unchanged, so
-the pipeline still runs end to end.
+Runs at stage 2.645, after every stage that decides a scene's own image and
+before colour grade + Ken Burns. Output is a static MP4 so KB never crops
+the edits.
 """
 
 from __future__ import annotations
 
-# Allow `uv run ___visuals/DECORATE_STAGE.py` from the repo root.
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
+import re
+from pathlib import Path
+
+from ___visuals.CACHE_IO import _resolve_to_local_path
 from ___visuals.CONFIG import (
+    IMAGE_EXTENSIONS,
     DECORATE_OUTPUT_DIR,
     DECORATE_RENDER_SAFETY_PAD_SEC,
     SearchTermData,
     scene_wants_decorate,
 )
+from ___visuals.MANUAL_STOCK_PLACEMENT import extract_frame
+from ___visuals.TIMING_MERGE import _load_scene_timings
+from ___visuals.decorator import run_decorator
+
+
+def _is_image(path: str) -> bool:
+    from pathlib import Path as _P
+    return _P(path).suffix.lower() in IMAGE_EXTENSIONS
+
+
+def _safe_stem(text: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9]+", "_", text).strip("_")[:50] or "scene"
+
+
+def _scene_base_image(entry: dict, out_dir: Path, stem: str) -> str | None:
+    """The scene's own footage as a local IMAGE (first frame if it's video)."""
+    footage = (entry or {}).get("footage") or []
+    key = next(iter(footage[0]), None) if footage else None
+    local = _resolve_to_local_path(key) if key else None
+    if not local:
+        return None
+    if _is_image(local):
+        return local
+    frame = str(out_dir / f"{stem}_basefrm.png")
+    return extract_frame(local, frame)
 
 
 def run_decorate_stage(
     final_data: list[dict],
     script_to_search_term: dict[str, SearchTermData],
 ) -> tuple[list[dict], dict[str, str]]:
-    """Open the decorate editor for every scene carrying the `decorate`
-    modifier. Returns (final_data, path_remap) like the other passes."""
+    """Open the decorator for every scene carrying `decorate`. Returns
+    (final_data, path_remap) like the other passes."""
     print("\n" + "=" * 70)
     print("[decorate] scenes carrying the decorate modifier")
     print("=" * 70)
@@ -62,17 +79,45 @@ def run_decorate_stage(
         print("[decorate] no scenes with the decorate modifier — skipping")
         return final_data, {}
 
-    print(f"[decorate] {len(wanting)} scene(s) want the editor "
-          f"(tools: draw / text / zoom):")
-    for txt in wanting:
-        term = script_to_search_term[txt].get("search_term", "")
-        print(f"[decorate]   '{txt[:55]}'  (caption tool prefill: '{term[:40]}')")
-    print(
-        "[decorate] EDITOR NOT WIRED YET — the GUI lives in "
-        "DECORATE_PREVIOUS.py / STATIC_RENDER.py / MAKE_TEXT_OVERLAY.py, "
-        "which weren't shared this session (see this file's docstring). "
-        "Footage left unchanged."
-    )
+    from ___visuals.STATIC_RENDER import _render_image_to_static_mp4  # lazy
+
+    scene_timings = _load_scene_timings()
+    final_by_text = {e["script_text"]: e for e in final_data}
     DECORATE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    _ = DECORATE_RENDER_SAFETY_PAD_SEC  # used once the editor is wired
-    return final_data, {}
+    path_remap: dict[str, str] = {}
+
+    for idx, txt in enumerate(wanting):
+        row = script_to_search_term[txt]
+        entry = final_by_text.get(txt)
+        stem = f"decorate_{idx:03d}_{_safe_stem(txt)}"
+        base = _scene_base_image(entry, DECORATE_OUTPUT_DIR, stem)
+        if not base:
+            print(f"[decorate] WARNING: no resolved footage for '{txt[:60]}' "
+                  f"— leaving as-is")
+            continue
+        duration = float(scene_timings.get(txt, 0.0))
+        if duration <= 0:
+            print(f"[decorate] WARNING: no/zero timing for '{txt[:60]}' "
+                  f"— leaving as-is")
+            continue
+
+        print(f"\n[decorate] [{idx + 1}/{len(wanting)}] '{txt[:60]}'")
+        edited = run_decorator(
+            base_image_path=base,
+            out_path=str(DECORATE_OUTPUT_DIR / f"{stem}.png"),
+            prefill_text=row.get("search_term", ""),
+            title=f"decorate: {txt[:40]}",
+        )
+        if not edited:
+            continue  # finished with no edits — keep the original footage
+
+        mp4 = str(DECORATE_OUTPUT_DIR / f"{stem}.mp4")
+        _render_image_to_static_mp4(
+            edited, duration + DECORATE_RENDER_SAFETY_PAD_SEC, mp4)
+        old_key = next(iter(entry["footage"][0]))
+        entry["footage"] = [{mp4: round(duration, 3)}]
+        path_remap[old_key] = mp4
+        print(f"[decorate]   ✓ {Path(mp4).name} (trim {round(duration, 3)}s)")
+
+    print(f"\n[decorate] DONE — {len(path_remap)} scene(s) decorated")
+    return final_data, path_remap

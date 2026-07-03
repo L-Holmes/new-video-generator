@@ -253,6 +253,7 @@ MAP_GEOCODE_CACHE_DIR: str = f"{_CACHE_DIR}/maps"
 # stickman_joint_3_row, decorate_previous, stickman_text_overlay,
 # zoom_prev_img, static_of_previous) are gone.
 from ___visuals.MEDIA_CATALOG import (  # noqa: E402  (re-export)
+    COLLAGEABLE_TYPES,
     GROUPABLE_TYPES,
     MEDIA_TYPE_CATALOG,
     MODIFIERS,
@@ -379,6 +380,17 @@ def normalise_scene_row(script_text: str, row: dict) -> None:
             f"'{name}' cannot take the group modifier on scene "
             f"'{script_text[:60]}' (groupable: {', '.join(sorted(GROUPABLE_TYPES))})"
         )
+    if "collage" in row["modifiers"] and name not in COLLAGEABLE_TYPES:
+        raise ValueError(
+            f"'{name}' cannot take the collage modifier on scene "
+            f"'{script_text[:60]}' (collageable: {', '.join(sorted(COLLAGEABLE_TYPES))})"
+        )
+    if {"group", "collage"} <= set(row["modifiers"]):
+        raise ValueError(
+            f"group and collage cannot combine on scene '{script_text[:60]}' "
+            f"(group = one cell per LINE across neighbours; collage = many "
+            f"images on THIS line)"
+        )
     row["media_type"] = MediaType(name)
 
 
@@ -394,6 +406,10 @@ def scene_is_grouped(row: dict) -> bool:
 
 def scene_wants_decorate(row: dict) -> bool:
     return "decorate" in (row.get("modifiers") or [])
+
+
+def scene_wants_collage(row: dict) -> bool:
+    return "collage" in (row.get("modifiers") or [])
 
 
 def group_scene_rows(
@@ -431,6 +447,16 @@ def group_scene_rows(
 # stage lives in DECORATE_STAGE.py.
 DECORATE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_scenes")
 DECORATE_RENDER_SAFETY_PAD_SEC: float = 0.08
+
+# ===========================================================================
+# COLLAGE (the `collage` modifier — several review picks on ONE line)
+# ===========================================================================
+# Auto mode scatters the picks with overlaps onto COLLAGE_BACKGROUND (an
+# image path, a '#rrggbb' colour, or None for the default plain card);
+# stamp-yourself mode loads the picks into the decorate editor as stamps.
+COLLAGE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/collage_scenes")
+COLLAGE_BACKGROUND: str | None = None
+COLLAGE_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 
 # ===========================================================================
