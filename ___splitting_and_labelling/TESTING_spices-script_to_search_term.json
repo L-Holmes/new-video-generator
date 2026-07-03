@@ -1,131 +1,64 @@
 {
   "If you open": {
     "search_term": "",
-    "search_type": "stock",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__stock",
-    "shot": {
-      "strategy": "new",
-      "material": "stock",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
-      "tier0: nothing on screen yet -> previous-family blocked",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier3: sampled 'new__stock' from the score-sheet"
-    ],
     "rule_ids": [
       12
     ]
   },
   "your kitchen cupboard right now, you probably have": {
     "search_term": "",
-    "search_type": "static_of_previous",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__hold",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "none",
-      "layout": {
-        "kind": "freeze",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__hold' from the score-sheet"
-    ],
     "rule_ids": [
       12
     ]
   },
   "a jar of nutmeg.": {
     "search_term": "",
-    "search_type": "manual_stock_add_to_previous",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__add_stock",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "stock",
-      "layout": {
-        "kind": "composite_onto_previous",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__add_stock' from the score-sheet"
-    ],
     "rule_ids": [
       1
     ]
   },
   "It costs about two dollars.": {
     "search_term": "",
-    "search_type": "object_generate",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__object",
-    "shot": {
-      "strategy": "new",
-      "material": "stock_image",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "object_edit",
-      "base": "none"
-    },
-    "tier": "tier1:lock_money",
-    "why": [
-      "rule 1009: a line with nothing you could picture is folded into the line AFTER it — e.g. 'but' + 'the dog runs' → 'but the dog runs'",
-      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier1: money amount on the line -> new__object"
-    ],
     "rule_ids": [
       1009,
       18,
@@ -134,33 +67,16 @@
   },
   "But in the 1600s,": {
     "search_term": "",
-    "search_type": "stock",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__stock",
-    "shot": {
-      "strategy": "new",
-      "material": "stock",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
-      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
-      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier3: sampled 'new__stock' from the score-sheet"
-    ],
     "rule_ids": [
       1001,
       18,
@@ -169,325 +85,160 @@
   },
   "this little wrinkled seed was": {
     "search_term": "",
-    "search_type": "manual_stock_add_to_previous",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__add_stock",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "stock",
-      "layout": {
-        "kind": "composite_onto_previous",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__add_stock' from the score-sheet"
-    ],
     "rule_ids": [
       15
     ]
   },
   "the single most contested resource on": {
     "search_term": "",
-    "search_type": "static_of_previous",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__hold",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "none",
-      "layout": {
-        "kind": "freeze",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__hold' from the score-sheet"
-    ],
     "rule_ids": [
       39
     ]
   },
   "the planet.": {
     "search_term": "",
-    "search_type": "manual_stock_add_to_previous",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__add_stock",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "stock",
-      "layout": {
-        "kind": "composite_onto_previous",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__add_stock' from the score-sheet"
-    ],
     "rule_ids": [
       1
     ]
   },
   "It was worth more than": {
     "search_term": "",
-    "search_type": "stock",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__stock",
-    "shot": {
-      "strategy": "new",
-      "material": "stock",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier3: sampled 'new__stock' from the score-sheet"
-    ],
     "rule_ids": [
       39
     ]
   },
   "its weight in gold.": {
     "search_term": "",
-    "search_type": "manual_stock_add_to_previous",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__add_stock",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "stock",
-      "layout": {
-        "kind": "composite_onto_previous",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__add_stock' from the score-sheet"
-    ],
     "rule_ids": [
       1
     ]
   },
   "Nutmeg only grew": {
     "search_term": "",
-    "search_type": "wikipedia",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__wikipedia",
-    "shot": {
-      "strategy": "new",
-      "material": "wikipedia",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: unknown-fame name -> wikipedia leaned up",
-      "tier3: sampled 'new__wikipedia' from the score-sheet"
-    ],
     "rule_ids": [
       12
     ]
   },
   "in one place on Earth:": {
     "search_term": "",
-    "search_type": "map",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__map",
-    "shot": {
-      "strategy": "new",
-      "material": "map",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier2: unknown-fame place -> map floored up",
-      "tier3: sampled 'new__map' from the score-sheet"
-    ],
     "rule_ids": [
       1
     ]
   },
   "the Banda Islands.": {
     "search_term": "",
-    "search_type": "stock",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__stock",
-    "shot": {
-      "strategy": "new",
-      "material": "stock",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: unknown-fame place -> map floored up",
-      "tier3: sampled 'new__stock' from the score-sheet"
-    ],
     "rule_ids": [
       1
     ]
   },
   "A tiny, incredibly remote volcanic archipelago in": {
     "search_term": "",
-    "search_type": "object_generate",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__object",
-    "shot": {
-      "strategy": "new",
-      "material": "stock_image",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "object_edit",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 24: a sentence ending on a number or amount — e.g. 'the whales vanished' | 'millions of years ago'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier3: sampled 'new__object' from the score-sheet"
-    ],
     "rule_ids": [
       24
     ]
   },
   "modern-day Indonesia.": {
     "search_term": "",
-    "search_type": "map",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__map",
-    "shot": {
-      "strategy": "new",
-      "material": "map",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier2: unknown-fame place -> map floored up",
-      "tier3: sampled 'new__map' from the score-sheet"
-    ],
     "rule_ids": []
   }
 }

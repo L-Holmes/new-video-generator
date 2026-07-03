@@ -1,428 +1,121 @@
 {
   "Rome was not built in a day.": {
-    "search_term": "",
+    "search_term": "Rome",
     "search_type": "wikipedia",
+    "media_type": "wikipedia",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__wikipedia",
-    "shot": {
-      "strategy": "new",
-      "material": "wikipedia",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: nothing on screen yet -> previous-family blocked",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: unknown-fame place -> map floored up",
-      "tier3: sampled 'new__stock' from the score-sheet",
-      "manual: set by hand in MANUAL_TAGGING"
-    ],
-    "rule_ids": [
-      1
-    ],
-    "manual": true
-  },
-  "But it burned in six.": {
-    "search_term": "",
-    "search_type": "stock",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "template": "new__stock",
-    "shot": {
-      "strategy": "new",
-      "material": "stock",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier3: sampled 'new__stock' from the score-sheet"
-    ],
     "rule_ids": [
       1
     ]
   },
-  "In 64 AD,": {
-    "search_term": "",
-    "search_type": "stock",
+  "But it burned in six. In 64 AD, a fire started in the merchant stalls near the Circus Maximus. Driven by wind, this hungry": {
+    "search_term": "burned burned",
+    "search_type": "ai_edit",
+    "media_type": "ai_edit_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__stock",
-    "shot": {
-      "strategy": "new",
-      "material": "stock",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier3: sampled 'new__stock' from the score-sheet"
-    ],
     "rule_ids": [
-      7
+      1,
+      7,
+      14,
+      18,
+      29,
+      61
     ]
   },
-  "a fire started in": {
-    "search_term": "",
-    "search_type": "joint_3_row",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "template": "editgroup__stock",
-    "shot": {
-      "strategy": "new",
-      "material": "stock",
-      "layout": {
-        "kind": "grid",
-        "n": 3,
-        "same_term": false
-      },
-      "overlay": "auto_text",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__add_stock' from the score-sheet",
-      "manual: set by hand in MANUAL_TAGGING"
-    ],
-    "rule_ids": [
-      14
-    ],
-    "manual": true
-  },
-  "the merchant stalls near": {
-    "search_term": "",
+  "blaze devoured": {
+    "search_term": "blaze",
     "search_type": "object_generate",
+    "media_type": "object",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__object",
-    "shot": {
-      "strategy": "new",
-      "material": "stock_image",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "object_edit",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'new__object' from the score-sheet"
-    ],
-    "rule_ids": [
-      18
-    ]
-  },
-  "the Circus Maximus.": {
-    "search_term": "",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "template": "editprev__add_stock",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "stock",
-      "layout": {
-        "kind": "composite_onto_previous",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier2: unknown-fame name -> wikipedia leaned up",
-      "tier3: sampled 'editprev__add_stock' from the score-sheet"
-    ],
-    "rule_ids": [
-      1
-    ]
-  },
-  "Driven by": {
-    "search_term": "",
-    "search_type": "stock",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "template": "new__stock",
-    "shot": {
-      "strategy": "new",
-      "material": "stock",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier3: sampled 'new__stock' from the score-sheet"
-    ],
-    "rule_ids": [
-      29
-    ]
-  },
-  "wind,": {
-    "search_term": "",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "template": "editprev__add_stock",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "stock",
-      "layout": {
-        "kind": "composite_onto_previous",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__add_stock' from the score-sheet"
-    ],
-    "rule_ids": [
-      7
-    ]
-  },
-  "this hungry blaze devoured": {
-    "search_term": "",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "template": "editprev__add_stock",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "stock",
-      "layout": {
-        "kind": "composite_onto_previous",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 61: a strong verb that introduces a comma list is cut from item one — e.g. 'the blaze devoured' | 'temples,' | 'villas,'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__add_stock' from the score-sheet"
-    ],
     "rule_ids": [
       61
     ]
   },
   "temples,": {
-    "search_term": "",
-    "search_type": "static_of_previous",
+    "search_term": "temple",
+    "search_type": "stickman_explain_wikipedia",
+    "media_type": "wikipedia_on_board",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__hold",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "none",
-      "layout": {
-        "kind": "freeze",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 8: a comma that separates two clauses or list items — e.g. 'she ran,' | 'he walked'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__hold' from the score-sheet"
-    ],
     "rule_ids": [
       8
     ]
   },
   "villas, and": {
-    "search_term": "",
-    "search_type": "manual_stock_add_to_previous",
+    "search_term": "villa",
+    "search_type": "stickman_explain_wikipedia",
+    "media_type": "wikipedia_on_board",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__add_stock",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "stock",
-      "layout": {
-        "kind": "composite_onto_previous",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__add_stock' from the score-sheet"
-    ],
     "rule_ids": [
       15
     ]
   },
   "entire districts.": {
-    "search_term": "",
-    "search_type": "zoom_prev_img",
+    "search_term": "district",
+    "search_type": "stickman",
+    "media_type": "ai_stock",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__zoom",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "none",
-      "layout": {
-        "kind": "crop_zoom",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__zoom' from the score-sheet"
-    ],
     "rule_ids": [
       1
     ]
   },
   "The city was rebuilt by": {
-    "search_term": "",
-    "search_type": "object_generate",
+    "search_term": "city",
+    "search_type": "map",
+    "media_type": "map",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__object",
-    "shot": {
-      "strategy": "new",
-      "material": "stock_image",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "object_edit",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
-      "rule 59: the doer in a passive 'by ...' phrase — cut to who or what did it — e.g. 'it was discovered' | 'by a local farmer'",
-      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier3: sampled 'new__object' from the score-sheet"
-    ],
     "rule_ids": [
       1000,
       59,
@@ -430,160 +123,70 @@
     ]
   },
   "a very unpopular emperor.": {
-    "search_term": "",
-    "search_type": "static_of_previous",
+    "search_term": "emperor ",
+    "search_type": "stickman",
+    "media_type": "ai_stock",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__hold",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "none",
-      "layout": {
-        "kind": "freeze",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__hold' from the score-sheet"
-    ],
     "rule_ids": [
       1
     ]
   },
   "Which brings us to Nero.": {
-    "search_term": "",
-    "search_type": "stock",
+    "search_term": "Which nero brings",
+    "search_type": "object_generate",
+    "media_type": "object",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__stock",
-    "shot": {
-      "strategy": "new",
-      "material": "stock",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier3: sampled 'new__stock' from the score-sheet"
-    ],
     "rule_ids": [
       1
     ]
   },
-  "He blamed": {
-    "search_term": "",
-    "search_type": "stock",
+  "He blamed a small religious sect, and": {
+    "search_term": "blamed",
+    "search_type": "stickman_explain_wikipedia",
+    "media_type": "wikipedia_on_board",
+    "modifiers": [
+      "decorate",
+      "caption",
+      "group"
+    ],
+    "group_id": 1,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "new__stock",
-    "shot": {
-      "strategy": "new",
-      "material": "stock",
-      "layout": {
-        "kind": "single",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier3: sampled 'new__stock' from the score-sheet"
-    ],
     "rule_ids": [
-      12
-    ]
-  },
-  "a small religious sect, and": {
-    "search_term": "",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "template": "editprev__add_stock",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "stock",
-      "layout": {
-        "kind": "composite_onto_previous",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier3:sampled",
-    "why": [
-      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier2: continuation -> fresh-material damped (mostly small edits mid-sentence)",
-      "tier2: new concrete noun mid-sentence -> add it onto the previous",
-      "tier3: sampled 'editprev__add_stock' from the score-sheet"
-    ],
-    "rule_ids": [
+      12,
       15
     ]
   },
   "the rest is history.": {
-    "search_term": "",
-    "search_type": "static_of_previous",
+    "search_term": "rest",
+    "search_type": "object_generate",
+    "media_type": "object",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "editprev__hold",
-    "shot": {
-      "strategy": "edit_previous",
-      "material": "none",
-      "layout": {
-        "kind": "freeze",
-        "n": 1,
-        "same_term": false
-      },
-      "overlay": "none",
-      "base": "none"
-    },
-    "tier": "tier1:lock_unvisualisable",
-    "why": [
-      "rule 1010: an idiomatic saying ('the rest is history') is kept whole and counts as non-visual — hold the previous image through it",
-      "tier0: AI disabled -> AI templates off the menu",
-      "tier1: no picture-able content -> hold the previous image"
-    ],
     "rule_ids": [
       1010
     ]
