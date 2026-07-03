@@ -42,6 +42,7 @@ from ___visuals.CONFIG import (
     MediaType,
     SearchTermData,
     MEDIA_PROPERTIES,
+    group_scene_rows,
     media_props,
 )
 from ___visuals.DOWNLOADS import _download_image
@@ -116,39 +117,22 @@ def generate_joint_scenes(
         print("[joint scenes] no joint scenes — returning empty map")
         return {}
 
-    joint_scenes.sort(key=lambda scene: int(scene[1]["position"]))
+    # Sort by SCRIPT ORDER (dict insertion order of the search-term file).
+    # NOT by the position field: positions restart at 1 for every group, so
+    # with two or more groups a position sort would interleave them.
+    _script_order = {txt: i for i, txt in enumerate(script_to_search_term)}
+    joint_scenes.sort(key=lambda scene: _script_order.get(scene[0], 1_000_000))
     for i, (txt, data) in enumerate(joint_scenes):
         print(
             f"[joint scenes]   sorted[{i}]: pos={data['position']}, "
+            f"group_id={data.get('group_id')}, "
             f"type={data['search_type'].value}, script='{txt[:60]}...'"
         )
 
-    # 2) Group consecutive joints by (same search_type + contiguous position).
-    grouped_joint_scenes: list[list[tuple[str, SearchTermData]]] = []
-    current_group: list[tuple[str, SearchTermData]] = []
-    previous_scene_data = None
-
-    for script_text, scene_data in joint_scenes:
-        if not previous_scene_data:
-            current_group.append((script_text, scene_data))
-            previous_scene_data = scene_data
-            continue
-
-        same_type = scene_data["search_type"] == previous_scene_data["search_type"]
-        next_position = (
-            int(scene_data["position"]) == int(previous_scene_data["position"]) + 1
-        )
-
-        if same_type and next_position:
-            current_group.append((script_text, scene_data))
-        else:
-            grouped_joint_scenes.append(current_group)
-            current_group = [(script_text, scene_data)]
-
-        previous_scene_data = scene_data
-
-    if current_group:
-        grouped_joint_scenes.append(current_group)
+    # 2) Group consecutive joints. New rows group by shared group_id (set by
+    #    the tagging tool's 'group' modifier); old rows fall back to the
+    #    contiguous-position rule. Logic lives in CONFIG.group_scene_rows.
+    grouped_joint_scenes = group_scene_rows(joint_scenes)
 
     print(f"\n[joint scenes] formed {len(grouped_joint_scenes)} group(s)")
     for gi, grp in enumerate(grouped_joint_scenes):

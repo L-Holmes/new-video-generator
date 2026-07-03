@@ -329,15 +329,163 @@ def media_props(mt: "MediaType | None") -> MediaProperties:
     return MEDIA_PROPERTIES.get(mt, _DEFAULT_PROPS)
 
 
+# ===========================================================================
+# NEW TAG-BASED CATALOG  (media_type + modifiers columns in the json)
+# ===========================================================================
+# The catalog itself lives in MEDIA_CATALOG.py (dependency-free, shared with
+# the tagging tool in ___splitting_and_labelling). CONFIG re-exports it and
+# adds the MediaType-enum plumbing, so the rest of the renderer keeps
+# importing everything from CONFIG as before.
+#
+# json rows now carry:
+#   media_type: one MEDIA_TYPE_CATALOG name ("stock", "hold_previous", ...)
+#   modifiers:  stackable extras (["decorate"], ["caption"], ["group"], ...)
+#   group_id:   lines sharing an id are ONE group (rule of n); null otherwise
+# search_type stays in the file as the derived legacy string, so older tools
+# that read the raw file (e.g. ai_generate_stickman_images) keep working.
+from ___visuals.MEDIA_CATALOG import (  # noqa: E402  (re-export)
+    MEDIA_TYPE_CATALOG,
+    MODIFIERS,
+    Tag,
+    residual_modifiers,
+    to_legacy,
+)
+
+
+def _validate_media_catalog() -> None:
+    """Refuse to import if the shared catalog and MediaType drift apart."""
+    bad = {n: d["legacy"] for n, d in MEDIA_TYPE_CATALOG.items()
+           if d["legacy"] not in {t.value for t in MediaType}}
+    if bad:
+        raise RuntimeError(
+            "MEDIA_TYPE_CATALOG references legacy values with no MediaType "
+            f"enum member: {bad}"
+        )
+    # every derived combo must resolve too
+    for combo in ("joint_3_row", "stickman_joint_3_row",
+                  "decorate_previous", "stickman_text_overlay"):
+        MediaType(combo)
+
+
+_validate_media_catalog()  # runs on import
+
+
+def new_type_to_media_type(media_type: str, modifiers) -> MediaType:
+    """media_type name + modifiers → the renderer's MediaType enum."""
+    return MediaType(to_legacy(media_type, modifiers))
+
+
+def normalise_scene_row(script_text: str, row: dict) -> None:
+    """Bring ONE search-term-file row up to the schema the renderer runs on,
+    IN PLACE. Accepts both the new tag-based rows and old flat rows:
+
+      - new rows (media_type set): search_type is DERIVED from
+        media_type + modifiers (authoritative — the string in the file is
+        just a mirror for tools that read the raw json)
+      - old rows (no media_type): search_type string is converted directly
+
+    After this, row["search_type"] is a MediaType enum, row["modifiers"] is a
+    list, and row["group_id"] / row["position"] exist. Raises ValueError with
+    the valid names on anything unknown.
+    """
+    row.setdefault("modifiers", [])
+    row.setdefault("group_id", None)
+    row.setdefault("position", "1")
+
+    media_type = (row.get("media_type") or "").strip()
+    if media_type:
+        if media_type not in MEDIA_TYPE_CATALOG:
+            valid = ", ".join(MEDIA_TYPE_CATALOG)
+            raise ValueError(
+                f"unknown media_type {media_type!r} on scene "
+                f"'{script_text[:60]}' (valid: {valid})"
+            )
+        unknown_mods = [m for m in row["modifiers"] if m not in MODIFIERS]
+        if unknown_mods:
+            raise ValueError(
+                f"unknown modifier(s) {unknown_mods} on scene "
+                f"'{script_text[:60]}' (valid: {', '.join(MODIFIERS)})"
+            )
+        row["search_type"] = new_type_to_media_type(media_type, row["modifiers"])
+        return
+
+    # old flat schema — a bare legacy string
+    st = row.get("search_type")
+    if isinstance(st, MediaType):
+        return
+    try:
+        row["search_type"] = MediaType(st)
+    except ValueError:
+        valid = ", ".join(t.value for t in MediaType)
+        raise ValueError(
+            f"unknown search_type {st!r} on scene '{script_text[:60]}' "
+            f"(valid: {valid})"
+        ) from None
+
+
+def group_scene_rows(
+    scenes: list[tuple[str, "SearchTermData"]],
+) -> list[list[tuple[str, "SearchTermData"]]]:
+    """Split an ORDERED (script-order) list of (script_text, row) joint scenes
+    into render groups.
+
+    New rows: consecutive scenes sharing the SAME search_type AND the SAME
+    non-null group_id are one group (the tagging tool assigns group_id when
+    you stack the 'group' modifier).
+
+    Old rows (no group_id): fall back to the original rule — same type AND
+    contiguous 1-based positions.
+    """
+    groups: list[list[tuple[str, "SearchTermData"]]] = []
+    current: list[tuple[str, "SearchTermData"]] = []
+    prev: "SearchTermData | None" = None
+    for text, row in scenes:
+        if prev is None:
+            current.append((text, row))
+            prev = row
+            continue
+        same_type = row["search_type"] == prev["search_type"]
+        gid, gid_prev = row.get("group_id"), prev.get("group_id")
+        if gid is not None or gid_prev is not None:
+            same_group = same_type and gid is not None and gid == gid_prev
+        else:
+            same_group = same_type and (
+                int(row.get("position", "1")) == int(prev.get("position", "1")) + 1
+            )
+        if same_group:
+            current.append((text, row))
+        else:
+            groups.append(current)
+            current = [(text, row)]
+        prev = row
+    if current:
+        groups.append(current)
+    return groups
+
+
+def scene_residual_modifiers(row: dict) -> list[str]:
+    """The modifiers a scene still needs applied as LAYERS on top of its own
+    finished footage (everything not already baked into its legacy type).
+    Consumed by MODIFIER_STAGE. Safe on old flat rows (no modifiers → [])."""
+    st = row.get("search_type")
+    legacy_value = st.value if isinstance(st, MediaType) else (st or "")
+    return residual_modifiers(
+        row.get("media_type", ""), row.get("modifiers", []), legacy_value
+    )
+
+
  # near MANUAL_STOCK_ADD_TYPES / ZOOM_PREV_TYPES / STATIC_OF_PREVIOUS_TYPES:
 DECORATE_PREVIOUS_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_previous")
 DECORATE_PREVIOUS_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 
-class SearchTermData(TypedDict):
+class SearchTermData(TypedDict, total=False):
     search_term: str
-    search_type: MediaType
-    position: str
+    search_type: MediaType   # enum after normalise_scene_row (legacy string on disk)
+    media_type: str          # new tag-based base name ("stock", "hold_previous", ...)
+    modifiers: list[str]     # stackable extras: decorate / caption / group
+    group_id: int | None     # lines sharing an id render as ONE group (rule of n)
+    position: str            # cell number within the group ("1".."n")
 
 
 
@@ -421,6 +569,16 @@ DECORATE_PREVIOUS_RENDER_SAFETY_PAD_SEC: float = 0.08
 # the scene's footage. A still flows through colour-grade + Ken Burns like any
 # image; an MP4 (animated effect) is left as-is.
 OBJECT_GENERATE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/object_generate_scenes")
+
+# ===========================================================================
+# MODIFIER LAYERS (decorate / caption stacked on a scene's OWN footage)
+# ===========================================================================
+# hold_previous + decorate/caption still route through the dedicated legacy
+# types (decorate_previous / stickman_text_overlay). Every OTHER base +
+# decorate/caption combo is applied by MODIFIER_STAGE as a layer on the
+# scene's own finished footage, output here.
+MODIFIER_LAYER_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/modifier_layers")
+MODIFIER_LAYER_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 # ===========================================================================
 # JOINT SCENE LAYOUTS

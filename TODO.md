@@ -1,3 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+==================
+
+
+
+
+
+
+TODO:
+- fix the current small annoyances with the web thing
+- 
+    - think of a list of new editting things to add - 
+        - like the question mark blacked out version of something that will be revealed
+    - think what editting things can be combined
+- add just literally 'the same picture as prevoius?' as an option?
+- then... (or perhaps beforehand?)
+
+
+
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
