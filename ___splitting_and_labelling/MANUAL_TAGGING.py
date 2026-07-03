@@ -54,7 +54,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from MEDIA_TYPES import MEDIA_TYPES, MODIFIERS, Tag, to_legacy
+from MEDIA_TYPES import (COLLAGEABLE_TYPES, GROUPABLE_TYPES, MEDIA_TYPES,
+                         MODIFIERS, Tag)
 
 HERE = Path(__file__).resolve().parent
 _PLACE_LABELS = {"GPE", "LOC"}
@@ -68,6 +69,8 @@ _NAME_LABELS = {"PERSON", "ORG", "FAC", "EVENT", "WORK_OF_ART", "NORP"}
 def build_catalog() -> dict:
     bases = [{"name": n, "label": n.replace("_", " "),
               "color": d["color"], "tags": [t.value for t in d["tags"]],
+              "groupable": n in GROUPABLE_TYPES,
+              "collageable": n in COLLAGEABLE_TYPES,
               "info": d["info"], "example": d["example"]}
              for n, d in MEDIA_TYPES.items()]
     mods = [{"name": n, "label": n, "color": d["color"],
@@ -106,8 +109,7 @@ def recompute(data: Dict[str, dict]) -> None:
 
     prev_gid, pos = None, 0
     for row in data.values():
-        row["search_type"] = to_legacy(row.get("media_type", ""),
-                                       row.get("modifiers", []))
+        row.pop("search_type", None)   # legacy column — purged on every save
         gid = row.get("group_id")
         if gid is not None and gid == prev_gid:
             pos += 1
@@ -208,6 +210,23 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
     if line not in data:
         return "unknown line"
     row = data[line]
+    mods = list(patch.get("modifiers", row.get("modifiers", [])) or [])
+    base = patch.get("media_type", row.get("media_type", ""))
+    if "group" in mods and base not in GROUPABLE_TYPES:
+        return ("only " + " and ".join(sorted(GROUPABLE_TYPES)).replace("_", " ")
+                + " can be grouped")
+    if "collage" in mods and base not in COLLAGEABLE_TYPES:
+        return ("only " + " and ".join(sorted(COLLAGEABLE_TYPES)).replace("_", " ")
+                + " can be collaged")
+    # group and collage are mutually exclusive — picking one drops the other
+    # (group = one cell per LINE across neighbours; collage = many images on
+    # THIS line). Last toggled wins.
+    if {"group", "collage"} <= set(mods) and "modifiers" in patch:
+        prev = set(row.get("modifiers", []))
+        newly = set(mods) - prev
+        drop = "collage" if "group" in newly else "group"
+        mods = [m for m in mods if m != drop]
+        patch = dict(patch, modifiers=mods)
     for key in {"media_type", "modifiers", "search_term"} & set(patch):
         row[key] = patch[key]
     if "modifiers" in patch:
@@ -812,9 +831,13 @@ function renderTypes(){
 }
 function renderMods(){
  const L=D.lines[sel]; const has=!!L.row.media_type;
+ const b=baseOf(L.row.media_type);
  $('#modbar').innerHTML=D.catalog.modifiers.map(m=>{
   const on=(L.row.modifiers||[]).includes(m.name)?' on':'';
-  return `<button class="mod${on}" ${has?'':'disabled'} onclick="toggleMod('${m.name}')">${m.label}`+
+  const dis=!has||(m.name==='group'&&!(b&&b.groupable))||(m.name==='collage'&&!(b&&b.collageable));
+  const why=m.name==='group'&&has&&!(b&&b.groupable)?'only stock and ai stock can be grouped'
+           :m.name==='collage'&&has&&!(b&&b.collageable)?'only stock can be collaged':'';
+  return `<button class="mod${on}" ${dis?'disabled':''} title="${why}" onclick="toggleMod('${m.name}')">${m.label}`+
          ` <i class="info" data-info="${m.name}">i</i></button>`;}).join('');
  $('#modhint').textContent=has?'':'pick a base first — there must be something to put these on';
  hookInfos($('#modbar').parentElement);

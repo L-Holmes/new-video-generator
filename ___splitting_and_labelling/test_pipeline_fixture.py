@@ -87,20 +87,18 @@ mL2 = ss._build_chunks_meta(docL2,
 check([m["list"]["index"] if m["list"] else None for m in mL2] == [0, 1, 2],
       "real comma noun list still groups")
 
-print("\n===== MEDIA_TYPES =====")
-check(all({"legacy", "tags", "info", "example", "color"} <= set(d)
+print("\n===== MEDIA_TYPES (shared catalog, no legacy layer) =====")
+check(all({"tags", "info", "example", "color"} <= set(d)
           for d in mtypes.MEDIA_TYPES.values()),
-      "every media type has legacy/tags/info/example/color")
-check("group" in mtypes.MODIFIERS and "decorate" in mtypes.MODIFIERS,
-      "group and decorate are stackable modifiers, not media types")
-check(mtypes.to_legacy("stock", []) == "stock"
-      and mtypes.to_legacy("stock", ["group"]) == "joint_3_row"
-      and mtypes.to_legacy("ai_stock", ["group"]) == "stickman_joint_3_row"
-      and mtypes.to_legacy("hold_previous", ["decorate"]) == "decorate_previous"
-      and mtypes.to_legacy("hold_previous", ["caption"]) == "stickman_text_overlay"
-      and mtypes.to_legacy("wikipedia", ["decorate"]) == "wikipedia"
-      and mtypes.to_legacy("", []) == "",
-      "legacy derivation: plain rule + the four renderer exceptions")
+      "every media type has tags/info/example/color")
+check(not any("legacy" in d for d in mtypes.MEDIA_TYPES.values())
+      and not hasattr(mtypes, "to_legacy"),
+      "no legacy strings and no to_legacy anywhere")
+check(set(mtypes.MODIFIERS) == {"decorate", "group", "collage"},
+      "modifiers: decorate / group / collage (caption+zoom+stamp = decorate tools)")
+check(mtypes.GROUPABLE_TYPES == {"stock", "ai_stock"}
+      and mtypes.COLLAGEABLE_TYPES == {"stock"},
+      "group: stock+ai_stock only; collage: stock only")
 
 print("\n===== SPLIT_AND_LABEL emit =====")
 work = _here / "fixture_run"; shutil.rmtree(work, ignore_errors=True)
@@ -118,10 +116,11 @@ cache.parent.mkdir(parents=True); cache.write_text(json.dumps(FIXTURE))
 out = sal.generate_script_to_search_term("script-fixture.txt")
 rows = json.loads(Path(out).read_text())
 check(len(rows) == 6 and all(
-      r["search_term"] == "" and r["media_type"] == "" and r["search_type"] == ""
+      r["search_term"] == "" and r["media_type"] == ""
+      and "search_type" not in r
       and r["modifiers"] == [] and r["group_id"] is None
       for r in rows.values()),
-      "emit: everything the user decides starts empty")
+      "emit: user columns empty, NO search_type column at all")
 check(rows["boom"]["rule_ids"] == [60]
       and all({"position", "sfx", "sfx_timing", "music", "music_trim_seconds",
                "music_fade_out"} <= set(r) for r in rows.values()),
@@ -154,15 +153,32 @@ call("/save", {"line": "ribs,", "patch": {"modifiers": ["group"]}})
 call("/save", {"line": "vertebrae,", "patch": {"media_type": "stock"}})
 call("/save", {"line": "vertebrae,", "patch": {"modifiers": ["group"]}})
 d = fresh()
-check(d["ribs,"]["search_type"] == "joint_3_row"
-      and d["ribs,"]["group_id"] == d["vertebrae,"]["group_id"] == 1
-      and [d["ribs,"]["position"], d["vertebrae,"]["position"]] == ["1", "2"],
-      "stock + group: shared group_id, positions 1..n, legacy joint_3_row")
+check(d["ribs,"]["group_id"] == d["vertebrae,"]["group_id"] == 1
+      and [d["ribs,"]["position"], d["vertebrae,"]["position"]] == ["1", "2"]
+      and "search_type" not in d["ribs,"],
+      "stock + group: shared group_id, positions 1..n, no derived column")
 
 call("/save", {"line": "boom", "patch": {"media_type": "hold_previous",
-                                         "modifiers": ["caption"]}})
-check(fresh()["boom"]["search_type"] == "stickman_text_overlay",
-      "hold + caption derives the caption legacy string")
+                                         "modifiers": ["decorate"]}})
+check(fresh()["boom"]["modifiers"] == ["decorate"],
+      "hold + decorate saves cleanly (the freeze-and-draw default)")
+r, code = call("/save", {"line": "boom", "patch": {"media_type": "wikipedia",
+                                                   "modifiers": ["group"]}})
+check(code == 400 and "grouped" in (r.get("error") or ""),
+      "group on a non-groupable base is rejected")
+r, code = call("/save", {"line": "boom", "patch": {"media_type": "map",
+                                                   "modifiers": ["collage"]}})
+check(code == 400 and "collaged" in (r.get("error") or ""),
+      "collage on a non-collageable base is rejected")
+call("/save", {"line": "a jar of nutmeg.", "patch": {"media_type": "stock",
+                                                     "modifiers": ["group"]}})
+call("/save", {"line": "a jar of nutmeg.",
+               "patch": {"modifiers": ["group", "collage"]}})
+d2 = fresh()["a jar of nutmeg."]
+check(d2["modifiers"] == ["collage"] and d2["group_id"] is None,
+      "toggling collage onto a grouped line swaps group out (last wins)")
+call("/save", {"line": "boom", "patch": {"media_type": "hold_previous",
+                                         "modifiers": ["decorate"]}})
 
 r, code = call("/split", {"line": "If you open", "index": 2})
 d = fresh()

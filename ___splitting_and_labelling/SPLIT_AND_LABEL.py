@@ -131,7 +131,6 @@ def build_rows(triples: List[Tuple[str, List[int], dict]]) -> dict:
     for text, ids, _meta in triples:
         out[text] = {
             "search_term": "",       # you write this (MANUAL_TAGGING / AI)
-            "search_type": "",       # derived from media_type + modifiers
             "media_type": "",        # you pick this (MANUAL_TAGGING)
             "modifiers": [],         # decorate / caption / group
             "group_id": None,        # lines sharing an id are one group

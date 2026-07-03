@@ -66,6 +66,7 @@ from ___visuals.CONFIG import (
     SYNCHRONIZED_SCRIPT_OUTPUT_FILE,
     media_props,
     normalise_scene_row,
+    scene_is_grouped,
     TIMESTAMPS_ABSOLUTE_FILE,
     MediaType,
     SearchTermData,
@@ -73,11 +74,11 @@ from ___visuals.CONFIG import (
 from ___visuals.DOWNLOADS import load_stock_footage
 from ___visuals.KEN_BURNS import apply_ken_burns_to_final_data
 from ___visuals.ADD_RELEVANT_OVERLAYS import apply_relevant_overlays_to_final_data
-from ___visuals.MODIFIER_STAGE import apply_modifier_layers_to_final_data
+from ___visuals.COLLAGE_STAGE import run_collage_stage
+from ___visuals.DECORATE_STAGE import run_decorate_stage
 from ___visuals.PIXELLATE_STAGE import pixellate_candidate_bundles
 from ___visuals.SCENE_GENERATORS import (
     generate_stickman_explain_scenes,
-    generate_text_overlay_scenes,
     run_all_local_generators,
 )
 from ___visuals.STATIC_RENDER import run_manual_image_stage
@@ -171,14 +172,10 @@ def main() -> None:
     scriptTextToPexelSearch: dict[str, SearchTermData] = load_json(
         LINE_INDEX_TO_SEARCH_TERM_FILE
     )
-    # Normalise every row to the schema the pipeline runs on. Handles BOTH:
-    #   - new tag-based rows: search_type is DERIVED from media_type +
-    #     modifiers (stock+group -> joint_3_row, hold_previous+caption ->
-    #     stickman_text_overlay, ...), and modifiers/group_id/position are
-    #     guaranteed present. Leftover decorate/caption modifiers are applied
-    #     later by the MODIFIER_STAGE pass (2.645).
-    #   - old flat rows: the bare search_type string converts directly.
-    # Either way row["search_type"] ends up a MediaType enum.
+    # Normalise every row: media_type becomes the MediaType enum, and the
+    # modifiers / group_id / position columns are validated + guaranteed.
+    # There is NO legacy layer: old flat files (search_type-only) must be
+    # converted ONCE with `uv run UPGRADE_OLD_JSON.py <file>` first.
     for key, value in scriptTextToPexelSearch.items():
         try:
             normalise_scene_row(key, value)
@@ -246,9 +243,9 @@ def main() -> None:
                 f"bundle(s) to the review set"
             )
 
-        # AI stickman tiles for stickman_joint scenes — same downstream flow as
-        # JOINT_3_ROW (these bundles feed the joint compositor) but the tiles
-        # are AI renders, not Pexels stills.
+        # AI stickman tiles for GROUPED ai_stock scenes — same downstream
+        # flow as grouped stock (these bundles feed the joint compositor)
+        # but the tiles are AI renders, not Pexels stills.
         stickman_joint_candidates = generate_stickman_joint_candidates(
             scriptTextToPexelSearch
         )
@@ -303,43 +300,38 @@ def main() -> None:
     # 2.5) STAGE 1 review — everything EXCEPT (things that don't need reviewing...)
     print("====================================================================")
     print("Launching media review GUI (stage 1: stock / wiki / joint / stickman)...")
-    # Exclude from the stage-1 review GUI:
-    #   - ai_edit: reviewed later in stage 2 (needs the stage-1 picks first)
-    #   - stickman_joint: the joint compositor always uses candidate [0] and
-    #     IGNORES the review pick, so reviewing these is pointless — and the
-    #     review's cleanup would delete the "unchosen" local AI tiles, which
-    #     (unlike Pexels URLs) can't be re-downloaded. They re-enter final_data
-    #     via the generator-merge step (2.6) afterwards.
-    _excluded_from_review = {
-        MediaType.AI_EDIT,
-        MediaType.ZOOM_PREV_IMG,
-        MediaType.STATIC_OF_PREVIOUS,
-        MediaType.DECORATE_PREVIOUS,
-    }
+    # Exclude from the stage-1 review GUI (property-driven, no type lists):
+    #   - ai-edit scenes: reviewed later in stage 2 (need the stage-1 picks)
+    #   - hold-previous scenes: nothing to review, they derive their image
+    def _skip_stage1(script_text: str) -> bool:
+        p = media_props(
+            scriptTextToPexelSearch.get(script_text, {}).get("media_type")
+        )
+        return p.is_ai_edit or p.is_hold_previous
+
     non_edit_candidates = [
-        c
-        for c in candidates_data
-        if scriptTextToPexelSearch.get(c["script_text"], {}).get("search_type")
-        not in _excluded_from_review
+        c for c in candidates_data if not _skip_stage1(c["script_text"])
     ]
 
+    def _is_ai_stock(d: dict, grouped: bool) -> bool:
+        return (
+            d.get("media_type") == MediaType.AI_STOCK
+            and scene_is_grouped(d) == grouped
+        )
+
     _stickman_texts = {
-        t
-        for t, d in scriptTextToPexelSearch.items()
-        if d.get("search_type") == MediaType.STICKMAN
+        t for t, d in scriptTextToPexelSearch.items() if _is_ai_stock(d, False)
     }
     _stickman_joint_texts = {
-        t
-        for t, d in scriptTextToPexelSearch.items()
-        if media_props(d.get("search_type")).is_stickman_joint
+        t for t, d in scriptTextToPexelSearch.items() if _is_ai_stock(d, True)
     }
     _regenerable_stage1 = _stickman_texts | _stickman_joint_texts
 
     def _regen_stage1(script_text: str) -> list[dict] | None:
-        st = scriptTextToPexelSearch.get(script_text, {}).get("search_type")
-        if st == MediaType.STICKMAN:
+        d = scriptTextToPexelSearch.get(script_text, {})
+        if _is_ai_stock(d, False):
             return _regenerate_stickman_scene(script_text, scriptTextToPexelSearch)
-        if media_props(st).is_stickman_joint:
+        if _is_ai_stock(d, True):
             return _regenerate_stickman_joint_scene(
                 script_text, scriptTextToPexelSearch
             )
@@ -425,22 +417,8 @@ def main() -> None:
         empty_msg="no explainer scenes; final_data unchanged",
     )
 
-    # 2.63) Text-overlay scenes: caption (search_term) composited onto the
-    #       PREVIOUS scene's chosen image. After explainer (so any prior scene
-    #       type resolves) and before Ken Burns (static MP4 → KB skips it, so
-    #       the tilted caption is never cropped).
-    overlay_footage_map = generate_text_overlay_scenes(
-        script_to_search_term=scriptTextToPexelSearch,
-        final_data=final_data,
-    )
-    final_data = integrate_generated_footage(
-        final_data,
-        overlay_footage_map,
-        source_label="text-overlay",
-        produced_msg="text-overlay footage produced — integrating into final_data",
-        save_label="text-overlay footage",
-        empty_msg="no text-overlay scenes; final_data unchanged",
-    )
+    # (captions are a tool of the decorate editor now — see stage 2.645.
+    #  the old dedicated text-overlay stage is gone.)
 
     # 2.64) Manual stock placement: composite each MANUAL_STOCK_ADD_TO_PREVIOUS
     #       scene's chosen still onto the PREVIOUS scene's image at a clicked
@@ -452,21 +430,31 @@ def main() -> None:
     )
     save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
 
-    # 2.645) Modifier LAYERS — decorate/caption stacked on a scene's OWN
-    #        footage (any base + modifier combo that doesn't have a dedicated
-    #        legacy type; hold_previous+decorate/caption already routed
-    #        through decorate_previous / stickman_text_overlay above). After
-    #        every stage that decides a scene's own image, before colour
-    #        grade + Ken Burns (caption output is a static MP4, so KB skips
-    #        it and the tilted caption is never cropped).
-    final_data, modifier_remap = apply_modifier_layers_to_final_data(
+    # 2.645) DECORATE editor — every scene carrying the `decorate` modifier
+    #        opens its OWN finished footage in the ONE interactive editor
+    #        (tools: draw, text/caption, zoom). Runs after every stage that
+    #        decides a scene's image, before colour grade + Ken Burns
+    #        (output is a static MP4, so KB never crops the drawings).
+    final_data, decorate_remap = run_decorate_stage(
         final_data,
         scriptTextToPexelSearch,
     )
-    if modifier_remap:
-        add_path_remap_to_history(modifier_remap, label="modifier-layers")
+    if decorate_remap:
+        add_path_remap_to_history(decorate_remap, label="decorate")
         save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
-        print(f"💾 Updated final_data with modifier layers → {FINAL_SCRIPT_AND_CLIPS}")
+        print(f"💾 Updated final_data with decorated scenes → {FINAL_SCRIPT_AND_CLIPS}")
+
+    # 2.646) COLLAGE — scenes carrying the `collage` modifier compose their
+    #        SEVERAL review picks into one image: auto scatter, or stamp
+    #        them by hand in the decorator. Static MP4 → KB skips it.
+    final_data, collage_remap = run_collage_stage(
+        final_data,
+        scriptTextToPexelSearch,
+    )
+    if collage_remap:
+        add_path_remap_to_history(collage_remap, label="collage")
+        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
+        print(f"💾 Updated final_data with collage scenes → {FINAL_SCRIPT_AND_CLIPS}")
 
     # 2.648) Cinematic colour grade — give all STOCK footage one unified
     #        "shot on film at golden hour" look BEFORE Ken Burns, so stills are
@@ -499,7 +487,7 @@ def main() -> None:
     #       overlay, motion preserved). Detection is per json section: '?' in the
     #       text → question chip; a measurement that STARTS the section (≤1
     #       leading word) → metric/imperial chip. First chip → top-left, second →
-    #       top-right; a STICKMAN_TEXT_OVERLAY's own corner is left free.
+    #       top-right; a decorate-layer caption's own corner is left free.
     final_data, overlays_remap = apply_relevant_overlays_to_final_data(
         final_data,
         scriptTextToPexelSearch,

@@ -4,15 +4,16 @@ Three jobs. each is one place.
 
 ## add a media type
 
-* open MEDIA_TYPES.py
-* copy any entry in the MEDIA_TYPES dict, give it a new name, set its legacy string (what the renderer should receive), its tags (new or edit_previous, plus ai / board if it applies), a colour, and one sentence of info
+* open ___visuals/MEDIA_CATALOG.py (the ONE shared catalog - the tagging tool and the video builder both read it)
+* copy any entry in the MEDIA_TYPE_CATALOG dict, give it a new name, set its legacy string, its tags (new or edit_previous, plus ai / board if it applies), a colour, and one sentence of info
+* give the video builder its enum value and MEDIA_PROPERTIES row in ___visuals/CONFIG.py - CONFIG refuses to import if you forget, so you cannot get this wrong silently
 * optionally drop an example picture at examples/<name>.png
 * done. it appears in MANUAL_TAGGING as a button, with its info popup and key entry, automatically
 
 ## add a stackable extra (like decorate)
 
-* same file, MODIFIERS dict, one entry
-* if the old renderer has a special string for some base + your extra, add one line to the to_legacy function at the bottom (the four existing exceptions show how)
+* same catalog file, MODIFIERS dict, one entry
+* if the renderer has a dedicated combined mode for some base + your extra, add one line to to_legacy in the catalog (the four existing exceptions show how). otherwise the renderer applies it as a layer via ___visuals/MODIFIER_STAGE.py
 
 ## add a sentence splitter rule
 

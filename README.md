@@ -183,3 +183,29 @@ Two main code folders are;
 
 /048 󰉋  ___splitting_and_labelling/
 /005 󰉋  ___visuals/
+
+
+
+
+
+=============================
+GUIDE:
+
+1) .
+Run the split thing
+
+2).
+Run the auto tagger
+
+3).
+Run the manual tagger
+
+4). 
+Run main 
+
+
+
+
+----
+
+Need to make it so that the split thing takes the output JSON file path as a param so it can be called from main.py!!! 
