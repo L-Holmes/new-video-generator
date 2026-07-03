@@ -4,26 +4,101 @@
 
 TODO NEXT TASK:
 - try and get claude to finihs...
+    - then test... fix whatever errors...
 
 
 
+THEN:
+
+===================================================================
+===================================================================
+===================================================================
+===================================================================
+
+
+Okay... One last go now at auto assigning the media types...
+This is done by a new file;
+Auto_add_mediatypes.py...
+
+Here was my original concept notes;
+
+```
+Create a file auto tag
+Loads of us statements
+Lind a flowchart
+Each calling custom functions line
+List of nouns 
+
+
+may want to to reference the original input sentence. 
+
+Categorize that's fine just leave them blank. 
+
+
+For now in the initial testing phase don't link up to anything just print true or false for each of the if statement checks so I can see that it's finding the right things.
+
+
+Perhaps to maximise the chancellor was getting the answer right for each if statement we can look at multiple data points a we look at the tags that were produced by the sentence with it and then b we recreate the original sentence by looking for the scent tense endos before and after it like full stops exclamation marks ellipses etc and then we can manually analyze that sense and so our self perhaps with reg x's perhaps with more NLP then we can create a probability of chances and then decide whether it's or is not for instance a sentence with a list of nouns
+
+Start with just one of two for now and then get the main ones implemented then give the the rest of them as functions and if statements but just leave them blank and make them all return false for now we'll add detail dock strings so that we can implement them later. 
+````
+
+;
+
+Each of the entries in the map then all of the if statement checks function names then true or false. 
+
+E.g. 
+
+"Scurvy"
+     Is_noun_list() = True
+	 Is_location() = False
+	 ....
+"Pirates"
+    Is_noun_... 
 
 
 
+=====
+Then down the line, we map those results to our "flowchart"
 
-==================
+E.g. 
+Is it a noun list? 
+Yes -> rule of three; end;
+
+Is it a location?
+Yes -> map; end; 
+
+
+====
+Just pick three functions to implement for now. 
+Then implement them, with the true or false tagging.. 
+Then have the file split in half by a bit comment and in the lower half then analyse the true false results and assign the types, and update the map accordingly 
+(Don't update an entry in the JSON if it's not already empty! Don't want it overwrite existing!) 
+
+Then of course add the names of the rest of the functions you feel may be helpful, but leave them blank. 
+
+Base the rest of the rules on things I've mentioned to you in this long thread.. and use your own intuition.. 
+(Only things that we can reliably detect!) 
+
+Also another example flow chart /.if statement suggestion: things like short sentences with no visualisables should be same as previous but decorate... 
+
+Organise well with enums and what not to make easy for future Devs. 
+Try not repeat code - follow best principles... 
+
+Then add big to-do at bottom for what to implement for future Dev work. 
+Big ordered task list.. 
 
 
 
+To note:
+- we expect a lot of entries to get all false- this is fine! We then move onto the manual tagging after you see.
 
 
 
-TODO:
-- fix the current small annoyances with the web thing
-- 
-    - think of a list of new editting things to add - 
-        - like the question mark blacked out version of something that will be revealed
-
+===================================================================
+===================================================================
+===================================================================
+===================================================================
 
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
@@ -43,35 +118,7 @@ tell me where to add stuff in an idiot proof way. before and after....
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 
-I think....
-- I should just get it working how it is...
-    - i have the potential to be putting out the stickman stuff...
-    and yet I'm not...
 
-- I need a workflow were i just get the input script, 
-    - then split it, perhaps manually by just clicking on where I want to split? (or perhaps I just base it off newlines?)
-    - and then generating the json using AI...
-
-- so will need rules for AI...
-e.g. like;
-- If its part of the same sentence... make it a joint scene.. l w
-
-
-------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------
-
-TODO NEXT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! (6pm)
-
-
-========================================================================
-========================================================================
-========================================================================
-========================================================================
-========================================================================
-========================================================================
-===============================================================
 THEN THEN:
 
 
@@ -182,9 +229,6 @@ what do i do if all of the stock images are just terrible?
 
 -----
 
-add an option:
-- 'same as previous'
-    
 --> or same as previous but rotate the other way (if its an image slightly rotated on a background... lol...)?????
 
 ---
@@ -198,45 +242,9 @@ add an option:
 - add reusable rules... the youtube rules
     - e.g. things part of the same sentence / same concept... should be ai edit, not new pics...
 
+-------
 
 TODO:
-- do i get some 8 bit music in the same style as mario etc, in order to fit the theme???
-
--------------------------------------
--------------------------------------
-
-plus:
-    - have a few things that are reused between videos for consistency.
-    - i.e.:
-        - wikipedia for named things (especially obscure named things...)
-            - e.g. 'Tutankamun'
-            - e.g. 'Alaric the goth'
-            - e.g. 'accona desert'
-        - maps from [google or open street map or something?], with a dot on, for when a place is named...
-        - stock footage from pexels for things that work well with stock footage;   
-            - e.g. specific places / mountains..
-                - e.g. 'the banda islands' or 'manhatten' or 'the great pyramid'
-                - e.g. sahara desert
-
-
-later:
-- for stock footage, apply same edits to all-- like a subtle film grain or whatever...
-
--------
-- then for two dollars...
-    - one dollar coin comes on screen, and then another one, and then the equals sign to the jar of nutmeg...
-
-
--------------------------
-
-TODO:
-
-- get the stock footage things once just to get all of the explainer backgrounds like crinkled paper, slow black static, grid background, etc. that i want...
---> will then need to make a list of scenarios and when i want them..
-    - e.g. always wikipedia for named things...
-    - e.g. always use 'bops' on the rule of three thing...
-
--------
 
 consider:
 - just simple things like:
@@ -253,15 +261,6 @@ Then:
 
 
 --------
-
-NEXT:
-Fix the words on screen thing...
-    - i wonder if we could add a manaul thing, seperately, like 'generate_manaul_timings.py'
-    --> where it plays the audio at like 0.5x speed, and then every time there is a word, the user clicks (or presses enter or space), or if you press backspace, it will rewind back to the prevoius word.
-    --> ideally it would also show the words on screen, and highlight the one you're up to (since we have access to the script and the input audio...)
-    or is this just annoying...
-
------------------
 
 TODO MEGA MASTER PLAN:
 - Create a youtube formula!
