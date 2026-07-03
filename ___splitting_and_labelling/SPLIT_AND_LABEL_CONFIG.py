@@ -1,60 +1,50 @@
 """
-SPLIT_AND_LABEL_CONFIG.py  —  the media vocabulary of the labelling pipeline
-============================================================================
-This file is deliberately SEPARATE from ___visuals/CONFIG.py.  The renderer
-keeps its own MediaType untouched; this file defines the vocabulary the
-DECISION side thinks in, plus the bridge that translates back to the
-renderer's legacy strings.  Change this file freely — the renderer only ever
-sees the output of `to_legacy()`.
+SPLIT_AND_LABEL_CONFIG.py  —  THE single place to define/tune media types
+==========================================================================
+Separate from ___visuals/CONFIG.py on purpose: the renderer keeps its own
+MediaType untouched; the decision side thinks in this vocabulary and the
+legacy bridge translates on emit.
 
-THE FOUR AXES
--------------
-Every "media type" the old system had is really a point in a 4-axis space:
+>>> ADDING / CHANGING A MEDIA TYPE = EDIT *ONE* TemplateDef ENTRY BELOW <<<
+Everything else (legacy bridge, requirements, lock-only sets, pacing
+priors, AI gating, derived groupings) is computed from TEMPLATE_DEFS.
+See EXTENDING_GUIDE.md for the step-by-step.
 
-    STRATEGY   what we do            new / edit_previous
-    MATERIAL   what we fetch         stock / stock_image / wikipedia / map / none
-    LAYOUT     how it's arranged     single / grid(n, same_term?) /
-                                     composite_onto_previous / crop_zoom / freeze
-    OVERLAY    what goes on top      none / auto_text / draw / object_edit
+NAMING CONVENTION  (strategy prefix, double underscore)
+-------------------------------------------------------
+    new__*        brand-new material reaches the screen
+                  (stock and AI generation are BOTH "brand new" — the
+                  prefix groups them, the material axis separates them)
+    editprev__*   the previous scene's image is edited / annotated / held
+    editgroup__*  a run of related cells built as one visual group — the
+                  first cell is unique, the rest build alongside it.
+                  RULE OF N: the cell count comes from the detected list
+                  size at emit time, not a hardcoded 3.  (The legacy
+                  renderer still draws 3-cell rows — see
+                  TODO_LEGACY_SWITCHOVER.md.)
 
-TAXONOMY TABLE  (old flat enum -> axis coordinates)
----------------------------------------------------
-    old media type                 strategy        material     layout                    overlay
-    ---------------------------   -------------   ----------   -----------------------   -----------
-    stock                         new             stock        single                    none
-    wikipedia                     new             wikipedia    single                    none
-    map                           new             map          single                    none
-    object_generate               new             stock_image  single                    object_edit
-    joint_3_row                   new             stock        grid(3, different)        none
-    (NEW) grid_same               new             stock        grid(3, SAME term)        none
-    manual_stock_add_to_previous  edit_previous   stock        composite_onto_previous   none
-    zoom_prev_img                 edit_previous   none         crop_zoom                 none
-    static_of_previous            edit_previous   none         freeze                    none
-    decorate_previous             edit_previous   none         freeze                    draw
-    read_out                      ***REMOVED***   —            —                         —
+THE FIVE AXES (every template is a point in this space)
+-------------------------------------------------------
+    STRATEGY   new / edit_previous
+    MATERIAL   stock / stock_image / wikipedia / map / ai_stock / none
+    BASE       none / stickman_board
+    LAYOUT     single / grid(n, same_term?) / composite_onto_previous /
+               crop_zoom / freeze / edit_in_place
+    OVERLAY    none / auto_text / draw / object_edit
 
-WHY read_out IS GONE
---------------------
-The narration is read out over EVERY line.  "read_out" as a media type only
-ever meant "change nothing on screen" — which is exactly hold_previous
-(the old static_of_previous).  Legacy inputs saying "read_out" are folded
-into hold_previous by LEGACY_TO_TEMPLATE below.
+Overlays are a MODIFIER available to any shot, not a media type: "new stock
+AND decorate it" is new__stock with overlay=draw — the axes compose.
 
-OVERLAYS ARE A MODIFIER, NOT A TYPE
------------------------------------
-Any shot may carry an overlay.  `decorate_previous` survives as a TEMPLATE
-(a convenient named preset = edit_previous + freeze + draw), but nothing
-stops a decision attaching `overlay=auto_text` to a fresh stock shot.  The
-"do I draw on top by default?" question becomes a per-shot field with a
-default, not an architectural fork.
-
-SHOT TEMPLATES
---------------
-Tier-3 sampling (and the weights table) doesn't want to reason over a 4-D
-space — it wants a small named menu.  SHOT_TEMPLATES is that menu: each name
-is a preset ShotSpec.  Adding a new choosable look = add one line here, one
-line in TEMPLATE_TO_LEGACY, and (optionally) a column in the weights
-generator.
+EXPECTED PACING RATIO  (the "mostly small edits" doctrine)
+----------------------------------------------------------
+prior_opener / prior_cont on each TemplateDef ARE the expected-ratio knobs:
+  • OPENERS (a line starting a sentence): mostly fresh material — stock
+    (or ai stock) dominates.
+  • CONTINUATIONS (mid-sentence lines): the video is fast-paced, so most
+    lines should be SUBTLE EDITS of what's already on screen — hold, zoom,
+    add-onto, caption — with fresh fetches the minority.
+Tune the mix by editing those two numbers per template; CONT_FRESH_DAMP
+below keeps per-rule weights from swamping the continuation mix.
 """
 from __future__ import annotations
 
@@ -63,162 +53,188 @@ from enum import Enum
 from typing import Dict, Optional
 
 
-# =============================================================================
-# AXIS 1 — STRATEGY
-# =============================================================================
 class Strategy(str, Enum):
-    NEW = "new"                        # fetch / render fresh material
-    EDIT_PREVIOUS = "edit_previous"    # act on the previous scene's image
+    NEW = "new"
+    EDIT_PREVIOUS = "edit_previous"
 
 
-# =============================================================================
-# AXIS 2 — MATERIAL
-# =============================================================================
 class Material(str, Enum):
-    STOCK = "stock"                # pexels video-or-image
-    STOCK_IMAGE = "stock_image"    # image only (feeds the object editor)
-    WIKIPEDIA = "wikipedia"        # wikipedia image
-    MAP = "map"                    # locally-rendered highlighted map
-    NONE = "none"                  # nothing new — reuse the previous scene
+    STOCK = "stock"
+    STOCK_IMAGE = "stock_image"
+    WIKIPEDIA = "wikipedia"
+    MAP = "map"
+    AI_STOCK = "ai_stock"          # AI-generated art (the stickman look)
+    NONE = "none"
 
 
-# =============================================================================
-# AXIS 3 — LAYOUT
-# =============================================================================
+class Base(str, Enum):
+    NONE = "none"
+    STICKMAN_BOARD = "stickman_board"
+
+
 class LayoutKind(str, Enum):
     SINGLE = "single"
-    GRID = "grid"                                   # n cells side by side
+    GRID = "grid"
     COMPOSITE_ONTO_PREVIOUS = "composite_onto_previous"
     CROP_ZOOM = "crop_zoom"
     FREEZE = "freeze"
+    EDIT_IN_PLACE = "edit_in_place"
 
 
 @dataclass(frozen=True)
 class Layout:
     kind: LayoutKind = LayoutKind.SINGLE
-    n: int = 1                 # cell count (grid only)
-    same_term: bool = False    # grid only: every cell uses the SAME search term
+    n: int = 1                 # editgroup cell count — overridden at emit
+    same_term: bool = False    # editgroup: same search term for every cell
 
 
-# =============================================================================
-# AXIS 4 — OVERLAY
-# =============================================================================
 class Overlay(str, Enum):
     NONE = "none"
-    AUTO_TEXT = "auto_text"    # auto-added on-screen text
-    DRAW = "draw"              # interactive decorate tools
-    OBJECT_EDIT = "object_edit"  # bg-separation editor + effects
+    AUTO_TEXT = "auto_text"
+    DRAW = "draw"
+    OBJECT_EDIT = "object_edit"
 
 
-# =============================================================================
-# A SHOT = one point in the 4-axis space
-# =============================================================================
 @dataclass(frozen=True)
 class ShotSpec:
     strategy: Strategy
     material: Material
     layout: Layout = field(default_factory=Layout)
     overlay: Overlay = Overlay.NONE
+    base: Base = Base.NONE
 
     def to_dict(self) -> Dict:
-        """JSON-friendly view for the output rows / review sheet."""
         d = asdict(self)
         d["strategy"] = self.strategy.value
         d["material"] = self.material.value
         d["layout"]["kind"] = self.layout.kind.value
         d["overlay"] = self.overlay.value
+        d["base"] = self.base.value
         return d
 
 
 # =============================================================================
-# SHOT TEMPLATES — the named menu the decision engine chooses from
+# >>> THE MASTER TABLE — the ONE place a dev edits <<<
 # =============================================================================
-GRID_CELLS = 3   # default cell count for grid templates (was JOINT_CELLS)
+@dataclass(frozen=True)
+class TemplateDef:
+    spec: ShotSpec
+    legacy: str                       # renderer string (AI off)
+    legacy_ai: Optional[str] = None   # renderer string when AI is on
+    requires: Optional[str] = None    # "named_thing_entity"/"place_entity"/"list"
+    lock_only: bool = False           # only reachable via a tier-1 lock
+    prior_opener: float = 0.02        # expected-ratio weight, sentence starts
+    prior_cont: float = 0.02          # expected-ratio weight, mid-sentence
 
-SHOT_TEMPLATES: Dict[str, ShotSpec] = {
-    # ---- strategy NEW -------------------------------------------------------
-    "stock":            ShotSpec(Strategy.NEW, Material.STOCK),
-    "wikipedia":        ShotSpec(Strategy.NEW, Material.WIKIPEDIA),
-    "map":              ShotSpec(Strategy.NEW, Material.MAP),
-    "object_generate":  ShotSpec(Strategy.NEW, Material.STOCK_IMAGE,
-                                 overlay=Overlay.OBJECT_EDIT),
-    "grid_different":   ShotSpec(Strategy.NEW, Material.STOCK,
-                                 Layout(LayoutKind.GRID, GRID_CELLS, False)),
-    "grid_same":        ShotSpec(Strategy.NEW, Material.STOCK,
-                                 Layout(LayoutKind.GRID, GRID_CELLS, True)),
-    # ---- strategy EDIT_PREVIOUS --------------------------------------------
-    "composite_onto_previous":
-                        ShotSpec(Strategy.EDIT_PREVIOUS, Material.STOCK,
-                                 Layout(LayoutKind.COMPOSITE_ONTO_PREVIOUS)),
-    "zoom_previous":    ShotSpec(Strategy.EDIT_PREVIOUS, Material.NONE,
-                                 Layout(LayoutKind.CROP_ZOOM)),
-    "hold_previous":    ShotSpec(Strategy.EDIT_PREVIOUS, Material.NONE,
-                                 Layout(LayoutKind.FREEZE)),
-    "decorate_previous": ShotSpec(Strategy.EDIT_PREVIOUS, Material.NONE,
-                                  Layout(LayoutKind.FREEZE),
-                                  overlay=Overlay.DRAW),
+
+GRID_CELLS = 3   # legacy renderer cell count; real n comes from the list
+
+_G = Layout(LayoutKind.GRID, GRID_CELLS, False)
+_GS = Layout(LayoutKind.GRID, GRID_CELLS, True)
+_N, _E = Strategy.NEW, Strategy.EDIT_PREVIOUS
+
+TEMPLATE_DEFS: Dict[str, TemplateDef] = {
+    # ---- new__* : brand-new material ---------------------------------------
+    "new__stock": TemplateDef(
+        ShotSpec(_N, Material.STOCK), legacy="stock",
+        prior_opener=0.50, prior_cont=0.14),
+    "new__ai_stock": TemplateDef(
+        ShotSpec(_N, Material.AI_STOCK), legacy="stickman",
+        prior_opener=0.45, prior_cont=0.12),
+    "new__object": TemplateDef(
+        ShotSpec(_N, Material.STOCK_IMAGE, overlay=Overlay.OBJECT_EDIT),
+        legacy="object_generate", prior_opener=0.12, prior_cont=0.06),
+    "new__wikipedia": TemplateDef(
+        ShotSpec(_N, Material.WIKIPEDIA), legacy="wikipedia",
+        requires="named_thing_entity", prior_opener=0.06, prior_cont=0.03),
+    "new__map": TemplateDef(
+        ShotSpec(_N, Material.MAP), legacy="map",
+        requires="place_entity", prior_opener=0.05, prior_cont=0.03),
+    "new__typography": TemplateDef(
+        ShotSpec(_N, Material.NONE, overlay=Overlay.AUTO_TEXT),
+        legacy="read_out", prior_opener=0.02, prior_cont=0.01),
+    "new__stock_on_board": TemplateDef(
+        ShotSpec(_N, Material.STOCK, base=Base.STICKMAN_BOARD),
+        legacy="stickman_explain_stock", prior_opener=0.05, prior_cont=0.02),
+    "new__wikipedia_on_board": TemplateDef(
+        ShotSpec(_N, Material.WIKIPEDIA, base=Base.STICKMAN_BOARD),
+        legacy="stickman_explain_wikipedia", requires="named_thing_entity",
+        prior_opener=0.03, prior_cont=0.02),
+    # ---- editprev__* : act on the previous image ---------------------------
+    "editprev__hold": TemplateDef(
+        ShotSpec(_E, Material.NONE, Layout(LayoutKind.FREEZE)),
+        legacy="static_of_previous", prior_opener=0.02, prior_cont=0.28),
+    "editprev__zoom": TemplateDef(
+        ShotSpec(_E, Material.NONE, Layout(LayoutKind.CROP_ZOOM)),
+        legacy="zoom_prev_img", prior_opener=0.02, prior_cont=0.16),
+    "editprev__add_stock": TemplateDef(
+        ShotSpec(_E, Material.STOCK, Layout(LayoutKind.COMPOSITE_ONTO_PREVIOUS)),
+        legacy="manual_stock_add_to_previous",
+        prior_opener=0.02, prior_cont=0.16),
+    "editprev__ai_edit": TemplateDef(
+        ShotSpec(_E, Material.AI_STOCK, Layout(LayoutKind.EDIT_IN_PLACE)),
+        legacy="ai_edit", prior_opener=0.02, prior_cont=0.14),
+    "editprev__caption": TemplateDef(
+        ShotSpec(_E, Material.NONE, Layout(LayoutKind.FREEZE),
+                 overlay=Overlay.AUTO_TEXT),
+        legacy="decorate_previous", legacy_ai="stickman_text_overlay",
+        prior_opener=0.02, prior_cont=0.10),
+    "editprev__draw": TemplateDef(
+        ShotSpec(_E, Material.NONE, Layout(LayoutKind.FREEZE),
+                 overlay=Overlay.DRAW),
+        legacy="decorate_previous", prior_opener=0.01, prior_cont=0.04),
+    # ---- editgroup__* : related cells, rule of N ----------------------------
+    "editgroup__stock": TemplateDef(
+        ShotSpec(_N, Material.STOCK, _G), legacy="joint_3_row",
+        requires="list", lock_only=True),
+    "editgroup__same_stock": TemplateDef(
+        ShotSpec(_N, Material.STOCK, _GS), legacy="joint_3_row",
+        requires="list", lock_only=True),
+    "editgroup__ai": TemplateDef(
+        ShotSpec(_N, Material.AI_STOCK, _G), legacy="stickman_joint_3_row",
+        requires="list", lock_only=True),
 }
 
-# Derived groupings — always compute from the axes, never hand-maintain lists.
-PREVIOUS_FAMILY = {name for name, s in SHOT_TEMPLATES.items()
-                   if s.strategy is Strategy.EDIT_PREVIOUS}
-GRID_TEMPLATES = {name for name, s in SHOT_TEMPLATES.items()
-                  if s.layout.kind is LayoutKind.GRID}
-FRESH_MATERIAL_TEMPLATES = {name for name, s in SHOT_TEMPLATES.items()
-                            if s.material is not Material.NONE}
+# Mid-sentence damp on fresh (strategy-new) templates after per-rule weights
+# apply — keeps a loud rule from overturning the "mostly small edits" mix.
+CONT_FRESH_DAMP = 0.40
 
 
 # =============================================================================
-# LEGACY BRIDGE — translate to/from the renderer's old MediaType strings
+# EVERYTHING BELOW IS DERIVED — never hand-edit
 # =============================================================================
-# The renderer still consumes the OLD strings in the `search_type` column.
-# Nothing downstream breaks while the decision side lives in the new model.
+SHOT_TEMPLATES: Dict[str, ShotSpec] = {n: d.spec for n, d in TEMPLATE_DEFS.items()}
+PREVIOUS_FAMILY = {n for n, d in TEMPLATE_DEFS.items()
+                   if d.spec.strategy is Strategy.EDIT_PREVIOUS}
+GRID_TEMPLATES = {n for n, d in TEMPLATE_DEFS.items()
+                  if d.spec.layout.kind is LayoutKind.GRID}
+FRESH_MATERIAL_TEMPLATES = {n for n, d in TEMPLATE_DEFS.items()
+                            if d.spec.material is not Material.NONE}
+AI_TEMPLATES = {n for n, d in TEMPLATE_DEFS.items()
+                if d.spec.material is Material.AI_STOCK
+                or d.spec.base is Base.STICKMAN_BOARD}
+TEMPLATE_REQUIREMENTS = {n: d.requires for n, d in TEMPLATE_DEFS.items()
+                         if d.requires}
+LOCK_ONLY_TEMPLATES = {n for n, d in TEMPLATE_DEFS.items() if d.lock_only}
+PRIOR_OPENER = {n: d.prior_opener for n, d in TEMPLATE_DEFS.items()}
+PRIOR_CONT = {n: d.prior_cont for n, d in TEMPLATE_DEFS.items()}
 
-TEMPLATE_TO_LEGACY: Dict[str, str] = {
-    "stock":                    "stock",
-    "wikipedia":                "wikipedia",
-    "map":                      "map",
-    "object_generate":          "object_generate",
-    "grid_different":           "joint_3_row",
-    # The renderer has no same-term grid yet; joint_3_row is the closest
-    # behaviour (the SAME search term is simply emitted for every cell).
-    "grid_same":                "joint_3_row",
-    "composite_onto_previous":  "manual_stock_add_to_previous",
-    "zoom_previous":            "zoom_prev_img",
-    "hold_previous":            "static_of_previous",
-    "decorate_previous":        "decorate_previous",
-}
-
-LEGACY_TO_TEMPLATE: Dict[str, str] = {
-    "stock":                        "stock",
-    "wikipedia":                    "wikipedia",
-    "map":                          "map",
-    "object_generate":              "object_generate",
-    "joint_3_row":                  "grid_different",
-    "manual_stock_add_to_previous": "composite_onto_previous",
-    "zoom_prev_img":                "zoom_previous",
-    "static_of_previous":           "hold_previous",
-    "decorate_previous":            "decorate_previous",
-    # read_out is retired: it never changed the screen, which is exactly
-    # what hold_previous means.  (See the module docstring.)
-    "read_out":                     "hold_previous",
-}
+LEGACY_TO_TEMPLATE: Dict[str, str] = {}
+for _n, _d in TEMPLATE_DEFS.items():           # first definition wins
+    LEGACY_TO_TEMPLATE.setdefault(_d.legacy, _n)
+    if _d.legacy_ai:
+        LEGACY_TO_TEMPLATE.setdefault(_d.legacy_ai, _n)
 
 
-def to_legacy(template: str) -> str:
-    """Template name -> the renderer's legacy MediaType string."""
-    return TEMPLATE_TO_LEGACY[template]
+def to_legacy(template: str, ai_enabled: bool = False) -> str:
+    d = TEMPLATE_DEFS[template]
+    return d.legacy_ai if (ai_enabled and d.legacy_ai) else d.legacy
 
 
 def from_legacy(legacy: str) -> str:
-    """Legacy MediaType string -> template name (folds read_out away)."""
     return LEGACY_TO_TEMPLATE[legacy]
 
 
-# Sanity: every template must round-trip to a legacy string, and every
-# legacy string must resolve to a real template.  Fails loudly at import
-# time, which is exactly when you want to find out.
-assert set(TEMPLATE_TO_LEGACY) == set(SHOT_TEMPLATES), \
-    "TEMPLATE_TO_LEGACY out of sync with SHOT_TEMPLATES"
-assert set(LEGACY_TO_TEMPLATE.values()) <= set(SHOT_TEMPLATES), \
-    "LEGACY_TO_TEMPLATE points at unknown templates"
+assert all("__" in n for n in TEMPLATE_DEFS), \
+    "template names must follow the strategy__name convention"
+assert set(TEMPLATE_REQUIREMENTS) <= set(TEMPLATE_DEFS)

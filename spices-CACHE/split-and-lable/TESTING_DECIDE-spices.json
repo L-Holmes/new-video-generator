@@ -1,0 +1,5903 @@
+[
+  {
+    "text": "If you open",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "open"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        0,
+        4
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier0: nothing on screen yet -> previous-family blocked",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02
+    },
+    "term_override": null
+  },
+  {
+    "text": "your kitchen cupboard right now, you probably have",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "kitchen",
+        "cupboard"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        4,
+        13
+      ],
+      "list": null
+    },
+    "template": "composite_onto_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "a jar\nof",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "jar"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        13,
+        17
+      ],
+      "list": {
+        "group": 0,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 0, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "nutmeg.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "nutmeg"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        17,
+        19
+      ],
+      "list": {
+        "group": 0,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 0, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "It costs",
+    "ids": [
+      18
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "costs"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        19,
+        22
+      ],
+      "list": null
+    },
+    "template": "wikipedia",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'wikipedia' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.65,
+      "map": 0.3,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "about two dollars.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "about two dollars",
+          "label": "MONEY"
+        }
+      ],
+      "keywords": [
+        "two",
+        "dollars"
+      ],
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": true,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        22,
+        26
+      ],
+      "list": null
+    },
+    "template": "object_generate",
+    "tier": "tier1:lock_money",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: money amount on the line -> object_generate"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "But in the 1600s,",
+    "ids": [
+      1001,
+      18,
+      7
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "the 1600s",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "1600s"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        26,
+        32
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.65,
+      "map": 0.3,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.02,
+      "hold_previous": 0.04,
+      "decorate_previous": 0.015
+    },
+    "term_override": null
+  },
+  {
+    "text": "this little wrinkled seed was",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "little",
+        "wrinkled",
+        "seed"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        32,
+        37
+      ],
+      "list": {
+        "group": 1,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 1, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "the single most contested resource on",
+    "ids": [
+      39
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "single",
+        "contested",
+        "resource"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        37,
+        43
+      ],
+      "list": {
+        "group": 1,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "tier1: list run (group 1, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "the planet.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "planet"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        43,
+        46
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "It was worth more than",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "worth"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        46,
+        52
+      ],
+      "list": {
+        "group": 2,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 2, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "its weight in gold.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "weight",
+        "gold"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        52,
+        57
+      ],
+      "list": {
+        "group": 2,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 2, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "Nutmeg only grew",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Nutmeg",
+          "label": "PERSON"
+        }
+      ],
+      "keywords": [
+        "nutmeg",
+        "grew"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        57,
+        61
+      ],
+      "list": null
+    },
+    "template": "wikipedia",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'wikipedia' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.208,
+      "map": 0.05,
+      "object_generate": 0.3125,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "in one place on Earth:",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "one",
+          "label": "CARDINAL"
+        },
+        {
+          "text": "Earth",
+          "label": "LOC"
+        }
+      ],
+      "keywords": [
+        "one",
+        "place",
+        "earth"
+      ],
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        61,
+        67
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: famous place 'Earth' -> stock footage of it"
+    ],
+    "scoresheet": null,
+    "term_override": "earth"
+  },
+  {
+    "text": "The Banda Islands.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "The Banda Islands",
+          "label": "LOC"
+        }
+      ],
+      "keywords": [
+        "banda",
+        "islands"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        67,
+        72
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier2: unknown-fame place -> map leaned up",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.6325,
+      "wikipedia": 0.08,
+      "map": 0.15,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "A tiny,",
+    "ids": [
+      7
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "tiny"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        72,
+        75
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.025,
+      "decorate_previous": 0.015
+    },
+    "term_override": null
+  },
+  {
+    "text": "incredibly remote volcanic archipelago in",
+    "ids": [
+      24
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "remote",
+        "volcanic",
+        "archipelago"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        75,
+        80
+      ],
+      "list": null
+    },
+    "template": "object_generate",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 24: a sentence ending on a number or amount — e.g. 'the whales vanished' | 'millions of years ago'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'object_generate' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.12,
+      "map": 0.05,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "modern-day Indonesia. If you were a",
+    "ids": [
+      1008,
+      1,
+      1007,
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "modern-day",
+          "label": "DATE"
+        },
+        {
+          "text": "Indonesia",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "modern",
+        "day",
+        "indonesia"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        80,
+        90
+      ],
+      "list": {
+        "group": 3,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1008: a line with nothing you could picture is folded into the line BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "rule 1007: a 'the / a' is pulled back from the next line onto a wordy connector, so the next line can start on a real word — e.g. 'but what if' + 'the' (from 'the planet') → 'but what if the' | 'planet'",
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 3, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "European merchant, getting",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "European",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "european",
+        "merchant"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        90,
+        94
+      ],
+      "list": {
+        "group": 3,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier1: list run (group 3, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "it meant",
+    "ids": [
+      45
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "meant"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        94,
+        96
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 45: 'X saw / found / knew Y' — split to reveal the Y — e.g. 'scientists discovered' | 'fossil skeletons'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.18,
+      "map": 0.05,
+      "object_generate": 0.52,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "sailing for months,",
+    "ids": [
+      25
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "months",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "sailing",
+        "months"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        97,
+        101
+      ],
+      "list": {
+        "group": 4,
+        "index": 0,
+        "size": 3
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 25: an extra comma-list pattern the basic comma rule misses — e.g. 'soaked,' | 'frozen,' | 'exhausted'",
+      "tier1: list run (group 4, item 1/3) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "surviving scurvy, \npirates,\nand",
+    "ids": [
+      1005,
+      29,
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "surviving",
+        "scurvy",
+        "pirates"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        101,
+        110
+      ],
+      "list": {
+        "group": 4,
+        "index": 1,
+        "size": 3
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1005: a lone '-ing / -ed' verb is reunited with the thing it acts on — e.g. 'revealing' + 'evidence' → 'revealing evidence'",
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 4, item 2/3) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "shipwrecks.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "shipwrecks"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        110,
+        112
+      ],
+      "list": {
+        "group": 4,
+        "index": 2,
+        "size": 3
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 4, item 3/3) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "But if you made it back with a",
+    "ids": [
+      1008,
+      12,
+      1007,
+      15
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        112,
+        120
+      ],
+      "list": {
+        "group": 5,
+        "index": 0,
+        "size": 3
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1008: a line with nothing you could picture is folded into the line BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "rule 1007: a 'the / a' is pulled back from the next line onto a wordy connector, so the next line can start on a real word — e.g. 'but what if' + 'the' (from 'the planet') → 'but what if the' | 'planet'",
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 5, item 1/3) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "single ship full of",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "single",
+        "ship",
+        "full"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        120,
+        125
+      ],
+      "list": {
+        "group": 5,
+        "index": 1,
+        "size": 3
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 5, item 2/3) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "nutmeg,",
+    "ids": [
+      26
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "nutmeg"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        125,
+        127
+      ],
+      "list": {
+        "group": 5,
+        "index": 2,
+        "size": 3
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 26: a long 'if / when / because...' opener that ends in a comma — e.g. 'if you already know the answer,' | 'you can skip ahead'",
+      "tier1: list run (group 5, item 3/3) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "you were set for",
+    "ids": [
+      29
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "set"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        127,
+        131
+      ],
+      "list": null
+    },
+    "template": "composite_onto_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "life.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "life"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        131,
+        133
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "The Dutch and",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Dutch",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "dutch"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        134,
+        137
+      ],
+      "list": {
+        "group": 6,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 6, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "the British fought bloody,",
+    "ids": [
+      7
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "British",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "british",
+        "fought",
+        "bloody"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        137,
+        142
+      ],
+      "list": {
+        "group": 6,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier1: list run (group 6, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "brutal wars over these tiny islands.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "brutal",
+        "wars",
+        "tiny",
+        "islands"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        142,
+        149
+      ],
+      "list": null
+    },
+    "template": "composite_onto_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "In fact,",
+    "ids": [
+      7
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "fact"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        149,
+        153
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.025,
+      "decorate_previous": 0.015
+    },
+    "term_override": null
+  },
+  {
+    "text": "to secure a monopoly on nutmeg,",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "secure",
+        "monopoly",
+        "nutmeg"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        153,
+        161
+      ],
+      "list": {
+        "group": 7,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 7, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "the Dutch formally traded",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Dutch",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "dutch",
+        "traded"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        161,
+        165
+      ],
+      "list": {
+        "group": 7,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier1: list run (group 7, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "a different island they owned to",
+    "ids": [
+      39
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "island",
+        "owned"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        165,
+        171
+      ],
+      "list": null
+    },
+    "template": "object_generate",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'object_generate' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "the British.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "British",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "british"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        171,
+        174
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.208,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "That island was Manhattan.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Manhattan",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "island",
+        "manhattan"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        174,
+        180
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: famous place 'Manhattan' -> stock footage of it"
+    ],
+    "scoresheet": null,
+    "term_override": "manhattan"
+  },
+  {
+    "text": "Yep...",
+    "ids": [
+      3
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "yep"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        180,
+        182
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 3: the line ends on a '...' or '…' — e.g. 'and then...' | 'silence'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.15,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.035,
+      "hold_previous": 0.03,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "New York City was traded for nutmeg.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "New York City",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "new",
+        "york",
+        "city",
+        "traded",
+        "nutmeg"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        182,
+        190
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: famous place 'New York City' -> stock footage of it"
+    ],
+    "scoresheet": null,
+    "term_override": "new york city"
+  },
+  {
+    "text": "The entire map of the modern world was quite literally drawn",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "map",
+        "modern",
+        "world",
+        "drawn"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 11,
+      "span": [
+        190,
+        202
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "by people desperately looking for",
+    "ids": [
+      29
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "people",
+        "looking"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        202,
+        207
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "a cheaper way to flavor their dinner.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "cheaper",
+        "way",
+        "flavor",
+        "dinner"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        207,
+        215
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "Because before global shipping, geography dictated your diet.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "global",
+        "shipping",
+        "geography",
+        "dictated",
+        "diet"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        215,
+        226
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.6325,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "Take black pepper.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "take",
+        "black",
+        "pepper"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        226,
+        231
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.6325,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "Today, it’s on",
+    "ids": [
+      1000,
+      12,
+      14
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Today",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "today"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        231,
+        237
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "rule 14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.02,
+      "hold_previous": 0.04,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "every restaurant table in the world.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "restaurant",
+        "table",
+        "world"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        237,
+        244
+      ],
+      "list": null
+    },
+    "template": "composite_onto_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "But originally, the black pepper vine was",
+    "ids": [
+      1009,
+      7,
+      42
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "black",
+        "pepper",
+        "vine"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        244,
+        253
+      ],
+      "list": null
+    },
+    "template": "object_generate",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1009: a line with nothing you could picture is folded into the line AFTER it — e.g. 'but' + 'the dog runs' → 'but the dog runs'",
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "rule 42: 'X is / looks / becomes Y' — split to reveal the Y — e.g. 'the desert becomes' | 'a frozen wasteland'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'object_generate' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.52,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.025,
+      "hold_previous": 0.045,
+      "decorate_previous": 0.02
+    },
+    "term_override": null
+  },
+  {
+    "text": "entirely native to",
+    "ids": [
+      14
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "native"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        253,
+        256
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "the \nMalabar Coast",
+    "ids": [
+      30
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Malabar Coast",
+          "label": "LOC"
+        }
+      ],
+      "keywords": [
+        "malabar",
+        "coast"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        256,
+        260
+      ],
+      "list": null
+    },
+    "template": "map",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 30: after a place or name, the 'in / on / at...' that says WHERE splits off — e.g. 'Alvord Desert' | 'in Oregon'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame place -> map leaned up",
+      "tier3: sampled 'map' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.15,
+      "map": 0.99,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "of India, \nspecifically Kerala.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "India",
+          "label": "GPE"
+        },
+        {
+          "text": "Kerala",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "india",
+        "kerala"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        260,
+        267
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: famous place 'India' -> stock footage of it"
+    ],
+    "scoresheet": null,
+    "term_override": "india"
+  },
+  {
+    "text": "To get to Europe,",
+    "ids": [
+      7
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Europe",
+          "label": "LOC"
+        }
+      ],
+      "keywords": [
+        "europe"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        267,
+        273
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier1: famous place 'Europe' -> stock footage of it"
+    ],
+    "scoresheet": null,
+    "term_override": "europe"
+  },
+  {
+    "text": "it had to pass through dozens of middlemen—",
+    "ids": [
+      2
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "dozens",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "pass",
+        "dozens",
+        "middlemen"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        273,
+        282
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "Arab traders,\n   Venetian merchants—",
+    "ids": [
+      2
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Arab",
+          "label": "NORP"
+        },
+        {
+          "text": "Venetian",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "arab",
+        "traders",
+        "venetian",
+        "merchants"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        282,
+        289
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.208,
+      "map": 0.05,
+      "object_generate": 0.3125,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "each jacking up",
+    "ids": [
+      29
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "jacking"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        289,
+        292
+      ],
+      "list": null
+    },
+    "template": "composite_onto_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "the price.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "price"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        292,
+        295
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "It was so valuable that when",
+    "ids": [
+      10
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "valuable"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        295,
+        302
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.02,
+      "hold_previous": 0.04,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "Alaric the Goth",
+    "ids": [
+      50
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Alaric",
+          "label": "PERSON"
+        }
+      ],
+      "keywords": [
+        "alaric",
+        "goth"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        302,
+        305
+      ],
+      "list": null
+    },
+    "template": "wikipedia",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 50: after a title-name like 'Alaric the Goth', split before the verb — e.g. 'Alaric the Goth' | 'invaded Rome'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'wikipedia' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.99,
+      "map": 0.05,
+      "object_generate": 0.375,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "laid siege to Rome in",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Rome",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "laid",
+        "siege",
+        "rome"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        305,
+        310
+      ],
+      "list": {
+        "group": 8,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 8, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "the year 410,",
+    "ids": [
+      31
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "the year 410",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "year",
+        "410"
+      ],
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        310,
+        314
+      ],
+      "list": {
+        "group": 8,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 31: a comma after a long, meaty clause — e.g. 'after searching the whole house for hours,' | 'they gave up'",
+      "tier1: list run (group 8, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "his ransom demand to",
+    "ids": [
+      32
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "ransom",
+        "demand"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        315,
+        319
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 32: a 'to do something' inside a long sentence — e.g. 'they travelled for days' | 'to reach the coast'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.1,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "spare the city wasn't just gold and",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "spare",
+        "city",
+        "gold"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        319,
+        327
+      ],
+      "list": {
+        "group": 9,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 9, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "silver.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "silver"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        327,
+        329
+      ],
+      "list": {
+        "group": 9,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 9, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "He demanded —",
+    "ids": [
+      1002,
+      12,
+      2
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "demanded"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        329,
+        333
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "rule 2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.015,
+      "hold_previous": 0.035,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "and received —",
+    "ids": [
+      1002,
+      12,
+      2
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "received"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        333,
+        336
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "rule 2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "three thousand pounds of black pepper.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "three thousand pounds",
+          "label": "MONEY"
+        }
+      ],
+      "keywords": [
+        "three",
+        "thousand",
+        "pounds",
+        "black",
+        "pepper"
+      ],
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": true,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        336,
+        343
+      ],
+      "list": null
+    },
+    "template": "object_generate",
+    "tier": "tier1:lock_money",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: money amount on the line -> object_generate"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "And because Europe was",
+    "ids": [
+      1001,
+      18,
+      42
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Europe",
+          "label": "LOC"
+        }
+      ],
+      "keywords": [
+        "europe"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        343,
+        348
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "rule 42: 'X is / looks / becomes Y' — split to reveal the Y — e.g. 'the desert becomes' | 'a frozen wasteland'",
+      "tier1: famous place 'Europe' -> stock footage of it"
+    ],
+    "scoresheet": null,
+    "term_override": "europe"
+  },
+  {
+    "text": "so entirely disconnected \nfrom where",
+    "ids": [
+      10
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "disconnected"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        348,
+        354
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "these spices actually grew,",
+    "ids": [
+      8
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "spices",
+        "grew"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        354,
+        359
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 8: a comma that separates two clauses or list items — e.g. 'she ran,' | 'he walked'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.18,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "the merchants who controlled the trade simply made things up to keep",
+    "ids": [
+      42
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "merchants",
+        "controlled",
+        "trade",
+        "things",
+        "keep"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 12,
+      "span": [
+        359,
+        372
+      ],
+      "list": null
+    },
+    "template": "composite_onto_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 42: 'X is / looks / becomes Y' — split to reveal the Y — e.g. 'the desert becomes' | 'a frozen wasteland'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.52,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "the prices high.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "prices",
+        "high"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        372,
+        376
+      ],
+      "list": null
+    },
+    "template": "composite_onto_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "Cinnamon comes from",
+    "ids": [
+      1000,
+      12,
+      14
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "cinnamon"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        376,
+        380
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "rule 14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.02,
+      "hold_previous": 0.04,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "the inner bark of a specific tree native to",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "inner",
+        "bark",
+        "tree",
+        "native"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 9,
+      "span": [
+        380,
+        389
+      ],
+      "list": {
+        "group": 10,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 10, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "Sri Lanka.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Sri Lanka",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "sri",
+        "lanka"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        389,
+        392
+      ],
+      "list": {
+        "group": 10,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 10, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "But for centuries,",
+    "ids": [
+      7
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "centuries",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "centuries"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        392,
+        397
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.025,
+      "decorate_previous": 0.015
+    },
+    "term_override": null
+  },
+  {
+    "text": "Arab traders told",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Arab",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "arab",
+        "traders",
+        "told"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        397,
+        400
+      ],
+      "list": null
+    },
+    "template": "object_generate",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'object_generate' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.208,
+      "map": 0.05,
+      "object_generate": 0.3125,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "the Greeks and",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "greeks"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        401,
+        404
+      ],
+      "list": {
+        "group": 11,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 11, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "Romans that",
+    "ids": [
+      10
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Romans",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "romans"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        404,
+        406
+      ],
+      "list": {
+        "group": 11,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'",
+      "tier1: list run (group 11, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "cinnamon was gathered by",
+    "ids": [
+      1000,
+      59,
+      29
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "cinnamon",
+        "gathered"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        406,
+        411
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "rule 59: the doer in a passive 'by ...' phrase — cut to who or what did it — e.g. 'it was discovered' | 'by a local farmer'",
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.3,
+      "map": 0.05,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "giant, terrifying birds",
+    "ids": [
+      10
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "giant",
+        "terrifying",
+        "birds"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        411,
+        415
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "who used the spice \nto",
+    "ids": [
+      32
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "used",
+        "spice"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        415,
+        421
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 32: a 'to do something' inside a long sentence — e.g. 'they travelled for days' | 'to reach the coast'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.1,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "build their nests on",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "build",
+        "nests"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        421,
+        425
+      ],
+      "list": {
+        "group": 12,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 12, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "sheer, unclimbable cliffs.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "sheer",
+        "unclimbable",
+        "cliffs"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        425,
+        430
+      ],
+      "list": {
+        "group": 12,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 12, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "The traders claimed",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "traders",
+        "claimed"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        430,
+        434
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "they had to leave heavy chunks of meat out for",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "leave",
+        "heavy",
+        "chunks",
+        "meat"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 10,
+      "span": [
+        434,
+        444
+      ],
+      "list": {
+        "group": 13,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 13, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "the birds,",
+    "ids": [
+      31
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "birds"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        444,
+        447
+      ],
+      "list": {
+        "group": 13,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 31: a comma after a long, meaty clause — e.g. 'after searching the whole house for hours,' | 'they gave up'",
+      "tier1: list run (group 13, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "who would carry the meat",
+    "ids": [
+      39
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "carry",
+        "meat"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        447,
+        453
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "to their nests,",
+    "ids": [
+      25
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "nests"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        453,
+        457
+      ],
+      "list": {
+        "group": 14,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 25: an extra comma-list pattern the basic comma rule misses — e.g. 'soaked,' | 'frozen,' | 'exhausted'",
+      "tier1: list run (group 14, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "collapsing them, and sending",
+    "ids": [
+      29
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "collapsing",
+        "sending"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        457,
+        462
+      ],
+      "list": {
+        "group": 14,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier1: list run (group 14, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "the cinnamon tumbling down.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "cinnamon",
+        "tumbling"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        462,
+        467
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "It was complete nonsense.",
+    "ids": [
+      1001,
+      35,
+      1
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "complete",
+        "nonsense"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        467,
+        473
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 35: an 'is / looks / feels...' followed by the thing it describes — e.g. 'the sky is' | 'a deep burning red'",
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.6325,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.3,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.02,
+      "hold_previous": 0.04,
+      "decorate_previous": 0.048
+    },
+    "term_override": null
+  },
+  {
+    "text": "But the Europeans believed it,",
+    "ids": [
+      7
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Europeans",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "europeans",
+        "believed"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        473,
+        480
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.208,
+      "map": 0.12,
+      "object_generate": 0.15,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.025,
+      "decorate_previous": 0.015
+    },
+    "term_override": null
+  },
+  {
+    "text": "and happily paid",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "paid"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        480,
+        483
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "the monster-bird premium.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "monster",
+        "bird",
+        "premium"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        483,
+        489
+      ],
+      "list": null
+    },
+    "template": "composite_onto_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "By the late 1400s,",
+    "ids": [
+      1001,
+      18,
+      7
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "the late 1400s",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "late",
+        "1400s"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        489,
+        495
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.65,
+      "map": 0.3,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.02,
+      "hold_previous": 0.04,
+      "decorate_previous": 0.015
+    },
+    "term_override": null
+  },
+  {
+    "text": "European powers were sick of paying",
+    "ids": [
+      29
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "European",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "european",
+        "powers",
+        "sick",
+        "paying"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        495,
+        501
+      ],
+      "list": null
+    },
+    "template": "composite_onto_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.208,
+      "map": 0.05,
+      "object_generate": 0.4375,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "these markups.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "markups"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        501,
+        504
+      ],
+      "list": null
+    },
+    "template": "composite_onto_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "So, they started sailing",
+    "ids": [
+      29
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "started",
+        "sailing"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        504,
+        510
+      ],
+      "list": null
+    },
+    "template": "object_generate",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'object_generate' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.038,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "west,",
+    "ids": [
+      25
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "west"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        510,
+        512
+      ],
+      "list": {
+        "group": 15,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 25: an extra comma-list pattern the basic comma rule misses — e.g. 'soaked,' | 'frozen,' | 'exhausted'",
+      "tier1: list run (group 15, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "looking for",
+    "ids": [
+      29
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "looking"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        512,
+        514
+      ],
+      "list": {
+        "group": 15,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier1: list run (group 15, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "a backdoor to",
+    "ids": [
+      39
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "backdoor"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        514,
+        517
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "India.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "India",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "india"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        517,
+        519
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: famous place 'India' -> stock footage of it"
+    ],
+    "scoresheet": null,
+    "term_override": "india"
+  },
+  {
+    "text": "Which brings us to",
+    "ids": [
+      58
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "brings"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        519,
+        524
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 58: a retention hook like 'here's the thing' or 'which brings us to' gets its own beat — e.g. 'here's the thing' | 'the map was wrong'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.035,
+      "decorate_previous": 0.055
+    },
+    "term_override": null
+  },
+  {
+    "text": "Christopher Columbus.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Christopher Columbus",
+          "label": "PERSON"
+        }
+      ],
+      "keywords": [
+        "christopher",
+        "columbus"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        524,
+        527
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.208,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "Columbus lands in",
+    "ids": [
+      39
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Columbus",
+          "label": "NORP"
+        }
+      ],
+      "keywords": [
+        "columbus",
+        "lands"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        527,
+        531
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.208,
+      "map": 0.12,
+      "object_generate": 0.3125,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "the Americas,",
+    "ids": [
+      7
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Americas",
+          "label": "LOC"
+        }
+      ],
+      "keywords": [
+        "americas"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        531,
+        534
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame place -> map leaned up",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.36,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "thinks he's in",
+    "ids": [
+      1000,
+      45,
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "thinks"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        534,
+        539
+      ],
+      "list": {
+        "group": 16,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "rule 45: 'X saw / found / knew Y' — split to reveal the Y — e.g. 'scientists discovered' | 'fossil skeletons'",
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 16, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "India,\nand is desperately looking for",
+    "ids": [
+      29
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "India",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "india",
+        "looking"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        539,
+        547
+      ],
+      "list": {
+        "group": 16,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier1: list run (group 16, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "black pepper to justify the cost of his voyage.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "black",
+        "pepper",
+        "justify",
+        "cost",
+        "voyage"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 9,
+      "span": [
+        547,
+        557
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "He doesn't find it.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "find"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        557,
+        564
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.6325,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "But he does find",
+    "ids": [
+      45
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "find"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        564,
+        569
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 45: 'X saw / found / knew Y' — split to reveal the Y — e.g. 'scientists discovered' | 'fossil skeletons'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.18,
+      "map": 0.05,
+      "object_generate": 0.52,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "a completely unrelated,",
+    "ids": [
+      7
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "unrelated"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        569,
+        573
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "violently spicy red fruit native to",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "spicy",
+        "red",
+        "fruit",
+        "native"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        573,
+        579
+      ],
+      "list": {
+        "group": 17,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 17, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "Mesoamerica.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Mesoamerica",
+          "label": "PRODUCT"
+        }
+      ],
+      "keywords": [
+        "mesoamerica"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        579,
+        581
+      ],
+      "list": {
+        "group": 17,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 17, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "He calls them\"",
+    "ids": [
+      1002,
+      5,
+      5
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "calls"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": true,
+      "n_tokens": 3,
+      "span": [
+        581,
+        586
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier1:lock_quote",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "tier1: quoted speech -> text drawn over the previous image"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "peppers\"",
+    "ids": [
+      1002,
+      5,
+      5
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "peppers"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": true,
+      "n_tokens": 1,
+      "span": [
+        586,
+        588
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier1:lock_quote",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "tier1: quoted speech -> text drawn over the previous image"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "to make his investors happy.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "investors",
+        "happy"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        588,
+        594
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "And unlike the fussy black pepper vines of India,",
+    "ids": [
+      1001,
+      56,
+      14,
+      8
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "India",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "fussy",
+        "black",
+        "pepper",
+        "vines",
+        "india"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 9,
+      "span": [
+        594,
+        605
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 56: a comparison with 'like' / 'as if' / 'resembling' — cut to the compared image — e.g. 'it looked' | 'like a graveyard of giants'",
+      "rule 14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'",
+      "rule 8: a comma that separates two clauses or list items — e.g. 'she ran,' | 'he walked'",
+      "tier1: famous place 'India' -> stock footage of it"
+    ],
+    "scoresheet": null,
+    "term_override": "india"
+  },
+  {
+    "text": "these new\"",
+    "ids": [
+      1002,
+      5,
+      5
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "new"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": true,
+      "n_tokens": 2,
+      "span": [
+        605,
+        608
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier1:lock_quote",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "tier1: quoted speech -> text drawn over the previous image"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "chili peppers\"",
+    "ids": [
+      1002,
+      5,
+      5
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "chili",
+        "peppers"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": true,
+      "n_tokens": 2,
+      "span": [
+        608,
+        611
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier1:lock_quote",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "tier1: quoted speech -> text drawn over the previous image"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "grew almost anywhere.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "grew"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        611,
+        615
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "Within fifty years,",
+    "ids": [
+      1001,
+      18,
+      7
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [
+        {
+          "text": "fifty years",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "fifty",
+        "years"
+      ],
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        615,
+        620
+      ],
+      "list": null
+    },
+    "template": "wikipedia",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'wikipedia' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.65,
+      "map": 0.3,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.02,
+      "hold_previous": 0.04,
+      "decorate_previous": 0.015
+    },
+    "term_override": null
+  },
+  {
+    "text": "they had spread across",
+    "ids": [
+      1000,
+      39,
+      29
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "spread"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        620,
+        624
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.12,
+      "object_generate": 0.35,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "the globe,\n       completely revolutionizing",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "globe",
+        "revolutionizing"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        624,
+        630
+      ],
+      "list": null
+    },
+    "template": "zoom_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "the cuisines of",
+    "ids": [
+      33
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "cuisines"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        630,
+        633
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 33: a sentence ending on an 'of ...' phrase — e.g. 'one of the driest' | 'climates on Earth'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.1,
+      "object_generate": 0.3,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "India,",
+    "ids": [
+      8
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "India",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "india"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        633,
+        635
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 8: a comma that separates two clauses or list items — e.g. 'she ran,' | 'he walked'",
+      "tier1: famous place 'India' -> stock footage of it"
+    ],
+    "scoresheet": null,
+    "term_override": "india"
+  },
+  {
+    "text": "China, and",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "China",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "china"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        635,
+        638
+      ],
+      "list": {
+        "group": 18,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 18, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "Southeast Asia.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Southeast Asia",
+          "label": "LOC"
+        }
+      ],
+      "keywords": [
+        "southeast",
+        "asia"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        638,
+        641
+      ],
+      "list": {
+        "group": 18,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 18, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "So the next time you season your food,\n   look at",
+    "ids": [
+      10
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "next",
+        "time",
+        "season",
+        "food",
+        "look"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 10,
+      "span": [
+        641,
+        654
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.12,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.02,
+      "hold_previous": 0.04,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "what you’re holding.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "holding"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        654,
+        659
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.275,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.2,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "You aren't just holding",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "holding"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        659,
+        665
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "dried bark and",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "dried",
+        "bark"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        665,
+        668
+      ],
+      "list": {
+        "group": 19,
+        "index": 0,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 19, item 1/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "seeds.",
+    "ids": [
+      1
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "seeds"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        668,
+        670
+      ],
+      "list": {
+        "group": 19,
+        "index": 1,
+        "size": 2
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 19, item 2/2) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "You are holding",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "holding"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        670,
+        674
+      ],
+      "list": null
+    },
+    "template": "stock",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.575,
+      "wikipedia": 0.08,
+      "map": 0.05,
+      "object_generate": 0.25,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.005,
+      "zoom_previous": 0.005,
+      "hold_previous": 0.008,
+      "decorate_previous": 0.005
+    },
+    "term_override": null
+  },
+  {
+    "text": "the remnants of",
+    "ids": [
+      33
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "remnants"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        674,
+        677
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 33: a sentence ending on an 'of ...' phrase — e.g. 'one of the driest' | 'climates on Earth'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.1,
+      "object_generate": 0.3,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "global monopolies,\n   the fall of",
+    "ids": [
+      33
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "global",
+        "monopolies",
+        "fall"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        677,
+        684
+      ],
+      "list": null
+    },
+    "template": "hold_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 33: a sentence ending on an 'of ...' phrase — e.g. 'one of the driest' | 'climates on Earth'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.08,
+      "map": 0.1,
+      "object_generate": 0.3,
+      "grid_different": 0.05,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  },
+  {
+    "text": "empires,\n   and",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "empires"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        684,
+        688
+      ],
+      "list": {
+        "group": 20,
+        "index": 0,
+        "size": 3
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 20, item 1/3) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "the reason",
+    "ids": [
+      15
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "reason"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        688,
+        690
+      ],
+      "list": {
+        "group": 20,
+        "index": 1,
+        "size": 3
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 20, item 2/3) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "the map of the world looks",
+    "ids": [
+      12
+    ],
+    "meta": {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "map",
+        "world",
+        "looks"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        690,
+        696
+      ],
+      "list": {
+        "group": 20,
+        "index": 2,
+        "size": 3
+      }
+    },
+    "template": "grid_different",
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier1: list run (group 20, item 3/3) -> one grid cell per item"
+    ],
+    "scoresheet": null,
+    "term_override": null
+  },
+  {
+    "text": "the way it does today.",
+    "ids": [],
+    "meta": {
+      "opener": false,
+      "ents": [
+        {
+          "text": "today",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "way",
+        "today"
+      ],
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        696,
+        702
+      ],
+      "list": null
+    },
+    "template": "decorate_previous",
+    "tier": "tier3:sampled",
+    "why": [
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ],
+    "scoresheet": {
+      "stock": 0.25,
+      "wikipedia": 0.06,
+      "map": 0.04,
+      "object_generate": 0.12,
+      "grid_different": 0.03,
+      "grid_same": 0.02,
+      "composite_onto_previous": 0.42,
+      "zoom_previous": 0.42,
+      "hold_previous": 0.5,
+      "decorate_previous": 0.42
+    },
+    "term_override": null
+  }
+]

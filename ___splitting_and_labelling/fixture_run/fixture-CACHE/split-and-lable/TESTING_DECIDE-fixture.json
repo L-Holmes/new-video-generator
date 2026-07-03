@@ -1,5 +1,36 @@
 [
   {
+    "text": "If you open",
+    "ids": [
+      7
+    ],
+    "meta": {
+      "opener": true,
+      "ents": [],
+      "keywords": [],
+      "has_visualisable": false,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        0,
+        4
+      ],
+      "list": null
+    },
+    "template": "typography_blank",
+    "tier": "tier1:lock_cold_open",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier0: nothing on screen yet -> previous-family blocked",
+      "tier0: AI disabled -> AI templates off the menu",
+      "tier1: cold open with nothing picture-able -> script text on blank"
+    ],
+    "scoresheet": null,
+    "term_override": "If you open"
+  },
+  {
     "text": "\"stop right there\"",
     "ids": [
       5
@@ -26,17 +57,15 @@
     "why": [
       "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
       "tier0: nothing on screen yet -> previous-family blocked",
-      "tier1: lock_quote wanted 'decorate_previous' but it's gated off -> falling through",
+      "tier0: AI disabled -> AI templates off the menu",
+      "tier1: lock_quote wanted 'caption_previous' but it's gated off -> falling through",
       "tier2: opener -> previous-family suppressed, fresh stock boosted",
       "tier3: sampled 'stock' from the score-sheet"
     ],
     "scoresheet": {
       "stock": 0.575,
-      "wikipedia": 0.08,
-      "map": 0.05,
       "object_generate": 0.12,
-      "grid_different": 0.05,
-      "grid_same": 0.02
+      "typography_blank": 0.01
     },
     "term_override": null
   },
@@ -72,6 +101,7 @@
     "tier": "tier1:lock_place",
     "why": [
       "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: obscure place 'Banda Islands' -> highlighted map"
     ],
     "scoresheet": null,
@@ -108,6 +138,7 @@
     "tier": "tier1:lock_place",
     "why": [
       "rule 46: 'X moves through / into / across Y' — split to reveal the place — e.g. 'water flowed' | 'across the plain'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: famous place 'Sahara' -> stock footage of it"
     ],
     "scoresheet": null,
@@ -127,7 +158,6 @@
         }
       ],
       "keywords": [
-        "costs",
         "two",
         "dollars"
       ],
@@ -146,6 +176,7 @@
     "tier": "tier1:lock_money",
     "why": [
       "rule 19: an amount of money gets its own line — e.g. 'it costs' | '$800,000'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: money amount on the line -> object_generate"
     ],
     "scoresheet": null,
@@ -181,6 +212,7 @@
     "tier": "tier1:lock_list_grid",
     "why": [
       "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: list run (group 0, item 1/3) -> one grid cell per item"
     ],
     "scoresheet": null,
@@ -216,6 +248,7 @@
     "tier": "tier1:lock_list_grid",
     "why": [
       "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: list run (group 0, item 2/3) -> one grid cell per item"
     ],
     "scoresheet": null,
@@ -252,6 +285,7 @@
     "tier": "tier1:lock_list_grid",
     "why": [
       "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: list run (group 0, item 3/3) -> one grid cell per item"
     ],
     "scoresheet": null,
@@ -281,6 +315,7 @@
     "tier": "tier1:lock_unvisualisable",
     "why": [
       "rule 1008: a line with nothing you could picture is folded into the line BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: no picture-able content -> hold the previous image"
     ],
     "scoresheet": null,
@@ -308,10 +343,11 @@
       ],
       "list": null
     },
-    "template": "decorate_previous",
+    "template": "caption_previous",
     "tier": "tier1:lock_sfx",
     "why": [
       "rule 60: a sound word like 'boom' or 'crash' stands alone as an SFX sync point — e.g. 'and then' | 'boom' | 'the roof came down'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: SFX beat (rule 60) -> big word over the previous image"
     ],
     "scoresheet": null,
@@ -349,6 +385,7 @@
     "tier": "tier1:lock_named_thing",
     "why": [
       "rule 50: after a title-name like 'Alaric the Goth', split before the verb — e.g. 'Alaric the Goth' | 'invaded Rome'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: obscure name 'Alaric the Goth' -> wikipedia image"
     ],
     "scoresheet": null,
@@ -381,20 +418,19 @@
     "tier": "tier3:sampled",
     "why": [
       "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier2: opener -> previous-family suppressed, fresh stock boosted",
       "tier3: sampled 'stock' from the score-sheet"
     ],
     "scoresheet": {
       "stock": 0.6325,
-      "wikipedia": 0.08,
-      "map": 0.05,
       "object_generate": 0.2,
-      "grid_different": 0.05,
-      "grid_same": 0.02,
+      "typography_blank": 0.01,
       "composite_onto_previous": 0.005,
       "zoom_previous": 0.005,
       "hold_previous": 0.008,
-      "decorate_previous": 0.005
+      "decorate_previous": 0.005,
+      "caption_previous": 0.005
     },
     "term_override": null
   }

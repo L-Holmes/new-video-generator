@@ -21,32 +21,49 @@ Run:  python3 gen_rule_media_weights.py > RULE_MEDIA_WEIGHTS.py
 import sentence_splitter as ss
 
 # Canonical order of the template names (mirrors SHOT_TEMPLATES).
+# NO GRID COLUMNS: grids are LOCK-ONLY (tier-1 list lock) and can never be
+# sampled at tier 3, so per-rule grid affinities would be dead weight.
 MEDIA_ORDER = [
-    "stock", "object_generate", "wikipedia", "map",
-    "grid_different", "grid_same",
+    "stock", "object_generate", "wikipedia", "map", "typography_blank",
+    "stickman", "ai_edit_previous",
+    "stickman_board_stock", "stickman_board_wikipedia",
     "composite_onto_previous", "zoom_previous",
-    "hold_previous", "decorate_previous",
+    "hold_previous", "decorate_previous", "caption_previous",
 ]
 
 # Stock-dominant default for EVERY rule (the "most things are stock" prior).
-# hold_previous absorbs the retired read_out's baseline.
+# hold_previous absorbs the retired read_out's baseline; typography_blank
+# exists almost exclusively via the cold-open lock.
 DEFAULT = {
     "stock": 0.45, "object_generate": 0.12, "wikipedia": 0.08, "map": 0.05,
-    "grid_different": 0.05, "grid_same": 0.02,
+    "typography_blank": 0.01,
     "composite_onto_previous": 0.03, "zoom_previous": 0.03,
     "hold_previous": 0.08, "decorate_previous": 0.04,
 }
 
+# AI + caption columns are DERIVED from the hand-tuned non-AI ones so the
+# two vocabularies can never drift apart (see build_dist):
+#   stickman                  = 0.90 x stock      (the AI workhorse)
+#   ai_edit_previous          = max(composite, zoom)
+#   stickman_board_stock      = 0.50 x stock
+#   stickman_board_wikipedia  = 0.75 x wikipedia
+#   caption_previous          = decorate_previous
+# Override any of them per rule with the short keys below if a rule needs
+# a different AI taste than its non-AI counterpart.
+
 # Per-rule OVERRIDES — only the types this rule should raise above the default.
-# (Anything omitted keeps the DEFAULT value.) Short keys:
+# (Anything omitted keeps the DEFAULT / derived value.) Short keys:
 #   S  stock            OG object_generate   WK wikipedia
-#   MP map              GD grid_different    GS grid_same
+#   MP map              TY typography_blank  SM stickman
+#   AE ai_edit_previous B+ stickman_board_stock  BW stickman_board_wikipedia
 #   C+ composite_onto_previous               ZP zoom_previous
-#   HP hold_previous    DP decorate_previous
+#   HP hold_previous    DP decorate_previous CP caption_previous
 _K = {"S": "stock", "OG": "object_generate", "WK": "wikipedia", "MP": "map",
-      "GD": "grid_different", "GS": "grid_same",
+      "TY": "typography_blank", "SM": "stickman", "AE": "ai_edit_previous",
+      "B+": "stickman_board_stock", "BW": "stickman_board_wikipedia",
       "C+": "composite_onto_previous", "ZP": "zoom_previous",
-      "HP": "hold_previous", "DP": "decorate_previous"}
+      "HP": "hold_previous", "DP": "decorate_previous",
+      "CP": "caption_previous"}
 
 OVERRIDES = {
     # --- SPLITTING RULES ---------------------------------------------------
@@ -64,8 +81,8 @@ OVERRIDES = {
     12: {"S": 0.50, "OG": 0.25},                                  # second finished action
     13: {"HP": 0.40, "S": 0.35, "ZP": 0.15},                      # long lead-in safety net
     14: {"MP": 0.12, "S": 0.42, "HP": 0.18},                      # long PP "beneath the floor"
-    15: {"GD": 0.80, "GS": 0.25, "S": 0.30, "OG": 0.20},          # noun list
-    16: {"GD": 0.80, "GS": 0.25, "S": 0.30, "OG": 0.20},          # bare noun list
+    15: {"S": 0.30, "OG": 0.20},          # noun list
+    16: {"S": 0.30, "OG": 0.20},          # bare noun list
     17: {"HP": 0.35, "ZP": 0.25, "S": 0.30},                      # list wrap-up "all sped past"
     18: {"WK": 0.65, "OG": 0.35, "MP": 0.30, "S": 0.35},          # NAME reveal (person/place/date/amount)
     19: {"OG": 0.60, "S": 0.40},                                  # money reveal (coins/gold)
@@ -73,10 +90,10 @@ OVERRIDES = {
     21: {"HP": 0.35, "S": 0.35, "ZP": 0.15},                      # and/or joins two sentences
     23: {"DP": 0.55, "OG": 0.25, "S": 0.28},                      # adjective reveal
     24: {"OG": 0.35, "S": 0.42, "WK": 0.12},                      # numeric phrase reveal
-    25: {"GD": 0.72, "GS": 0.22, "S": 0.30, "OG": 0.20},          # extra comma-list
+    25: {"S": 0.30, "OG": 0.20},          # extra comma-list
     26: {"HP": 0.42, "ZP": 0.20, "S": 0.30},                      # long subordinate opener comma
     27: {"DP": 0.52, "OG": 0.25, "S": 0.28},                      # terminal adjective pair
-    28: {"S": 0.40, "GD": 0.30, "OG": 0.28, "WK": 0.15},          # noun-stuffed PP
+    28: {"S": 0.40, "OG": 0.28, "WK": 0.15},          # noun-stuffed PP
     29: {"OG": 0.35, "C+": 0.38, "S": 0.30},                      # participle intro "revealing"
     30: {"MP": 0.78, "S": 0.30, "WK": 0.15},                      # post-entity "in Oregon" (PLACE)
     31: {"HP": 0.40, "S": 0.30, "ZP": 0.15},                      # comma after long clause
@@ -97,9 +114,9 @@ OVERRIDES = {
     46: {"MP": 0.58, "S": 0.35, "ZP": 0.18},                      # spatial "across the plain"
     47: {"HP": 0.35, "OG": 0.25, "S": 0.30, "ZP": 0.20},          # result "that satellites use it"
     48: {"WK": 0.52, "OG": 0.30, "S": 0.30, "DP": 0.20},          # equation "Valley of the Whales"
-    49: {"GD": 0.42, "OG": 0.30, "C+": 0.26, "S": 0.35},          # "and blistering heat"
+    49: {"OG": 0.30, "C+": 0.26, "S": 0.35},          # "and blistering heat"
     50: {"WK": 0.72, "OG": 0.30, "S": 0.30},                      # title-name "Alaric the Goth"
-    51: {"GD": 0.72, "GS": 0.22, "S": 0.30, "OG": 0.20},          # first list item
+    51: {"S": 0.30, "OG": 0.20},          # first list item
     52: {"OG": 0.35, "DP": 0.32, "WK": 0.22, "S": 0.35},          # explaining label
     53: {"S": 0.42, "OG": 0.25, "DP": 0.20, "MP": 0.15},          # numeric opener "In 1946,"
     54: {"DP": 0.52, "OG": 0.25, "S": 0.28},                      # terminal descriptor
@@ -127,8 +144,22 @@ OVERRIDES = {
 
 def build_dist(rid):
     d = dict(DEFAULT)
-    for short, val in OVERRIDES.get(rid, {}).items():
+    overrides = OVERRIDES.get(rid, {})
+    for short, val in overrides.items():
         d[_K[short]] = val
+    # derived AI + caption columns (only when not explicitly overridden)
+    derived = {
+        "stickman": round(0.90 * d["stock"], 3),
+        "ai_edit_previous": max(d["composite_onto_previous"],
+                                d["zoom_previous"]),
+        "stickman_board_stock": round(0.50 * d["stock"], 3),
+        "stickman_board_wikipedia": round(0.75 * d["wikipedia"], 3),
+        "caption_previous": d["decorate_previous"],
+    }
+    for name, val in derived.items():
+        short = next(s for s, full in _K.items() if full == name)
+        if short not in overrides:
+            d[name] = val
     return {k: round(d[k], 3) for k in MEDIA_ORDER}
 
 

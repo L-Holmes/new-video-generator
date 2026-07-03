@@ -49,6 +49,13 @@ THEN THEN:
 
 
 
+Integrate optional ability for background video... 
+
+
+---
+
+Structures / outlines for script that we will be generating with AI
+
 
 ========================================================================
 ========================================================================
@@ -59,33 +66,13 @@ THEN THEN:
 ===============================================================
 
 
-but then ask it to use its own judgement anyway?
-
----------
-
-
 0)
-    - modify the prompt... textfile_to_final_json.md
+- modify the prompt... textfile_to_final_json.md
+    - (I think it ignore ai etc..)
 1) Idea for video
 2) split_text.md
 3) textfile_to_final_json.md
 4) feed that in to generate the video
-
-
-
-
-==========
-
-
-
-------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------
-- never add the re-touching or whatever its called to anything apart from stock images or footage...
-    - never the stickmen or anything like that!
-
-
 
 
 ------------------------------------------------------------------------------------------------------------------
@@ -95,7 +82,7 @@ but then ask it to use its own judgement anyway?
 
 ----------------------------------
 
-    THEN:
+THEN:
 for when a map is shown...
 
 
@@ -117,10 +104,11 @@ Grid background (2 or 3 variations)
 ---> then two, up to five pictures layered on top, like a collage, each slightly rotated
 (Perhaps also with slight box shadow etc. to look like it's been placed there...) 
 
+
+--> I THINK THE PAPER MAY BE A BIT.. TACKY? NOT 'TIMELESS'...?
+
 ------------------------------------------------------------------------------------------------------------------
 
-
-------------------------------------------------------------------------------------------------------------------
 
 Other ideas:
 - stock fallback

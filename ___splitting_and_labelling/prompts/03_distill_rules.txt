@@ -1,0 +1,24 @@
+You are tidying a rulebook for an AI visual director.
+
+Below is MASTER_RULES.md — rules taught by a video editor over many
+projects, in the format:
+
+RULE #N)
+* [example line] <k more entries> [example line]
+* design: "..."
+* reason: "..."
+
+It has grown noisy. Produce a CLEANED version that:
+1. merges duplicates and near-duplicates (keep ALL distinct example lines
+   from the merged rules — examples are the most valuable part);
+2. keeps every rule's original number where possible; a merged rule keeps
+   the LOWEST number of its sources and lists the absorbed numbers as
+   "(absorbs #X, #Y)";
+3. never invents new rules, never drops a rule whose meaning isn't covered
+   elsewhere, never renumbers below #1001;
+4. keeps the exact RULE format shown above.
+
+Output the cleaned markdown only.
+
+================ MASTER_RULES.md ================
+{{MASTER_RULES}}

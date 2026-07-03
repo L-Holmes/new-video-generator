@@ -7,17 +7,52 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier0: nothing on screen yet -> previous-family blocked",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "your kitchen cupboard right now, you probably have": {
-    "search_term": "add kitchen cupboard right probably to previous",
+    "search_term": "add kitchen cupboard to previous",
     "search_type": "manual_stock_add_to_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "composite_onto_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "stock",
+      "layout": {
+        "kind": "composite_onto_previous",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ]
   },
   "a jar\nof": {
     "search_term": "jar",
@@ -27,17 +62,49 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 0, item 1/2) -> one grid cell per item"
+    ]
   },
   "nutmeg.": {
-    "search_term": "jar",
-    "search_type": "zoom_prev_img",
-    "position": "1",
+    "search_term": "nutmeg",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 0, item 2/2) -> one grid cell per item"
+    ]
   },
   "It costs": {
     "search_term": "costs",
@@ -47,57 +114,158 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "wikipedia",
+    "shot": {
+      "strategy": "new",
+      "material": "wikipedia",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'wikipedia' from the score-sheet"
+    ]
   },
   "about two dollars.": {
-    "search_term": "costs",
-    "search_type": "static_of_previous",
+    "search_term": "two dollars",
+    "search_type": "object_generate",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "object_generate",
+    "shot": {
+      "strategy": "new",
+      "material": "stock_image",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "object_edit"
+    },
+    "tier": "tier1:lock_money",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: money amount on the line -> object_generate"
+    ]
   },
   "But in the 1600s,": {
     "search_term": "1600s",
-    "search_type": "wikipedia",
+    "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "this little wrinkled seed was": {
-    "search_term": "1600s",
-    "search_type": "zoom_prev_img",
+    "search_term": "little wrinkled seed",
+    "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 1, item 1/2) -> one grid cell per item"
+    ]
   },
   "the single most contested resource on": {
-    "search_term": "add single contested resource to previous",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
+    "search_term": "single contested resource",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "tier1: list run (group 1, item 2/2) -> one grid cell per item"
+    ]
   },
   "the planet.": {
-    "search_term": "1600s",
+    "search_term": "PLANET",
     "search_type": "decorate_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ]
   },
   "It was worth more than": {
     "search_term": "worth",
@@ -107,37 +275,103 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 2, item 1/2) -> one grid cell per item"
+    ]
   },
   "its weight in gold.": {
-    "search_term": "worth",
-    "search_type": "decorate_previous",
+    "search_term": "weight gold",
+    "search_type": "joint_3_row",
+    "position": "2",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 2, item 2/2) -> one grid cell per item"
+    ]
+  },
+  "Nutmeg only grew": {
+    "search_term": "Nutmeg",
+    "search_type": "wikipedia",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "wikipedia",
+    "shot": {
+      "strategy": "new",
+      "material": "wikipedia",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'wikipedia' from the score-sheet"
+    ]
   },
-  "Nutmeg only grew": {
-    "search_term": "nutmeg only grew",
+  "in one place on Earth:": {
+    "search_term": "earth",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "in one place on Earth:": {
-    "search_term": "nutmeg only grew",
-    "search_type": "static_of_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: famous place 'Earth' -> stock footage of it"
+    ]
   },
   "The Banda Islands.": {
     "search_term": "banda islands",
@@ -147,97 +381,270 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier2: unknown-fame place -> map leaned up",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "A tiny,": {
     "search_term": "tiny",
-    "search_type": "read_out",
+    "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "incredibly remote volcanic archipelago in": {
-    "search_term": "add incredibly remote volcanic archipelago to previous",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "modern-day Indonesia. If you were a": {
-    "search_term": "modern-day indonesia",
-    "search_type": "joint_3_row",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "European merchant, getting": {
-    "search_term": "modern-day indonesia",
-    "search_type": "static_of_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "it meant": {
-    "search_term": "meant",
+    "search_term": "remote volcanic archipelago",
     "search_type": "object_generate",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "object_generate",
+    "shot": {
+      "strategy": "new",
+      "material": "stock_image",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "object_edit"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 24: a sentence ending on a number or amount — e.g. 'the whales vanished' | 'millions of years ago'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'object_generate' from the score-sheet"
+    ]
   },
-  "sailing for months,": {
-    "search_term": "meant",
-    "search_type": "decorate_previous",
+  "modern-day Indonesia. If you were a": {
+    "search_term": "modern day indonesia",
+    "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1008: a line with nothing you could picture is folded into the line BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "rule 1007: a 'the / a' is pulled back from the next line onto a wordy connector, so the next line can start on a real word — e.g. 'but what if' + 'the' (from 'the planet') → 'but what if the' | 'planet'",
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 3, item 1/2) -> one grid cell per item"
+    ]
+  },
+  "European merchant, getting": {
+    "search_term": "european merchant",
+    "search_type": "joint_3_row",
+    "position": "2",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier1: list run (group 3, item 2/2) -> one grid cell per item"
+    ]
+  },
+  "it meant": {
+    "search_term": "european merchant",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 45: 'X saw / found / knew Y' — split to reveal the Y — e.g. 'scientists discovered' | 'fossil skeletons'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
+  },
+  "sailing for months,": {
+    "search_term": "sailing months",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 25: an extra comma-list pattern the basic comma rule misses — e.g. 'soaked,' | 'frozen,' | 'exhausted'",
+      "tier1: list run (group 4, item 1/3) -> one grid cell per item"
+    ]
   },
   "surviving scurvy, \npirates,\nand": {
     "search_term": "surviving scurvy pirates",
     "search_type": "joint_3_row",
-    "position": "1",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1005: a lone '-ing / -ed' verb is reunited with the thing it acts on — e.g. 'revealing' + 'evidence' → 'revealing evidence'",
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 4, item 2/3) -> one grid cell per item"
+    ]
   },
   "shipwrecks.": {
-    "search_term": "add shipwrecks to previous",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
+    "search_term": "shipwrecks",
+    "search_type": "joint_3_row",
+    "position": "3",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 4, item 3/3) -> one grid cell per item"
+    ]
   },
   "But if you made it back with a": {
-    "search_term": "made back",
+    "search_term": "but if you made it back with a",
     "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1008: a line with nothing you could picture is folded into the line BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "rule 1007: a 'the / a' is pulled back from the next line onto a wordy connector, so the next line can start on a real word — e.g. 'but what if' + 'the' (from 'the planet') → 'but what if the' | 'planet'",
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 5, item 1/3) -> one grid cell per item"
+    ]
   },
   "single ship full of": {
     "search_term": "single ship full",
@@ -247,17 +654,49 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 5, item 2/3) -> one grid cell per item"
+    ]
   },
   "nutmeg,": {
-    "search_term": "single ship full",
-    "search_type": "decorate_previous",
-    "position": "1",
+    "search_term": "nutmeg",
+    "search_type": "joint_3_row",
+    "position": "3",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 26: a long 'if / when / because...' opener that ends in a comma — e.g. 'if you already know the answer,' | 'you can skip ahead'",
+      "tier1: list run (group 5, item 3/3) -> one grid cell per item"
+    ]
   },
   "you were set for": {
     "search_term": "add set to previous",
@@ -267,17 +706,51 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "composite_onto_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "stock",
+      "layout": {
+        "kind": "composite_onto_previous",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ]
   },
   "life.": {
-    "search_term": "single ship full",
+    "search_term": "nutmeg",
     "search_type": "zoom_prev_img",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
   },
   "The Dutch and": {
     "search_term": "dutch",
@@ -287,27 +760,76 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 6, item 1/2) -> one grid cell per item"
+    ]
   },
   "the British fought bloody,": {
-    "search_term": "dutch",
-    "search_type": "zoom_prev_img",
-    "position": "1",
+    "search_term": "british fought bloody",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier1: list run (group 6, item 2/2) -> one grid cell per item"
+    ]
   },
   "brutal wars over these tiny islands.": {
-    "search_term": "dutch",
-    "search_type": "zoom_prev_img",
+    "search_term": "add brutal wars tiny islands to previous",
+    "search_type": "manual_stock_add_to_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "composite_onto_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "stock",
+      "layout": {
+        "kind": "composite_onto_previous",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ]
   },
   "In fact,": {
     "search_term": "fact",
@@ -317,57 +839,157 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "to secure a monopoly on nutmeg,": {
-    "search_term": "fact",
-    "search_type": "zoom_prev_img",
+    "search_term": "secure monopoly nutmeg",
+    "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 7, item 1/2) -> one grid cell per item"
+    ]
   },
   "the Dutch formally traded": {
-    "search_term": "add dutch formally traded to previous",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
+    "search_term": "dutch traded",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier1: list run (group 7, item 2/2) -> one grid cell per item"
+    ]
   },
   "a different island they owned to": {
-    "search_term": "add different island owned to previous",
-    "search_type": "manual_stock_add_to_previous",
+    "search_term": "island owned",
+    "search_type": "object_generate",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "object_generate",
+    "shot": {
+      "strategy": "new",
+      "material": "stock_image",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "object_edit"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'object_generate' from the score-sheet"
+    ]
   },
   "the British.": {
-    "search_term": "fact",
+    "search_term": "island owned",
     "search_type": "static_of_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
   },
   "That island was Manhattan.": {
-    "search_term": "island manhattan",
+    "search_term": "manhattan",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: famous place 'Manhattan' -> stock footage of it"
+    ]
   },
   "Yep...": {
     "search_term": "yep",
@@ -377,57 +999,158 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 3: the line ends on a '...' or '…' — e.g. 'and then...' | 'silence'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "New York City was traded for nutmeg.": {
-    "search_term": "new york city traded nutmeg",
+    "search_term": "new york city",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: famous place 'New York City' -> stock footage of it"
+    ]
   },
   "The entire map of the modern world was quite literally drawn": {
-    "search_term": "entire map modern world quite literally",
+    "search_term": "map modern world drawn",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "by people desperately looking for": {
-    "search_term": "entire map modern world quite literally",
-    "search_type": "static_of_previous",
+    "search_term": "map modern world drawn",
+    "search_type": "zoom_prev_img",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
   },
   "a cheaper way to flavor their dinner.": {
-    "search_term": "entire map modern world quite literally",
+    "search_term": "map modern world drawn",
     "search_type": "static_of_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
   },
   "Because before global shipping, geography dictated your diet.": {
-    "search_term": "because before global shipping geography dictated",
+    "search_term": "global shipping geography dictated diet",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "Take black pepper.": {
     "search_term": "take black pepper",
@@ -437,17 +1160,53 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "Today, it’s on": {
-    "search_term": "today s",
+    "search_term": "today",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "rule 14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "every restaurant table in the world.": {
     "search_term": "add restaurant table world to previous",
@@ -457,77 +1216,215 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "composite_onto_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "stock",
+      "layout": {
+        "kind": "composite_onto_previous",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ]
   },
   "But originally, the black pepper vine was": {
-    "search_term": "originally black pepper vine",
+    "search_term": "black pepper vine",
     "search_type": "object_generate",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "object_generate",
+    "shot": {
+      "strategy": "new",
+      "material": "stock_image",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "object_edit"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1009: a line with nothing you could picture is folded into the line AFTER it — e.g. 'but' + 'the dog runs' → 'but the dog runs'",
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "rule 42: 'X is / looks / becomes Y' — split to reveal the Y — e.g. 'the desert becomes' | 'a frozen wasteland'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'object_generate' from the score-sheet"
+    ]
   },
   "entirely native to": {
-    "search_term": "entirely native",
-    "search_type": "object_generate",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "the \nMalabar Coast": {
-    "search_term": "malabar coast",
-    "search_type": "map",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "of India, \nspecifically Kerala.": {
-    "search_term": "malabar coast",
-    "search_type": "static_of_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "To get to Europe,": {
-    "search_term": "get europe",
-    "search_type": "stock",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "it had to pass through dozens of middlemen—": {
-    "search_term": "get europe",
+    "search_term": "NATIVE",
     "search_type": "decorate_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ]
+  },
+  "the \nMalabar Coast": {
+    "search_term": "Malabar Coast",
+    "search_type": "map",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "map",
+    "shot": {
+      "strategy": "new",
+      "material": "map",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 30: after a place or name, the 'in / on / at...' that says WHERE splits off — e.g. 'Alvord Desert' | 'in Oregon'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame place -> map leaned up",
+      "tier3: sampled 'map' from the score-sheet"
+    ]
+  },
+  "of India, \nspecifically Kerala.": {
+    "search_term": "india",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: famous place 'India' -> stock footage of it"
+    ]
+  },
+  "To get to Europe,": {
+    "search_term": "europe",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier1: famous place 'Europe' -> stock footage of it"
+    ]
+  },
+  "it had to pass through dozens of middlemen—": {
+    "search_term": "PASS DOZENS MIDDLEMEN",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ]
   },
   "Arab traders,\n   Venetian merchants—": {
-    "search_term": "get europe",
+    "search_term": "europe",
     "search_type": "static_of_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
   },
   "each jacking up": {
     "search_term": "add jacking to previous",
@@ -537,17 +1434,51 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "composite_onto_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "stock",
+      "layout": {
+        "kind": "composite_onto_previous",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ]
   },
   "the price.": {
-    "search_term": "get europe",
-    "search_type": "static_of_previous",
+    "search_term": "europe",
+    "search_type": "zoom_prev_img",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
   },
   "It was so valuable that when": {
     "search_term": "valuable",
@@ -557,17 +1488,52 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "Alaric the Goth": {
-    "search_term": "alaric goth",
+    "search_term": "Alaric",
     "search_type": "wikipedia",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "wikipedia",
+    "shot": {
+      "strategy": "new",
+      "material": "wikipedia",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 50: after a title-name like 'Alaric the Goth', split before the verb — e.g. 'Alaric the Goth' | 'invaded Rome'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'wikipedia' from the score-sheet"
+    ]
   },
   "laid siege to Rome in": {
     "search_term": "laid siege rome",
@@ -577,47 +1543,128 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 8, item 1/2) -> one grid cell per item"
+    ]
   },
   "the year 410,": {
-    "search_term": "laid siege rome",
-    "search_type": "static_of_previous",
-    "position": "1",
+    "search_term": "year 410",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 31: a comma after a long, meaty clause — e.g. 'after searching the whole house for hours,' | 'they gave up'",
+      "tier1: list run (group 8, item 2/2) -> one grid cell per item"
+    ]
   },
   "his ransom demand to": {
-    "search_term": "laid siege rome",
-    "search_type": "decorate_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "spare the city wasn't just gold and": {
-    "search_term": "add spare city wasn't gold to previous",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "silver.": {
-    "search_term": "laid siege rome",
+    "search_term": "year 410",
     "search_type": "static_of_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 32: a 'to do something' inside a long sentence — e.g. 'they travelled for days' | 'to reach the coast'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
+  },
+  "spare the city wasn't just gold and": {
+    "search_term": "spare city gold",
+    "search_type": "joint_3_row",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 9, item 1/2) -> one grid cell per item"
+    ]
+  },
+  "silver.": {
+    "search_term": "silver",
+    "search_type": "joint_3_row",
+    "position": "2",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 9, item 2/2) -> one grid cell per item"
+    ]
   },
   "He demanded —": {
     "search_term": "demanded",
@@ -627,7 +1674,26 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "rule 2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "and received —": {
     "search_term": "demanded",
@@ -637,57 +1703,161 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "rule 2: a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
   },
   "three thousand pounds of black pepper.": {
-    "search_term": "demanded",
-    "search_type": "static_of_previous",
+    "search_term": "three thousand pounds black pepper",
+    "search_type": "object_generate",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "object_generate",
+    "shot": {
+      "strategy": "new",
+      "material": "stock_image",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "object_edit"
+    },
+    "tier": "tier1:lock_money",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: money amount on the line -> object_generate"
+    ]
   },
   "And because Europe was": {
-    "search_term": "because europe",
-    "search_type": "wikipedia",
+    "search_term": "europe",
+    "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "rule 42: 'X is / looks / becomes Y' — split to reveal the Y — e.g. 'the desert becomes' | 'a frozen wasteland'",
+      "tier1: famous place 'Europe' -> stock footage of it"
+    ]
   },
   "so entirely disconnected \nfrom where": {
-    "search_term": "because europe",
+    "search_term": "DISCONNECTED",
     "search_type": "decorate_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ]
   },
   "these spices actually grew,": {
-    "search_term": "because europe",
+    "search_term": "europe",
     "search_type": "zoom_prev_img",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 8: a comma that separates two clauses or list items — e.g. 'she ran,' | 'he walked'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
   },
   "the merchants who controlled the trade simply made things up to keep": {
-    "search_term": "because europe",
-    "search_type": "static_of_previous",
+    "search_term": "add merchants controlled trade things keep to previous",
+    "search_type": "manual_stock_add_to_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "composite_onto_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "stock",
+      "layout": {
+        "kind": "composite_onto_previous",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 42: 'X is / looks / becomes Y' — split to reveal the Y — e.g. 'the desert becomes' | 'a frozen wasteland'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ]
   },
   "the prices high.": {
     "search_term": "add prices high to previous",
@@ -697,37 +1867,105 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "composite_onto_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "stock",
+      "layout": {
+        "kind": "composite_onto_previous",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ]
   },
   "Cinnamon comes from": {
-    "search_term": "cinnamon comes",
+    "search_term": "cinnamon",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "rule 14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "the inner bark of a specific tree native to": {
-    "search_term": "cinnamon comes",
-    "search_type": "zoom_prev_img",
+    "search_term": "inner bark tree native",
+    "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 10, item 1/2) -> one grid cell per item"
+    ]
   },
   "Sri Lanka.": {
-    "search_term": "cinnamon comes",
-    "search_type": "decorate_previous",
-    "position": "1",
+    "search_term": "sri lanka",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 10, item 2/2) -> one grid cell per item"
+    ]
   },
   "But for centuries,": {
     "search_term": "centuries",
@@ -737,17 +1975,52 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "Arab traders told": {
-    "search_term": "add arab traders told to previous",
-    "search_type": "manual_stock_add_to_previous",
+    "search_term": "arab traders told",
+    "search_type": "object_generate",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "object_generate",
+    "shot": {
+      "strategy": "new",
+      "material": "stock_image",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "object_edit"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'object_generate' from the score-sheet"
+    ]
   },
   "the Greeks and": {
     "search_term": "greeks",
@@ -757,67 +2030,184 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 11, item 1/2) -> one grid cell per item"
+    ]
   },
   "Romans that": {
-    "search_term": "greeks",
-    "search_type": "static_of_previous",
-    "position": "1",
+    "search_term": "romans",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'",
+      "tier1: list run (group 11, item 2/2) -> one grid cell per item"
+    ]
   },
-  "cinnamon was gathered \nby": {
-    "search_term": "greeks",
-    "search_type": "static_of_previous",
+  "cinnamon was gathered by": {
+    "search_term": "romans",
+    "search_type": "zoom_prev_img",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "rule 59: the doer in a passive 'by ...' phrase — cut to who or what did it — e.g. 'it was discovered' | 'by a local farmer'",
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
   },
   "giant, terrifying birds": {
-    "search_term": "greeks",
+    "search_term": "romans",
     "search_type": "static_of_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
   },
   "who used the spice \nto": {
-    "search_term": "greeks",
+    "search_term": "romans",
     "search_type": "static_of_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 32: a 'to do something' inside a long sentence — e.g. 'they travelled for days' | 'to reach the coast'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
   },
   "build their nests on": {
-    "search_term": "greeks",
-    "search_type": "static_of_previous",
+    "search_term": "build nests",
+    "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 12, item 1/2) -> one grid cell per item"
+    ]
   },
   "sheer, unclimbable cliffs.": {
-    "search_term": "greeks",
-    "search_type": "static_of_previous",
-    "position": "1",
+    "search_term": "sheer unclimbable cliffs",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 12, item 2/2) -> one grid cell per item"
+    ]
   },
   "The traders claimed": {
     "search_term": "traders claimed",
@@ -827,7 +2217,24 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "they had to leave heavy chunks of meat out for": {
     "search_term": "leave heavy chunks meat",
@@ -837,27 +2244,76 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 13, item 1/2) -> one grid cell per item"
+    ]
   },
   "the birds,": {
-    "search_term": "leave heavy chunks meat",
-    "search_type": "static_of_previous",
-    "position": "1",
+    "search_term": "birds",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 31: a comma after a long, meaty clause — e.g. 'after searching the whole house for hours,' | 'they gave up'",
+      "tier1: list run (group 13, item 2/2) -> one grid cell per item"
+    ]
   },
   "who would carry the meat": {
-    "search_term": "leave heavy chunks meat",
+    "search_term": "birds",
     "search_type": "zoom_prev_img",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
   },
   "to their nests,": {
     "search_term": "nests",
@@ -867,37 +2323,105 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 25: an extra comma-list pattern the basic comma rule misses — e.g. 'soaked,' | 'frozen,' | 'exhausted'",
+      "tier1: list run (group 14, item 1/2) -> one grid cell per item"
+    ]
   },
   "collapsing them, and sending": {
-    "search_term": "nests",
-    "search_type": "static_of_previous",
-    "position": "1",
+    "search_term": "collapsing sending",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier1: list run (group 14, item 2/2) -> one grid cell per item"
+    ]
   },
   "the cinnamon tumbling down.": {
-    "search_term": "nests",
+    "search_term": "CINNAMON TUMBLING",
     "search_type": "decorate_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ]
   },
   "It was complete nonsense.": {
     "search_term": "complete nonsense",
-    "search_type": "read_out",
+    "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 35: an 'is / looks / feels...' followed by the thing it describes — e.g. 'the sky is' | 'a deep burning red'",
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "But the Europeans believed it,": {
     "search_term": "europeans believed",
@@ -907,27 +2431,79 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "and happily paid": {
-    "search_term": "europeans believed",
+    "search_term": "PAID",
     "search_type": "decorate_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ]
   },
   "the monster-bird premium.": {
-    "search_term": "europeans believed",
-    "search_type": "zoom_prev_img",
+    "search_term": "add monster bird premium to previous",
+    "search_type": "manual_stock_add_to_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "composite_onto_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "stock",
+      "layout": {
+        "kind": "composite_onto_previous",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ]
   },
   "By the late 1400s,": {
     "search_term": "late 1400s",
@@ -937,27 +2513,81 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "European powers were sick of paying": {
-    "search_term": "late 1400s",
-    "search_type": "zoom_prev_img",
+    "search_term": "add european powers sick paying to previous",
+    "search_type": "manual_stock_add_to_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "composite_onto_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "stock",
+      "layout": {
+        "kind": "composite_onto_previous",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ]
   },
   "these markups.": {
-    "search_term": "late 1400s",
-    "search_type": "zoom_prev_img",
+    "search_term": "add markups to previous",
+    "search_type": "manual_stock_add_to_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "composite_onto_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "stock",
+      "layout": {
+        "kind": "composite_onto_previous",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'composite_onto_previous' from the score-sheet"
+    ]
   },
   "So, they started sailing": {
     "search_term": "started sailing",
@@ -967,7 +2597,24 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "object_generate",
+    "shot": {
+      "strategy": "new",
+      "material": "stock_image",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "object_edit"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'object_generate' from the score-sheet"
+    ]
   },
   "west,": {
     "search_term": "west",
@@ -977,47 +2624,157 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 25: an extra comma-list pattern the basic comma rule misses — e.g. 'soaked,' | 'frozen,' | 'exhausted'",
+      "tier1: list run (group 15, item 1/2) -> one grid cell per item"
+    ]
   },
   "looking for": {
-    "search_term": "west",
-    "search_type": "decorate_previous",
-    "position": "1",
+    "search_term": "looking",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier1: list run (group 15, item 2/2) -> one grid cell per item"
+    ]
   },
   "a backdoor to": {
-    "search_term": "west",
+    "search_term": "looking",
     "search_type": "zoom_prev_img",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
   },
   "India.": {
-    "search_term": "west",
-    "search_type": "static_of_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "Which brings us to Christopher Columbus.": {
-    "search_term": "brings us christopher columbus",
+    "search_term": "india",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: famous place 'India' -> stock footage of it"
+    ]
+  },
+  "Which brings us to": {
+    "search_term": "brings",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 58: a retention hook like 'here's the thing' or 'which brings us to' gets its own beat — e.g. 'here's the thing' | 'the map was wrong'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
+  },
+  "Christopher Columbus.": {
+    "search_term": "brings",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
   },
   "Columbus lands in": {
     "search_term": "columbus lands",
@@ -1027,57 +2784,161 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier2: unknown-fame name -> wikipedia leaned up",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "the Americas,": {
-    "search_term": "columbus lands",
+    "search_term": "AMERICAS",
     "search_type": "decorate_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier2: unknown-fame place -> map leaned up",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ]
   },
   "thinks he's in": {
-    "search_term": "columbus lands",
-    "search_type": "zoom_prev_img",
+    "search_term": "thinks",
+    "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "rule 45: 'X saw / found / knew Y' — split to reveal the Y — e.g. 'scientists discovered' | 'fossil skeletons'",
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 16, item 1/2) -> one grid cell per item"
+    ]
   },
   "India,\nand is desperately looking for": {
-    "search_term": "india desperately looking",
-    "search_type": "stock",
-    "position": "1",
+    "search_term": "india looking",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier1: list run (group 16, item 2/2) -> one grid cell per item"
+    ]
   },
   "black pepper to justify the cost of his voyage.": {
-    "search_term": "india desperately looking",
+    "search_term": "india looking",
     "search_type": "static_of_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
   },
   "He doesn't find it.": {
-    "search_term": "doesn't find",
+    "search_term": "find",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "But he does find": {
     "search_term": "find",
@@ -1087,7 +2948,24 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 45: 'X saw / found / knew Y' — split to reveal the Y — e.g. 'scientists discovered' | 'fossil skeletons'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "a completely unrelated,": {
     "search_term": "find",
@@ -1097,167 +2975,461 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
   },
   "violently spicy red fruit native to": {
-    "search_term": "find",
-    "search_type": "static_of_previous",
+    "search_term": "spicy red fruit native",
+    "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 17, item 1/2) -> one grid cell per item"
+    ]
   },
   "Mesoamerica.": {
-    "search_term": "find",
-    "search_type": "static_of_previous",
-    "position": "1",
+    "search_term": "mesoamerica",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 17, item 2/2) -> one grid cell per item"
+    ]
   },
   "He calls them\"": {
-    "search_term": "calls",
-    "search_type": "read_out",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "peppers\"": {
-    "search_term": "add peppers to previous",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "to make his investors happy.": {
-    "search_term": "find",
+    "search_term": "CALLS",
     "search_type": "decorate_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier1:lock_quote",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "tier1: quoted speech -> text drawn over the previous image"
+    ]
   },
-  "And unlike the fussy black pepper vines of India,": {
-    "search_term": "unlike fussy black pepper vines india",
-    "search_type": "read_out",
+  "peppers\"": {
+    "search_term": "PEPPERS",
+    "search_type": "decorate_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier1:lock_quote",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "tier1: quoted speech -> text drawn over the previous image"
+    ]
   },
-  "these new\"": {
-    "search_term": "add new to previous",
-    "search_type": "manual_stock_add_to_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "chili peppers\"": {
-    "search_term": "chili peppers",
-    "search_type": "read_out",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "grew almost anywhere.": {
-    "search_term": "find",
+  "to make his investors happy.": {
+    "search_term": "mesoamerica",
     "search_type": "static_of_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
+  },
+  "And unlike the fussy black pepper vines of India,": {
+    "search_term": "india",
+    "search_type": "stock",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 56: a comparison with 'like' / 'as if' / 'resembling' — cut to the compared image — e.g. 'it looked' | 'like a graveyard of giants'",
+      "rule 14: a long 'in / on / at / with...' phrase — e.g. 'she hid' | 'beneath the old wooden floor'",
+      "rule 8: a comma that separates two clauses or list items — e.g. 'she ran,' | 'he walked'",
+      "tier1: famous place 'India' -> stock footage of it"
+    ]
+  },
+  "these new\"": {
+    "search_term": "NEW",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier1:lock_quote",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "tier1: quoted speech -> text drawn over the previous image"
+    ]
+  },
+  "chili peppers\"": {
+    "search_term": "CHILI PEPPERS",
+    "search_type": "decorate_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier1:lock_quote",
+    "why": [
+      "rule 1002: a lonely piece of punctuation ('...', a dash, a stray quote) is stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
+      "tier1: quoted speech -> text drawn over the previous image"
+    ]
+  },
+  "grew almost anywhere.": {
+    "search_term": "india",
+    "search_type": "static_of_previous",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
   },
   "Within fifty years,": {
-    "search_term": "within fifty years",
+    "search_term": "fifty years",
     "search_type": "wikipedia",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "wikipedia",
+    "shot": {
+      "strategy": "new",
+      "material": "wikipedia",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1001: a tiny leftover bit is attached to the line AFTER it, where it belongs — e.g. 'is' + 'big' → 'is big'",
+      "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'wikipedia' from the score-sheet"
+    ]
   },
   "they had spread across": {
-    "search_term": "within fifty years",
+    "search_term": "fifty years",
     "search_type": "zoom_prev_img",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1000: a tiny leftover bit (like 'and' or 'the') is attached to the line BEFORE it, where it belongs — e.g. 'the curious child' + 'and' → 'the curious child and'",
+      "rule 39: the thing after a preposition gets its own line — e.g. 'shapes appeared' | 'in the rock'",
+      "rule 29: an '-ing' or '-ed' word that introduces what comes next — e.g. 'revealing' | 'a hidden cave'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
   },
   "the globe,\n       completely revolutionizing": {
-    "search_term": "within fifty years",
+    "search_term": "fifty years",
+    "search_type": "zoom_prev_img",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "zoom_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "crop_zoom",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'zoom_previous' from the score-sheet"
+    ]
+  },
+  "the cuisines of": {
+    "search_term": "fifty years",
     "search_type": "static_of_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
-  },
-  "the cuisines of": {
-    "search_term": "within fifty years",
-    "search_type": "decorate_previous",
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 33: a sentence ending on an 'of ...' phrase — e.g. 'one of the driest' | 'climates on Earth'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
   },
   "India,": {
-    "search_term": "within fifty years",
-    "search_type": "zoom_prev_img",
+    "search_term": "india",
+    "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_place",
+    "why": [
+      "rule 8: a comma that separates two clauses or list items — e.g. 'she ran,' | 'he walked'",
+      "tier1: famous place 'India' -> stock footage of it"
+    ]
   },
   "China, and": {
-    "search_term": "within fifty years",
-    "search_type": "zoom_prev_img",
+    "search_term": "china",
+    "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 18, item 1/2) -> one grid cell per item"
+    ]
   },
   "Southeast Asia.": {
-    "search_term": "within fifty years",
-    "search_type": "zoom_prev_img",
-    "position": "1",
+    "search_term": "southeast asia",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 18, item 2/2) -> one grid cell per item"
+    ]
   },
   "So the next time you season your food,\n   look at": {
     "search_term": "next time season food look",
@@ -1267,27 +3439,78 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 10: a joining word like 'when', 'because', 'which' or 'that' starts a new part — e.g. 'he left' | 'because it rained'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "what you’re holding.": {
-    "search_term": "re holding",
+    "search_term": "holding",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "You aren't just holding": {
-    "search_term": "aren't holding",
+    "search_term": "holding",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "dried bark and": {
     "search_term": "dried bark",
@@ -1297,17 +3520,49 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 19, item 1/2) -> one grid cell per item"
+    ]
   },
   "seeds.": {
-    "search_term": "dried bark",
-    "search_type": "zoom_prev_img",
-    "position": "1",
+    "search_term": "seeds",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier1: list run (group 19, item 2/2) -> one grid cell per item"
+    ]
   },
   "You are holding": {
     "search_term": "holding",
@@ -1317,17 +3572,51 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "stock",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier2: opener -> previous-family suppressed, fresh stock boosted",
+      "tier3: sampled 'stock' from the score-sheet"
+    ]
   },
   "the remnants of": {
-    "search_term": "holding",
+    "search_term": "REMNANTS",
     "search_type": "decorate_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 33: a sentence ending on an 'of ...' phrase — e.g. 'one of the driest' | 'climates on Earth'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ]
   },
   "global monopolies,\n   the fall of": {
     "search_term": "holding",
@@ -1337,7 +3626,24 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "hold_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "rule 33: a sentence ending on an 'of ...' phrase — e.g. 'one of the driest' | 'climates on Earth'",
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'hold_previous' from the score-sheet"
+    ]
   },
   "empires,\n   and": {
     "search_term": "empires",
@@ -1347,36 +3653,100 @@
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 20, item 1/3) -> one grid cell per item"
+    ]
   },
   "the reason": {
-    "search_term": "empires",
-    "search_type": "static_of_previous",
-    "position": "1",
+    "search_term": "reason",
+    "search_type": "joint_3_row",
+    "position": "2",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier1: list run (group 20, item 2/3) -> one grid cell per item"
+    ]
   },
   "the map of the world looks": {
-    "search_term": "empires",
-    "search_type": "static_of_previous",
-    "position": "1",
+    "search_term": "map world looks",
+    "search_type": "joint_3_row",
+    "position": "3",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "grid_different",
+    "shot": {
+      "strategy": "new",
+      "material": "stock",
+      "layout": {
+        "kind": "grid",
+        "n": 3,
+        "same_term": false
+      },
+      "overlay": "none"
+    },
+    "tier": "tier1:lock_list_grid",
+    "why": [
+      "rule 12: one complete action has finished and the next begins — e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
+      "tier1: list run (group 20, item 3/3) -> one grid cell per item"
+    ]
   },
   "the way it does today.": {
-    "search_term": "empires",
+    "search_term": "WAY TODAY",
     "search_type": "decorate_previous",
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
     "music_trim_seconds": 0,
-    "music_fade_out": 0
+    "music_fade_out": 0,
+    "template": "decorate_previous",
+    "shot": {
+      "strategy": "edit_previous",
+      "material": "none",
+      "layout": {
+        "kind": "freeze",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "draw"
+    },
+    "tier": "tier3:sampled",
+    "why": [
+      "tier2: continuation -> previous-family floored, fresh stock damped",
+      "tier3: sampled 'decorate_previous' from the score-sheet"
+    ]
   }
 }

@@ -67,7 +67,7 @@ from spacy.tokens import Doc, Span, Token
 # === VERSION marker — change me when shipping a new revision ===========
 # The user can check this at runtime: `from sentence_splitter import VERSION`.
 # If it doesn't match the version you expect, they're running stale code.
-VERSION = "v18.1-2026-07-02"
+VERSION = "v18.5-2026-07-03"
 
 
  # === SINGLE-RUN DEBUG FLAG ================================================
@@ -278,6 +278,8 @@ RULE_DESCRIPTIONS: Dict[int, str] = {
         "e.g. 'it was discovered' | 'by a local farmer'",
     60: "a sound word like 'boom' or 'crash' stands alone as an SFX sync "
         "point — e.g. 'and then' | 'boom' | 'the roof came down'",
+    61: "a strong verb that introduces a comma list is cut from item one — "
+        "e.g. 'the blaze devoured' | 'temples,' | 'villas,'",
 
     # ---- MERGING RULES (post-processing glue passes) ------------------------
     1000: "a tiny leftover bit (like 'and' or 'the') is attached to the line "
@@ -303,6 +305,8 @@ RULE_DESCRIPTIONS: Dict[int, str] = {
           "'but what if the' | 'planet'",
     1008: "a line with nothing you could picture is folded into the line "
           "BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+    1010: "an idiomatic saying ('the rest is history') is kept whole and "
+          "counts as non-visual — hold the previous image through it",
     1009: "a line with nothing you could picture is folded into the line "
           "AFTER it — e.g. 'but' + 'the dog runs' → 'but the dog runs'",
 }
@@ -390,6 +394,7 @@ _SPLIT_RULE_IDS: Dict[str, int] = {
     "rule_discourse_pivot":             58,
     "rule_passive_agent_reveal":        59,
     "rule_sfx_beat":                    60,
+    "rule_verb_list_reveal":            61,
 }
 
 
@@ -560,6 +565,9 @@ ADV_INTRODUCERS  = {
 TRANSITION_ADVERBS = {
     "then", "later", "suddenly", "eventually", "finally",
     "afterwards", "subsequently", "next", "soon", "now",
+    # v18.4 expansion — more scene-change cues
+    "afterward", "meanwhile", "immediately", "instantly", "overnight",
+    "tonight", "today", "tomorrow", "yesterday", "abruptly", "gradually",
 }
 
 # Tunables ----------------------------------------------------------------
@@ -1255,6 +1263,10 @@ SFX_WORDS = {
     "whoosh", "woosh", "swoosh", "thud", "thump", "snap", "crack",
     "pop", "buzz", "roar", "splash", "slam", "screech", "clang",
     "crunch", "zap", "thwack", "clunk",
+    # v18.4 expansion
+    "click", "rattle", "rumble", "hiss", "sizzle", "fizz", "thunk",
+    "plop", "splat", "squelch", "ding", "honk", "vroom", "whirr",
+    "clatter", "creak", "crackle", "whack", "boing", "ping",
 }
 
 
@@ -1436,6 +1448,24 @@ NEGATION_TOKENS = {"n't", "not", "never"}
 WEAK_VERB_LEMMAS = {
     "be", "have", "do", "get", "make", "go", "come",
     "seem", "appear", "become", "remain", "stay",
+    # v18.2 — transactional / light verbs that paint no picture on their
+    # own ("It costs", "Which brings us to", "what you're holding").  The
+    # image, when there is one, always lives in the accompanying NOUN, so
+    # excluding these verbs from visualisability/keywords never loses a
+    # visual — it only stops verb-only lines counting as picture-able and
+    # verb-only search terms ("costs", "brings", "find") being emitted.
+    "cost", "bring", "take", "find", "mean", "keep", "let", "need",
+    "want", "know", "think", "say", "tell", "happen", "matter",
+    "include", "involve", "require", "use", "try", "hold",
+    # v18.4 expansion — perception/cognition/aspect verbs whose image
+    # always lives in the accompanying noun
+    "allow", "begin", "start", "stop", "end", "continue", "cause",
+    "help", "consider", "believe", "decide", "expect", "feel", "hear",
+    "see", "look", "call", "ask", "understand", "realize", "realise",
+    "remember", "forget", "learn", "notice", "wonder", "agree",
+    "describe", "explain", "refer", "relate", "depend", "occur",
+    "exist", "provide", "offer", "receive", "own", "contain", "belong",
+    "manage", "fail", "attempt", "plan", "intend", "tend", "suppose",
 }
 
 # All surface forms of the above weak verbs, including clitic contractions.
@@ -1464,6 +1494,19 @@ WEAK_VERB_FORMS = {
     "become", "becomes", "became", "becoming",
     "remain", "remains", "remained", "remaining",
     "stay", "stays", "stayed", "staying",
+    # v18.2 additions (irregular surfaces of the new weak lemmas)
+    "cost", "costs", "brought", "bring", "brings", "bringing",
+    "take", "takes", "took", "taken", "taking",
+    "find", "finds", "found", "finding",
+    "mean", "means", "meant", "meaning",
+    "keep", "keeps", "kept", "keeping",
+    "know", "knows", "knew", "known", "knowing",
+    "think", "thinks", "thought", "thinking",
+    "say", "says", "said", "saying", "tell", "tells", "told", "telling",
+    "hold", "holds", "held", "holding",
+    # v18.4 irregular surfaces of the expanded weak lemmas
+    "began", "begun", "saw", "seen", "heard", "felt", "understood",
+    "forgot", "forgotten", "learnt", "realised", "realized",
 }
 
 # Lemma set for "weak" adjectives — quantifier-ish words that spaCy tags
@@ -1475,6 +1518,13 @@ WEAK_ADJ_LEMMAS = {
     "such", "other", "same", "different", "various", "several",
     "certain", "particular", "specific", "general",
     "own", "whole", "entire", "main", "only", "very", "too",
+    # v18.4 expansion — quantity / hedging / abstract adjectives that paint
+    # no picture on their own
+    "numerous", "countless", "multiple", "additional", "further", "extra",
+    "overall", "usual", "common", "typical", "normal", "standard",
+    "possible", "likely", "probable", "potential", "available", "able",
+    "mere", "single", "sole", "former", "latter", "recent", "current",
+    "actual", "eventual", "respective", "relevant", "similar", "equal",
 }
 
 
@@ -1521,6 +1571,34 @@ def _has_visualisable_content(doc: Doc, lo: int, hi: int) -> bool:
 # -----------------------------------------------------------------------------
 def rule_strip_markdown(text: str) -> str:
     return "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("#"))
+
+
+# -----------------------------------------------------------------------------
+# RULE 0.25 — NORMALISE WHITESPACE  (preprocessing)
+# Scripts arrive hard-wrapped and sometimes indented.  If raw newlines reach
+# spaCy they become WHITESPACE TOKENS inside the doc, which silently breaks
+# the splitter three ways:
+#   1. adjacency-based rules check doc[t.i+1] expecting the comma/noun/conj
+#      to be NEXT — a '\n' token in between stops the rule firing (this is
+#      how a clean 3-item list can come out mangled);
+#   2. "non-punct token" counts include space tokens, inflating every
+#      length threshold;
+#   3. chunk text is emitted from the raw doc text, so '\n' and indentation
+#      leak straight into the output JSON.
+# Fix at the source: no whitespace run ever survives to the parser.
+#
+#   • a PARAGRAPH break (blank line) is a sentence break: if the text before
+#     it doesn't already end in sentence punctuation, a full stop is added;
+#   • every remaining whitespace run (newlines, tabs, multi-spaces) collapses
+#     to a single space.
+# -----------------------------------------------------------------------------
+_PARA_BREAK_RE = re.compile(r"([^\s.!?;:…])[ \t]*\n[ \t]*\n\s*")
+_WS_RUN_RE = re.compile(r"\s+")
+
+
+def rule_normalise_whitespace(text: str) -> str:
+    text = _PARA_BREAK_RE.sub(r"\1. ", text)   # unpunctuated paragraph ends
+    return _WS_RUN_RE.sub(" ", text).strip()   # collapse all whitespace runs
 
 
 # -----------------------------------------------------------------------------
@@ -2920,7 +2998,7 @@ def rule_numeric_approximator_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
       "took almost | a hundred years"
       "spans over | three continents"
     """
-    DEBUG = True
+    DEBUG = False
     APPROX_ADV = {"nearly", "almost", "about", "roughly", "approximately",
                   "around", "over", "just", "only", "barely", "merely"}
     out = set()
@@ -3816,7 +3894,7 @@ def rule_phrasal_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
 # RULE 39 — PREPOSITIONAL OBJECT REVEAL
 # -----------------------------------------------------------------------------
 def rule_prep_object_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
-    DEBUG = True
+    DEBUG = False
     out = set()
     for t in doc:
         if t.pos_ != "ADP":
@@ -4966,7 +5044,7 @@ def rule_title_appositive_verb_split(doc: Doc, splits: Set[int]) -> Set[int]:
 #   4. Sentence length ≥10
 # -----------------------------------------------------------------------------
 def rule_first_list_item_split(doc: Doc, splits: Set[int]) -> Set[int]:
-    DEBUG = True
+    DEBUG = False
     out = set()
     for t in doc:
         if t.pos_ not in {"NOUN", "PROPN", "ADJ", "DET"}:
@@ -5555,6 +5633,47 @@ def rule_sfx_beat(doc: Doc) -> Set[int]:
                 out.add(nxt_i + 1)
             elif not doc[nxt_i].is_punct:
                 out.add(nxt_i)
+    return out
+
+
+# -----------------------------------------------------------------------------
+# RULE 61 — STRONG VERB INTRODUCING A LIST  (v18.5)
+# "the blaze devoured | temples, | villas, | and entire districts."
+# Rule 15 splits BETWEEN the list items but never separates the introducing
+# VERB from item one — the verb clause stayed glued to the first item
+# ("...devoured temples,"), hiding the verb beat and polluting grid cell 1.
+# Detection is PART-OF-SPEECH based on purpose: ANY verb that isn't in
+# WEAK_VERB_LEMMAS qualifies.  No whitelist of "action verbs" to fall out of
+# date — 'devoured' works because it parses as a strong VERB, not because
+# someone remembered to add it to a list.
+#
+# FIRE:      strong VERB, then (det/adj/num)* NOUN(s) ',' (det/adj/num)* NOUN
+#            → split immediately after the verb
+# DON'T FIRE: weak verb ("was", "included"); no comma noun-run following
+# -----------------------------------------------------------------------------
+def rule_verb_list_reveal(doc: Doc) -> Set[int]:
+    out = set()
+    for t in doc:
+        if t.pos_ != "VERB" or t.lemma_.lower() in WEAK_VERB_LEMMAS:
+            continue
+        j = t.i + 1
+        k, hops = j, 0
+        while k < len(doc) and hops < 3 and doc[k].pos_ in {"DET", "ADJ", "NUM"}:
+            k += 1
+            hops += 1
+        if k >= len(doc) or doc[k].pos_ not in {"NOUN", "PROPN"}:
+            continue
+        m = k                                   # absorb compound nouns
+        while m + 1 < len(doc) and doc[m + 1].pos_ in {"NOUN", "PROPN"}:
+            m += 1
+        if m + 1 >= len(doc) or doc[m + 1].text != ",":
+            continue
+        n2, hops = m + 2, 0                     # a second item must follow
+        while n2 < len(doc) and hops < 3 and doc[n2].pos_ in {"DET", "ADJ", "NUM"}:
+            n2 += 1
+            hops += 1
+        if n2 < len(doc) and doc[n2].pos_ in {"NOUN", "PROPN"}:
+            out.add(j)
     return out
 
 
@@ -6482,7 +6601,7 @@ def _post_merge_unvisualisable(doc: Doc,
     if len(chunks) <= 1:
         return chunks, chunk_spans
 
-    DEBUG_PMV = True
+    DEBUG_PMV = False
     if DEBUG_PMV:
         print(f"  [post-merge-unvis] INPUT chunks:")
         for i, (c, (lo, hi)) in enumerate(zip(chunks, chunk_spans)):
@@ -6637,7 +6756,7 @@ def _merge_throwaways(doc: Doc, raw: List[Tuple[int, int]],
     if split_provenance is None:
         split_provenance = {}
 
-    DEBUG_MT = True
+    DEBUG_MT = False
     if DEBUG_MT:
         print(f"  [merge-throwaways] INPUT raw chunks:")
         for i, (lo, hi) in enumerate(raw):
@@ -6844,6 +6963,7 @@ _POSITIVE_PIPELINE: List[tuple] = [
     ("rule_discourse_pivot",         rule_discourse_pivot,         True),
     ("rule_passive_agent_reveal",    rule_passive_agent_reveal,    True),
     ("rule_sfx_beat",                rule_sfx_beat,                False),
+    ("rule_verb_list_reveal",        rule_verb_list_reveal,        False),
 ]
 
 # Anti-rules: (name, function)
@@ -6904,6 +7024,7 @@ def _split_core(text: str, debug: bool = False):
     is_debug = debug or SINGLE_RUN_DEBUG
 
     text = rule_strip_markdown(text)
+    text = rule_normalise_whitespace(text)
     text = rule_normalise_punct(text)
     nlp_pipe = _nlp()
     doc = nlp_pipe(text)
@@ -6957,6 +7078,10 @@ def _split_core(text: str, debug: bool = False):
             protected |= new
         if is_debug:
             _debug_print_stage(name, was_applied, (doc, splits))
+
+    # ---- idioms are never cut open (rule 1010) -------------------------------
+    for _ilo, _ihi in _idiom_spans(doc):
+        splits -= set(range(_ilo + 1, _ihi)) - protected
 
     # ---- forbidden splits (remove) ------------------------------------------
     if is_debug:
@@ -7026,6 +7151,10 @@ def _split_core(text: str, debug: bool = False):
         _debug_print_stage("post_merge_unvisualisable",
                            prev_chunks != fused, fused)
 
+    # Belt-and-braces: the whitespace normaliser means no space tokens should
+    # exist, but no output line may EVER carry '\n' / tabs / double spaces —
+    # sanitise once here, at the single exit point.
+    fused = [Chunk(" ".join(c.text.split()), c.ids) for c in fused]
     return doc, fused, fused_spans
 
 
@@ -7053,6 +7182,15 @@ class ChunkWithMeta(NamedTuple):
       keywords          list   — content words in order (nouns, proper nouns,
                                  numbers, strong adjectives, strong verbs) —
                                  ready-made search-term material
+      nouns             list   — noun/proper-noun lemmas only (subset of the
+                                 above; a search term needs at least one)
+      head_noun         str    — lemma of the line's main noun phrase head
+                                 ("" when the line has no noun)
+      demonstrative     bool   — an NP is anaphoric: "this/that/these/those X"
+      pronoun_subject   bool   — the subject is a bare it/they/he/she
+      script_topic      str    — doc-level: the most frequent concrete noun
+                                 in the whole script ("nutmeg") — the
+                                 last-resort referent for term synthesis
       has_visualisable  bool   — the splitter's own picture-ability test
       has_number        bool   — any numeric token
       has_money         bool   — MONEY entity or currency symbol
@@ -7082,6 +7220,107 @@ def split_text_into_sections_with_meta(text: str,
 
 # Rule ids that mark a chunk as an item of a list run (see _build_chunks_meta).
 _LIST_RULE_IDS = {15, 16, 25, 51}
+_LIST_ITEM_MAX_TOKENS = 5   # a real list item is short ("scurvy," "pirates,")
+_LIST_MIN_TAGGED = 2        # >=2 tagged boundaries -> >=3 on-screen cells
+
+# Generic nouns that must never win the "script topic" vote — they appear in
+# every script regardless of subject.  A LINGUISTIC category list (like the
+# weak-verb sets), not a world-knowledge answer key.
+_GENERIC_TOPIC_NOUNS = {
+    "thing", "way", "time", "year", "day", "part", "place", "people",
+    "world", "lot", "kind", "sort", "one", "story", "fact", "reason",
+    # v18.4 expansion
+    "bit", "case", "side", "end", "point", "idea", "example", "problem",
+    "question", "answer", "moment", "name", "word", "line", "video",
+    "subject", "matter", "area", "number", "amount", "group", "level",
+    "order", "form", "type", "use", "need", "man", "woman", "guy",
+}
+
+# Pronouns that make a line lean on an earlier subject ("It was worth...").
+# "you" is deliberately absent — narration addresses the viewer constantly.
+_ANAPHORIC_SUBJECT_PRONOUNS = {"it", "they", "he", "she"}
+
+# Idiomatic SAYINGS — a stretch of words that means something as a UNIT and
+# paints no literal picture ("the rest is history" is not about history
+# footage).  Two effects, both automatic:
+#   1. the splitter never cuts INSIDE an idiom — it stays one line;
+#   2. its tokens don't count as keywords/nouns/visualisable content, so an
+#      idiom-only line correctly reads as "hold the previous image".
+# Token tuples, lowercased, matched against the parsed doc.
+IDIOM_PHRASES = {
+    ("the", "rest", "is", "history"),
+    ("long", "story", "short"),
+    ("at", "the", "end", "of", "the", "day"),
+    ("when", "all", "is", "said", "and", "done"),
+    ("believe", "it", "or", "not"),
+    ("truth", "be", "told"),
+    ("needless", "to", "say"),
+    ("as", "it", "turns", "out"),
+    ("for", "what", "it", "'s", "worth"),
+    ("against", "all", "odds"),
+    ("sooner", "or", "later"),
+    ("little", "did", "they", "know"),
+    ("little", "did", "he", "know"),
+    ("little", "did", "she", "know"),
+    ("lo", "and", "behold"),
+    ("by", "and", "large"),
+    ("all", "things", "considered"),
+    ("time", "will", "tell"),
+    ("in", "a", "nutshell"),
+    ("out", "of", "the", "blue"),
+    ("come", "rain", "or", "shine"),
+    ("against", "the", "odds"),
+    ("easier", "said", "than", "done"),
+    ("last", "but", "not", "least"),
+    ("more", "or", "less"),
+    ("give", "or", "take"),
+    ("one", "way", "or", "another"),
+}
+
+
+def _idiom_spans(doc: Doc) -> List[Tuple[int, int]]:
+    """All (lo, hi) token spans in the doc matching an idiom phrase."""
+    lowers = [t.lower_ for t in doc]
+    spans: List[Tuple[int, int]] = []
+    for phrase in IDIOM_PHRASES:
+        L = len(phrase)
+        for i in range(len(lowers) - L + 1):
+            if tuple(lowers[i:i + L]) == phrase:
+                spans.append((i, i + L))
+    return spans
+
+
+# Noun lemmas whose stock footage should be styled "historical" once the
+# script has mentioned an old date: people-roles, vessels, conflict,
+# institutions.  A LINGUISTIC category lexicon (all the splitter's word
+# lists live here) — consumed by SEARCH_TERM_SYNTHESIS.
+ERA_STYLE_NOUNS = {
+    # people & roles
+    "merchant", "sailor", "trader", "soldier", "pirate", "explorer",
+    "settler", "colonist", "peasant", "farmer", "monk", "priest",
+    "blacksmith", "knight", "samurai", "warrior", "gladiator", "viking",
+    "crusader", "conqueror", "slave", "servant", "messenger", "scribe",
+    # rulers & nobility
+    "king", "queen", "emperor", "empress", "prince", "princess",
+    "pharaoh", "sultan", "tsar", "czar", "monarch", "duke", "duchess",
+    "lord", "lady", "nobleman", "chief", "chieftain", "shogun",
+    # military & command
+    "general", "admiral", "captain", "commander", "army", "navy",
+    "legion", "regiment", "cavalry", "infantry", "archer", "musketeer",
+    # vessels & travel
+    "ship", "boat", "vessel", "fleet", "galleon", "caravel", "frigate",
+    "voyage", "expedition", "caravan", "chariot", "carriage",
+    # conflict & power
+    "battle", "war", "siege", "conquest", "invasion", "rebellion",
+    "revolution", "uprising", "raid", "duel", "crusade", "plague",
+    # institutions & places-of-power
+    "empire", "kingdom", "dynasty", "colony", "monopoly", "treaty",
+    "throne", "crown", "court", "castle", "fortress", "palace",
+    "temple", "cathedral", "monastery", "harbor", "harbour", "port",
+    # objects of the era
+    "sword", "shield", "spear", "cannon", "musket", "armor", "armour",
+    "scroll", "parchment", "coin", "chest", "spice", "silk",
+}
 
 
 def _build_chunks_meta(doc: Doc, chunks: ChunkMap,
@@ -7091,21 +7330,55 @@ def _build_chunks_meta(doc: Doc, chunks: ChunkMap,
     Runs AFTER all merging, over the final chunk spans, so it never has to
     care about the split/merge machinery — it just reads facts off the doc.
     """
+    # ---- doc-level topic: the most frequent concrete noun in the script ----
+    # ("nutmeg" for a spice-trade script).  Stamped into every chunk's meta
+    # so downstream term synthesis has a last-resort referent.
+    topic_counts: Dict[str, int] = {}
+    for t in doc:
+        if t.pos_ in {"NOUN", "PROPN"} and not t.is_punct and not t.is_space:
+            lem = t.lemma_.lower()
+            if lem not in _GENERIC_TOPIC_NOUNS and len(lem) > 2:
+                topic_counts[lem] = topic_counts.get(lem, 0) + 1
+    script_topic = max(topic_counts, key=topic_counts.get) if topic_counts else ""
+
+    # idiom token indices: excluded from keywords/nouns/visualisability
+    idiom_idx: Set[int] = set()
+    idiom_span_list = _idiom_spans(doc)
+    for _lo, _hi in idiom_span_list:
+        idiom_idx.update(range(_lo, _hi))
+
     metas: List[Dict[str, object]] = []
-    for (lo, hi) in spans:
+    for chunk_i, (lo, hi) in enumerate(spans):
         opener = (lo == 0
                   or bool(doc[lo].is_sent_start)
                   or doc[lo - 1].text in HARD_PUNCT)
         ents = [{"text": e.text, "label": e.label_}
                 for e in doc.ents if e.start < hi and e.end > lo]
         keywords: List[str] = []
+        nouns: List[str] = []
+        head_noun = ""
+        demonstrative = False
+        pronoun_subject = False
         seen: Set[str] = set()
         for t in doc[lo:hi]:
             if t.is_punct or t.is_space:
                 continue
+            if t.i in idiom_idx:
+                continue          # idiom words are not content (rule 1010)
+            if (t.pos_ == "DET" and t.dep_ == "det"
+                    and t.lower_ in {"this", "that", "these", "those"}):
+                demonstrative = True
+            if (t.pos_ == "PRON" and t.dep_ in {"nsubj", "nsubjpass"}
+                    and t.lower_ in _ANAPHORIC_SUBJECT_PRONOUNS):
+                pronoun_subject = True
             keep = False
             if t.pos_ in {"NOUN", "PROPN", "NUM"}:
                 keep = True
+                if t.pos_ in {"NOUN", "PROPN"}:
+                    nouns.append(t.lemma_.lower())
+                    # the first non-compound noun is the chunk's head noun
+                    if not head_noun and t.dep_ != "compound":
+                        head_noun = t.lemma_.lower()
             elif t.pos_ == "ADJ" and t.lemma_.lower() not in WEAK_ADJ_LEMMAS:
                 keep = True
             elif (t.pos_ == "VERB"
@@ -7117,11 +7390,27 @@ def _build_chunks_meta(doc: Doc, chunks: ChunkMap,
                 if low not in seen:
                     seen.add(low)
                     keywords.append(low)
+        # a chunk that fully contains an idiom is that saying: tag it 1010
+        # and, if the idiom is all it has, it isn't picture-able at all
+        chunk_has_idiom = any(lo <= _ilo and _ihi <= hi
+                              for _ilo, _ihi in idiom_span_list)
+        has_vis = _has_visualisable_content(doc, lo, hi)
+        if chunk_has_idiom:
+            if 1010 not in chunks[chunk_i].ids:
+                chunks[chunk_i].ids.append(1010)
+            if not nouns and not keywords:
+                has_vis = False
+
         metas.append({
             "opener": opener,
             "ents": ents,
             "keywords": keywords,
-            "has_visualisable": _has_visualisable_content(doc, lo, hi),
+            "nouns": nouns,
+            "head_noun": head_noun,
+            "demonstrative": demonstrative,
+            "pronoun_subject": pronoun_subject,
+            "script_topic": script_topic,
+            "has_visualisable": has_vis,
             "has_number": any(t.like_num or t.pos_ == "NUM"
                               for t in doc[lo:hi]),
             "has_money": any(t.ent_type_ == "MONEY" or t.text in CURRENCY_SYMS
@@ -7134,26 +7423,47 @@ def _build_chunks_meta(doc: Doc, chunks: ChunkMap,
         })
 
     # ---- list grouping ------------------------------------------------------
-    # A chunk's ids record the rule that created the boundary at its END, so
-    # in a 3-item list the first two items carry the list-rule id and the
-    # LAST item usually carries the sentence-end id instead.  We therefore
-    # extend every tagged run by one chunk — that trailing chunk is the final
-    # list item.  (Heuristic: if the run is instead followed by a plain
-    # continuation, that continuation gets pulled into the group; acceptable,
-    # since visually it still belongs to the same beat.)
+    # A grid only makes sense as a YouTube visual for an OBVIOUS
+    # comma-separated run of short, picture-able noun items ("scurvy, |
+    # pirates, | and shipwrecks").  A chunk qualifies as a LIST ITEM only if
+    # ALL of these hold:
+    #     • its END boundary was created by a list rule (ids ∩ list rules)
+    #     • it ends with a comma (the visible list signal)
+    #     • it contains at least one noun (something to put in the cell)
+    #     • it is short (≤ _LIST_ITEM_MAX_TOKENS non-punct tokens)
+    # and a GROUP only forms from ≥ _LIST_MIN_TAGGED consecutive qualifying
+    # items — i.e. at least THREE on-screen cells once the trailing item is
+    # pulled in.  A single stray rule-15 boundary ("this wrinkled seed was" /
+    # "the single most contested...") can no longer masquerade as a list.
+    #
+    # (A chunk's ids record the rule that created the boundary at its END,
+    # so the FINAL list item carries the sentence-end id instead — the +1
+    # extension below pulls it in, provided it also looks like an item.)
+    def _qualifies(k: int) -> bool:
+        return (bool(set(chunks[k].ids) & _LIST_RULE_IDS)
+                and chunks[k].text.rstrip().endswith(",")
+                and bool(metas[k]["nouns"])
+                and metas[k]["n_tokens"] <= _LIST_ITEM_MAX_TOKENS)
+
+    def _tail_qualifies(k: int) -> bool:      # the final, comma-less item
+        return (bool(metas[k]["nouns"])
+                and metas[k]["n_tokens"] <= _LIST_ITEM_MAX_TOKENS + 1)
+
     i, group_id, n = 0, -1, len(chunks)
     while i < n:
-        if set(chunks[i].ids) & _LIST_RULE_IDS:
+        if _qualifies(i):
             j = i
-            while j < n and set(chunks[j].ids) & _LIST_RULE_IDS:
+            while j < n and _qualifies(j):
                 j += 1
-            if j < n:
-                j += 1                       # pull in the final list item
-            group_id += 1
-            size = j - i
-            for k in range(i, j):
-                metas[k]["list"] = {"group": group_id,
-                                    "index": k - i, "size": size}
+            tagged = j - i
+            if j < n and _tail_qualifies(j):
+                j += 1                        # pull in the final list item
+            if tagged >= _LIST_MIN_TAGGED:
+                group_id += 1
+                size = j - i
+                for k in range(i, j):
+                    metas[k]["list"] = {"group": group_id,
+                                        "index": k - i, "size": size}
             i = j
         else:
             i += 1

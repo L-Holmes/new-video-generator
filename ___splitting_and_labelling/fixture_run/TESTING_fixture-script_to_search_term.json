@@ -1,4 +1,33 @@
 {
+  "If you open": {
+    "search_term": "If you open",
+    "search_type": "read_out",
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "template": "typography_blank",
+    "shot": {
+      "strategy": "new",
+      "material": "none",
+      "layout": {
+        "kind": "single",
+        "n": 1,
+        "same_term": false
+      },
+      "overlay": "auto_text",
+      "base": "none"
+    },
+    "tier": "tier1:lock_cold_open",
+    "why": [
+      "rule 7: a scene-setting opener that ends in a comma — e.g. 'In the morning,' | 'we left'",
+      "tier0: nothing on screen yet -> previous-family blocked",
+      "tier0: AI disabled -> AI templates off the menu",
+      "tier1: cold open with nothing picture-able -> script text on blank"
+    ]
+  },
   "\"stop right there\"": {
     "search_term": "stop",
     "search_type": "stock",
@@ -17,13 +46,15 @@
         "n": 1,
         "same_term": false
       },
-      "overlay": "none"
+      "overlay": "none",
+      "base": "none"
     },
     "tier": "tier3:sampled",
     "why": [
       "rule 5: a phrase in quotation marks gets its own line — e.g. she yelled | 'stop right there'",
       "tier0: nothing on screen yet -> previous-family blocked",
-      "tier1: lock_quote wanted 'decorate_previous' but it's gated off -> falling through",
+      "tier0: AI disabled -> AI templates off the menu",
+      "tier1: lock_quote wanted 'caption_previous' but it's gated off -> falling through",
       "tier2: opener -> previous-family suppressed, fresh stock boosted",
       "tier3: sampled 'stock' from the score-sheet"
     ]
@@ -46,11 +77,13 @@
         "n": 1,
         "same_term": false
       },
-      "overlay": "none"
+      "overlay": "none",
+      "base": "none"
     },
     "tier": "tier1:lock_place",
     "why": [
       "rule 18: a name worth a dramatic reveal — a person, place, date or amount — e.g. 'a valley called' | 'Wadi Al-Hitan'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: obscure place 'Banda Islands' -> highlighted map"
     ]
   },
@@ -72,16 +105,18 @@
         "n": 1,
         "same_term": false
       },
-      "overlay": "none"
+      "overlay": "none",
+      "base": "none"
     },
     "tier": "tier1:lock_place",
     "why": [
       "rule 46: 'X moves through / into / across Y' — split to reveal the place — e.g. 'water flowed' | 'across the plain'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: famous place 'Sahara' -> stock footage of it"
     ]
   },
   "it costs about two dollars": {
-    "search_term": "costs two dollars",
+    "search_term": "sahara two dollars",
     "search_type": "object_generate",
     "position": "1",
     "sfx": "none",
@@ -98,16 +133,18 @@
         "n": 1,
         "same_term": false
       },
-      "overlay": "object_edit"
+      "overlay": "object_edit",
+      "base": "none"
     },
     "tier": "tier1:lock_money",
     "why": [
       "rule 19: an amount of money gets its own line — e.g. 'it costs' | '$800,000'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: money amount on the line -> object_generate"
     ]
   },
   "ribs,": {
-    "search_term": "ribs",
+    "search_term": "about two dollars",
     "search_type": "joint_3_row",
     "position": "1",
     "sfx": "none",
@@ -124,16 +161,18 @@
         "n": 3,
         "same_term": false
       },
-      "overlay": "none"
+      "overlay": "none",
+      "base": "none"
     },
     "tier": "tier1:lock_list_grid",
     "why": [
       "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: list run (group 0, item 1/3) -> one grid cell per item"
     ]
   },
   "vertebrae,": {
-    "search_term": "vertebrae",
+    "search_term": "about two dollars",
     "search_type": "joint_3_row",
     "position": "2",
     "sfx": "none",
@@ -150,16 +189,18 @@
         "n": 3,
         "same_term": false
       },
-      "overlay": "none"
+      "overlay": "none",
+      "base": "none"
     },
     "tier": "tier1:lock_list_grid",
     "why": [
       "rule 15: a run of things listed with no verb between them — e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: list run (group 0, item 2/3) -> one grid cell per item"
     ]
   },
   "entire skulls": {
-    "search_term": "entire skulls",
+    "search_term": "about two dollars",
     "search_type": "joint_3_row",
     "position": "3",
     "sfx": "none",
@@ -176,16 +217,18 @@
         "n": 3,
         "same_term": false
       },
-      "overlay": "none"
+      "overlay": "none",
+      "base": "none"
     },
     "tier": "tier1:lock_list_grid",
     "why": [
       "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: list run (group 0, item 3/3) -> one grid cell per item"
     ]
   },
   "but that was": {
-    "search_term": "entire skulls",
+    "search_term": "about two dollars",
     "search_type": "static_of_previous",
     "position": "1",
     "sfx": "none",
@@ -202,11 +245,13 @@
         "n": 1,
         "same_term": false
       },
-      "overlay": "none"
+      "overlay": "none",
+      "base": "none"
     },
     "tier": "tier1:lock_unvisualisable",
     "why": [
       "rule 1008: a line with nothing you could picture is folded into the line BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: no picture-able content -> hold the previous image"
     ]
   },
@@ -219,7 +264,7 @@
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "template": "decorate_previous",
+    "template": "caption_previous",
     "shot": {
       "strategy": "edit_previous",
       "material": "none",
@@ -228,11 +273,13 @@
         "n": 1,
         "same_term": false
       },
-      "overlay": "draw"
+      "overlay": "auto_text",
+      "base": "none"
     },
     "tier": "tier1:lock_sfx",
     "why": [
       "rule 60: a sound word like 'boom' or 'crash' stands alone as an SFX sync point — e.g. 'and then' | 'boom' | 'the roof came down'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: SFX beat (rule 60) -> big word over the previous image"
     ]
   },
@@ -254,16 +301,18 @@
         "n": 1,
         "same_term": false
       },
-      "overlay": "none"
+      "overlay": "none",
+      "base": "none"
     },
     "tier": "tier1:lock_named_thing",
     "why": [
       "rule 50: after a title-name like 'Alaric the Goth', split before the verb — e.g. 'Alaric the Goth' | 'invaded Rome'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier1: obscure name 'Alaric the Goth' -> wikipedia image"
     ]
   },
   "the dog jumped down": {
-    "search_term": "dog jumped",
+    "search_term": "alaric the goth dog jumped",
     "search_type": "stock",
     "position": "1",
     "sfx": "none",
@@ -280,11 +329,13 @@
         "n": 1,
         "same_term": false
       },
-      "overlay": "none"
+      "overlay": "none",
+      "base": "none"
     },
     "tier": "tier3:sampled",
     "why": [
       "rule 1: the line ends with . ! ? ; or : — e.g. 'The dog jumped.' | 'The man ran.'",
+      "tier0: AI disabled -> AI templates off the menu",
       "tier2: opener -> previous-family suppressed, fresh stock boosted",
       "tier3: sampled 'stock' from the score-sheet"
     ]
