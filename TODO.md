@@ -356,6 +356,17 @@ FABLE TODO
 
 
 
+---------------
+
+For prod:
+- ADD WAY FOR USERS TO EASILY GET AI TO POPULATE THE TAGS;
+    - for the manual tagging;
+        - add a button 'let AI populate this list for me'
+        - at the top left is instructions.
+        - once clicked, at the left side, it shows the json with a copy button (and which confirms when you copy)
+        - at the right, there is a prompt that the user is expected to copy and paste into an AI agent chat.
+        - it also has a clear button.
+        - user then pastes the new json into the text box. code confirms whether its different (and perhaps other verification, like checking the keys are all the same...)
 
 ----------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------
