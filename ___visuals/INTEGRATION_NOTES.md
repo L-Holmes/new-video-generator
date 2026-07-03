@@ -1,45 +1,45 @@
-# INTEGRATION NOTES - new media types in the video builder
+# INTEGRATION NOTES - the legacy layer is gone
 
-what changed, in plain english.
+files below are labelled ___visuals/ or ___splitting_and_labelling/ or root.
 
-## one shared catalog
+## the model (no legacy, no conversion at runtime)
 
-* the media type catalog now lives in ___visuals/MEDIA_CATALOG.py. it has no dependencies and no side effects.
-* ___visuals/CONFIG.py re-exports it and adds the MediaType enum plumbing, so renderer modules keep importing everything from CONFIG.
-* ___splitting_and_labelling/MEDIA_TYPES.py is now a thin shim that imports the same catalog. the tagging tool and the renderer literally read the same dict, so they cannot drift.
-* to add a media type: one entry in MEDIA_CATALOG.py, plus its enum value and MEDIA_PROPERTIES row in CONFIG.py. CONFIG refuses to import if the catalog references a legacy string with no enum, so you cannot forget.
+* MediaType is now BUILT from the shared catalog names: stock, ai_stock, wikipedia, map, object, typography, stock_on_board, wikipedia_on_board, hold_previous, add_stock_to_previous, ai_edit_previous. eleven members, value == name.
+* the old combined and derived types are deleted: joint_3_row, stickman_joint_3_row, decorate_previous, stickman_text_overlay, zoom_prev_img, static_of_previous, stickman, ai_edit, read_out, object_generate do not exist anywhere.
+* grouping is the group modifier plus group_id. a group OF stock, a group OF ai_stock. only those two bases can group (GROUPABLE_TYPES); the tagging tool greys the group chip for anything else and the loader rejects it.
+* decorate is ONE modifier that opens ONE editor with clickable tools: draw, text/caption, zoom. "zoom into the previous image" is hold_previous + decorate (hold makes the previous image this scene's footage, the zoom tool crops it) - the stay-same-plus-edit default you described. captions are the text tool, prefilled from the search_term.
+* the json has NO search_type column. the renderer dispatches on media_type + modifiers. MANUAL_TAGGING purges search_type from any row it touches; SPLIT_AND_LABEL never writes it.
+* old flat files convert ONCE with: uv run UPGRADE_OLD_JSON.py <file> (root). it maps every old string, folds the old zoom/caption/decorate types into hold_previous + decorate, assigns group_ids to joint runs, keeps a .pre-upgrade.bak, and can be deleted afterwards.
 
-## the json now carries the new columns
+## running package files directly
 
-* media_type - the base name you picked in MANUAL_TAGGING (stock, hold_previous, ...)
-* modifiers - stacked extras (decorate, caption, group)
-* group_id - lines sharing a number are one group. null otherwise.
-* search_type - still written to the file as the derived legacy string, so tools that read the raw file (ai_generate_stickman_images filters on it) keep working unchanged.
-* main.py normalises every row on load with CONFIG.normalise_scene_row: new rows derive their enum from media_type + modifiers (that is authoritative); old flat files with just a search_type string still load exactly as before.
+* every ___visuals module we touched now starts with a 4-line bootstrap so `uv run ___visuals/<file>.py` works from the repo root. paste the same 4 lines (they are at the top of ___visuals/CONFIG.py) into DECORATE_PREVIOUS.py and any other package file you run directly.
 
-## grouping now uses group_id
+## what changed where
 
-* generate_joint_scenes used to sort by the position field. positions restart at 1 for every group, so two groups in one video would interleave and group wrongly.
-* it now sorts by script order and groups consecutive scenes that share the same type and the same group_id (CONFIG.group_scene_rows). old files without group_id fall back to the original contiguous-position rule.
+* ___visuals/MEDIA_CATALOG.py - the one catalog (names, tags, colours, info, GROUPABLE_TYPES). no legacy field, no to_legacy.
+* ___visuals/CONFIG.py - MediaType built from the catalog; new MediaProperties (needs_external_candidates, uses_wikipedia, image_only, is_ai_base, is_ai_edit, is_on_board, is_object, acts_on_previous, is_hold_previous, is_manual_stock_add); normalise_scene_row (rejects legacy files, strips stale columns, validates modifiers and grouping); scene_type / scene_is_grouped / scene_wants_decorate / group_scene_rows; joint layouts and sfx keyed by MediaType.STOCK / MediaType.AI_STOCK; TYPOGRAPHY_ENABLE and TYPOGRAPHY_RENDER_SAFETY_PAD_SEC (renamed from READ_OUT_*); DECORATE_OUTPUT_DIR.
+* ___visuals/DECORATE_STAGE.py - the merged editor's stage (replaces MODIFIER_STAGE.py - delete that file). wiring pending: see "files needed" below. until wired it prints which scenes are waiting and changes nothing, so the pipeline still runs.
+* ___visuals/SCENE_GENERATORS.py - joint generator runs on grouped rows (group modifier + group_id, base decides stock vs ai tiles); typography rename; the text-overlay generator is deleted (caption = decorate tool).
+* ___visuals/AI_GENERATION.py - plain ai_stock vs grouped ai_stock filters; ai_edit_previous; generator called with grouped=True/False instead of process_type.
+* ___visuals/PIXELLATE_STAGE.py - pixellates MediaType.AI_STOCK + MediaType.AI_EDIT_PREVIOUS (grouped tiles are the same ai_stock type).
+* ___visuals/COLOUR_GRADE_STAGE.py, ___visuals/ADD_RELEVANT_OVERLAYS.py - read media_type / the decorate modifier.
+* ___visuals/MANUAL_STOCK_PLACEMENT.py - bootstrap + header comments; its crop_and_zoom / _SizeBox / extract_frame are the zoom building blocks the merged editor will reuse.
+* main.py (root) - loader normalises the new schema only; stage-1 review exclusions are property-driven; the text-overlay stage is gone; stage 2.645 is the decorate editor.
+* ai_generate_stickman_images.py (root) - filters raw rows by media_type == "ai_stock" + grouped-ness; process_type and _search_type_str are gone.
+* ___splitting_and_labelling/MEDIA_TYPES.py - shim over the shared catalog (Tag, MEDIA_TYPES, MODIFIERS, GROUPABLE_TYPES).
+* ___splitting_and_labelling/MANUAL_TAGGING.py - no derived column (purges search_type on save); group chip greyed unless the base can group; server rejects invalid grouping.
+* ___splitting_and_labelling/SPLIT_AND_LABEL.py - emits rows without search_type.
+* UPGRADE_OLD_JSON.py (root) - the one-time converter.
+* stickman_script_to_search_term.json (root) - your test file, upgraded through that exact script (plus the Indonesa -> Indonesia typo fix so the map stage doesn't geocode-fail).
 
-## decorate and caption are layers now
+## files needed to finish (please share)
 
-* hold_previous + decorate and hold_previous + caption still route through the dedicated legacy types (decorate_previous, stickman_text_overlay) - that is the "stay same as previous + draw on it" default, unchanged and free.
-* any OTHER base + decorate/caption reaches the renderer as the base type plus leftover modifiers. the new pass ___visuals/MODIFIER_STAGE.py (stage 2.645 in main, after manual placement, before colour grade and ken burns) applies them to the scene's OWN finished footage:
-* caption is fully wired: it composites the caption with the same MAKE_TEXT_OVERLAY renderer the legacy overlay type uses, as a static mp4 so ken burns skips it. the caption text is the row's caption_text field if you add one, otherwise its search_term (add caption_text by hand when the term is needed for fetching, e.g. stock + caption).
-* decorate needs one line from you: point DECORATE_LAYER_HOOK in MODIFIER_STAGE.py at your interactive decorate editor (signature in the file). until then a decorate layer prints a clear notice and leaves the footage unchanged - nothing breaks.
+these dispatch on the old types or hold the editor code, and were not part of this session:
 
-## unchanged on purpose
-
-* PIXELLATE_STAGE, COLOUR_GRADE_STAGE, AI_GENERATION, ADD_RELEVANT_OVERLAYS, MANUAL_STOCK_PLACEMENT, WORDS_ON_SCREEN, ai_generate_stickman_images: they dispatch on the MediaType enum or the raw legacy string, and both are preserved.
-* old script_to_search_term.json files run exactly as before.
-
-## files in this drop
-
-* main.py (loader + stage 2.645)
-* ___visuals/MEDIA_CATALOG.py (new)
-* ___visuals/CONFIG.py (re-export, normalise_scene_row, group_scene_rows, scene_residual_modifiers, MODIFIER_LAYER_* paths)
-* ___visuals/MODIFIER_STAGE.py (new)
-* ___visuals/SCENE_GENERATORS.py (grouping)
-* ___splitting_and_labelling/MEDIA_TYPES.py (now the shim)
-* testing: test_integration.py (renderer side, runs with stubs), and the existing tagging tests pass unchanged against the shim
+* ___visuals/DECORATE_PREVIOUS.py - the draw/text editor to merge zoom + caption into (becomes the DECORATE_STAGE editor)
+* ___visuals/STATIC_RENDER.py - drives the hold/zoom/decorate/manual-placement stages and still-to-mp4; must switch to the property flags + per-row modifiers
+* ___visuals/MAKE_TEXT_OVERLAY.py - the caption renderer the editor's text tool reuses
+* ___visuals/TIMING_MERGE.py and ___visuals/AUDIO_EVENTS.py - joint timing + per-type sfx; likely small changes (JOINT_TYPE_SFX_MAP keys changed)
+* ___visuals/STOCK_FOOTAGE_REVIEW.py - only if it inspects search_type anywhere
+* ___visuals/CACHE_IO.py and ___visuals/OBJECT_GENERATE_STAGE.py - to confirm they are type-free (expected)

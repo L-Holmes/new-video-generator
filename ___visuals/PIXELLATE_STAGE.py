@@ -30,14 +30,15 @@ from ___visuals.PIXELLATE import pixellate_image
 PIXELLATE_AI_IMAGES: bool = True
 
 # Which MediaTypes get pixellated — the "genuinely AI-generated still" types.
-# NOTE on STICKMAN_JOINT_3_ROW: those tiles are line art on a forced-white
-# background that the compositor keys out (removeBG=True). Pixellation averages
-# colours, so near-white can drift slightly off-white and leave a faint fringe
-# after keying. If that looks bad, just drop STICKMAN_JOINT_3_ROW from this set.
+# AI_STOCK covers BOTH plain scenes and grouped grid tiles (grouping is the
+# `group` modifier now, not a separate type). NOTE on grouped tiles: they are
+# line art on a forced-white background that the compositor keys out
+# (removeBG=True). Pixellation averages colours, so near-white can drift
+# slightly off-white and leave a faint fringe after keying — if that looks
+# bad, gate on scene_is_grouped in pixellate_candidate_bundles.
 PIXELLATE_AI_TYPES: set[MediaType] = {
-    MediaType.STICKMAN,
-    MediaType.AI_EDIT,
-    MediaType.STICKMAN_JOINT_3_ROW,
+    MediaType.AI_STOCK,
+    MediaType.AI_EDIT_PREVIOUS,
 }
 
 # Forwarded to pixellate_image. Smaller grid = chunkier pixels.
@@ -57,7 +58,7 @@ def _pixellate_cache_path(image_path: str) -> Path:
 
 def _maybe_pixellate_entries(
     image_entries: list[dict],
-    search_type: MediaType | None,
+    media_type: MediaType | None,
 ) -> list[dict]:
     """
     Pixellate every image path in a list of {path: trim} candidate entries,
@@ -66,13 +67,13 @@ def _maybe_pixellate_entries(
     review GUI + stitcher resolve the new PNGs.
 
     Key properties:
-      - No-op when pixellation is disabled OR the scene's search_type isn't a
+      - No-op when pixellation is disabled OR the scene's media_type isn't a
         pixellated type — callers can pass anything and let this decide.
       - Cached + idempotent: if the px copy already exists it is REUSED (not
         re-rendered), so a HAND-EDITED px file survives re-runs, and a path
         that's already a px copy is passed straight through (no double-pixel).
     """
-    if not PIXELLATE_AI_IMAGES or search_type not in PIXELLATE_AI_TYPES:
+    if not PIXELLATE_AI_IMAGES or media_type not in PIXELLATE_AI_TYPES:
         return image_entries
     if not image_entries:
         return image_entries
@@ -149,7 +150,7 @@ def pixellate_candidate_bundles(
 
     n = 0
     for bundle in bundles:
-        st = script_to_search_term.get(bundle["script_text"], {}).get("search_type")
+        st = script_to_search_term.get(bundle["script_text"], {}).get("media_type")
         if st not in PIXELLATE_AI_TYPES:
             continue
         imgs = (bundle.get("candidates") or {}).get("images") or []

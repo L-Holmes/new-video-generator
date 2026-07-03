@@ -55,7 +55,7 @@ from ___visuals.CONFIG import (
 # stickman / ai_edit / read-out / maps / pure text overlays are intentionally
 # excluded so the film look doesn't fight the illustrated/synthetic styling —
 # flip APPLY_COLOUR_GRADING_TO_ALL to grade those too. To drop a specific stock
-# type (e.g. JOINT_3_ROW), subtract it from this set.
+# type, subtract it from this set.
 COLOUR_GRADE_STOCK_TYPES: set[MediaType] = {
     mt for mt, p in MEDIA_PROPERTIES.items() if p.needs_external_candidates
 }
@@ -106,7 +106,7 @@ def apply_colour_grading_to_final_data(
     def _eligible(script_text: str) -> bool:
         if APPLY_COLOUR_GRADING_TO_ALL:
             return True
-        st = script_to_search_term.get(script_text, {}).get("search_type")
+        st = script_to_search_term.get(script_text, {}).get("media_type")
         return st in COLOUR_GRADE_STOCK_TYPES
 
     # Pre-scan so the progress bar has an accurate total.

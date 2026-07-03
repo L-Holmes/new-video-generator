@@ -12,6 +12,15 @@ this is the ONE place to flip knobs / change paths.
 
 from __future__ import annotations
 
+# Allow `uv run ___visuals/<file>.py` from the repo root: when a package file
+# is executed directly, python puts ___visuals/ (not the root) on sys.path,
+# so `from ___visuals...` imports fail. This puts the root back. Paste the
+# same 4 lines at the top of any package file you want to run directly.
+if __package__ in (None, ""):
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+
 import argparse
 import sys
 import threading
@@ -181,16 +190,16 @@ JOINT_MIN_SCENE_DURATION_FOR_TRANSITION_SEC: float = 1.0
 JOINT_BASE_DURATION_FALLBACK_SEC: float = 3.0
 
 # ===========================================================================
-# READ-OUT (KINETIC TYPOGRAPHY) INTEGRATION
+# TYPOGRAPHY (KINETIC TYPOGRAPHY) INTEGRATION
 # ===========================================================================
 # Extra seconds added to the rendered MP4 beyond the scene's actual runtime,
 # so that when the stitcher trims to `line_duration` it never falls short
 # due to libx264 encoder rounding. The extra footage shows the last word
 # stationary, which is invisible after trim.
-READ_OUT_RENDER_SAFETY_PAD_SEC: float = 0.08
+TYPOGRAPHY_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 # Set False to disable the kinetic typography renderer entirely.
-READ_OUT_ENABLE: bool = True
+TYPOGRAPHY_ENABLE: bool = True
 
 
 # ===========================================================================
@@ -232,82 +241,70 @@ MAP_GEOCODE_CACHE_DIR: str = f"{_CACHE_DIR}/maps"
 # ===========================================================================
 
 
-class MediaType(Enum):
-    STOCK = "stock"  # Pexels videos+images, picked via review GUI
-    WIKIPEDIA = "wikipedia"  # Wikipedia images, picked via review GUI
-    JOINT_3_ROW = "joint_3_row"  # 3-image collage composited locally
-    READ_OUT = "read_out"  # Kinetic typography (script text on screen)
-    MAP = "map"  # Highlighted map of a country/region/place (rendered locally)
-    STICKMAN = "stickman"  # AI-generated stickman; 2 variants → review GUI
-    AI_EDIT = "ai_edit"  # Edit the preceding AI image; N variants -> 2nd review
-    STICKMAN_EXPLAIN_STOCK = (
-        "stickman_explain_stock"  # chosen Pexels clip composited onto a board base
-    )
-    STICKMAN_EXPLAIN_WIKIPEDIA = "stickman_explain_wikipedia"  # chosen Wikipedia image composited onto a board base
-    STICKMAN_TEXT_OVERLAY = (
-        "stickman_text_overlay"  # caption (search_term) on the PREVIOUS scene's image
-    )
-    STICKMAN_JOINT_3_ROW = (
-        "stickman_joint_3_row"  # like JOINT_3_ROW but tiles are AI stickman images
-    )
-    MANUAL_STOCK_ADD_TO_PREVIOUS = "manual_stock_add_to_previous"  # place this scene's chosen still onto the PREVIOUS scene's image (manual click/size)
-    ZOOM_PREV_IMG = "zoom_prev_img"  # derive this scene's image by cropping/zooming into the PREVIOUS scene's image
-    STATIC_OF_PREVIOUS = "static_of_previous"  # reuse prev image, OR freeze prev video's last *played* frame
-    DECORATE_PREVIOUS = "decorate_previous"  # interactive: draw text (and future tools) onto the PREVIOUS scene's image
-    OBJECT_GENERATE = "object_generate"  # fetch a stock IMAGE, edit it in the OBJECT_SEPERATION editor (bg separation + effects), use the edited result
+# ===========================================================================
+# MEDIA TYPES  —  built FROM the shared catalog. No legacy layer.
+# ===========================================================================
+# The catalog (names, tags, colours, info — shared with the tagging tool)
+# lives in MEDIA_CATALOG.py. The enum members ARE the catalog names:
+#   MediaType.STOCK, MediaType.AI_STOCK, ..., MediaType.HOLD_PREVIOUS, ...
+# Grouping is the `group` modifier (+ group_id), NOT a type. Decorating,
+# captions and zooming are tools of the ONE decorate editor, reached via the
+# `decorate` modifier, NOT types. The old combined types (joint_3_row,
+# stickman_joint_3_row, decorate_previous, stickman_text_overlay,
+# zoom_prev_img, static_of_previous) are gone.
+from ___visuals.MEDIA_CATALOG import (  # noqa: E402  (re-export)
+    GROUPABLE_TYPES,
+    MEDIA_TYPE_CATALOG,
+    MODIFIERS,
+    Tag,
+)
 
+MediaType = Enum(  # type: ignore[misc]
+    "MediaType", {name.upper(): name for name in MEDIA_TYPE_CATALOG}
+)
+MediaType.__doc__ = "One member per MEDIA_TYPE_CATALOG entry; value == name."
 
 
 # ===========================================================================
 # PER-TYPE PROPERTY TABLE  —  SINGLE SOURCE OF TRUTH
 # ===========================================================================
 # One row of booleans per MediaType. Everything in the codebase reads these
-# via media_props(x).<flag>; there are NO separate classification sets to keep
-# in sync. _validate_media_map() refuses to import if a type is unlisted, so a
-# new MediaType is one obvious place to fill in.
+# via media_props(x).<flag>. _validate_media_map() refuses to import if a
+# type is unlisted, so a new type is one obvious place to fill in.
 @dataclass(frozen=True)
 class MediaProperties:
     # ── external raw material ───────────────────────────────────────────
     needs_external_candidates: bool = False  # fetch Pexels/Wikipedia before generation
     uses_wikipedia: bool = False             # ...and that fetch is Wikipedia, not Pexels
-    image_only: bool = False                 # fetch a STILL only (no stock video); one pick spans the scene
-    # ── compositors / generators ────────────────────────────────────────
-    is_joint: bool = False                   # joint compositor (needs a JOINT_LAYOUT_POSITIONS entry)
-    is_stickman_joint: bool = False          # ...and its tiles are AI stickman renders, not Pexels stills
-    is_ai_base: bool = False                 # valid base image for an ai_edit walk-back
-    is_stickman_explain: bool = False        # chosen clip composited onto a board base
-    is_text_overlay: bool = False            # caption on the PREVIOUS scene's image
-    # ── derive-from-previous image stages ───────────────────────────────
-    is_manual_stock_add: bool = False
-    is_zoom_prev: bool = False
-    is_static_of_previous: bool = False
-    is_decorate_previous: bool = False
-    is_object_generate: bool = False         # edit the chosen still in the OBJECT_SEPERATION editor
+    image_only: bool = False                 # fetch a STILL only; one pick spans the scene
+    # ── generators / stages ─────────────────────────────────────────────
+    is_ai_base: bool = False                 # valid base image for an ai-edit walk-back
+    is_ai_edit: bool = False                 # the ai-edit-previous stage handles it
+    is_on_board: bool = False                # chosen clip composited onto a board base
+    is_object: bool = False                  # goes through the object-separation editor
+    # ── derive-from-previous stages ─────────────────────────────────────
+    acts_on_previous: bool = False           # derives its image from the previous scene
+    is_hold_previous: bool = False           # freeze/reuse the previous image
+    is_manual_stock_add: bool = False        # click/size a still onto the previous image
 
 
-# DO NOT WRAP NY LINES
 MEDIA_PROPERTIES: dict[MediaType, MediaProperties] = {
     MediaType.STOCK: MediaProperties(needs_external_candidates=True),
+    MediaType.AI_STOCK: MediaProperties(is_ai_base=True),
     MediaType.WIKIPEDIA: MediaProperties(needs_external_candidates=True, uses_wikipedia=True),
-    MediaType.JOINT_3_ROW: MediaProperties(needs_external_candidates=True, is_joint=True),
-    MediaType.READ_OUT: MediaProperties(),
     MediaType.MAP: MediaProperties(),
-    MediaType.STICKMAN: MediaProperties(is_ai_base=True),
-    MediaType.AI_EDIT: MediaProperties(is_ai_base=True),
-    MediaType.STICKMAN_EXPLAIN_STOCK: MediaProperties( needs_external_candidates=True, is_stickman_explain=True),
-    MediaType.STICKMAN_EXPLAIN_WIKIPEDIA: MediaProperties( needs_external_candidates=True, uses_wikipedia=True, is_stickman_explain=True),
-    MediaType.STICKMAN_TEXT_OVERLAY: MediaProperties(is_text_overlay=True),
-    MediaType.STICKMAN_JOINT_3_ROW: MediaProperties(is_joint=True, is_stickman_joint=True),
-    MediaType.MANUAL_STOCK_ADD_TO_PREVIOUS: MediaProperties( needs_external_candidates=True, image_only=True, is_manual_stock_add=True),
-    MediaType.ZOOM_PREV_IMG: MediaProperties(is_zoom_prev=True),
-    MediaType.STATIC_OF_PREVIOUS: MediaProperties(is_static_of_previous=True),
-    MediaType.DECORATE_PREVIOUS: MediaProperties(is_decorate_previous=True),
-    MediaType.OBJECT_GENERATE: MediaProperties( needs_external_candidates=True, image_only=True, is_object_generate=True),
+    MediaType.OBJECT: MediaProperties(needs_external_candidates=True, image_only=True, is_object=True),
+    MediaType.TYPOGRAPHY: MediaProperties(),
+    MediaType.STOCK_ON_BOARD: MediaProperties(needs_external_candidates=True, is_on_board=True),
+    MediaType.WIKIPEDIA_ON_BOARD: MediaProperties(needs_external_candidates=True, uses_wikipedia=True, is_on_board=True),
+    MediaType.HOLD_PREVIOUS: MediaProperties(acts_on_previous=True, is_hold_previous=True),
+    MediaType.ADD_STOCK_TO_PREVIOUS: MediaProperties(needs_external_candidates=True, image_only=True, acts_on_previous=True, is_manual_stock_add=True),
+    MediaType.AI_EDIT_PREVIOUS: MediaProperties(is_ai_base=True, is_ai_edit=True, acts_on_previous=True),
 }
 
 
 def _validate_media_map() -> None:
-    """Refuse to import if MEDIA_PROPERTIES and MediaType drift apart."""
+    """Refuse to import if the catalog, the enum, or the property table drift."""
     defined, expected = set(MEDIA_PROPERTIES), set(MediaType)
     if defined != expected:
         raise RuntimeError(
@@ -315,6 +312,9 @@ def _validate_media_map() -> None:
             f"  missing definitions for: {expected - defined}\n"
             f"  extra definitions for:   {defined - expected}"
         )
+    bad_groupable = GROUPABLE_TYPES - {t.value for t in MediaType}
+    if bad_groupable:
+        raise RuntimeError(f"GROUPABLE_TYPES has unknown names: {bad_groupable}")
 
 
 _validate_media_map()  # runs on import
@@ -323,170 +323,114 @@ _DEFAULT_PROPS = MediaProperties()
 
 
 def media_props(mt: "MediaType | None") -> MediaProperties:
-    """Property row for a MediaType. Unknown/None → an all-False default row, so
-    `media_props(x).some_flag` is always safe (mirrors the old `x in SOME_SET`,
-    which was also False for unknown values)."""
+    """Property row for a MediaType. Unknown/None → an all-False default row,
+    so `media_props(x).some_flag` is always safe."""
     return MEDIA_PROPERTIES.get(mt, _DEFAULT_PROPS)
 
 
 # ===========================================================================
-# NEW TAG-BASED CATALOG  (media_type + modifiers columns in the json)
+# SCENE ROWS  —  loading + per-row helpers
 # ===========================================================================
-# The catalog itself lives in MEDIA_CATALOG.py (dependency-free, shared with
-# the tagging tool in ___splitting_and_labelling). CONFIG re-exports it and
-# adds the MediaType-enum plumbing, so the rest of the renderer keeps
-# importing everything from CONFIG as before.
-#
-# json rows now carry:
-#   media_type: one MEDIA_TYPE_CATALOG name ("stock", "hold_previous", ...)
-#   modifiers:  stackable extras (["decorate"], ["caption"], ["group"], ...)
-#   group_id:   lines sharing an id are ONE group (rule of n); null otherwise
-# search_type stays in the file as the derived legacy string, so older tools
-# that read the raw file (e.g. ai_generate_stickman_images) keep working.
-from ___visuals.MEDIA_CATALOG import (  # noqa: E402  (re-export)
-    MEDIA_TYPE_CATALOG,
-    MODIFIERS,
-    Tag,
-    residual_modifiers,
-    to_legacy,
-)
+class SearchTermData(TypedDict, total=False):
+    search_term: str
+    media_type: MediaType    # enum after normalise_scene_row (name string on disk)
+    modifiers: list[str]     # stackable extras: decorate / group
+    group_id: int | None     # lines sharing an id render as ONE group (rule of n)
+    position: str            # cell number within the group ("1".."n")
 
 
-def _validate_media_catalog() -> None:
-    """Refuse to import if the shared catalog and MediaType drift apart."""
-    bad = {n: d["legacy"] for n, d in MEDIA_TYPE_CATALOG.items()
-           if d["legacy"] not in {t.value for t in MediaType}}
-    if bad:
-        raise RuntimeError(
-            "MEDIA_TYPE_CATALOG references legacy values with no MediaType "
-            f"enum member: {bad}"
-        )
-    # every derived combo must resolve too
-    for combo in ("joint_3_row", "stickman_joint_3_row",
-                  "decorate_previous", "stickman_text_overlay"):
-        MediaType(combo)
-
-
-_validate_media_catalog()  # runs on import
-
-
-def new_type_to_media_type(media_type: str, modifiers) -> MediaType:
-    """media_type name + modifiers → the renderer's MediaType enum."""
-    return MediaType(to_legacy(media_type, modifiers))
+_DEAD_LEGACY_COLUMNS = ("search_type", "template", "shot", "tier", "why")
 
 
 def normalise_scene_row(script_text: str, row: dict) -> None:
-    """Bring ONE search-term-file row up to the schema the renderer runs on,
-    IN PLACE. Accepts both the new tag-based rows and old flat rows:
+    """Bring ONE json row up to the schema the renderer runs on, IN PLACE:
+    row["media_type"] becomes a MediaType enum; modifiers/group_id/position
+    are guaranteed present and validated. Old flat files (search_type-only)
+    are NOT accepted — run UPGRADE_OLD_JSON.py once to convert them."""
+    for dead in _DEAD_LEGACY_COLUMNS:
+        row.pop(dead, None)  # ignored if an upgraded file still carries them
 
-      - new rows (media_type set): search_type is DERIVED from
-        media_type + modifiers (authoritative — the string in the file is
-        just a mirror for tools that read the raw json)
-      - old rows (no media_type): search_type string is converted directly
-
-    After this, row["search_type"] is a MediaType enum, row["modifiers"] is a
-    list, and row["group_id"] / row["position"] exist. Raises ValueError with
-    the valid names on anything unknown.
-    """
+    name = row.get("media_type")
+    if isinstance(name, MediaType):
+        name = name.value
+    name = (name or "").strip()
+    if not name:
+        raise ValueError(
+            f"scene '{script_text[:60]}' has no media_type. Old flat files "
+            f"(search_type only) must be converted once with: "
+            f"uv run UPGRADE_OLD_JSON.py <file>"
+        )
+    if name not in MEDIA_TYPE_CATALOG:
+        raise ValueError(
+            f"unknown media_type {name!r} on scene '{script_text[:60]}' "
+            f"(valid: {', '.join(MEDIA_TYPE_CATALOG)})"
+        )
     row.setdefault("modifiers", [])
     row.setdefault("group_id", None)
     row.setdefault("position", "1")
-
-    media_type = (row.get("media_type") or "").strip()
-    if media_type:
-        if media_type not in MEDIA_TYPE_CATALOG:
-            valid = ", ".join(MEDIA_TYPE_CATALOG)
-            raise ValueError(
-                f"unknown media_type {media_type!r} on scene "
-                f"'{script_text[:60]}' (valid: {valid})"
-            )
-        unknown_mods = [m for m in row["modifiers"] if m not in MODIFIERS]
-        if unknown_mods:
-            raise ValueError(
-                f"unknown modifier(s) {unknown_mods} on scene "
-                f"'{script_text[:60]}' (valid: {', '.join(MODIFIERS)})"
-            )
-        row["search_type"] = new_type_to_media_type(media_type, row["modifiers"])
-        return
-
-    # old flat schema — a bare legacy string
-    st = row.get("search_type")
-    if isinstance(st, MediaType):
-        return
-    try:
-        row["search_type"] = MediaType(st)
-    except ValueError:
-        valid = ", ".join(t.value for t in MediaType)
+    unknown = [m for m in row["modifiers"] if m not in MODIFIERS]
+    if unknown:
         raise ValueError(
-            f"unknown search_type {st!r} on scene '{script_text[:60]}' "
-            f"(valid: {valid})"
-        ) from None
+            f"unknown modifier(s) {unknown} on scene '{script_text[:60]}' "
+            f"(valid: {', '.join(MODIFIERS)})"
+        )
+    if "group" in row["modifiers"] and name not in GROUPABLE_TYPES:
+        raise ValueError(
+            f"'{name}' cannot take the group modifier on scene "
+            f"'{script_text[:60]}' (groupable: {', '.join(sorted(GROUPABLE_TYPES))})"
+        )
+    row["media_type"] = MediaType(name)
+
+
+def scene_type(row: dict) -> "MediaType | None":
+    """The row's MediaType (after normalise_scene_row). None-safe."""
+    mt = row.get("media_type")
+    return mt if isinstance(mt, MediaType) else None
+
+
+def scene_is_grouped(row: dict) -> bool:
+    return "group" in (row.get("modifiers") or [])
+
+
+def scene_wants_decorate(row: dict) -> bool:
+    return "decorate" in (row.get("modifiers") or [])
 
 
 def group_scene_rows(
     scenes: list[tuple[str, "SearchTermData"]],
 ) -> list[list[tuple[str, "SearchTermData"]]]:
-    """Split an ORDERED (script-order) list of (script_text, row) joint scenes
-    into render groups.
-
-    New rows: consecutive scenes sharing the SAME search_type AND the SAME
-    non-null group_id are one group (the tagging tool assigns group_id when
-    you stack the 'group' modifier).
-
-    Old rows (no group_id): fall back to the original rule — same type AND
-    contiguous 1-based positions.
-    """
+    """Split an ORDERED (script-order) list of grouped scenes into render
+    groups: consecutive scenes sharing the SAME media_type AND the SAME
+    non-null group_id are one group."""
     groups: list[list[tuple[str, "SearchTermData"]]] = []
     current: list[tuple[str, "SearchTermData"]] = []
     prev: "SearchTermData | None" = None
     for text, row in scenes:
-        if prev is None:
-            current.append((text, row))
-            prev = row
-            continue
-        same_type = row["search_type"] == prev["search_type"]
-        gid, gid_prev = row.get("group_id"), prev.get("group_id")
-        if gid is not None or gid_prev is not None:
-            same_group = same_type and gid is not None and gid == gid_prev
-        else:
-            same_group = same_type and (
-                int(row.get("position", "1")) == int(prev.get("position", "1")) + 1
-            )
-        if same_group:
-            current.append((text, row))
-        else:
+        same = (
+            prev is not None
+            and row.get("media_type") == prev.get("media_type")
+            and row.get("group_id") is not None
+            and row.get("group_id") == prev.get("group_id")
+        )
+        if prev is not None and not same:
             groups.append(current)
-            current = [(text, row)]
+            current = []
+        current.append((text, row))
         prev = row
     if current:
         groups.append(current)
     return groups
 
 
-def scene_residual_modifiers(row: dict) -> list[str]:
-    """The modifiers a scene still needs applied as LAYERS on top of its own
-    finished footage (everything not already baked into its legacy type).
-    Consumed by MODIFIER_STAGE. Safe on old flat rows (no modifiers → [])."""
-    st = row.get("search_type")
-    legacy_value = st.value if isinstance(st, MediaType) else (st or "")
-    return residual_modifiers(
-        row.get("media_type", ""), row.get("modifiers", []), legacy_value
-    )
-
-
- # near MANUAL_STOCK_ADD_TYPES / ZOOM_PREV_TYPES / STATIC_OF_PREVIOUS_TYPES:
-DECORATE_PREVIOUS_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_previous")
-DECORATE_PREVIOUS_RENDER_SAFETY_PAD_SEC: float = 0.08
-
-
-class SearchTermData(TypedDict, total=False):
-    search_term: str
-    search_type: MediaType   # enum after normalise_scene_row (legacy string on disk)
-    media_type: str          # new tag-based base name ("stock", "hold_previous", ...)
-    modifiers: list[str]     # stackable extras: decorate / caption / group
-    group_id: int | None     # lines sharing an id render as ONE group (rule of n)
-    position: str            # cell number within the group ("1".."n")
-
+# ===========================================================================
+# DECORATE EDITOR (the `decorate` modifier)
+# ===========================================================================
+# ONE interactive editor, applied to the scene's OWN finished footage, with
+# clickable tools: draw, text/caption, zoom/crop. It replaces the old
+# decorate_previous, stickman_text_overlay and zoom_prev_img types. The
+# stage lives in DECORATE_STAGE.py.
+DECORATE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_scenes")
+DECORATE_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 
 # ===========================================================================
@@ -504,7 +448,7 @@ STICKMAN_NUM_VARIANTS: int = 1
 # STICKMAN_NUM_VARIANTS: int = 2 # TODO change back to 2 once finished testing...
 
 # The generator reads the same search-term JSON the rest of the pipeline uses;
-# it just filters rows whose search_type == "stickman".
+# it filters rows by media_type == "ai_stock" (grouped or not — see its args).
 STICKMAN_PROMPTS_FILE: str = LINE_INDEX_TO_SEARCH_TERM_FILE
 
 # Where generated PNGs are written (cache-scoped, like joint/read-out output).
@@ -531,12 +475,6 @@ STICKMAN_EXPLAIN_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_explain_scenes"
 STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 
-# Text-overlay scenes: a Fireship-style caption (the scene's search_term)
-# composited onto the PREVIOUS scene's chosen image. Synthesised AFTER review
-# + explainer (so any prior scene type resolves) and BEFORE Ken Burns. Not
-# fetched, not AI-generated, not reviewed.
-STICKMAN_TEXT_OVERLAY_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/text_overlay_scenes")
-STICKMAN_TEXT_OVERLAY_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 # How many preceding stickman images to pass as ADDITIONAL context (on top of
 # the 3 style refs) for character/style continuity → up to 6 images total.
@@ -557,9 +495,6 @@ STICKMAN_CONTEXT_NUM_IMAGES: int = 3
 MANUAL_STOCK_PLACEMENT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/manual_stock_placement")
 MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC: float = 0.08
 
-DECORATE_PREVIOUS_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_previous")
-DECORATE_PREVIOUS_RENDER_SAFETY_PAD_SEC: float = 0.08
-
 # ===========================================================================
 # OBJECT GENERATE (stock image -> object-separation editor -> edited media)
 # ===========================================================================
@@ -571,27 +506,19 @@ DECORATE_PREVIOUS_RENDER_SAFETY_PAD_SEC: float = 0.08
 OBJECT_GENERATE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/object_generate_scenes")
 
 # ===========================================================================
-# MODIFIER LAYERS (decorate / caption stacked on a scene's OWN footage)
-# ===========================================================================
-# hold_previous + decorate/caption still route through the dedicated legacy
-# types (decorate_previous / stickman_text_overlay). Every OTHER base +
-# decorate/caption combo is applied by MODIFIER_STAGE as a layer on the
-# scene's own finished footage, output here.
-MODIFIER_LAYER_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/modifier_layers")
-MODIFIER_LAYER_RENDER_SAFETY_PAD_SEC: float = 0.08
-
-# ===========================================================================
 # JOINT SCENE LAYOUTS
 # ===========================================================================
 # TODO - consider moving this to the JOINT_IMAGE_CREATOR file
 
+# Keyed by the BASE type of a group (the `group` modifier decides that a
+# run of lines is a group; the base decides where the tiles come from).
 JOINT_LAYOUT_POSITIONS: dict[MediaType, list[list[int]]] = {
-    MediaType.JOINT_3_ROW: [
+    MediaType.STOCK: [
         [25, 50],
         [50, 50],
         [75, 50],
     ],
-    MediaType.STICKMAN_JOINT_3_ROW: [
+    MediaType.AI_STOCK: [
         [25, 50],
         [50, 50],
         [75, 50],
@@ -599,9 +526,9 @@ JOINT_LAYOUT_POSITIONS: dict[MediaType, list[list[int]]] = {
 }
 
 def _validate_joint_layouts() -> None:
-    missing = {mt for mt, p in MEDIA_PROPERTIES.items() if p.is_joint and mt not in JOINT_LAYOUT_POSITIONS}
+    missing = {n for n in GROUPABLE_TYPES if MediaType(n) not in JOINT_LAYOUT_POSITIONS}
     if missing:
-        raise RuntimeError(f"is_joint types missing a JOINT_LAYOUT_POSITIONS entry: {missing}")
+        raise RuntimeError(f"groupable types missing a JOINT_LAYOUT_POSITIONS entry: {missing}")
 
 
 _validate_joint_layouts()
@@ -622,11 +549,11 @@ MUSIC_VOLUME: float = 0.01  # ducked under narration
 # (right after the transition animation finishes) on every joint stage.
 # User can still override per-scene by setting `"sfx"` in the JSON.
 JOINT_TYPE_SFX_MAP: dict[MediaType, dict] = {
-    MediaType.JOINT_3_ROW: {
+    MediaType.STOCK: {
         "path": "se-pop.mp3",
         "timing": "loop_start",
     },
-    MediaType.STICKMAN_JOINT_3_ROW: {
+    MediaType.AI_STOCK: {
         "path": "se-pop.mp3",
         "timing": "loop_start",
     },

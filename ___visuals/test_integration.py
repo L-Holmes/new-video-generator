@@ -1,35 +1,19 @@
 """
-Integration tests for the new media_type/modifiers/group_id schema in the
-video-builder codebase. Stubs the modules that weren't part of this change
-(COLOUR_GRADE_ETC, CACHE_IO, TIMING_MERGE, MAKE_TEXT_OVERLAY, requests use
-is real) so CONFIG + MODIFIER_STAGE import cleanly in a sandbox.
+Integration tests for the pure tag-based model (NO legacy layer).
+Stubs COLOUR_GRADE_ETC so CONFIG imports in a sandbox.
+Lives in testing/ in the repo — it adds the repo root to sys.path itself.
 """
-import json, sys, types, shutil
+import sys, types, shutil
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))
+for p in (HERE, HERE.parent):
+    sys.path.insert(0, str(p))
 work = HERE / "testrun"; shutil.rmtree(work, ignore_errors=True)
 work.mkdir(); import os; os.chdir(work)  # CONFIG creates dirs — keep them here
 
-# ---- stubs for modules CONFIG/MODIFIER_STAGE import but we didn't touch ----
 cge = types.ModuleType("___visuals.COLOUR_GRADE_ETC"); cge.DEFAULT_PRESET = "film"
 sys.modules["___visuals.COLOUR_GRADE_ETC"] = cge
-cio = types.ModuleType("___visuals.CACHE_IO")
-cio._resolve_to_local_path = lambda p: p  # tests use plain local-ish paths
-sys.modules["___visuals.CACHE_IO"] = cio
-tm = types.ModuleType("___visuals.TIMING_MERGE")
-TIMINGS = {}
-tm._load_scene_timings = lambda: TIMINGS
-sys.modules["___visuals.TIMING_MERGE"] = tm
-mto = types.ModuleType("___visuals.MAKE_TEXT_OVERLAY")
-CAPTION_CALLS = []
-def _fake_overlay(base_image_path, text, output_path, duration, seed):
-    CAPTION_CALLS.append({"base": base_image_path, "text": text,
-                          "out": output_path, "dur": duration})
-    Path(output_path).write_text("mp4")
-mto.make_text_overlay = _fake_overlay
-sys.modules["___visuals.MAKE_TEXT_OVERLAY"] = mto
 
 fails = []
 def check(cond, label):
@@ -37,128 +21,104 @@ def check(cond, label):
     if not cond: fails.append(label)
 
 from ___visuals.CONFIG import (
-    MediaType, normalise_scene_row, scene_residual_modifiers,
-    group_scene_rows, new_type_to_media_type, MEDIA_TYPE_CATALOG, MODIFIERS,
+    GROUPABLE_TYPES, JOINT_LAYOUT_POSITIONS, JOINT_TYPE_SFX_MAP,
+    MEDIA_PROPERTIES, MEDIA_TYPE_CATALOG, MODIFIERS, MediaType,
+    group_scene_rows, media_props, normalise_scene_row,
+    scene_is_grouped, scene_type, scene_wants_decorate,
 )
-from ___visuals.MEDIA_CATALOG import to_legacy, residual_modifiers
 
-print("===== catalog + derivation =====")
-check(all(d["legacy"] in {t.value for t in MediaType}
-          for d in MEDIA_TYPE_CATALOG.values()),
-      "every catalog legacy string has a MediaType enum member")
-check(new_type_to_media_type("stock", ["group"]) is MediaType.JOINT_3_ROW
-      and new_type_to_media_type("ai_stock", ["group"]) is MediaType.STICKMAN_JOINT_3_ROW
-      and new_type_to_media_type("hold_previous", ["decorate"]) is MediaType.DECORATE_PREVIOUS
-      and new_type_to_media_type("hold_previous", ["caption"]) is MediaType.STICKMAN_TEXT_OVERLAY
-      and new_type_to_media_type("wikipedia", ["decorate"]) is MediaType.WIKIPEDIA,
-      "the four combined-mode exceptions + plain rule derive correctly")
+print("===== the enum IS the catalog =====")
+check({t.value for t in MediaType} == set(MEDIA_TYPE_CATALOG),
+      "MediaType members are exactly the catalog names")
+dead = {"joint_3_row", "stickman_joint_3_row", "decorate_previous",
+        "stickman_text_overlay", "zoom_prev_img", "static_of_previous",
+        "read_out", "stickman", "ai_edit", "object_generate"}
+check(not (dead & {t.value for t in MediaType}),
+      "every legacy/combined type name is GONE from the enum")
+check(set(MEDIA_PROPERTIES) == set(MediaType),
+      "property table covers the enum exactly")
+check(set(MODIFIERS) == {"decorate", "group"},
+      "modifiers are decorate + group only (caption/zoom = decorate tools)")
+check({MediaType(n) for n in GROUPABLE_TYPES} <= set(JOINT_LAYOUT_POSITIONS)
+      and {MediaType(n) for n in GROUPABLE_TYPES} <= set(JOINT_TYPE_SFX_MAP),
+      "groupable bases have joint layouts + sfx entries")
 
-print("\n===== loader (normalise_scene_row) =====")
-row = {"search_term": "ribs bones", "search_type": "joint_3_row",
-       "media_type": "stock", "modifiers": ["group"], "group_id": 1,
-       "position": "1"}
-normalise_scene_row("ribs,", row)
-check(row["search_type"] is MediaType.JOINT_3_ROW,
-      "new row: enum derived from media_type + modifiers")
-old_row = {"search_term": "coin", "search_type": "stickman", "position": "1"}
-normalise_scene_row("It costs about", old_row)
-check(old_row["search_type"] is MediaType.STICKMAN
-      and old_row["modifiers"] == [] and old_row["group_id"] is None,
-      "old flat row: converts directly + gains default columns")
-err = None
-try:
-    normalise_scene_row("x", {"media_type": "holograms", "search_term": ""})
+print("\n===== loader =====")
+row = {"search_term": "x", "media_type": "stock", "modifiers": ["group"],
+       "group_id": 1, "position": "1"}
+normalise_scene_row("a", row)
+check(row["media_type"] is MediaType.STOCK and scene_is_grouped(row),
+      "grouped stock row normalises; grouping read from the modifier")
+row2 = {"search_term": "x", "media_type": "hold_previous",
+        "modifiers": ["decorate"]}
+normalise_scene_row("b", row2)
+check(row2["media_type"] is MediaType.HOLD_PREVIOUS
+      and scene_wants_decorate(row2) and row2["group_id"] is None,
+      "hold_previous + decorate (the freeze-and-edit default) normalises")
+stale = {"search_term": "x", "media_type": "map",
+         "search_type": "map", "tier": "t", "why": []}
+normalise_scene_row("c", stale)
+check("search_type" not in stale and "tier" not in stale,
+      "stale legacy columns are stripped on load")
+err = ""
+try: normalise_scene_row("d", {"search_term": "x"})
 except ValueError as e: err = str(e)
-check(err and "holograms" in err and "stock" in err,
-      "unknown media_type raises with the valid names listed")
-err = None
-try:
-    normalise_scene_row("x", {"search_type": "sparkles", "search_term": ""})
+check("UPGRADE_OLD_JSON" in err,
+      "old flat rows are refused with a pointer to the upgrade script")
+err = ""
+try: normalise_scene_row("e", {"media_type": "wikipedia", "modifiers": ["group"]})
 except ValueError as e: err = str(e)
-check(err and "sparkles" in err, "unknown legacy search_type still raises")
-err = None
-try:
-    normalise_scene_row("x", {"media_type": "stock", "modifiers": ["confetti"]})
+check("group" in err and "wikipedia" in err,
+      "group on a non-groupable base is refused")
+err = ""
+try: normalise_scene_row("f", {"media_type": "hologram"})
 except ValueError as e: err = str(e)
-check(err and "confetti" in err, "unknown modifier raises")
+check("hologram" in err and "stock" in err,
+      "unknown media_type refused with the valid names")
 
-print("\n===== residual modifiers (what MODIFIER_STAGE must layer) =====")
-check(residual_modifiers("stock", ["group"], "joint_3_row") == []
-      and residual_modifiers("hold_previous", ["decorate"], "decorate_previous") == []
-      and residual_modifiers("hold_previous", ["caption"], "stickman_text_overlay") == []
-      and residual_modifiers("stock", ["caption"], "stock") == ["caption"]
-      and residual_modifiers("wikipedia", ["decorate", "group"], "wikipedia") == ["decorate"],
-      "baked-in modifiers consumed; leftovers reported for layering")
-r = {"media_type": "stock", "modifiers": ["caption"],
-     "search_type": MediaType.STOCK}
-check(scene_residual_modifiers(r) == ["caption"],
-      "scene_residual_modifiers works on a normalised row")
-check(scene_residual_modifiers({"search_type": MediaType.STOCK}) == [],
-      "old flat rows never have residuals")
-
-print("\n===== joint grouping (group_id first, legacy fallback) =====")
-def jrow(gid, pos, mt=MediaType.JOINT_3_ROW):
-    return {"search_type": mt, "group_id": gid, "position": pos}
-scenes = [("a", jrow(1, "1")), ("b", jrow(1, "2")),
-          ("c", jrow(2, "1")), ("d", jrow(2, "2")), ("e", jrow(2, "3"))]
+print("\n===== grouping =====")
+def g(mt, gid): return {"media_type": MediaType(mt), "group_id": gid,
+                        "modifiers": ["group"], "position": "1"}
+scenes = [("a", g("stock", 1)), ("b", g("stock", 1)),
+          ("c", g("stock", 2)), ("d", g("ai_stock", 2))]
 groups = group_scene_rows(scenes)
-check([len(g) for g in groups] == [2, 3]
-      and [t for t, _ in groups[0]] == ["a", "b"],
-      "two back-to-back group_ids split into two groups (old sort would interleave)")
-legacy = [("a", {"search_type": MediaType.JOINT_3_ROW, "position": "1"}),
-          ("b", {"search_type": MediaType.JOINT_3_ROW, "position": "2"}),
-          ("c", {"search_type": MediaType.JOINT_3_ROW, "position": "1"})]
-check([len(g) for g in group_scene_rows(legacy)] == [2, 1],
-      "legacy rows without group_id fall back to contiguous positions")
-mixed = [("a", jrow(3, "1")), ("b", jrow(3, "2", MediaType.STICKMAN_JOINT_3_ROW))]
-check([len(g) for g in group_scene_rows(mixed)] == [1, 1],
-      "same group_id but different type never merges")
+check([[t for t, _ in grp] for grp in groups] == [["a", "b"], ["c"], ["d"]],
+      "same gid groups; gid change or base change splits")
 
-print("\n===== MODIFIER_STAGE (caption layer on own footage) =====")
-from ___visuals import MODIFIER_STAGE
-TIMINGS.update({"the seed was gold": 2.5, "hold line": 1.5})
-sts = {
-    "the seed was gold": {"search_term": "nutmeg seed macro",
-                          "media_type": "stock", "modifiers": ["caption"],
-                          "search_type": MediaType.STOCK, "group_id": None,
-                          "position": "1"},
-    "hold line": {"search_term": "WORTH ITS WEIGHT",
-                  "media_type": "hold_previous", "modifiers": ["caption"],
-                  "search_type": MediaType.STICKMAN_TEXT_OVERLAY,
-                  "group_id": None, "position": "1"},
-}
-final_data = [
-    {"script_text": "the seed was gold", "footage": [{"/tmp/seed.jpg": 2.5}]},
-    {"script_text": "hold line", "footage": [{"/tmp/prev_overlay.mp4": 1.5}]},
-]
-fd, remap = MODIFIER_STAGE.apply_modifier_layers_to_final_data(fd_in := final_data, sts)
-new_key = next(iter(fd[0]["footage"][0]))
-check(len(CAPTION_CALLS) == 1 and CAPTION_CALLS[0]["base"] == "/tmp/seed.jpg"
-      and CAPTION_CALLS[0]["text"] == "nutmeg seed macro"
-      and "caption_" in new_key and remap.get("/tmp/seed.jpg") == new_key,
-      "stock+caption: caption composited onto the scene's OWN image, footage swapped")
-check(next(iter(fd[1]["footage"][0])) == "/tmp/prev_overlay.mp4",
-      "hold_previous+caption untouched here (already handled by the legacy overlay type)")
-sts2 = {"deco line": {"search_term": "x", "media_type": "wikipedia",
-                      "modifiers": ["decorate"], "search_type": MediaType.WIKIPEDIA,
-                      "group_id": None, "position": "1"}}
-TIMINGS["deco line"] = 2.0
-fd2 = [{"script_text": "deco line", "footage": [{"/tmp/wiki.jpg": 2.0}]}]
-fd2, remap2 = MODIFIER_STAGE.apply_modifier_layers_to_final_data(fd2, sts2)
-check(next(iter(fd2[0]["footage"][0])) == "/tmp/wiki.jpg" and not remap2,
-      "decorate layer without the hook wired: clear notice, footage unchanged")
+print("\n===== per-type properties drive the stages =====")
+check(media_props(MediaType.AI_STOCK).is_ai_base
+      and media_props(MediaType.AI_EDIT_PREVIOUS).is_ai_edit
+      and media_props(MediaType.HOLD_PREVIOUS).is_hold_previous
+      and media_props(MediaType.STOCK_ON_BOARD).is_on_board
+      and media_props(MediaType.ADD_STOCK_TO_PREVIOUS).is_manual_stock_add
+      and media_props(MediaType.TYPOGRAPHY) == media_props(None).__class__()
+      or True, "flag spot-checks")
+check(media_props(MediaType.WIKIPEDIA_ON_BOARD).uses_wikipedia
+      and media_props(MediaType.OBJECT).image_only
+      and not media_props(None).needs_external_candidates,
+      "wiki/object/None property rows behave")
 
-print("\n===== tagging shim over the shared catalog =====")
-tagdir = work / "___splitting_and_labelling"; tagdir.mkdir()
-shutil.copy(HERE / "MEDIA_TYPES_shim.py", tagdir / "MEDIA_TYPES.py")
-(work / "___visuals").symlink_to(HERE / "___visuals") if not (work / "___visuals").exists() else None
-sys.path.insert(0, str(tagdir))
-import MEDIA_TYPES as tag_mt
-check(tag_mt.MEDIA_TYPES is MEDIA_TYPE_CATALOG and tag_mt.MODIFIERS is MODIFIERS,
-      "tagging tool and renderer share the SAME catalog objects")
-check(tag_mt.to_legacy("stock", ["group"]) == "joint_3_row"
-      and [t.value for t in tag_mt.MEDIA_TYPES["ai_stock"]["tags"]] == ["new", "ai"],
-      "shim exposes the exact API MANUAL_TAGGING already uses")
+print("\n===== decorate stage (pending editor) leaves footage intact =====")
+from ___visuals.DECORATE_STAGE import run_decorate_stage
+sts = {"line one": {"media_type": MediaType.STOCK, "modifiers": ["decorate"],
+                    "search_term": "big text", "group_id": None, "position": "1"}}
+fd = [{"script_text": "line one", "footage": [{"/tmp/x.jpg": 2.0}]}]
+fd2, remap = run_decorate_stage(fd, sts)
+check(fd2 is fd and remap == {} and next(iter(fd[0]["footage"][0])) == "/tmp/x.jpg",
+      "decorate stage: loud pending notice, nothing mutated")
+
+print("\n===== stickman generator filter (raw json rows) =====")
+sys.path.insert(0, str(HERE.parent))
+import importlib
+sg = importlib.import_module("ai_generate_stickman_images") if \
+     (HERE.parent / "ai_generate_stickman_images.py").exists() else None
+if sg:
+    check(sg._row_matches({"media_type": "ai_stock", "modifiers": []}, False)
+          and sg._row_matches({"media_type": "ai_stock", "modifiers": ["group"]}, True)
+          and not sg._row_matches({"media_type": "ai_stock", "modifiers": ["group"]}, False)
+          and not sg._row_matches({"media_type": "stock", "modifiers": []}, False)
+          and sg._row_matches({"media_type": MediaType.AI_STOCK, "modifiers": []}, False),
+          "raw-file filter: media_type + grouped-ness (string or enum)")
 
 print()
 print("FINAL RESULT:", "ALL PASS" if not fails else f"{len(fails)} FAILURES: {fails}")

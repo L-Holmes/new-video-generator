@@ -18,7 +18,7 @@ Ken-Burns stages exactly: it transforms footage in place and returns
 
 Placement: the first detected badge → TOP-LEFT corner, the second → TOP-RIGHT.
 At most two (keeps the frame uncluttered — see MAX_BADGES_PER_SCENE). If the
-scene is itself a STICKMAN_TEXT_OVERLAY, the corner its caption occupies is
+scene carries the decorate modifier, the corner its caption may occupy is
 left free.
 
 Works for both images (PIL composite → PNG) and videos (ffmpeg overlay over the
@@ -43,11 +43,17 @@ from pathlib import Path
 from PIL import Image
 
 from ___visuals.CACHE_IO import _is_image_path, _resolve_to_local_path
-from ___visuals.CONFIG import _CACHE_DIR, DEBUG, ProgressTracker, media_props
+from ___visuals.CONFIG import (
+    _CACHE_DIR,
+    DEBUG,
+    ProgressTracker,
+    scene_type,
+    scene_wants_decorate,
+)
 
 # Reuse the EXACT caption renderer + deterministic position picker from the
 # Fireship-style text overlay, so badges match that look AND so we can recompute
-# which corner an existing STICKMAN_TEXT_OVERLAY caption is sitting in.
+# which corner an existing decorate-editor caption is sitting in.
 from ___visuals.MAKE_TEXT_OVERLAY import (
     FPS,
     FRAME_H,
@@ -93,9 +99,9 @@ BADGE_MARGIN_PX: int = 28  # keep chips off the very edge of the frame
 # At most this many badges per scene (keep the frame uncluttered).
 MAX_BADGES_PER_SCENE: int = 2
 
-# Scene types to skip entirely (by MediaType). Empty by default — badges are
-# added to "whatever relevant section". Populate to exclude, e.g. READ_OUT
-# (which already shows big text). Compared via media_props flags / type value.
+# Scene types to skip entirely (by MediaType value, e.g. "typography").
+# Empty by default — badges are added to "whatever relevant section".
+# Populate to exclude, e.g. typography (which already shows big text).
 SKIP_TYPE_VALUES: set[str] = set()
 
 
@@ -446,20 +452,21 @@ def _badges_for_text(text: str) -> list[str]:
 
 
 def _free_anchors(text: str, script_to_search_term: dict) -> list[str]:
-    """Corners available for badges, removing the one a STICKMAN_TEXT_OVERLAY
-    caption already occupies on this same scene."""
+    """Corners available for badges, removing the one a decorate-editor
+    caption may occupy on this same scene (captions are a tool of the
+    decorate modifier now — the old text-overlay type is gone)."""
     free = list(ANCHOR_FILL_ORDER)
     data = script_to_search_term.get(text)
-    if data and media_props(data.get("search_type")).is_text_overlay:
-        # generate_text_overlay_scenes calls make_text_overlay(seed=txt), so the
-        # caption anchor is deterministic: _pick_combo(txt)[0] -> "TL"/"TR"/"C".
+    if data and scene_wants_decorate(data):
+        # the caption tool seeds its placement from the script text, same as
+        # the old overlay type did: _pick_combo(txt)[0] -> "TL"/"TR"/"C".
         caption_anchor = _pick_combo(text)[0]
         if caption_anchor in free:
             free.remove(caption_anchor)
             if DEBUG:
                 print(
-                    f"[overlays]   '{text[:40]}' is a text-overlay; caption in "
-                    f"{caption_anchor} — leaving that corner free"
+                    f"[overlays]   '{text[:40]}' has a decorate layer; a "
+                    f"caption may sit in {caption_anchor} — leaving it free"
                 )
     return free
 
@@ -580,11 +587,9 @@ def apply_relevant_overlays_to_final_data(
     for entry in final_data:
         text = entry.get("script_text", "")
         data = script_to_search_term.get(text)
-        if data and data.get("search_type") is not None:
-            stype = data["search_type"]
-            value = getattr(stype, "value", stype)
-            if value in SKIP_TYPE_VALUES:
-                continue
+        mt = scene_type(data) if data else None
+        if mt is not None and mt.value in SKIP_TYPE_VALUES:
+            continue
         badges = _badges_for_text(text)
         if not badges:
             continue

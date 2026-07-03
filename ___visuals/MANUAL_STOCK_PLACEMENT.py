@@ -5,13 +5,14 @@ Manual, per-scene image edits performed AFTER all stock/AI picks are made and
 BEFORE Ken Burns. Two tools, both driven by a sized + positionable box over the
 PREVIOUS scene's image:
 
-  • PLACEMENT  (MediaType.MANUAL_STOCK_ADD_TO_PREVIOUS)
+  • PLACEMENT  (MediaType.ADD_STOCK_TO_PREVIOUS)
       Stamp this scene's chosen stock still onto the previous image as many
       times as you like: click to add one (at the current size), keep clicking
       to add more (sizes can differ), Undo removes the last, Done finishes.
       All stamps are flattened together. Optional white-background knockout.
 
-  • ZOOM/CROP  (MediaType.ZOOM_PREV_IMG)
+  • ZOOM/CROP  (a decorate-editor tool now — crop_and_zoom below is the
+    building block the merged editor reuses; there is no zoom media type)
       Derive this scene's image by cropping/zooming into the previous image.
       The dashed box (default 90% width, base aspect ratio so it never
       distorts) is centred by default and movable with the mouse; the crop is
@@ -39,6 +40,12 @@ Standalone test
 """
 
 from __future__ import annotations
+
+# Allow `uv run ___visuals/MANUAL_STOCK_PLACEMENT.py` from the repo root.
+if __package__ in (None, ""):
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import subprocess
 from dataclasses import dataclass

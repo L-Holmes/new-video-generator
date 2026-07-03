@@ -1,17 +1,17 @@
 """
 Locally-rendered scene generators (no external candidates, no review):
-  - generate_joint_scenes      — multi-image collage MP4s (joint compositor)
-  - generate_read_out_scenes   — kinetic typography
+  - generate_joint_scenes      — grouped scenes (the `group` modifier) as
+                                 multi-image collage MP4s (joint compositor)
+  - generate_read_out_scenes   — kinetic typography (media_type "typography")
   - generate_map_scenes        — highlighted place maps
   - generate_stickman_explain_scenes — chosen stock/wiki clip on a board base
-  - generate_text_overlay_scenes     — caption on the previous scene's image
 
 plus the LOCAL_FOOTAGE_GENERATORS registry and run_all_local_generators that
-drives the registry-based ones. The explainer / text-overlay generators are
-invoked directly by main() (they run after review), not via the registry.
+drives the registry-based ones. The explainer generator is invoked directly
+by main() (it runs after review), not via the registry. Captions live in the
+decorate editor now (DECORATE_STAGE) — the old text-overlay generator is gone.
 
-MAKE_EXPLAINER_IMAGE / MAKE_TEXT_OVERLAY are imported lazily inside their
-generators.
+MAKE_EXPLAINER_IMAGE is imported lazily inside its generator.
 """
 
 from __future__ import annotations
@@ -31,19 +31,18 @@ from ___visuals.CONFIG import (
     MAP_ENABLE,
     MAP_GEOCODE_CACHE_DIR,
     MAP_OUTPUT_DIR,
-    READ_OUT_ENABLE,
-    READ_OUT_RENDER_SAFETY_PAD_SEC,
+    TYPOGRAPHY_ENABLE,
+    TYPOGRAPHY_RENDER_SAFETY_PAD_SEC,
     STICKMAN_EXPLAIN_OUTPUT_DIR,
     STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC,
-    STICKMAN_TEXT_OVERLAY_OUTPUT_DIR,
-    STICKMAN_TEXT_OVERLAY_RENDER_SAFETY_PAD_SEC,
     TIMESTAMPS_ABSOLUTE_FILE,
     WORD_TIMINGS_FILE,
+    GROUPABLE_TYPES,
     MediaType,
     SearchTermData,
-    MEDIA_PROPERTIES,
     group_scene_rows,
     media_props,
+    scene_is_grouped,
 )
 from ___visuals.DOWNLOADS import _download_image
 from ___visuals.GET_MAP import get_map_image
@@ -65,16 +64,17 @@ def generate_joint_scenes(
     final_data: list[dict] | None = None,
 ) -> dict[str, list[dict]]:
     """
-    Build joint composite scenes for any scene whose search_type is in
-    JOINT_TYPES, and return a stitcher-ready map of:
+    Build joint composite scenes for every GROUPED scene (rows carrying the
+    `group` modifier — a group OF stock, a group OF ai_stock), returning a
+    stitcher-ready map of:
 
         { script_text: [ {local_path: trim_seconds}, ... ], ... }
 
     Each joint stage typically contributes TWO entries (intro + loop). Very
     short scenes get just one entry — the loop file alone.
 
-    Adjacent scenes are grouped if they share the SAME joint search_type
-    AND have contiguous positions. Each group becomes one composite render.
+    Adjacent scenes sharing the SAME base media_type AND the SAME group_id
+    (assigned by the tagging tool) are one group = one composite render.
     """
 
     print("\n" + "=" * 70)
@@ -83,7 +83,7 @@ def generate_joint_scenes(
         f"[joint scenes] script_to_search_term has {len(script_to_search_term)} entries"
     )
     print(f"[joint scenes] candidates_data has {len(candidates_data)} entries")
-    print(f"[joint scenes] joint types registered: " f"{[mt.value for mt, p in MEDIA_PROPERTIES.items() if p.is_joint]}")
+    print(f"[joint scenes] groupable base types: {sorted(GROUPABLE_TYPES)}")
     print("=" * 70)
 
     scene_timings = _load_scene_timings()
@@ -105,10 +105,10 @@ def generate_joint_scenes(
         key = next(iter(footage[0]), None) if footage else None
         chosen_by_text[entry["script_text"]] = key
 
-    # 1) Locate all scenes whose search_type is a joint type.
+    # 1) Locate all GROUPED scenes (the `group` modifier on a groupable base).
     joint_scenes: list[tuple[str, SearchTermData]] = []
     for script_text, scene_data in script_to_search_term.items():
-        if not media_props(scene_data["search_type"]).is_joint:
+        if not scene_is_grouped(scene_data):
             continue
         joint_scenes.append((script_text, scene_data))
 
@@ -126,7 +126,7 @@ def generate_joint_scenes(
         print(
             f"[joint scenes]   sorted[{i}]: pos={data['position']}, "
             f"group_id={data.get('group_id')}, "
-            f"type={data['search_type'].value}, script='{txt[:60]}...'"
+            f"type={data['media_type'].value}, script='{txt[:60]}...'"
         )
 
     # 2) Group consecutive joints. New rows group by shared group_id (set by
@@ -137,7 +137,7 @@ def generate_joint_scenes(
     print(f"\n[joint scenes] formed {len(grouped_joint_scenes)} group(s)")
     for gi, grp in enumerate(grouped_joint_scenes):
         positions = [s[1]["position"] for s in grp]
-        joint_type = grp[0][1]["search_type"]
+        joint_type = grp[0][1]["media_type"]
         print(
             f"[joint scenes]   group {gi}: type={joint_type.value}, "
             f"positions={positions}, size={len(grp)}"
@@ -147,7 +147,7 @@ def generate_joint_scenes(
     script_text_to_footage_entries: dict[str, list[dict]] = {}
 
     for group_index, group in enumerate(grouped_joint_scenes):
-        joint_type = group[0][1]["search_type"]
+        joint_type = group[0][1]["media_type"]  # the group's BASE type
         print(
             f"\n[joint scenes] processing group {group_index}: "
             f"type={joint_type.value}, size={len(group)}"
@@ -165,19 +165,19 @@ def generate_joint_scenes(
         # Per-joint-type rendering config. Add a `case` here when adding a
         # new joint layout (and an entry in JOINT_LAYOUT_POSITIONS).
         match joint_type:
-            case MediaType.JOINT_3_ROW:
+            case MediaType.STOCK:
                 box_percentage = 50
                 transition = TRANSITION_RANDOM
                 background_path = "_BACKGROUNDS/bg_crumpled_card.mp4"
                 base_duration = JOINT_BASE_DURATION_FALLBACK_SEC
                 remove_bg = True
 
-            case MediaType.STICKMAN_JOINT_3_ROW:
-                # Identical to JOINT_3_ROW; the ONLY difference is the tiles come
-                # from the AI stickman generator instead of Pexels. The stickman
-                # images are line art on forced-white backgrounds, so remove_bg
-                # cuts the figure out onto the crumpled card. Flip to False if you
-                # ever want the white kept.
+            case MediaType.AI_STOCK:
+                # Identical to a stock group; the ONLY difference is the tiles
+                # come from the AI stickman generator instead of Pexels. The
+                # stickman images are line art on forced-white backgrounds, so
+                # remove_bg cuts the figure out onto the crumpled card. Flip to
+                # False if you ever want the white kept.
                 box_percentage = 50
                 transition = TRANSITION_RANDOM
                 background_path = "_BACKGROUNDS/bg_crumpled_card.mp4"
@@ -185,7 +185,7 @@ def generate_joint_scenes(
                 remove_bg = True
 
             case _:
-                print(f"[joint scenes] FATAL: unsupported joint type: {joint_type}")
+                print(f"[joint scenes] FATAL: unsupported group base type: {joint_type}")
                 sys.exit(1)
 
         stage_timings = [
@@ -270,7 +270,7 @@ def generate_joint_scenes(
                         f"  cleanup deleted it because a STALE review decision (from when"
                     )
                     print(
-                        f"  this scene had a different search_type) pointed elsewhere."
+                        f"  this scene had a different media_type) pointed elsewhere."
                     )
                     print(
                         f"  Delete {CANDIDATES_CACHE_FILE} and re-run to regenerate it."
@@ -340,8 +340,8 @@ def generate_read_out_scenes(
     final_data: list[dict] | None = None,  # unused — registry signature uniformity
 ) -> dict[str, list[dict]]:
     """
-    Render a silent kinetic-typography MP4 for every scene flagged
-    MediaType.READ_OUT, and return a stitcher-ready map of:
+    Render a silent kinetic-typography MP4 for every MediaType.TYPOGRAPHY
+    scene, and return a stitcher-ready map of:
 
         { script_text: [ {local_path: trim_seconds} ], ... }
 
@@ -356,14 +356,14 @@ def generate_read_out_scenes(
     print("[read-out scenes] STARTING generate_read_out_scenes")
     print("=" * 70)
 
-    if not READ_OUT_ENABLE:
-        print("[read-out scenes] READ_OUT_ENABLE is False — skipping")
+    if not TYPOGRAPHY_ENABLE:
+        print("[read-out scenes] TYPOGRAPHY_ENABLE is False — skipping")
         return {}
 
     read_outs = [
         (txt, data)
         for txt, data in script_to_search_term.items()
-        if data["search_type"] == MediaType.READ_OUT
+        if data["media_type"] == MediaType.TYPOGRAPHY
     ]
 
     if not read_outs:
@@ -426,7 +426,7 @@ def generate_read_out_scenes(
         # Render slightly longer than the scene runtime so the stitcher's
         # trim never falls short due to libx264 keyframe alignment. The
         # extra footage (last word stationary) is invisible after trim.
-        render_duration = duration + READ_OUT_RENDER_SAFETY_PAD_SEC
+        render_duration = duration + TYPOGRAPHY_RENDER_SAFETY_PAD_SEC
 
         print(
             f"\n[read-out scenes] [{idx + 1}/{len(read_outs)}] "
@@ -435,7 +435,7 @@ def generate_read_out_scenes(
         print(f"[read-out scenes]   scene duration   = {duration:.3f}s")
         print(
             f"[read-out scenes]   render duration  = {render_duration:.3f}s "
-            f"(+{READ_OUT_RENDER_SAFETY_PAD_SEC:.3f}s safety pad)"
+            f"(+{TYPOGRAPHY_RENDER_SAFETY_PAD_SEC:.3f}s safety pad)"
         )
         print(f"[read-out scenes]   line_start (abs) = {line_start:.3f}s")
         print(
@@ -474,7 +474,7 @@ def generate_map_scenes(
     final_data: list[dict] | None = None,  # unused — registry signature uniformity
 ) -> dict[str, list[dict]]:
     """
-    Render a highlighted map for every scene flagged MediaType.MAP and return a
+    Render a highlighted map for every MediaType.MAP scene and return a
     stitcher-ready map:
 
         { script_text: [ {local_mp4_path: trim_seconds} ], ... }
@@ -504,7 +504,7 @@ def generate_map_scenes(
     map_scenes = [
         (txt, data)
         for txt, data in script_to_search_term.items()
-        if data["search_type"] == MediaType.MAP
+        if data["media_type"] == MediaType.MAP
     ]
     if not map_scenes:
         print("[map scenes] no map scenes — returning empty map")
@@ -582,7 +582,7 @@ def generate_stickman_explain_scenes(
     final_data: list[dict],
 ) -> dict[str, list[dict]]:
     """
-    For every scene whose search_type is in STICKMAN_EXPLAIN_TYPES, composite
+    For every on-board scene (stock_on_board / wikipedia_on_board), composite
     the clip the user CHOSE in review (stored in final_data) onto a randomly
     selected Einstein board base, and return a stitcher-ready map:
 
@@ -602,7 +602,7 @@ def generate_stickman_explain_scenes(
     explain_scenes = [
         (txt, data)
         for txt, data in script_to_search_term.items()
-        if media_props(data["search_type"]).is_stickman_explain
+        if media_props(data["media_type"]).is_on_board
     ]
     if not explain_scenes:
         print("[explain scenes] no explainer scenes — returning empty map")
@@ -689,116 +689,6 @@ def generate_stickman_explain_scenes(
     return footage_map
 
 
-def generate_text_overlay_scenes(
-    script_to_search_term: dict[str, SearchTermData],
-    final_data: list[dict],
-) -> dict[str, list[dict]]:
-    """
-    For every MediaType.STICKMAN_TEXT_OVERLAY scene, composite a tilted
-    Fireship-style caption (the scene's search_term) onto the PREVIOUS scene's
-    chosen image, returning a stitcher-ready map:
-
-        { script_text: [ {local_mp4_path: trim_seconds} ], ... }
-
-    "Previous image" = the nearest preceding scene that is NOT itself a
-    text-overlay and whose final footage resolves to an image (or a video,
-    whose first frame is used). Output is a STATIC MP4 so the Ken Burns pass
-    skips it and the tilted caption is never cropped/zoomed.
-
-    NOT in LOCAL_FOOTAGE_GENERATORS: it needs the post-review picks
-    (final_data), not the raw candidates.
-    """
-    print("\n" + "=" * 70)
-    print("[text-overlay] STARTING generate_text_overlay_scenes")
-    print("=" * 70)
-
-    overlay_scenes = [
-        (txt, data)
-        for txt, data in script_to_search_term.items()
-        if media_props(data["search_type"]).is_text_overlay
-    ]
-    if not overlay_scenes:
-        print("[text-overlay] no text-overlay scenes — returning empty map")
-        return {}
-
-    print(f"[text-overlay] found {len(overlay_scenes)} text-overlay scene(s)")
-
-    from ___visuals.MAKE_TEXT_OVERLAY import make_text_overlay  # lazy import
-
-    scene_timings = _load_scene_timings()
-    ordered_texts = list(script_to_search_term.keys())
-    final_by_text = {e["script_text"]: e for e in final_data}
-
-    def _resolve_base_for(idx: int) -> str | None:
-        """Nearest preceding non-overlay scene's resolved local image/video."""
-        for j in range(idx - 1, -1, -1):
-            prev_text = ordered_texts[j]
-            if media_props(
-                script_to_search_term[prev_text]["search_type"]
-            ).is_text_overlay:
-                continue  # skip other captions
-            footage = (final_by_text.get(prev_text) or {}).get("footage") or []
-            if not footage:
-                continue
-            key = next(iter(footage[0]), None)  # url or local path
-            local = _resolve_to_local_path(key) if key else None
-            if local:
-                print(
-                    f"[text-overlay]   base for '{ordered_texts[idx][:45]}' "
-                    f"← '{prev_text[:45]}' ({Path(local).name})"
-                )
-                return local
-        print(
-            f"[text-overlay]   WARNING: no prior image for "
-            f"'{ordered_texts[idx][:45]}' — using a plain background"
-        )
-        return None
-
-    out_dir = STICKMAN_TEXT_OVERLAY_OUTPUT_DIR
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    footage_map: dict[str, list[dict]] = {}
-    for txt, data in overlay_scenes:
-        idx = ordered_texts.index(txt)
-        base_local = _resolve_base_for(idx)
-
-        if txt not in scene_timings:
-            print(f"[text-overlay] FATAL: no timing for '{txt[:60]}'")
-            sys.exit(1)
-        duration = float(scene_timings[txt])
-        if duration <= 0:
-            print(
-                f"[text-overlay] WARNING: zero/negative duration — skipping "
-                f"'{txt[:60]}'"
-            )
-            continue
-
-        render_duration = duration + STICKMAN_TEXT_OVERLAY_RENDER_SAFETY_PAD_SEC
-        safe_stem = re.sub(r"[^a-zA-Z0-9]+", "_", txt).strip("_")[:50] or "scene"
-        output_path = str(out_dir / f"text_overlay_{idx:03d}_{safe_stem}.mp4")
-
-        try:
-            make_text_overlay(
-                base_image_path=base_local or "",
-                text=data["search_term"],  # the caption text
-                output_path=output_path,
-                duration=render_duration,
-                seed=txt,  # deterministic position/tilt per scene
-            )
-        except Exception as exc:
-            print(f"[text-overlay] FATAL: render failed for '{txt[:50]}': {exc}")
-            sys.exit(1)
-
-        footage_map[txt] = [{output_path: round(duration, 3)}]
-        print(
-            f"[text-overlay]   ✓ '{txt[:50]}' → {Path(output_path).name} "
-            f"(trim {round(duration, 3)}s)"
-        )
-
-    print("\n" + "=" * 70)
-    print(f"[text-overlay] DONE — produced {len(footage_map)} scene(s)")
-    print("=" * 70)
-    return footage_map
 # ===========================================================================
 # GENERATOR REGISTRY
 # ===========================================================================
@@ -808,8 +698,8 @@ def generate_text_overlay_scenes(
 # map. The merge helpers above are completely generator-agnostic — they
 # integrate any such map into final_data + history.json identically.
 #
-# Note: a single generator can handle multiple MediaTypes — generate_joint_scenes
-# already does, dispatching internally based on which types are in JOINT_TYPES.
+# Note: a single generator can handle multiple bases — generate_joint_scenes
+# dispatches internally on a group's base type (stock vs ai_stock).
 
 LOCAL_FOOTAGE_GENERATORS: dict[
     str,
@@ -818,9 +708,9 @@ LOCAL_FOOTAGE_GENERATORS: dict[
         dict[str, list[dict]],
     ],
 ] = {
-    "joint": generate_joint_scenes,  # handles every type in JOINT_TYPES
-    "read_out": generate_read_out_scenes,  # handles MediaType.READ_OUT
-    "map": generate_map_scenes,  # handles MediaType.MAP
+    "group": generate_joint_scenes,  # every grouped run (stock / ai_stock)
+    "typography": generate_read_out_scenes,  # MediaType.TYPOGRAPHY
+    "map": generate_map_scenes,  # MediaType.MAP
 }
 
 

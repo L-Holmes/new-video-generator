@@ -37,8 +37,8 @@ from ___visuals.CONFIG import (
     STICKMAN_OUTPUT_DIR,
     STICKMAN_PROMPTS_FILE,
     SearchTermData,
-    MEDIA_PROPERTIES,
-    media_props
+    media_props,
+    scene_is_grouped,
 )
 from ___visuals.PIXELLATE_STAGE import _maybe_pixellate_entries
 from ___visuals.STOCK_FOOTAGE_REVIEW import run_media_review
@@ -55,7 +55,7 @@ def generate_stickman_candidates(
     script_to_search_term: dict[str, SearchTermData],
 ) -> list[dict]:
     """
-    For every scene with search_type == MediaType.STICKMAN, generate
+    For every plain (non-grouped) MediaType.AI_STOCK scene, generate
     STICKMAN_NUM_VARIANTS AI images (same prompt) and return candidate bundles
     in the SAME shape load_stock_footage() returns, so they can be appended to
     candidates_data and reviewed by the same GUI (which will show N options).
@@ -69,7 +69,7 @@ def generate_stickman_candidates(
     stickman_scenes = {
         txt: data
         for txt, data in script_to_search_term.items()
-        if data["search_type"] == MediaType.STICKMAN
+        if data["media_type"] == MediaType.AI_STOCK and not scene_is_grouped(data)
     }
 
     print("\n" + "=" * 70)
@@ -165,27 +165,26 @@ def generate_stickman_joint_candidates(
     script_to_search_term: dict[str, SearchTermData],
 ) -> list[dict]:
     """
-    For every scene whose search_type is in STICKMAN_JOINT_TYPES (currently just
-    MediaType.STICKMAN_JOINT_3_ROW), generate ONE AI stickman image — reusing
-    the SAME generator + prompt engineering as MediaType.STICKMAN — and return
-    candidate bundles in the SAME shape load_stock_footage() returns.
+    For every GROUPED MediaType.AI_STOCK scene (the ai_stock lines carrying
+    the `group` modifier — the grid tiles), generate ONE AI stickman image —
+    reusing the SAME generator + prompt engineering as plain ai_stock — and
+    return candidate bundles in the SAME shape load_stock_footage() returns.
 
     These bundles are appended to candidates_data and consumed by the joint
-    compositor (generate_joint_scenes) EXACTLY like the Pexels-image bundles are
-    for JOINT_3_ROW. The ONLY difference between joint_3_row and
-    stickman_joint_3_row is the source of the tile images: Pexels vs AI.
+    compositor (generate_joint_scenes) EXACTLY like the Pexels-image bundles
+    are for grouped stock. The ONLY difference between a stock group and an
+    ai_stock group is the source of the tile images: Pexels vs AI.
 
-    generate_stickman_images() filters its prompts file by an EXACT
-    search_type == process_type match, so we just pass the REAL search-term file
-    with process_type = "stickman_joint_3_row". No temp file / relabelling
-    needed, and it can't collide with the ordinary "stickman" pass.
+    generate_stickman_images(grouped=True) filters the REAL search-term file
+    by media_type == "ai_stock" + the group modifier, so it can't collide
+    with the ordinary plain-ai_stock pass.
 
     Returns [] (and does no work) if there are no stickman-joint scenes.
     """
     joint_scenes = {
         txt: data
         for txt, data in script_to_search_term.items()
-        if media_props(data["search_type"]).is_stickman_joint
+        if data["media_type"] == MediaType.AI_STOCK and scene_is_grouped(data)
     }
 
     print("\n" + "=" * 70)
@@ -209,15 +208,12 @@ def generate_stickman_joint_candidates(
         f"[stickman-joint] generating {STICKMAN_JOINT_NUM_VARIANTS} variant(s) "
         f"per scene → {STICKMAN_JOINT_OUTPUT_DIR}"
     )
-    generated: dict[str, list[str]] = {}
-    for jt in (mt for mt, p in MEDIA_PROPERTIES.items() if p.is_stickman_joint):
-        part = generate_stickman_images(
-            prompts_file=STICKMAN_PROMPTS_FILE,  # the real search-term file
-            out_dir=STICKMAN_JOINT_OUTPUT_DIR,
-            num_variants=STICKMAN_JOINT_NUM_VARIANTS,
-            process_type=jt.value,  # e.g. "stickman_joint_3_row"
-        )
-        generated.update(part)
+    generated: dict[str, list[str]] = generate_stickman_images(
+        prompts_file=STICKMAN_PROMPTS_FILE,  # the real search-term file
+        out_dir=STICKMAN_JOINT_OUTPUT_DIR,
+        num_variants=STICKMAN_JOINT_NUM_VARIANTS,
+        grouped=True,  # the ai_stock lines carrying the group modifier
+    )
     # generated: { script_text: [path, ...] }
     print(f"[stickman-joint] generator returned images for {len(generated)} scene(s)")
 
@@ -297,14 +293,11 @@ def _regenerate_stickman_joint_scene(
             except Exception:
                 pass
 
-    st = script_to_search_term.get(script_text, {}).get("search_type")
-    process_type = st.value if hasattr(st, "value") else "stickman_joint_3_row"
-
     generated = generate_stickman_images(
         prompts_file=STICKMAN_PROMPTS_FILE,
         out_dir=STICKMAN_JOINT_OUTPUT_DIR,
         num_variants=STICKMAN_JOINT_NUM_VARIANTS,
-        process_type=process_type,
+        grouped=True,
     )
 
     paths = generated.get(script_text)
@@ -328,7 +321,7 @@ def _regenerate_stickman_joint_scene(
 
     entries = _maybe_pixellate_entries(
         [{p: duration} for p in paths],
-        script_to_search_term.get(script_text, {}).get("search_type"),
+        script_to_search_term.get(script_text, {}).get("media_type"),
     )
     print(f"[regen] stickman_joint '{script_text[:50]}' → {len(entries)} new option(s)")
     return entries
@@ -384,7 +377,7 @@ def _regenerate_stickman_scene(
 
     entries = _maybe_pixellate_entries(
         [{p: duration} for p in paths],
-        script_to_search_term.get(script_text, {}).get("search_type"),
+        script_to_search_term.get(script_text, {}).get("media_type"),
     )
     print(f"[regen] stickman '{script_text[:50]}' → {len(entries)} new option(s)")
     return entries
@@ -467,7 +460,7 @@ def build_ai_edit_candidates_for_target(
     reached_target = False
 
     for text, data in script_to_search_term.items():
-        st = data["search_type"]
+        st = data["media_type"]
         is_target = text == target_text
         chosen_local = chosen_by_text.get(text)
 
@@ -540,7 +533,7 @@ def build_ai_edit_candidates_for_target(
     # preceding AI scene (resolved from final_data above), so the whole chain
     # stays in the pixel look and reflects any manual fixes you painted in.
     pixel_images = _maybe_pixellate_entries(
-        [{p: dur} for p in paths], MediaType.AI_EDIT
+        [{p: dur} for p in paths], MediaType.AI_EDIT_PREVIOUS
     )
 
     print(f"[ai_edit]   → {len(paths)} candidate image(s), {dur:.2f}s each")
@@ -578,7 +571,7 @@ def run_ai_edit_stage(
     edit_texts = [
         txt
         for txt, data in script_to_search_term.items()
-        if data["search_type"] == MediaType.AI_EDIT
+        if data["media_type"] == MediaType.AI_EDIT_PREVIOUS
     ]
 
     print("\n" + "=" * 70)

@@ -1,7 +1,7 @@
 """
 Stickman Batch Image Generator + shared AI-image core.
 
-Generates AI stickman images for scenes flagged search_type == "stickman", and
+Generates AI stickman images for scenes with media_type == "ai_stock", and
 exposes the reusable robust-call core (_call_flux_to_file) + helpers that
 ai_edit.py builds on.
 
@@ -28,7 +28,7 @@ A failed scene gets a captioned placeholder at a DISTINCT name:
 
 ## --- PRE-REQUISITES ---
 - FAL_KEY set in .env
-- prompts file with entries containing search_term, position, search_type
+- prompts file with entries containing search_term, media_type, modifiers
 - Reference images listed in REF_IMAGES
 """
 
@@ -56,7 +56,6 @@ DEFAULT_CONTEXT_NUM_IMAGES = 0   # 0 = no preceding-scene context (original beha
 MODEL        = "fal-ai/flux-2-max/edit"   # accepts image_urls
 IMAGE_SIZE   = "landscape_16_9"           # 16:9 to match the video (was square_hd)
 CONCURRENCY  = 1                          # max parallel fal calls
-PROCESS_TYPE = "stickman"
 POSTPROCESS  = True
 
 # Generous per-call backstop (10 min). A call still pending after this is
@@ -89,9 +88,14 @@ _PH_DARK           = (40, 40, 40)
 _PH_GREY           = (120, 120, 120)
 
 
-def _search_type_str(value) -> str:
-    """Accept either a raw string or a MediaType-like enum exposing `.value`."""
-    return value.value if hasattr(value, "value") else value
+def _row_matches(row, grouped: bool) -> bool:
+    """A row is ours when its media_type is 'ai_stock' and its grouped-ness
+    (the 'group' modifier) matches. Accepts raw json rows (strings) or rows
+    already normalised to enums."""
+    mt = row.get("media_type")
+    mt = mt.value if hasattr(mt, "value") else mt
+    is_grouped = "group" in (row.get("modifiers") or [])
+    return mt == "ai_stock" and is_grouped == grouped
 
 
 def _scene_stem(script_text: str) -> str:
@@ -340,17 +344,15 @@ async def _generate_one(sem, narration, entry, ref_urls, context_urls, out_dir,
     return narration, variant, path, is_ph
 
 
-async def _generate_all(prompts_file, out_dir, num_variants, process_type,
+async def _generate_all(prompts_file, out_dir, num_variants, grouped,
                         context_num_images=DEFAULT_CONTEXT_NUM_IMAGES):
     out_dir = pathlib.Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     data = json.loads(pathlib.Path(prompts_file).read_text())
-    targets = [
-        (k, v) for k, v in data.items()
-        if _search_type_str(v.get("search_type")) == process_type
-    ]
-    print(f"Processing {len(targets)} {process_type} scene(s) "
+    targets = [(k, v) for k, v in data.items() if _row_matches(v, grouped)]
+    label = "grouped ai_stock" if grouped else "ai_stock"
+    print(f"Processing {len(targets)} {label} scene(s) "
           f"x {num_variants} variant(s)"
           + (f"  (+ up to {context_num_images} context image(s) each)"
              if context_num_images > 0 else ""))
@@ -449,19 +451,22 @@ async def _generate_all(prompts_file, out_dir, num_variants, process_type,
 def generate_stickman_images(prompts_file=DEFAULT_PROMPTS_FILE,
                              out_dir=DEFAULT_OUT_DIR,
                              num_variants=DEFAULT_NUM_VARIANTS,
-                             process_type=PROCESS_TYPE,
+                             grouped=False,
                              context_num_images=DEFAULT_CONTEXT_NUM_IMAGES):
     """
     Synchronous entry point. Returns { script_text: [image_path, ...] } with up
-    to `num_variants` images per stickman scene. Never raises on a generation
+    to `num_variants` images per ai_stock scene. Never raises on a generation
     failure - failed scenes get a placeholder image path instead.
 
+    grouped=False -> plain ai_stock scenes; grouped=True -> the ai_stock lines
+    carrying the 'group' modifier (the grid tiles). Same prompts, same style.
+
     context_num_images > 0 also feeds the lowest-variant output of each of the
-    previous N stickman scenes (script order, same batch) as extra reference
-    images for character/style continuity. Generation then runs scene-by-scene.
+    previous N scenes (script order, same batch) as extra reference images for
+    character/style continuity. Generation then runs scene-by-scene.
     """
     return asyncio.run(
-        _generate_all(str(prompts_file), out_dir, num_variants, process_type,
+        _generate_all(str(prompts_file), out_dir, num_variants, grouped,
                       context_num_images)
     )
 
