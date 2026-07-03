@@ -447,6 +447,9 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
   .badge{display:block;width:max-content;margin:0 0 5px}
   .ltxt{white-space:normal;font-size:16px}
   .mjoin{position:absolute;right:8px;top:10px;padding:9px 12px;border-radius:8px;border:1px solid #5f9ec0;background:#16222c;color:#a9d0ea;font-size:13px}
+  .row.joinpend{position:relative;z-index:29;pointer-events:none}
+  .row.joinpend .mjoin{pointer-events:auto}
+  .row.joinpend .ltxt{text-decoration:line-through;opacity:.6}
   .mjoin.confirm{background:#2e7d32;border-color:#66bb6a;color:#fff;font-weight:700;z-index:29;animation:pulse 1.2s infinite;box-shadow:0 0 14px #66bb6acc}
   .mjoin.confirm.nudgeit{transform:scale(1.12)}
   #joinshield.open{display:block;position:fixed;inset:0;z-index:28;background:transparent}
@@ -481,9 +484,9 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
   image already on screen, so it is greyed on the first line. then STACK extras on top:
   decorate, caption, or group — grouped neighbours share a coloured stripe (rule of n).
   a line is done when it gets its green tick: media type AND search term both set.
-  splitting: hover the LEFT TWO-THIRDS of a line's text — a golden cursor snaps
-  between letters, click to break; the right third of the text always just selects
-  the line; both halves inherit the media type and search term. joining: hover a
+  splitting: hover a line's text — a golden cursor snaps between letters, click to
+  break; the space after the LAST character just selects the line; both halves
+  inherit the media type and search term. joining: hover a
   row's end for the join-to-above arrow — the preview shows exactly what you'll get.</p>
   <div id="keycards"></div>
  </details>
@@ -590,7 +593,8 @@ function renderList(){
  el.appendChild(nav(-1,'▲ move to entry above','up'));
  D.lines.forEach((L,i)=>{
   const r=document.createElement('div');
-  r.className='row'+(i===sel?' sel':'');
+  const pend=isMobile()&&i===pendJoin;
+  r.className='row'+(i===sel?' sel':'')+(pend?' joinpend':'');
   const gid=L.row.group_id;
   if(gid) r.style.borderLeftColor=gcol(gid);
   const b=baseOf(L.row.media_type);
@@ -603,7 +607,7 @@ function renderList(){
    `<span class="ltxt" data-i="${i}">${esc(L.line)}</span>`+
    `<span class="lterm">${esc(L.row.search_term||'')}</span>`+
    (i>0?`<button class="joinbtn">⤴ join to above</button>`:'')+
-   (isMobile()&&i>0?`<button class="mjoin">⤴ join to above</button>`:'');
+   (isMobile()&&i>0?`<button class="mjoin${pend?' confirm':''}">${pend?'✓ confirm join':'⤴ join to above'}</button>`:'');
   r.onclick=e=>{
    if(e.target.closest('.joinbtn,.mjoin'))return;
    if(scissors){openMobileSplit(i);return;}
@@ -613,7 +617,7 @@ function renderList(){
          jb.onmouseleave=()=>joinGhost(i,false);
          jb.onclick=e=>{e.stopPropagation();doJoin(i);};}
   const mj=r.querySelector('.mjoin');
-  if(mj)mj.onclick=e=>{e.stopPropagation();startJoin(i);};
+  if(mj)mj.onclick=e=>{e.stopPropagation();pend?confirmJoin():startJoin(i);};
   const tx=r.querySelector('.ltxt');
   if(!isMobile()){
     tx.onmouseenter=()=>armSplit(tx,i);
@@ -622,6 +626,12 @@ function renderList(){
   el.appendChild(r);
  });
  el.appendChild(nav(1,'▼ move to entry below','down'));
+ if(isMobile()&&pendJoin>0){
+   const rows=document.querySelectorAll('#list .row');
+   const prevTx=rows[pendJoin-1]&&rows[pendJoin-1].querySelector('.ltxt');
+   if(prevTx&&!prevTx.querySelector('.ghostadd'))
+     prevTx.insertAdjacentHTML('beforeend',` <span class="ghostadd">${esc(D.lines[pendJoin].line)}</span>`);
+ }
 }
 // ---- inline splitting on the left ------------------------------------------
 function armSplit(tx,i){
@@ -630,16 +640,16 @@ function armSplit(tx,i){
  const line=D.lines[i].line;
  tx.innerHTML=[...line].map((c,k)=>`<span class="ch" data-k="${k}">${esc(c)}</span>`).join('');
  tx.onmousemove=e=>{
-   // the SPLIT ZONE is the left two-thirds of the text, and never past the
-   // last character — beyond it the caret cancels and clicks just select.
-   const box=tx.getBoundingClientRect();
-   let limit=box.left+box.width*0.66;
+   // the split zone runs exactly to the LAST CHARACTER: past it (on its own
+   // visual line) the caret cancels, so the space after the end of the text
+   // is the click-to-select area — always lined up with where the text
+   // really ends. wrapped middle lines are splittable across their full
+   // width (their text runs to the wrap, so there is no dead zone).
+   let limit=Infinity;
    const lastCh=tx.children[line.length-1];
    if(lastCh){
      const lr=lastCh.getBoundingClientRect();
-     // cap at the last character ONLY when the pointer is on ITS visual
-     // line — on higher wrapped lines the whole two-thirds stays splittable
-     if(e.clientY>=lr.top&&e.clientY<=lr.bottom)limit=Math.min(limit,lr.right);
+     if(e.clientY>=lr.top&&e.clientY<=lr.bottom)limit=lr.right;
    }
    if(e.clientX>limit){
      $('#caret').style.display='none';$('#splittip').style.display='none';
@@ -693,10 +703,12 @@ async function doJoin(i){
 }
 function startJoin(i){
  // MODAL: nothing else can happen until the user confirms or cancels.
- pendJoin=i; joinGhost(i,true);
- const btn=document.querySelectorAll('#list .row')[i].querySelector('.mjoin');
- btn.classList.add('confirm'); btn.textContent='✓ confirm join';
- btn.onclick=e=>{e.stopPropagation();confirmJoin();};
+ // State-driven: renderList paints the green in-place confirm button (and
+ // the ghost preview) FROM pendJoin, so any re-render in between — a saved
+ // term reloading, anything — keeps the confirm state instead of quietly
+ // reverting the button to plain blue underneath the shield.
+ pendJoin=i;
+ renderList();
  $('#joinshield').classList.add('open');
  $('#joinconfirm').classList.add('open');
 }

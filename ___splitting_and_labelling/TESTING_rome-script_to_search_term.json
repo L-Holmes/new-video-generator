@@ -1,11 +1,9 @@
 {
   "Rome was not built in a day.": {
-    "search_term": "Rome",
-    "search_type": "wikipedia",
-    "media_type": "wikipedia",
-    "modifiers": [
-      "decorate"
-    ],
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -17,13 +15,11 @@
       1
     ]
   },
-  "But it burned in six. In 64 AD, a fire started in the merchant stalls near the Circus Maximus. Driven by wind, this hungry": {
-    "search_term": "burned burned",
-    "search_type": "ai_edit",
-    "media_type": "ai_edit_previous",
-    "modifiers": [
-      "decorate"
-    ],
+  "But it burned in six.": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -32,18 +28,109 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1,
-      7,
-      14,
-      18,
-      29,
-      61
+      1
     ]
   },
-  "blaze devoured": {
-    "search_term": "blaze",
-    "search_type": "object_generate",
-    "media_type": "object",
+  "In 64 AD,": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ]
+  },
+  "a fire started in": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      14
+    ]
+  },
+  "the merchant stalls near": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      18
+    ]
+  },
+  "the Circus Maximus.": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "Driven by": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      29
+    ]
+  },
+  "wind,": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ]
+  },
+  "this hungry blaze devoured": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -57,9 +144,9 @@
     ]
   },
   "temples,": {
-    "search_term": "temple",
-    "search_type": "stickman_explain_wikipedia",
-    "media_type": "wikipedia_on_board",
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -73,9 +160,9 @@
     ]
   },
   "villas, and": {
-    "search_term": "villa",
-    "search_type": "stickman_explain_wikipedia",
-    "media_type": "wikipedia_on_board",
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -89,9 +176,9 @@
     ]
   },
   "entire districts.": {
-    "search_term": "district",
-    "search_type": "stickman",
-    "media_type": "ai_stock",
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -105,9 +192,9 @@
     ]
   },
   "The city was rebuilt by": {
-    "search_term": "city",
-    "search_type": "map",
-    "media_type": "map",
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -123,9 +210,9 @@
     ]
   },
   "a very unpopular emperor.": {
-    "search_term": "emperor ",
-    "search_type": "stickman",
-    "media_type": "ai_stock",
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -139,9 +226,9 @@
     ]
   },
   "Which brings us to Nero.": {
-    "search_term": "Which nero brings",
-    "search_type": "object_generate",
-    "media_type": "object",
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -154,16 +241,12 @@
       1
     ]
   },
-  "He blamed a small religious sect, and": {
-    "search_term": "blamed",
-    "search_type": "stickman_explain_wikipedia",
-    "media_type": "wikipedia_on_board",
-    "modifiers": [
-      "decorate",
-      "caption",
-      "group"
-    ],
-    "group_id": 1,
+  "He blamed": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -171,14 +254,29 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      12,
+      12
+    ]
+  },
+  "a small religious sect, and": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
       15
     ]
   },
   "the rest is history.": {
-    "search_term": "rest",
-    "search_type": "object_generate",
-    "media_type": "object",
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",

@@ -1,6 +1,16 @@
 
 
 
+TODO:
+- did we actually remove the legacy? as intended? 
+    - I'm replacing everything with the new!
+
+
+
+
+TODO NEXT TASK:
+- Also, you know 'zoom previous'? Please can you instead add that functionality as an extra clickable option functionality for 'decorate'. Same with caption- do you think that could be merged into being another clickable option for the decorate? (what formerl used to be decorate prevoius?) 
+- (do the same for any that use that same sort of edditting system...)
 
 
 
@@ -20,10 +30,6 @@ TODO:
 - 
     - think of a list of new editting things to add - 
         - like the question mark blacked out version of something that will be revealed
-    - think what editting things can be combined
-- add just literally 'the same picture as prevoius?' as an option?
-- then... (or perhaps beforehand?)
-
 
 
 ------------------------------------------------------------------------------------------------------------------

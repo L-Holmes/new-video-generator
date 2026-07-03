@@ -1,204 +1,10 @@
 {
-  "Rome was not built in a day.": {
-    "search_term": "Rome",
-    "search_type": "wikipedia",
-    "media_type": "wikipedia",
-    "modifiers": [
-      "decorate"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ]
-  },
-  "But it burned in six.": {
-    "search_term": "burned burned",
-    "search_type": "ai_edit",
-    "media_type": "ai_edit_previous",
-    "modifiers": [
-      "decorate"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ]
-  },
-  "In 64 AD, a fire started in the merchant stalls near the Circus Maximus. Driven by wind,": {
-    "search_term": "fire",
-    "search_type": "read_out",
-    "media_type": "typography",
+  "If you open": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      7,
-      14,
-      18,
-      1,
-      29
-    ]
-  },
-  "this hungry": {
-    "search_term": "blaze",
-    "search_type": "object_generate",
-    "media_type": "object",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      61
-    ],
-    "_split_before": {
-      "text": "blaze devoured",
-      "glue": " "
-    }
-  },
-  "blaze devoured": {
-    "search_term": "blaze",
-    "search_type": "object_generate",
-    "media_type": "object",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      61
-    ]
-  },
-  "temples,": {
-    "search_term": "temple",
-    "search_type": "stickman_explain_wikipedia",
-    "media_type": "wikipedia_on_board",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      8
-    ]
-  },
-  "villas, and": {
-    "search_term": "villa",
-    "search_type": "stickman_explain_wikipedia",
-    "media_type": "wikipedia_on_board",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      15
-    ]
-  },
-  "entire districts.": {
-    "search_term": "district",
-    "search_type": "stickman",
-    "media_type": "ai_stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ]
-  },
-  "The city was rebuilt by": {
-    "search_term": "city",
-    "search_type": "map",
-    "media_type": "map",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1000,
-      59,
-      29
-    ]
-  },
-  "a very unpopular emperor.": {
-    "search_term": "emperor ",
-    "search_type": "stickman",
-    "media_type": "ai_stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ]
-  },
-  "Which brings us to Nero.": {
-    "search_term": "Which nero brings",
-    "search_type": "stickman",
-    "media_type": "ai_stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ]
-  },
-  "He blamed": {
-    "search_term": "blamed",
-    "search_type": "stickman_explain_wikipedia",
-    "media_type": "wikipedia_on_board",
-    "modifiers": [
-      "decorate",
-      "caption",
-      "group"
-    ],
-    "group_id": 1,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -209,10 +15,78 @@
       12
     ]
   },
-  "a small religious sect, and": {
-    "search_term": "sect",
-    "search_type": "object_generate",
-    "media_type": "object",
+  "your kitchen cupboard right now, you probably have": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12
+    ]
+  },
+  "a jar of nutmeg.": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "It costs about two dollars.": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1009,
+      18,
+      1
+    ]
+  },
+  "But in the 1600s,": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1001,
+      18,
+      7
+    ]
+  },
+  "this little wrinkled seed was": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -225,10 +99,10 @@
       15
     ]
   },
-  "the rest is history.": {
-    "search_term": "rest",
-    "search_type": "object_generate",
-    "media_type": "object",
+  "the single most contested resource on": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -238,7 +112,133 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1010
+      39
     ]
+  },
+  "the planet.": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "It was worth more than": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      39
+    ]
+  },
+  "its weight in gold.": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "Nutmeg only grew": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12
+    ]
+  },
+  "in one place on Earth:": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "the Banda Islands.": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "A tiny, incredibly remote volcanic archipelago in": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      24
+    ]
+  },
+  "modern-day Indonesia.": {
+    "search_term": "",
+    "search_type": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": []
   }
 }

@@ -1,8 +1,8 @@
 {
   "If you open": {
-    "search_term": "",
-    "search_type": "",
-    "media_type": "",
+    "search_term": "Kitchen cupboard opening",
+    "search_type": "stock",
+    "media_type": "stock",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -15,10 +15,10 @@
       12
     ]
   },
-  "your kitchen cupboard right now, you probably have": {
-    "search_term": "",
-    "search_type": "",
-    "media_type": "",
+  "your kitchen cupboard right now,": {
+    "search_term": "\n-\n",
+    "search_type": "zoom_prev_img",
+    "media_type": "zoom_previous",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -28,13 +28,16 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      12
+      12,
+      1,
+      1009,
+      18
     ]
   },
-  "a jar of nutmeg.": {
-    "search_term": "",
-    "search_type": "",
-    "media_type": "",
+  "you probably have a jar of nutmeg.": {
+    "search_term": "jar of nutmeg",
+    "search_type": "stickman_explain_wikipedia",
+    "media_type": "wikipedia_on_board",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -44,8 +47,15 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1
-    ]
+      12,
+      1,
+      1009,
+      18
+    ],
+    "_split_before": {
+      "text": "It costs about two dollars.",
+      "glue": " "
+    }
   },
   "It costs about two dollars.": {
     "search_term": "",
@@ -60,9 +70,10 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
+      12,
+      1,
       1009,
-      18,
-      1
+      18
     ]
   },
   "But in the 1600s,": {
@@ -99,7 +110,7 @@
       15
     ]
   },
-  "the single most contested resource on": {
+  "the single most contested resource": {
     "search_term": "",
     "search_type": "",
     "media_type": "",
@@ -112,10 +123,16 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      39
-    ]
+      39,
+      1,
+      12
+    ],
+    "_split_before": {
+      "text": "on the planet. It was worth more than its weight in gold. Nutmeg only grew",
+      "glue": " "
+    }
   },
-  "the planet.": {
+  "on the planet. It was worth more than its weight in gold. Nutmeg only grew": {
     "search_term": "",
     "search_type": "",
     "media_type": "",
@@ -128,61 +145,15 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1
-    ]
-  },
-  "It was worth more than": {
-    "search_term": "",
-    "search_type": "",
-    "media_type": "",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      39
-    ]
-  },
-  "its weight in gold.": {
-    "search_term": "",
-    "search_type": "",
-    "media_type": "",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ]
-  },
-  "Nutmeg only grew": {
-    "search_term": "",
-    "search_type": "",
-    "media_type": "",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
+      39,
+      1,
       12
     ]
   },
   "in one place on Earth:": {
-    "search_term": "",
-    "search_type": "",
-    "media_type": "",
+    "search_term": "Earth",
+    "search_type": "stickman",
+    "media_type": "ai_stock",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -197,8 +168,8 @@
   },
   "the Banda Islands.": {
     "search_term": "",
-    "search_type": "",
-    "media_type": "",
+    "search_type": "static_of_previous",
+    "media_type": "hold_previous",
     "modifiers": [],
     "group_id": null,
     "position": "1",
