@@ -1,10 +1,12 @@
 """
-DECORATE_PREVIOUS.py
-====================
-Interactive, per-scene DECORATION of the PREVIOUS scene's image, performed
-AFTER all stock/AI picks are made and BEFORE Ken Burns — exactly like
-MANUAL_STOCK_PLACEMENT (placement / zoom). This is the rendering primitive
-behind the `decorate_previous` media type.
+decorator/draw.py — the decorate editor's DRAW CANVAS and its HUB window.
+==========================================================================
+This is the window the decorator opens STRAIGHT INTO: the draw canvas
+(text boxes, arrows, highlights, circles, lines, rectangles) with a TAB
+STRIP along the top for the other tools — stamp, zoom, object — switched
+by clicking a tab or with Ctrl+Left / Ctrl+Right. Picking a tab bakes the
+items drawn so far and hands over to that tool; when it finishes you land
+back here. FINISH ends the whole session.
 
 Tools (the side-panel "toolbar" — more can be slotted in later):
 
@@ -66,6 +68,12 @@ uv run DECORATE_PREVIOUS.py stickman-CACHE/stock_footage/wiki-img-e33fdcc1b657.j
 
 from __future__ import annotations
 
+# Allow `uv run ___visuals/decorator/draw.py` from the repo root.
+if __package__ in (None, ""):
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent.parent))
+
 import argparse
 import math
 import subprocess
@@ -76,7 +84,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageTk
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import filedialog, messagebox
 
 # Reuse the display-fit + frame-extract helpers + Pillow resample shim from the
 # sibling manual stage so the two GUIs behave identically.
@@ -214,6 +222,42 @@ class TextDeco:
 
 
 @dataclass(eq=False)
+class StampDeco:
+    """A picture stamped onto the base — the old manual stock placement,
+    now a native item: click to drop, + / − to resize, nudge, undo."""
+    path: str                # the stamp image file
+    width: int               # stamp width in BASE-image px (aspect kept)
+    cx_frac: float
+    cy_frac: float
+    remove_bg: bool = False  # key out a near-white background first
+
+
+_STAMP_SRC_CACHE: dict = {}
+
+
+def _load_stamp_rgba(path: str, remove_bg: bool) -> "Image.Image":
+    key = (path, bool(remove_bg))
+    im = _STAMP_SRC_CACHE.get(key)
+    if im is None:
+        im = Image.open(path).convert("RGBA")
+        if remove_bg:
+            try:  # lazy: the white-keyer lives with the placement helpers
+                from ___visuals.MANUAL_STOCK_PLACEMENT import remove_white_background
+                im = remove_white_background(im)
+            except Exception as exc:
+                print(f"[draw] stamp remove_bg failed ({exc}) — using as-is")
+        _STAMP_SRC_CACHE[key] = im
+    return im
+
+
+def render_stamp_image(path: str, width: int, remove_bg: bool) -> "Image.Image":
+    src_im = _load_stamp_rgba(path, remove_bg)
+    w = max(8, int(width))
+    h = max(1, round(w * src_im.height / src_im.width))
+    return src_im.resize((w, h), _RESAMPLE)
+
+
+@dataclass(eq=False)
 class ArrowDeco:
     """One arrow decoration, relative to the BASE image."""
     length: int              # arrow length in BASE-image px
@@ -272,6 +316,10 @@ class RectDeco:
 # ===========================================================================
 
 def deco_to_dict(d) -> dict:
+    if isinstance(d, StampDeco):
+        return {"kind": "stamp", "path": d.path, "width": d.width,
+                "cx_frac": d.cx_frac, "cy_frac": d.cy_frac,
+                "remove_bg": d.remove_bg}
     if isinstance(d, ArrowDeco):
         return {"type": "arrow", "length": d.length, "angle": d.angle,
                 "cx_frac": d.cx_frac, "cy_frac": d.cy_frac}
@@ -295,6 +343,9 @@ def deco_to_dict(d) -> dict:
 
 
 def deco_from_dict(r: dict):
+    if r.get("kind") == "stamp":
+        return StampDeco(r["path"], int(r["width"]), float(r["cx_frac"]),
+                         float(r["cy_frac"]), bool(r.get("remove_bg", False)))
     t = r.get("type")
     if t == "highlight" or ("width" in r and "height" in r and "angle" in r and "x0_frac" not in r):
         return HighlightDeco(int(r["width"]), int(r["height"]), float(r["angle"]),
@@ -620,6 +671,8 @@ def _render_item(item) -> Image.Image:
     """Render a SPRITE decoration (text/arrow/circle/line/rect) at BASE
     resolution. Highlights are not sprites — they're applied to the base by
     _apply_highlights."""
+    if isinstance(item, StampDeco):
+        return render_stamp_image(item.path, item.width, item.remove_bg)
     if isinstance(item, ArrowDeco):
         return render_arrow_image(item.length, item.angle)
     if isinstance(item, CircleDeco):
@@ -749,7 +802,8 @@ class _DecorateApp:
     button, U, Backspace, or Ctrl-Z.
     """
 
-    def __init__(self, base_path, title, initial):
+    def __init__(self, base_path, title, initial, tabs=(),
+                 stamps=None, work_dir=None):
         try:
             self.root = tk.Tk()
         except tk.TclError as exc:
@@ -758,6 +812,63 @@ class _DecorateApp:
                 f"needs a desktop session (tkinter said: {exc})")
         self.root.title(title)
         self.root.configure(bg="#1e1e24")
+
+        # ── session state: this ONE window hosts the whole edit ──────────
+        self.base_path = str(base_path)
+        self.work_dir = Path(work_dir) if work_dir else Path(
+            tempfile.mkdtemp(prefix="decorator_"))
+        self.stamp_paths = [str(s) for s in (stamps or [])]
+        self.stamp_i = 0
+        self.stamp_remove_bg = tk.BooleanVar(value=False)
+        self._session_edited = False
+        self._bake_n = 0
+        self._destroyed = False
+        self.action = "exit"             # "finish" | "exit"
+        self.final_path = None
+        self.final_video = None          # an exported animated MP4 wins on FINISH
+        self._busy = False               # true only during modal waits
+        self._obj_frame = None           # the mounted object editor, if any
+        self._pending_tab = None
+        self._zoom_mode = False
+        self._zoom_frozen = False
+        self._zoom_rect = None
+        self._zoom_cx = self._zoom_cy = 0.5   # crop centre, fractions
+        self._zoom_wpct = 55                  # crop width, % of the image
+
+        # ── TAB STRIP (top): selectable title LEFT, tabs at the RIGHT ────
+        # Tabs switch tool IN THIS WINDOW: stamp arms a droppable picture,
+        # zoom arms a drag-a-box crop, object opens the extraction editor
+        # over the top and returns here. Ctrl+Left / Ctrl+Right cycles.
+        self.tabs = ["draw"] + [t for t in tabs if t != "draw"]
+        self._tab_i = 0
+        if len(self.tabs) > 1:
+            strip = tk.Frame(self.root, bg="#14141a")
+            strip.pack(side="top", fill="x")
+            tvar = tk.StringVar(value=title)
+            te = tk.Entry(strip, textvariable=tvar, state="readonly",
+                          readonlybackground="#14141a", fg="#8a8a95",
+                          relief="flat", bd=0, font=("Arial", 10),
+                          width=max(18, len(title)))
+            te.pack(side="left", padx=(10, 4), pady=6)  # selectable/copyable
+            tk.Button(strip, text="▶", command=lambda: self._cycle_tab(+1),
+                      bg="#14141a", fg="#8a8a95", bd=0,
+                      font=("Arial", 11)).pack(side="right", padx=(2, 10))
+            self._tab_btns = {}
+            for name in reversed(self.tabs):
+                b = tk.Button(
+                    strip, text=name.upper(), bd=0, padx=14, pady=6,
+                    font=("Arial", 10, "bold"),
+                    bg="#2b6cb0" if name == "draw" else "#14141a",
+                    fg="#ffffff" if name == "draw" else "#8a8a95",
+                    activebackground="#2b6cb0", activeforeground="#ffffff",
+                    command=(lambda n=name: self._goto_tab(n)))
+                b.pack(side="right", padx=2, pady=4)
+                self._tab_btns[name] = b
+            tk.Button(strip, text="◀", command=lambda: self._cycle_tab(-1),
+                      bg="#14141a", fg="#8a8a95", bd=0,
+                      font=("Arial", 11)).pack(side="right", padx=(8, 2))
+            self.root.bind("<Control-Left>", lambda e: self._cycle_tab(-1))
+            self.root.bind("<Control-Right>", lambda e: self._cycle_tab(+1))
 
         self.base = _load_base_image(base_path)
         self.bw, self.bh = self.base.size
@@ -852,12 +963,19 @@ class _DecorateApp:
         side.pack_propagate(False)
         self._side = side
 
-        tk.Label(side, text="DECORATE THE\nPREVIOUS IMAGE:", bg="#1e1e24",
+        self.header_var = tk.StringVar(value="DECORATE — DRAW")
+        tk.Label(side, textvariable=self.header_var, bg="#1e1e24",
                  fg="#dddddd", justify="left",
                  font=("Arial", 11, "bold")).pack(anchor="w", pady=(2, 8))
 
+        # ── the swappable tool area: one panel per tab ────────────────────
+        self.tool_area = tk.Frame(side, bg="#1e1e24")
+        self.tool_area.pack(anchor="w", fill="x")
+        self.draw_panel = tk.Frame(self.tool_area, bg="#1e1e24")
+        self.draw_panel.pack(anchor="w", fill="x")
+
         # Toolbar (three rows — room for more tools later).
-        tb1 = tk.Frame(side, bg="#1e1e24")
+        tb1 = tk.Frame(self.draw_panel, bg="#1e1e24")
         tb1.pack(anchor="w", fill="x", pady=(0, 4))
         tk.Button(tb1, text="✏  Add text", command=self._add_text,
                   font=("Arial", 11, "bold"), bg="#3a3a46", fg="white",
@@ -865,7 +983,7 @@ class _DecorateApp:
         tk.Button(tb1, text="➤  Add arrow", command=self._add_arrow,
                   font=("Arial", 11, "bold"), bg="#3a3a46", fg="white",
                   width=11).pack(side="left", padx=(6, 0))
-        tb2 = tk.Frame(side, bg="#1e1e24")
+        tb2 = tk.Frame(self.draw_panel, bg="#1e1e24")
         tb2.pack(anchor="w", fill="x", pady=(0, 4))
         tk.Button(tb2, text="✦  Add highlight", command=self._add_highlight,
                   font=("Arial", 11, "bold"), bg="#3a3a46", fg="white",
@@ -873,7 +991,7 @@ class _DecorateApp:
         tk.Button(tb2, text="◯  Add circle", command=self._add_circle,
                   font=("Arial", 11, "bold"), bg="#3a3a46", fg="white",
                   width=11).pack(side="left", padx=(6, 0))
-        tb3 = tk.Frame(side, bg="#1e1e24")
+        tb3 = tk.Frame(self.draw_panel, bg="#1e1e24")
         tb3.pack(anchor="w", fill="x", pady=(0, 4))
         tk.Button(tb3, text="\u2500  Add line", command=self._add_line,
                   font=("Arial", 11, "bold"), bg="#3a3a46", fg="white",
@@ -881,6 +999,69 @@ class _DecorateApp:
         tk.Button(tb3, text="\u25ad  Add rectangle", command=self._add_rectangle,
                   font=("Arial", 11, "bold"), bg="#3a3a46", fg="white",
                   width=11).pack(side="left", padx=(6, 0))
+
+        # ── STAMP panel: preview + arrows + repeat stamping ──────────────
+        self.stamp_panel = tk.Frame(self.tool_area, bg="#1e1e24")
+        self._stamp_prev_photo = None
+        self.stamp_preview = tk.Label(self.stamp_panel, bg="#101016",
+                                      bd=1, relief="solid")
+        self.stamp_preview.pack(anchor="w", pady=(0, 4))
+        nav = tk.Frame(self.stamp_panel, bg="#1e1e24")
+        nav.pack(anchor="w", fill="x", pady=(0, 4))
+        self.stamp_prev_btn = tk.Button(nav, text="◀", width=3,
+                                        command=lambda: self._stamp_select(self.stamp_i - 1))
+        self.stamp_prev_btn.pack(side="left")
+        self.stamp_which_var = tk.StringVar(value="")
+        tk.Label(nav, textvariable=self.stamp_which_var, bg="#1e1e24",
+                 fg="#dddddd", font=("Arial", 10, "bold")
+                 ).pack(side="left", padx=8)
+        self.stamp_next_btn = tk.Button(nav, text="▶", width=3,
+                                        command=lambda: self._stamp_select(self.stamp_i + 1))
+        self.stamp_next_btn.pack(side="left")
+        tk.Button(self.stamp_panel, text="pick another picture…",
+                  command=self._stamp_add_file, font=("Arial", 10)
+                  ).pack(anchor="w", pady=(0, 4))
+        tk.Checkbutton(self.stamp_panel, text="key out white background",
+                       variable=self.stamp_remove_bg,
+                       command=self._stamp_rearm, bg="#1e1e24",
+                       fg="#bbbbbb", selectcolor="#14141a",
+                       activebackground="#1e1e24", activeforeground="#dddddd",
+                       font=("Arial", 10)).pack(anchor="w", pady=(0, 4))
+        tk.Label(self.stamp_panel, bg="#1e1e24", fg="#bbbbbb",
+                 font=("Arial", 10), justify="left", wraplength=330,
+                 text=("Click the image to stamp it — as many times as you "
+                       "like. + / − resizes the floating one; arrow keys "
+                       "nudge the last stamp; Undo removes it.")
+                 ).pack(anchor="w", pady=(0, 6))
+
+        # ── OBJECT panel: the extraction editor's controls mount here ────
+        self.object_panel = tk.Frame(self.tool_area, bg="#1e1e24")
+
+        # ── ZOOM panel: live box on the canvas + complete button ─────────
+        self.zoom_panel = tk.Frame(self.tool_area, bg="#1e1e24")
+        tk.Label(self.zoom_panel, bg="#1e1e24", fg="#bbbbbb",
+                 font=("Arial", 10), justify="left", wraplength=330,
+                 text=("The gold box is the crop. Click (or drag) on the "
+                       "image to move it; − / + below changes its size. "
+                       "Nothing happens until you press complete.")
+                 ).pack(anchor="w", pady=(0, 6))
+        zrow = tk.Frame(self.zoom_panel, bg="#1e1e24")
+        zrow.pack(anchor="w", pady=(0, 6))
+        tk.Button(zrow, text="−", width=3, font=("Arial", 13, "bold"),
+                  command=lambda: self._zoom_resize(+10)).pack(side="left")
+        self.zoom_pct_var = tk.StringVar(value="")
+        tk.Label(zrow, textvariable=self.zoom_pct_var, bg="#1e1e24",
+                 fg="#dddddd", font=("Arial", 11, "bold"), width=14
+                 ).pack(side="left", padx=6)
+        tk.Button(zrow, text="+", width=3, font=("Arial", 13, "bold"),
+                  command=lambda: self._zoom_resize(-10)).pack(side="left")
+        tk.Button(self.zoom_panel, text="✓  complete zoom",
+                  command=self._zoom_complete, font=("Arial", 12, "bold"),
+                  bg="#2e7d32", fg="white").pack(anchor="w", pady=(2, 4),
+                                                 fill="x")
+        tk.Button(self.zoom_panel, text="←  back to draw (cancel)",
+                  command=lambda: self._goto_tab("draw"),
+                  font=("Arial", 10)).pack(anchor="w", pady=(0, 6))
 
         # Text-entry group (hidden unless typing).
         self.entry_frame = tk.Frame(side, bg="#1e1e24")
@@ -946,6 +1127,7 @@ class _DecorateApp:
         self.edit_btn.pack(anchor="w", pady=(0, 6))
 
         srow = tk.Frame(self.controls, bg="#1e1e24")
+        self._size_row = srow
         srow.pack(anchor="w")
         tk.Label(srow, text="Size:", bg="#1e1e24", fg="#dddddd",
                  font=("Arial", 11)).pack(side="left", padx=(0, 6))
@@ -963,16 +1145,23 @@ class _DecorateApp:
                  font=("Arial", 10)).pack(side="left", padx=(6, 0))
 
         self.count_var = tk.StringVar(value="Items: 0")
-        tk.Label(side, textvariable=self.count_var, bg="#1e1e24", fg="#7CFC00",
-                 font=("Arial", 13, "bold")).pack(anchor="w", pady=(8, 0))
+        tk.Label(self.controls, textvariable=self.count_var, bg="#1e1e24",
+                 fg="#7CFC00", font=("Arial", 13, "bold")
+                 ).pack(anchor="w", pady=(8, 0))
 
         self.status_var = tk.StringVar(value="")
-        tk.Label(side, textvariable=self.status_var, bg="#1e1e24", fg="#5ad1ff",
-                 font=("Arial", 10, "bold"), justify="left",
-                 wraplength=330).pack(anchor="w", pady=(4, 8))
+        self.status_entry = tk.Entry(
+            side, textvariable=self.status_var, state="readonly",
+            readonlybackground="#1e1e24", fg="#5ad1ff", relief="flat",
+            bd=0, font=("Arial", 10, "bold"))
+        self.status_entry.pack(anchor="w", fill="x",
+                               pady=(4, 8))  # selectable/copyable
 
-        tk.Label(side, justify="left", bg="#1e1e24", fg="#bbbbbb", font=("Arial", 10),
-                 text=("Add text → type → click to drop (auto-ready).\n"
+        _instr = tk.Text(self.draw_panel, bg="#1e1e24", fg="#bbbbbb",
+                         font=("Arial", 10), relief="flat", bd=0,
+                         height=10, wrap="word",
+                         highlightthickness=0)
+        _instr.insert("1.0", "Add text → type → click to drop (auto-ready).\n"
                        "Add arrow → aim on the dial → click to drop.\n"
                        "Add highlight → drag a box over the area.\n"
                        "Circle / line / rect → click through each step.\n"
@@ -989,7 +1178,9 @@ class _DecorateApp:
                        "  + / \u2212      size  (type a number for exact)\n"
                        "  Ctrl-Z / U undo last item · Bksp cancel shape\n"
                        "  Enter / D  confirm draw step \u00b7 else finish\n"
-                       "  Esc / Q    exit (resume later)")).pack(anchor="w", pady=(2, 8))
+                       "  Esc / Q    exit (resume later)")
+        _instr.config(state="disabled")  # disabled Text is still selectable
+        _instr.pack(anchor="w", pady=(2, 8))
 
         btns = tk.Frame(side, bg="#1e1e24")
         btns.pack(anchor="w", side="bottom", pady=(8, 2))
@@ -1045,6 +1236,8 @@ class _DecorateApp:
 
     def _kbd(self, fn):
         def handler(event):
+            if self._busy or self._obj_frame is not None:
+                return          # the object editor is mounted — keys are its
             if isinstance(self.root.focus_get(), tk.Entry):
                 return          # don't fire shortcuts while typing in a field
             return fn()
@@ -1055,6 +1248,9 @@ class _DecorateApp:
         return max(6, round(base_px * self.scale))
 
     def _render_item_img(self, item, *, display: bool) -> Image.Image:
+        if isinstance(item, StampDeco):
+            w = max(8, round(item.width * self.scale)) if display else item.width
+            return render_stamp_image(item.path, w, item.remove_bg)
         if isinstance(item, ArrowDeco):
             L = max(8, round(item.length * self.scale)) if display else item.length
             return render_arrow_image(L, item.angle)
@@ -1124,6 +1320,10 @@ class _DecorateApp:
     def _on_motion(self, event):
         self._update_cursor(event.x, event.y)
         self._last_xy = (event.x, event.y)
+        if self._zoom_mode:
+            if not self._zoom_frozen:
+                self._zoom_move(event.x, event.y)   # the box follows the cursor
+            return
         if self._draw_tool is not None and self._draw_anchor is not None:
             self._update_draw_preview((event.x, event.y))
             return
@@ -1143,6 +1343,17 @@ class _DecorateApp:
             self.canvas.itemconfig(self.ghost_item, state="hidden")
 
     def _on_press(self, event):
+        if self._busy:
+            return
+        if self._zoom_mode:
+            self._zoom_frozen = not self._zoom_frozen
+            if not self._zoom_frozen:
+                self._zoom_move(event.x, event.y)
+            self._set_status(
+                "Box frozen — press ✓ complete zoom (or Enter), or click to "
+                "move it again." if self._zoom_frozen
+                else "Box follows the cursor — click to freeze it in place.")
+            return
         # Requirement: clicking the canvas with the text tool open but nothing
         # typed must warn the user rather than silently doing nothing.
         if self.mode == "typing":
@@ -1168,12 +1379,16 @@ class _DecorateApp:
     def _on_drag(self, event):
         self._update_cursor(event.x, event.y)
         self._last_xy = (event.x, event.y)
+        if self._zoom_mode:
+            self._zoom_frozen = False
+            self._zoom_move(event.x, event.y)
+            return
         if self._draw_tool is not None and self._draw_anchor is not None:
             self._update_draw_preview((event.x, event.y))
             return
 
     def _on_release(self, event):
-        pass  # draw tools are click-move-click, not drag-release
+        pass  # zoom applies via its ✓ button; draw tools are click-move-click
 
     def _place_pending(self, x, y):
         """Drop the floating pending item, select it, then re-arm the tool so
@@ -1192,6 +1407,12 @@ class _DecorateApp:
         if self._rearm == "arrow":
             self._pending = ArrowDeco(self.cur_arrow_len, self.cur_arrow_angle,
                                       0.5, 0.5)
+            self._regen_ghost()
+        elif self._rearm == "stamp" and self.stamp_paths:
+            self._pending = StampDeco(self.stamp_paths[self.stamp_i],
+                                      p.width if isinstance(p, StampDeco)
+                                      else self._default_stamp_w(),
+                                      0.5, 0.5, self.stamp_remove_bg.get())
             self._regen_ghost()
         else:
             self.canvas.itemconfig(self.ghost_item, state="hidden")
@@ -1297,6 +1518,14 @@ class _DecorateApp:
         self.canvas.tag_raise(self.draw_dot)
 
     def _finish_or_confirm(self):
+        if self._busy:
+            return
+        if self._obj_frame is not None:
+            self._obj_frame._finish()   # Enter = apply object & come back
+            return
+        if self._zoom_mode:
+            self._zoom_complete()
+            return
         """Enter / D: confirm the current draw STEP if a shape is mid-draw;
         otherwise finish & move on (a re-armed tool with no shape in progress
         must not swallow the finish shortcut)."""
@@ -1498,7 +1727,7 @@ class _DecorateApp:
             self._dial_shown = False
         self._highlight_entry(False)
         self.entry_frame.pack(anchor="w", fill="x", pady=(4, 2),
-                              before=self.controls)
+                              before=self.status_entry)
         self.edit_btn.config(state="disabled")
         self.entry.focus_set()
         self.entry.select_range(0, "end")
@@ -1588,6 +1817,8 @@ class _DecorateApp:
 
     # -- selected-item controls -------------------------------------------
     def _update_controls(self):
+        if self._destroyed:
+            return
         """Show/hide the dial, tweak (nudge) panel, Edit + size to match
         the current pending / selected item."""
         target = self._pending if self._pending is not None else self.active
@@ -1596,7 +1827,7 @@ class _DecorateApp:
         if show_dial:
             if not self._dial_shown:
                 self.dial_frame.pack(anchor="w", fill="x", pady=(4, 2),
-                                     before=self.controls)
+                                     before=self.status_entry)
                 self._dial_shown = True
             self._redraw_dial()
         elif self._dial_shown:
@@ -1605,7 +1836,7 @@ class _DecorateApp:
         # Tweak panel: only meaningful for a placed (selected) item.
         if self.active is not None and self.mode != "typing":
             self.tweak_frame.pack(anchor="w", fill="x", pady=(4, 2),
-                                  before=self.controls)
+                                  before=self.status_entry)
         else:
             self.tweak_frame.pack_forget()
         if target is not None:
@@ -1678,6 +1909,8 @@ class _DecorateApp:
 
     # -- size --------------------------------------------------------------
     def _size_of(self, item) -> int:
+        if isinstance(item, StampDeco):
+            return item.width
         if isinstance(item, TextDeco):
             return item.font_size
         if isinstance(item, ArrowDeco):
@@ -1704,7 +1937,10 @@ class _DecorateApp:
             self.size_var.set(str(self._active_size()))
             return
         tgt = self._size_target()
-        if isinstance(tgt, ArrowDeco):
+        if isinstance(tgt, StampDeco):
+            v = max(40, min(self.bw, value))
+            tgt.width = v
+        elif isinstance(tgt, ArrowDeco):
             v = max(MIN_ARROW_PX, min(MAX_ARROW_PX, value))
             tgt.length = v
             self.cur_arrow_len = v
@@ -1732,6 +1968,8 @@ class _DecorateApp:
 
     def _size_step(self) -> int:
         tgt = self._size_target()
+        if isinstance(tgt, StampDeco):
+            return max(20, round(self.bw * 0.04))
         if isinstance(tgt, ArrowDeco):
             return ARROW_STEP_PX
         if isinstance(tgt, (CircleDeco, LineDeco, RectDeco)):
@@ -1770,17 +2008,317 @@ class _DecorateApp:
         self._update_controls()
         self._set_status(f"Removed the last item \u2014 {len(self.items)} left.")
 
+    def _mark_tab(self, name):
+        self._tab_i = self.tabs.index(name) if name in self.tabs else 0
+        for n, b in getattr(self, "_tab_btns", {}).items():
+            on = n == name
+            b.config(bg="#2b6cb0" if on else "#14141a",
+                     fg="#ffffff" if on else "#8a8a95")
+
+    def _show_panel(self, name):
+        for p in (self.draw_panel, self.stamp_panel, self.zoom_panel):
+            p.pack_forget()
+        panel = {"stamp": self.stamp_panel, "zoom": self.zoom_panel,
+                 "object": self.object_panel}.get(name, self.draw_panel)
+        panel.pack(anchor="w", fill="x")
+        # per-tab sidebar: item controls for draw + stamp (stamp without the
+        # Edit-text button); zoom and object get ONLY their own panel.
+        self.controls.pack_forget()
+        if name in ("draw", "stamp"):
+            self.controls.pack(anchor="w", fill="x", pady=(6, 2),
+                               before=self.status_entry)
+            self.edit_btn.pack_forget()
+            if name == "draw":
+                self.edit_btn.pack(anchor="w", pady=(0, 6),
+                                   before=self._size_row)
+        self.header_var.set({"stamp": "STAMP PICTURES",
+                             "zoom": "ZOOM / CROP",
+                             "object": "OBJECT — cut out / effects"
+                             }.get(name, "DECORATE — DRAW"))
+
+    def _goto_tab(self, name):
+        """Switch tool INSIDE this window — the sidebar swaps with it."""
+        if self._busy or name not in self.tabs:
+            return
+        if self._obj_frame is not None:
+            if name == "object":
+                return
+            # leaving the object tab = apply the object edit, then switch
+            self._pending_tab = name
+            self._obj_frame._finish()
+            return
+        self._zoom_hide()
+        self._pending = None
+        self._rearm = None
+        self._cancel_draw()
+        self.canvas.itemconfig(self.ghost_item, state="hidden")
+        if name == "object":
+            self._tab_object()          # returns to the draw tab afterwards
+            return
+        self._mark_tab(name)
+        self._show_panel(name)
+        if name == "draw":
+            self._set_status("Draw tools: text / arrow / highlight / circle "
+                             "/ line / rectangle.")
+        elif name == "stamp":
+            self._tab_stamp()
+        elif name == "zoom":
+            self._tab_zoom()
+        self._update_controls()
+
+    def _cycle_tab(self, step):
+        self._goto_tab(self.tabs[(self._tab_i + step) % len(self.tabs)])
+
+    # ── STAMP: pick from the passed-in pictures, stamp again and again ────
+    def _default_stamp_w(self) -> int:
+        return max(40, round(self.bw * 0.30))
+
+    def _stamp_select(self, i):
+        if not self.stamp_paths:
+            return
+        self.stamp_i = i % len(self.stamp_paths)
+        path = self.stamp_paths[self.stamp_i]
+        n = len(self.stamp_paths)
+        self.stamp_which_var.set(f"{self.stamp_i + 1}/{n}  "
+                                 f"{Path(path).name[:22]}")
+        state = "normal" if n > 1 else "disabled"
+        self.stamp_prev_btn.config(state=state)
+        self.stamp_next_btn.config(state=state)
+        try:
+            thumb = _load_stamp_rgba(path, self.stamp_remove_bg.get()).copy()
+            thumb.thumbnail((300, 170))
+            self._stamp_prev_photo = ImageTk.PhotoImage(thumb)
+            self.stamp_preview.config(image=self._stamp_prev_photo, text="")
+        except Exception as exc:
+            self.stamp_preview.config(image="", text=f"preview failed: {exc}")
+        self._stamp_rearm()
+
+    def _stamp_rearm(self):
+        """(Re)float the selected picture on the cursor, keeping the last
+        used width, so every click drops another copy."""
+        if not self.stamp_paths:
+            return
+        width = (self._pending.width
+                 if isinstance(self._pending, StampDeco)
+                 else self._default_stamp_w())
+        self._pending = StampDeco(self.stamp_paths[self.stamp_i], width,
+                                  0.5, 0.5, self.stamp_remove_bg.get())
+        self._rearm = "stamp"
+        self._regen_ghost()
+
+    def _stamp_add_file(self):
+        path = filedialog.askopenfilename(
+            parent=self.root, title="pick a picture to stamp",
+            filetypes=[("images", "*.png *.jpg *.jpeg *.webp *.bmp"),
+                       ("all files", "*.*")])
+        if path:
+            self.stamp_paths.append(str(path))
+            self._stamp_select(len(self.stamp_paths) - 1)
+
+    def _tab_stamp(self):
+        if not self.stamp_paths:
+            self._stamp_add_file()
+            if not self.stamp_paths:
+                self._set_status("Stamp: no picture chosen.")
+                self._goto_tab("draw")
+                return
+        self._stamp_select(self.stamp_i)
+        self._set_status("Click the image to stamp — click again for more.")
+
+    # ── ZOOM: a live box, moved by clicking, applied by the button ────────
+    def _tab_zoom(self):
+        self._zoom_mode = True
+        self._zoom_frozen = False
+        self._zoom_redraw()
+        self._set_status("The gold box follows your cursor — click to "
+                         "freeze it, − / + sizes it, ✓ (or Enter) applies.")
+
+    def _zoom_box_px(self):
+        w = self.disp_w * self._zoom_wpct / 100.0
+        h = w * self.disp_h / self.disp_w      # aspect locked to the image
+        cx = min(max(self._zoom_cx * self.disp_w, w / 2), self.disp_w - w / 2)
+        cy = min(max(self._zoom_cy * self.disp_h, h / 2), self.disp_h - h / 2)
+        self._zoom_cx, self._zoom_cy = cx / self.disp_w, cy / self.disp_h
+        return cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2
+
+    def _zoom_redraw(self):
+        x0, y0, x1, y1 = self._zoom_box_px()
+        if self._zoom_rect is None:
+            self._zoom_rect = self.canvas.create_rectangle(
+                x0, y0, x1, y1, outline="#e6c15a", width=3, dash=(6, 4))
+        else:
+            self.canvas.coords(self._zoom_rect, x0, y0, x1, y1)
+            self.canvas.itemconfig(self._zoom_rect, state="normal")
+        self.canvas.tag_raise(self._zoom_rect)
+        self.zoom_pct_var.set(f"box: {self._zoom_wpct}% wide")
+
+    def _zoom_move(self, x, y):
+        self._zoom_cx = min(max(x / self.disp_w, 0.0), 1.0)
+        self._zoom_cy = min(max(y / self.disp_h, 0.0), 1.0)
+        self._zoom_redraw()
+
+    def _zoom_resize(self, delta_pct):
+        self._zoom_wpct = min(100, max(10, self._zoom_wpct + delta_pct))
+        self._zoom_redraw()
+
+    def _zoom_hide(self):
+        self._zoom_mode = False
+        self._zoom_frozen = False
+        if self._zoom_rect is not None:
+            self.canvas.itemconfig(self._zoom_rect, state="hidden")
+
+    def _zoom_complete(self):
+        from ___visuals.MANUAL_STOCK_PLACEMENT import CropBox, crop_and_zoom
+        self._zoom_hide()
+        self._note_supersede()
+        self._bake_to_base()
+        self._bake_n += 1
+        out = str(self.work_dir / f"zoom_{self._bake_n:02d}.png")
+        crop_and_zoom(self.base_path,
+                      CropBox(self._zoom_wpct, self._zoom_cx, self._zoom_cy),
+                      out)
+        self._session_edited = True
+        self._reload_base(out)
+        self._zoom_cx = self._zoom_cy = 0.5
+        self._goto_tab("draw")
+        self._set_status("Zoomed. Keep editing, or FINISH.")
+
+    # ── OBJECT: the extraction editor opens ON TOP; this window hides ─────
+    def _tab_object(self):
+        """Mount the object extraction editor IN THIS WINDOW: its canvas
+        replaces the image area, its controls fill the sidebar panel under
+        the tabs, and the decorator's OWN 'Finish edits & move on', 'Undo'
+        and status line are its chrome — no duplicate buttons, no resize.
+        Clicking another tab applies the object edit and switches there."""
+        if self._busy or self._obj_frame is not None:
+            return
+        from ___visuals.decorator.object_editor import ObjectSeparator  # lazy
+
+        self._bake_to_base()
+        self._mark_tab("object")
+        self._show_panel("object")
+        self._pending_tab = None
+        # pin the window size — mounting must not resize anything
+        self.root.update_idletasks()
+        geo = f"{self.root.winfo_width()}x{self.root.winfo_height()}"
+        self._bake_n += 1
+        obj_dir = self.work_dir / f"object_{self._bake_n:02d}"
+        obj_dir.mkdir(parents=True, exist_ok=True)
+
+        self.canvas.pack_forget()
+        # the decorator's own buttons drive the editor while it's mounted
+        self._saved_done_cmd = self.done_btn.cget("command")
+        self._saved_undo_cmd = self.undo_btn.cget("command")
+
+        def _done(saved):
+            self._obj_frame = None
+            self.canvas.pack(side="left", padx=10, pady=10,
+                             before=self._side)
+            self.done_btn.config(command=self._saved_done_cmd,
+                                 text="✓ Finish edits\n& move on")
+            self.undo_btn.config(command=self._saved_undo_cmd)
+            self.root.geometry(geo)
+            self._apply_object_result(saved)
+            nxt, self._pending_tab = self._pending_tab or "draw", None
+            self._goto_tab(nxt)
+
+        try:
+            self._obj_frame = ObjectSeparator(
+                str(self.base_path), str(obj_dir),
+                master=self.root, on_done=_done,
+                hosts={"sidebar": self.object_panel,
+                       "status": self.status_var,
+                       "undo_btn": self.undo_btn})
+            self._obj_frame.pack(side="left", fill="both", expand=True,
+                                 padx=10, pady=10, before=self._side)
+            self.done_btn.config(command=self._obj_frame._finish)
+            self.undo_btn.config(command=self._obj_frame._undo,
+                                 state="disabled")
+            self.root.geometry(geo)   # hold the exact same window size
+        except Exception as exc:
+            print(f"[draw] object editor failed to mount: {exc}")
+            self._obj_frame = None
+            self.canvas.pack(side="left", padx=10, pady=10,
+                             before=self._side)
+            self._goto_tab("draw")
+
+    def _apply_object_result(self, result):
+        if not result:
+            self._set_status("Object: closed without saving — nothing "
+                             "changed.")
+            return
+        if Path(str(result)).suffix.lower() in VIDEO_EXTS:
+            self.final_video = str(result)
+            self._session_edited = True
+            self._set_status("Animated MP4 captured as the session result — "
+                             "press FINISH to use it. (Any further edit "
+                             "discards it.)")
+            print(f"[draw]   object: animated result {Path(result).name} — "
+                  f"applied when you FINISH")
+        else:
+            self._note_supersede()
+            self._session_edited = True
+            self._reload_base(str(result))
+            self._set_status("Object edit applied. Keep editing, or FINISH.")
+
+    def _note_supersede(self):
+        if self.final_video:
+            print(f"[draw]   further edits made — discarding the earlier "
+                  f"animated result {Path(self.final_video).name}")
+            self.final_video = None
+
+    # -- baking / reloading the base IN PLACE -------------------------------
+    def _bake_to_base(self):
+        """Composite the items placed so far onto the base and carry on
+        editing the result (same window)."""
+        if not self.items:
+            return
+        self._note_supersede()
+        self._bake_n += 1
+        out = str(self.work_dir / f"bake_{self._bake_n:02d}.png")
+        composite_text_decorations(self.base_path, list(self.items), out)
+        self._session_edited = True
+        self.items = []
+        self.active = None
+        self._pending = None
+        self._reload_base(out)
+
+    def _reload_base(self, path):
+        self.base_path = str(path)
+        self.base = _load_base_image(self.base_path)
+        self.bw, self.bh = self.base.size
+        self.scale, self.disp_w, self.disp_h = _fit_display(
+            self.bw, self.bh, self.root.winfo_screenwidth(),
+            self.root.winfo_screenheight())
+        self.base_disp = self.base.resize((self.disp_w, self.disp_h),
+                                          _RESAMPLE).convert("RGBA")
+        self.canvas.config(width=self.disp_w, height=self.disp_h)
+        self._rebuild_composite()
+        self._update_controls()
+
     def _done(self):
         self._cancel_draw()
         self.result = list(self.items)
+        if len(self.tabs) > 1:          # session mode: this window OWNS baking
+            self._bake_to_base()
+            self.action = "finish"
+            if self.final_video:        # an exported animated MP4 wins
+                self.final_path = self.final_video
+            else:
+                self.final_path = (self.base_path if self._session_edited
+                                   else None)
+        self._destroyed = True
         self.root.destroy()
 
     def _exit(self):
         self.result = None
+        self._destroyed = True
         self.root.destroy()
 
     # -- misc --------------------------------------------------------------
     def _update_buttons(self):
+        if self._destroyed:
+            return
         n = len(self.items)
         self.count_var.set(f"Items: {n}")
         self.undo_btn.config(state="normal" if n else "disabled")
@@ -1789,7 +2327,12 @@ class _DecorateApp:
                                and self.mode != "typing") else "disabled")
 
     def _set_status(self, msg):
-        self.status_var.set(msg)
+        if self._destroyed:
+            return
+        try:
+            self.status_var.set(msg)
+        except tk.TclError:
+            pass
 
     def run(self):
         self.root.protocol("WM_DELETE_WINDOW", self._exit)
@@ -1799,12 +2342,31 @@ class _DecorateApp:
 def decorate_prev_interactive(base_image_path,
                               window_title="Decorate the previous image",
                               initial=None):
-    """Open the decorate GUI. Returns list[TextDeco | ArrowDeco | HighlightDeco
-    | CircleDeco | LineDeco | RectDeco] on Finish (possibly empty), or None if
-    the user EXITS (resume later)."""
+    """Open the draw canvas ALONE (no tabs). Returns the item list on
+    Finish (possibly empty), or None if the user EXITS (resume later)."""
     app = _DecorateApp(base_image_path, window_title, initial)
     app.run()
     return app.result
+
+
+def run_editor_session(base_image_path,
+                       window_title="decorate",
+                       tabs=("stamp", "zoom", "object"),
+                       stamps=None,
+                       work_dir=None):
+    """Open the ONE decorator window for a whole session: the draw canvas
+    with STAMP / ZOOM / OBJECT all working IN-window (the object extraction
+    editor mounts under the tab strip). Returns (action, path):
+      action — "finish" or "exit"
+      path   — the session result on finish (a still, OR an animated MP4 if
+               the object editor exported one and nothing was edited after),
+               None on finish-with-no-edits / exit
+    """
+    app = _DecorateApp(base_image_path, window_title, None, tabs=tabs,
+                       stamps=stamps, work_dir=work_dir)
+    app.run()
+    return ("finish", app.final_path) if app.action == "finish" \
+        else ("exit", None)
 
 
 # ===========================================================================
@@ -1812,6 +2374,11 @@ def decorate_prev_interactive(base_image_path,
 # ===========================================================================
 
 def _main():
+    print(
+        "[draw] NOTE: this standalone run opens the draw canvas ALONE.\n"
+        "[draw] The full editor (draw + stamp/zoom/object tabs) is:\n"
+        "[draw]     uv run ___visuals/decorator/api.py PIC.png\n"
+    )
     ap = argparse.ArgumentParser(
         description="Decorate a base image, then bake PNG/MP4.")
     ap.add_argument("base", help="base image (or video — first frame is used)")

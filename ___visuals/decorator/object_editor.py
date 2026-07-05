@@ -55,6 +55,12 @@ TESTING
     ...
 """
 
+# Allow running this file directly from the repo root.
+if __package__ in (None, ""):
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+
 import os
 import sys
 import threading
@@ -96,14 +102,40 @@ ANIM_DEFS = [  # (style key, button label)
 ]
 
 
-class ObjectSeparator(tk.Tk):
-    def __init__(self, image_path: str, output_dir: str):
-        super().__init__()
+class ObjectSeparator(tk.Frame):
+    """Standalone (master=None): opens its own window, exactly as before.
+    Embedded (master=<container>): builds INSIDE the given widget — the
+    decorator mounts it under its tab strip, so the same window hosts it —
+    and calls on_done(saved_path_or_None) when finished/closed."""
+
+    def __init__(self, image_path: str, output_dir: str,
+                 master=None, on_done=None, hosts=None):
+        # hosts (embedded only): {"sidebar": Frame for the controls,
+        #   "status": the host's StringVar, "undo_btn": the host's Undo
+        #   button} — the DECORATOR's own Finish / Undo / status become this
+        #   editor's chrome; no duplicate buttons are built.
+        self._hosts = hosts or {}
+        self._owns_root = master is None
+        if self._owns_root:
+            self._root = tk.Tk()
+            self._root.title("Object Separation")
+            self._root.geometry(WINDOW_SIZE)
+            self._root.minsize(920, 560)
+            tk.Frame.__init__(self, self._root, bg="#1e1e1e")
+            self.pack(fill="both", expand=True)
+            self._root.protocol("WM_DELETE_WINDOW", self._close)
+        else:
+            self._root = master.winfo_toplevel()
+            tk.Frame.__init__(self, master, bg="#1e1e1e")
+        self.on_done = on_done
         self.image_path = image_path
         self.output_dir = output_dir
-        self.title("Object Separation")
-        self.geometry(WINDOW_SIZE)
-        self.minsize(920, 560)
+        # embedded: no immediate "export" wording — everything applies when
+        # the DECORATOR session finishes.
+        self._lbl_plain = ("Finish edits and continue" if self._owns_root
+                           else "\u2713 apply & back to decorate")
+        self._lbl_armed = ("Finish & export MP4 \u25B6" if self._owns_root
+                           else "\u2713 apply effect & back (renders on finish)")
 
         pil = Image.open(image_path)
         self.alpha = pil.getchannel("A") if "A" in pil.getbands() else None
@@ -154,6 +186,24 @@ class ObjectSeparator(tk.Tk):
 
     # ------------------------------------------------------------------ UI
     def _build_ui(self):
+        if not self._owns_root:
+            # EMBEDDED: this frame is just the canvas area; the controls go
+            # into the host's sidebar panel, and the host's Finish / Undo /
+            # status ARE this editor's chrome.
+            self.canvas = tk.Canvas(self, bg="#1e1e1e", highlightthickness=0)
+            self.canvas.pack(fill="both", expand=True)
+            self.canvas.bind("<ButtonPress-1>", self._on_press)
+            self.canvas.bind("<B1-Motion>", self._on_drag)
+            self.canvas.bind("<ButtonRelease-1>", self._on_release)
+            self.status = self._hosts["status"]
+            self.undo_btn = self._hosts["undo_btn"]
+            self.finish_btn = None          # the host's Finish drives _finish
+            side = self._hosts["sidebar"]
+            self._embed_controls = tk.Frame(side, bg=SIDEBAR_BG)
+            self._embed_controls.pack(fill="both", expand=True)
+            self._build_scroll_controls(self._embed_controls)
+            return
+
         sidebar = tk.Frame(self, width=SIDEBAR_WIDTH, bg=SIDEBAR_BG)
         sidebar.pack(side="right", fill="y")
         sidebar.pack_propagate(False)
@@ -182,7 +232,7 @@ class ObjectSeparator(tk.Tk):
 
         # --- pinned bottom: status + finish --------------------------------
         self.finish_btn = tk.Button(
-            sidebar, text="Finish edits and continue", command=self._finish,
+            sidebar, text=self._lbl_plain, command=self._finish,
             bg=ARMED_BG, fg="white", activebackground="#178233",
             activeforeground="white", font=("TkDefaultFont", 10, "bold"),
             relief="flat",
@@ -193,6 +243,9 @@ class ObjectSeparator(tk.Tk):
                  wraplength=SIDEBAR_WIDTH - 24, justify="left", anchor="w"
                  ).pack(side="bottom", fill="x", padx=12, pady=(0, 4))
 
+        self._build_scroll_controls(sidebar)
+
+    def _build_scroll_controls(self, sidebar):
         # --- scrollable middle ---------------------------------------------
         mid = tk.Frame(sidebar, bg=SIDEBAR_BG)
         mid.pack(side="top", fill="both", expand=True)
@@ -480,9 +533,11 @@ class ObjectSeparator(tk.Tk):
                            activeforeground=self._btn_afg,
                            font=("TkDefaultFont", 9, "normal"), relief="raised")
         if self.anim_style:
-            self.finish_btn.config(text="Finish & export MP4 \u25B6")
+            if self.finish_btn is not None:
+                self.finish_btn.config(text=self._lbl_armed)
         else:
-            self.finish_btn.config(text="Finish edits and continue")
+            if self.finish_btn is not None:
+                self.finish_btn.config(text=self._lbl_plain)
 
     def _reset_selection(self):
         self.points.clear()
@@ -553,6 +608,8 @@ class ObjectSeparator(tk.Tk):
             self._model_error = str(exc)
 
     def _poll_model(self):
+        if not self.winfo_exists():
+            return  # frame/window gone — never fire on a dead widget
         if self._model_error is not None and self._model_error != "__shown__":
             self.config(cursor="")
             self.status.set("Model failed to load — see the dialog.")
@@ -727,6 +784,27 @@ class ObjectSeparator(tk.Tk):
 
         obj = self.object_mask
         brush = max(3, int(round(min(self.H, self.W) / 200)))
+
+        # A CLOSED stroke is a lasso: remove everything it encircles.
+        sx, sy = pts[0]
+        ex, ey = pts[-1]
+        close_px = max(25, brush * 6)
+        if len(pts) >= 8 and abs(sx - ex) <= close_px and abs(sy - ey) <= close_px:
+            poly = np.zeros((self.H, self.W), np.uint8)
+            cv2.fillPoly(poly, [np.array(pts, np.int32)], 1)
+            inside = poly.astype(bool) & obj
+            if inside.any():
+                self._snapshot()
+                self._clear_cut()
+                self.show_result = False
+                self.manual_remove |= inside
+                self._recompute_mask()
+                self.status.set("Circled region removed from the subject. "
+                                "(A line ACROSS a part splits it instead.)")
+                return
+            self.status.set("That circle didn't enclose any of the subject.")
+            return
+
         line = np.zeros((self.H, self.W), np.uint8)
         cv2.polylines(line, [np.array(pts, np.int32)], False, 1, brush)
         line_bool = line.astype(bool)
@@ -745,7 +823,8 @@ class ObjectSeparator(tk.Tk):
         subpieces = [lblt == i for i in range(1, numt)]
         subpieces = [c for c in subpieces if int(c.sum()) >= min_area]
         if len(subpieces) < 2:
-            self.status.set("The line didn't split that part - draw fully across it.")
+            self.status.set("The line didn't split that part - draw fully "
+                            "across it (or CIRCLE a region to remove it).")
             return
 
         self._snapshot()
@@ -1111,6 +1190,24 @@ class ObjectSeparator(tk.Tk):
         return True
 
     # ------------------------------------------------------------ save
+    def _close(self):
+        """Standalone: destroy the window. Embedded: destroy just this frame
+        and hand the result to the host via on_done."""
+        cb, self.on_done = self.on_done, None
+        try:
+            self._unbind_wheel()
+        except Exception:
+            pass
+        if self._owns_root:
+            self._root.destroy()
+        else:
+            ec = getattr(self, "_embed_controls", None)
+            if ec is not None:
+                ec.destroy()
+            self.destroy()
+            if cb:
+                cb(getattr(self, "saved_path", None))
+
     def _finish(self):
         os.makedirs(self.output_dir, exist_ok=True)
         stem = os.path.splitext(os.path.basename(self.image_path))[0]
@@ -1123,7 +1220,7 @@ class ObjectSeparator(tk.Tk):
                 return
             print(f"[object-separation] saved video -> {out_path}")
             self.saved_path = out_path
-            self.destroy()
+            self._close()
             return
 
         out_path = os.path.join(self.output_dir,
@@ -1139,7 +1236,7 @@ class ObjectSeparator(tk.Tk):
             result.save(out_path)
         print(f"[object-separation] saved -> {out_path}")
         self.saved_path = out_path
-        self.destroy()
+        self._close()
 
 
 # --------------------------------------------------------------- entry points
@@ -1156,7 +1253,7 @@ def run_editor(image_path: str, output_dir: str = None) -> "str | None":
         output_dir = os.path.join(os.getcwd(), "temp")
     app = ObjectSeparator(image_path, output_dir)
     app.mainloop()
-    return getattr(app, "saved_path", None)
+    return getattr(app, "saved_path", None)  # Frame.mainloop == root loop
 
 
 def main(argv=None) -> int:

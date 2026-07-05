@@ -22,7 +22,7 @@
       "type": "sfx",
       "path": "_SOUND_EFFECTS/se-pop.mp3",
       "timing": "loop_start",
-      "_debug": "auto-injected for type stickman_joint_3_row"
+      "_debug": "auto-injected for grouped ai_stock"
     }
   ],
   "pirates and": [
@@ -30,7 +30,7 @@
       "type": "sfx",
       "path": "_SOUND_EFFECTS/se-pop.mp3",
       "timing": "loop_start",
-      "_debug": "auto-injected for type stickman_joint_3_row"
+      "_debug": "auto-injected for grouped ai_stock"
     }
   ],
   "shipwrecks. But if you made it back with a": [
@@ -38,7 +38,7 @@
       "type": "sfx",
       "path": "_SOUND_EFFECTS/se-pop.mp3",
       "timing": "loop_start",
-      "_debug": "auto-injected for type stickman_joint_3_row"
+      "_debug": "auto-injected for grouped ai_stock"
     }
   ]
 }

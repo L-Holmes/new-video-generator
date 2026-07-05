@@ -10,6 +10,12 @@ uv run edit.py output/012.png "add a small parrot on his shoulder" -o output/012
 uv run ai_edit.py temp/ai_output/005.png "raise the sword hand" -o temp/ai_output/005-hand-raised.png
 """
 
+# Allow running this file directly from the repo root.
+if __package__ in (None, ""):
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+
 """
 AI Edit generator.
 

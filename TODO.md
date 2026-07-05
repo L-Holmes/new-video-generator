@@ -1,10 +1,14 @@
 
 
 
+====================
+
 
 TODO NEXT TASK:
-- try and get claude to finihs...
-    - then test... fix whatever errors...
+- couple more issues with decorate... could fix.. or just leave..
+
+
+- the scroll box etc.
 
 
 
@@ -14,6 +18,8 @@ THEN:
 ===================================================================
 ===================================================================
 ===================================================================
+
+(perhaps i simplify the below? just get the basic stuff?)
 
 
 Okay... One last go now at auto assigning the media types...

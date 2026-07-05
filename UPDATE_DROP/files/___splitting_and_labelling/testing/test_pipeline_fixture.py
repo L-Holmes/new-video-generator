@@ -21,6 +21,9 @@ sys.modules["spacy"] = spacy_stub; sys.modules["spacy.tokens"] = tok
 
 import sentence_splitter as ss
 import SPLIT_AND_LABEL as sal
+import types as _t
+_cge = _t.ModuleType("___visuals.COLOUR_GRADE_ETC"); _cge.DEFAULT_PRESET = "film"
+import sys as _s; _s.modules.setdefault("___visuals.COLOUR_GRADE_ETC", _cge)
 import MEDIA_TYPES as mtypes
 import MANUAL_TAGGING as mt
 
@@ -94,8 +97,8 @@ check(all({"tags", "info", "example", "color"} <= set(d)
 check(not any("legacy" in d for d in mtypes.MEDIA_TYPES.values())
       and not hasattr(mtypes, "to_legacy"),
       "no legacy strings and no to_legacy anywhere")
-check(set(mtypes.MODIFIERS) == {"decorate", "group", "collage"},
-      "modifiers: decorate / group / collage (caption+zoom+stamp = decorate tools)")
+check(set(mtypes.MODIFIERS) == {"decorate", "caption", "group", "collage"},
+      "modifiers: decorate (editor) / caption (automatic) / group / collage")
 check(mtypes.GROUPABLE_TYPES == {"stock", "ai_stock"}
       and mtypes.COLLAGEABLE_TYPES == {"stock"},
       "group: stock+ai_stock only; collage: stock only")

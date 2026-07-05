@@ -1,3 +1,9 @@
+
+# Allow running this file directly from the repo root.
+if __package__ in (None, ""):
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 import numpy as np
 from PIL import Image
 import os

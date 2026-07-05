@@ -47,13 +47,14 @@ check({t.value for t in MediaType} == set(MEDIA_TYPE_CATALOG),
       "MediaType members are exactly the catalog names")
 dead = {"joint_3_row", "stickman_joint_3_row", "decorate_previous",
         "stickman_text_overlay", "zoom_prev_img", "static_of_previous",
-        "read_out", "stickman", "ai_edit", "object_generate"}
-check(not (dead & {t.value for t in MediaType}),
-      "every legacy/combined type name is GONE from the enum")
+        "read_out", "stickman", "ai_edit", "object_generate",
+        "object", "add_stock_to_previous", "manual_stock_add_to_previous"}
+check(not (dead & {t.value for t in MediaType}) and len(list(MediaType)) == 9,
+      "9 types; object + add_stock_to_previous are decorate-editor tabs now")
 check(set(MEDIA_PROPERTIES) == set(MediaType),
       "property table covers the enum exactly")
-check(set(MODIFIERS) == {"decorate", "group", "collage"},
-      "modifiers are decorate/group/collage (caption/zoom/stamp = decorate tools)")
+check(set(MODIFIERS) == {"decorate", "caption", "group", "collage"},
+      "modifiers: decorate (editor), caption (automatic), group, collage")
 check({MediaType(n) for n in GROUPABLE_TYPES} <= set(JOINT_LAYOUT_POSITIONS)
       and {MediaType(n) for n in GROUPABLE_TYPES} <= set(JOINT_TYPE_SFX_MAP),
       "groupable bases have joint layouts + sfx entries")
@@ -104,14 +105,11 @@ print("\n===== per-type properties drive the stages =====")
 check(media_props(MediaType.AI_STOCK).is_ai_base
       and media_props(MediaType.AI_EDIT_PREVIOUS).is_ai_edit
       and media_props(MediaType.HOLD_PREVIOUS).is_hold_previous
-      and media_props(MediaType.STOCK_ON_BOARD).is_on_board
-      and media_props(MediaType.ADD_STOCK_TO_PREVIOUS).is_manual_stock_add
-      and media_props(MediaType.TYPOGRAPHY) == media_props(None).__class__()
-      or True, "flag spot-checks")
+      and media_props(MediaType.STOCK_ON_BOARD).is_on_board,
+      "flag spot-checks")
 check(media_props(MediaType.WIKIPEDIA_ON_BOARD).uses_wikipedia
-      and media_props(MediaType.OBJECT).image_only
       and not media_props(None).needs_external_candidates,
-      "wiki/object/None property rows behave")
+      "wiki/None property rows behave")
 
 print("\n===== decorate + collage stages import and short-circuit =====")
 from ___visuals.DECORATE_STAGE import run_decorate_stage
@@ -144,9 +142,8 @@ if sg:
 
 print("\n===== collage modifier =====")
 from ___visuals.CONFIG import COLLAGEABLE_TYPES, scene_wants_collage
-check(set(MODIFIERS) == {"decorate", "group", "collage"}
-      and COLLAGEABLE_TYPES == {"stock"},
-      "modifiers now decorate/group/collage; collage is stock-only")
+check("caption" in MODIFIERS and COLLAGEABLE_TYPES == {"stock"},
+      "caption is a modifier again (automatic); collage is stock-only")
 row = {"search_term": "x", "media_type": "stock", "modifiers": ["collage"]}
 normalise_scene_row("c1", row)
 check(scene_wants_collage(row), "stock + collage normalises")
@@ -182,15 +179,107 @@ try: auto_collage([pics[0]], str(work / "bad.png"))
 except ValueError as e: err = str(e)
 check("at least 2" in err, "collage needs at least two images")
 
-print("\n===== decorator package: tools registry =====")
-from ___visuals.decorator.tools import TOOLS, ToolContext
-check(set(TOOLS) == {"stamp", "zoom", "draw", "text"},
-      "editor tools: stamp + zoom (live) and draw + text (hooked)")
-ctx = ToolContext(current="x.png", work_dir=work, prefill_text="BIG WORDS")
-check(TOOLS["draw"][1](ctx) is None and TOOLS["text"][1](ctx) is None,
-      "unwired draw/text tools decline loudly instead of crashing")
-check(TOOLS["stamp"][1](ctx) is None,
-      "stamp with no stamp images declines cleanly")
+print("\n===== decorator: ONE persistent window per session =====")
+# draw.py needs tkinter (absent here) — stub the session; capture the runner
+SESSIONS = []
+drawstub = types.ModuleType("___visuals.decorator.draw")
+def _fake_session(base, window_title, tabs, stamps, work_dir):
+    SESSIONS.append({"base": base, "stamps": list(stamps or [])})
+    return _fake_session.result
+drawstub.run_editor_session = _fake_session
+sys.modules["___visuals.decorator.draw"] = drawstub
+from ___visuals.decorator.api import run_decorator
+
+img = work / "base.png"; img.write_text("p")
+edited = work / "edited.png"; edited.write_text("p")
+_fake_session.result = ("finish", str(edited))
+out = run_decorator(str(img), str(work / "out1.png"),
+                    stamps=[str(img)], title="t")
+check(out is not None and Path(out).exists() and len(SESSIONS) == 1
+      and SESSIONS[0]["stamps"] == [str(img)],
+      "one session = ONE window; stamps passed through; result saved")
+_fake_session.result = ("exit", None)
+check(run_decorator(str(img), str(work / "out2.png")) is None,
+      "closing the window abandons the session (footage kept)")
+vid = work / "anim.mp4"; vid.write_text("v")
+_fake_session.result = ("finish", str(vid))
+out3 = run_decorator(str(img), str(work / "out3.png"))
+check(out3 is not None and out3.endswith(".mp4") and Path(out3).exists(),
+      "an animated MP4 session result saves with the right suffix")
+import ___visuals.decorator as _dpkg
+_dec_dir = Path(_dpkg.__file__).resolve().parent
+import ast as _ast
+for _f in sorted(_dec_dir.glob("*.py")):
+    _ast.parse(_f.read_text())
+check(True, "every decorator file parses (syntax gate)")
+draw_src = (_dec_dir / "draw.py").read_text()
+obj_src = (_dec_dir / "object_editor.py").read_text()
+check("ObjectSeparator(" in draw_src and "master=self.root" in draw_src
+      and "on_done=_done" in draw_src,
+      "object tab MOUNTS the editor inside the decorator window")
+check("class ObjectSeparator(tk.Frame)" in obj_src
+      and "self._owns_root" in obj_src
+      and "apply effect & back" in obj_src,
+      "editor is dual-mode: standalone window OR embedded frame, no "
+      "export-now wording when embedded")
+
+print("\n===== the caption modifier is AUTOMATIC (no editor) =====")
+CAPTIONS = []
+mtostub = types.ModuleType("___visuals.MAKE_TEXT_OVERLAY")
+mtostub.make_text_overlay = lambda base, text, out, **k: (
+    CAPTIONS.append({"base": base, "text": text}), Path(out).write_text("p"))
+sys.modules["___visuals.MAKE_TEXT_OVERLAY"] = mtostub
+import ___visuals.DECORATE_STAGE as DS
+DS._load_scene_timings = lambda: {"cap line": 2.0}
+DS._resolve_to_local_path = lambda p: p
+sts_c = {"cap line": {"media_type": MediaType.STOCK, "modifiers": ["caption"],
+                      "search_term": "WORTH ITS WEIGHT", "group_id": None,
+                      "position": "1"}}
+img = work / "capbase.png"; img.write_text("p")
+fd_c = [{"script_text": "cap line", "footage": [{str(img): 2.0}]}]
+fd_c2, remap_c = DS.run_decorate_stage(fd_c, sts_c)
+new_key = next(iter(fd_c2[0]["footage"][0]))
+check(CAPTIONS and CAPTIONS[0]["text"] == "WORTH ITS WEIGHT"
+      and CAPTIONS[0]["base"] == str(img)
+      and new_key.endswith(".mp4") and remap_c,
+      "caption row: tilted caption baked hands-free, footage swapped to mp4")
+
+print("\n===== decorate stage: animated MP4 results used directly =====")
+import ___visuals.DECORATE_STAGE as DS2
+anim = work / "sess_result.mp4"; anim.write_text("v")
+apistub = sys.modules["___visuals.decorator.api"] if \
+    "___visuals.decorator.api" in sys.modules else None
+import ___visuals.decorator.api as dapi
+dapi_run = dapi.run_decorator
+dapi.run_decorator = lambda **k: str(anim)
+DS2.run_decorator = dapi.run_decorator
+DS2._load_scene_timings = lambda: {"anim line": 2.0}
+DS2._resolve_to_local_path = lambda p: p
+base2 = work / "b2.png"; base2.write_text("p")
+sts_a = {"anim line": {"media_type": MediaType.STOCK, "modifiers": ["decorate"],
+                       "search_term": "x", "group_id": None, "position": "1"}}
+fd_a = [{"script_text": "anim line", "footage": [{str(base2): 2.0}]}]
+fd_a2, remap_a = DS2.run_decorate_stage(fd_a, sts_a)
+key_a = next(iter(fd_a2[0]["footage"][0]))
+check(key_a.endswith(".mp4") and Path(key_a).exists() and remap_a,
+      "decorate stage: animated session result copied in, no still-baking")
+dapi.run_decorator = dapi_run
+
+print("\n===== stages import + short-circuit cleanly =====")
+from ___visuals import COLLAGE_STAGE
+from ___visuals.DECORATE_STAGE import run_decorate_stage
+fd0 = [{"script_text": "plain", "footage": [{"/tmp/a.jpg": 1.0}]}]
+sts0 = {"plain": {"media_type": MediaType.STOCK, "modifiers": [],
+                  "search_term": "x", "group_id": None, "position": "1"}}
+fd1, r1 = run_decorate_stage(fd0, sts0)
+check(fd1 is fd0 and r1 == {}, "decorate stage: no decorate scenes → no-op")
+COLLAGE_STAGE._load_scene_timings = lambda: {"col line": 2.0}
+sts1 = {"col line": {"media_type": MediaType.STOCK, "modifiers": ["collage"],
+                     "search_term": "x", "group_id": None, "position": "1"}}
+fd2 = [{"script_text": "col line", "footage": [{"/tmp/only_one.jpg": 2.0}]}]
+fd3, r3 = COLLAGE_STAGE.run_collage_stage(fd2, sts1)
+check(r3 == {} and next(iter(fd3[0]["footage"][0])) == "/tmp/only_one.jpg",
+      "collage stage: <2 usable picks → clear warning, footage untouched")
 
 print()
 print("FINAL RESULT:", "ALL PASS" if not fails else f"{len(fails)} FAILURES: {fails}")

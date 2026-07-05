@@ -24,8 +24,8 @@ What it does per row:
   - stickman                    -> ai_stock
   - ai_edit                     -> ai_edit_previous
   - read_out                    -> typography
-  - object_generate             -> object
-  - manual_stock_add_to_previous-> add_stock_to_previous
+  - object_generate             -> stock + ["decorate"]  (object tab cuts it out)
+  - manual_stock_add_to_previous-> hold_previous + ["decorate"]  (stamp tab)
   - stickman_explain_stock      -> stock_on_board
   - stickman_explain_wikipedia  -> wikipedia_on_board
   - stock / wikipedia / map     -> unchanged names
@@ -42,12 +42,12 @@ OLD_TO_NEW: dict[str, tuple[str, list[str]]] = {
     "wikipedia": ("wikipedia", []),
     "map": ("map", []),
     "read_out": ("typography", []),
-    "object_generate": ("object", []),
+    "object_generate": ("stock", ["decorate"]),  # cut-out = the object TAB
     "stickman": ("ai_stock", []),
     "ai_edit": ("ai_edit_previous", []),
     "stickman_explain_stock": ("stock_on_board", []),
     "stickman_explain_wikipedia": ("wikipedia_on_board", []),
-    "manual_stock_add_to_previous": ("add_stock_to_previous", []),
+    "manual_stock_add_to_previous": ("hold_previous", ["decorate"]),  # stamp TAB
     "static_of_previous": ("hold_previous", []),
     "zoom_prev_img": ("hold_previous", ["decorate"]),
     "decorate_previous": ("hold_previous", ["decorate"]),

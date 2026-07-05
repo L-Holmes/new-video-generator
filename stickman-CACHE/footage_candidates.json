@@ -4,10 +4,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/8889750/8889750-uhd_4096_2160_24fps.mp4": 2.82
+                    "https://videos.pexels.com/video-files/19227878/19227878-uhd_3840_2160_30fps.mp4": 2.82
                 },
                 {
-                    "https://videos.pexels.com/video-files/32320840/13786036_2562_1440_60fps.mp4": 2.82
+                    "https://videos.pexels.com/video-files/36017451/15273142_3840_2160_60fps.mp4": 2.82
                 }
             ],
             "images": [
@@ -34,10 +34,10 @@
                     "https://images.pexels.com/photos/4778354/pexels-photo-4778354.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
                 },
                 {
-                    "https://images.pexels.com/photos/33316024/pexels-photo-33316024.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
+                    "https://images.pexels.com/photos/7236723/pexels-photo-7236723.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
                 },
                 {
-                    "https://images.pexels.com/photos/8176604/pexels-photo-8176604.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
+                    "https://images.pexels.com/photos/33316024/pexels-photo-33316024.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
                 }
             ]
         },
@@ -100,10 +100,10 @@
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/30550542/13086247_1920_1080_30fps.mp4": 1.76
+                    "https://videos.pexels.com/video-files/7431747/7431747-uhd_4096_2160_30fps.mp4": 1.76
                 },
                 {
-                    "https://videos.pexels.com/video-files/7431747/7431747-uhd_4096_2160_30fps.mp4": 1.76
+                    "https://videos.pexels.com/video-files/7593623/7593623-uhd_4096_1974_30fps.mp4": 1.76
                 }
             ],
             "images": [
@@ -134,13 +134,13 @@
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/37211343/pexels-photo-37211343.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.82
-                },
-                {
                     "https://images.pexels.com/photos/4096290/pexels-photo-4096290.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.82
                 },
                 {
-                    "https://images.pexels.com/photos/32200365/pexels-photo-32200365.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.82
+                    "https://images.pexels.com/photos/4870657/pexels-photo-4870657.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.82
+                },
+                {
+                    "https://images.pexels.com/photos/35902963/pexels-photo-35902963.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 3.82
                 }
             ]
         },
@@ -208,10 +208,10 @@
                     "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
                 },
                 {
-                    "https://images.pexels.com/photos/7001550/pexels-photo-7001550.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
+                    "https://images.pexels.com/photos/27683225/pexels-photo-27683225.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
                 },
                 {
-                    "https://images.pexels.com/photos/27683225/pexels-photo-27683225.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
+                    "https://images.pexels.com/photos/8166101/pexels-photo-8166101.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
                 }
             ]
         },
