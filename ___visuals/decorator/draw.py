@@ -829,6 +829,7 @@ class _DecorateApp:
         self._busy = False               # true only during modal waits
         self._obj_frame = None           # the mounted object editor, if any
         self._pending_tab = None
+        self._end_after_object = False
         self._zoom_mode = False
         self._zoom_frozen = False
         self._zoom_rect = None
@@ -968,9 +969,43 @@ class _DecorateApp:
                  fg="#dddddd", justify="left",
                  font=("Arial", 11, "bold")).pack(anchor="w", pady=(2, 8))
 
+        # ── scrollable middle: hosts every per-tab panel + controls ──────
+        # (small window → this scrolls; the Finish/Undo row and status are
+        #  pinned at the bottom and can never be cut off or squished)
+        _mid = tk.Frame(side, bg="#1e1e24")
+        _mid.pack(fill="both", expand=True)
+        _vsb = tk.Scrollbar(_mid, orient="vertical")
+        _vsb.pack(side="right", fill="y")
+        self._side_scroll = tk.Canvas(_mid, bg="#1e1e24",
+                                      highlightthickness=0,
+                                      yscrollcommand=_vsb.set)
+        self._side_scroll.pack(side="left", fill="both", expand=True)
+        _vsb.config(command=self._side_scroll.yview)
+        _inner = tk.Frame(self._side_scroll, bg="#1e1e24")
+        _iwin = self._side_scroll.create_window((0, 0), window=_inner,
+                                                anchor="nw")
+        _inner.bind("<Configure>", lambda e: self._side_scroll.configure(
+            scrollregion=self._side_scroll.bbox("all")))
+        self._side_scroll.bind("<Configure>",
+                               lambda e: self._side_scroll.itemconfig(
+                                   _iwin, width=e.width))
+
+        def _wheel(e):
+            step = -1 if getattr(e, "num", 0) == 4 or e.delta > 0 else 1
+            self._side_scroll.yview_scroll(step, "units")
+        self._side_scroll.bind("<Enter>", lambda e: [
+            self._side_scroll.bind_all("<MouseWheel>", _wheel),
+            self._side_scroll.bind_all("<Button-4>", _wheel),
+            self._side_scroll.bind_all("<Button-5>", _wheel)])
+        self._side_scroll.bind("<Leave>", lambda e: [
+            self._side_scroll.unbind_all("<MouseWheel>"),
+            self._side_scroll.unbind_all("<Button-4>"),
+            self._side_scroll.unbind_all("<Button-5>")])
+        self._panel_host = _inner
+
         # ── the swappable tool area: one panel per tab ────────────────────
-        self.tool_area = tk.Frame(side, bg="#1e1e24")
-        self.tool_area.pack(anchor="w", fill="x")
+        self.tool_area = tk.Frame(_inner, bg="#1e1e24")
+        self.tool_area.pack(anchor="w", fill="both", expand=True)
         self.draw_panel = tk.Frame(self.tool_area, bg="#1e1e24")
         self.draw_panel.pack(anchor="w", fill="x")
 
@@ -1059,12 +1094,9 @@ class _DecorateApp:
                   command=self._zoom_complete, font=("Arial", 12, "bold"),
                   bg="#2e7d32", fg="white").pack(anchor="w", pady=(2, 4),
                                                  fill="x")
-        tk.Button(self.zoom_panel, text="←  back to draw (cancel)",
-                  command=lambda: self._goto_tab("draw"),
-                  font=("Arial", 10)).pack(anchor="w", pady=(0, 6))
 
         # Text-entry group (hidden unless typing).
-        self.entry_frame = tk.Frame(side, bg="#1e1e24")
+        self.entry_frame = tk.Frame(self._panel_host, bg="#1e1e24")
         self.text_label = tk.Label(self.entry_frame, text="Type your text:",
                                    bg="#1e1e24", fg="#bbbbbb", font=("Arial", 10))
         self.text_label.pack(anchor="w")
@@ -1098,7 +1130,7 @@ class _DecorateApp:
                  fg="#5ad1ff", font=("Arial", 10, "bold")).pack(anchor="w")
 
         # "Selected item" tweak panel — nudge d-pad.
-        self.tweak_frame = tk.Frame(side, bg="#1e1e24")
+        self.tweak_frame = tk.Frame(self._panel_host, bg="#1e1e24")
         tk.Label(self.tweak_frame, text="Move the selected item:",
                  bg="#1e1e24", fg="#bbbbbb", font=("Arial", 10)).pack(anchor="w")
         trow = tk.Frame(self.tweak_frame, bg="#1e1e24")
@@ -1119,8 +1151,10 @@ class _DecorateApp:
                   **bopt).grid(row=2, column=1, padx=1, pady=1)
 
         # Place-mode controls (Edit text + size).
-        self.controls = tk.Frame(side, bg="#1e1e24")
+        self.controls = tk.Frame(self._panel_host, bg="#1e1e24")
         self.controls.pack(anchor="w", fill="x", pady=(6, 2))
+        self._anchor = tk.Frame(self._panel_host, bg="#1e1e24")
+        self._anchor.pack(fill="x")   # permanent pack anchor for the frames above
         self.edit_btn = tk.Button(self.controls, text="✎  Edit text",
                                   command=self._edit_text, font=("Arial", 11),
                                   width=14, state="disabled")
@@ -1150,12 +1184,6 @@ class _DecorateApp:
                  ).pack(anchor="w", pady=(8, 0))
 
         self.status_var = tk.StringVar(value="")
-        self.status_entry = tk.Entry(
-            side, textvariable=self.status_var, state="readonly",
-            readonlybackground="#1e1e24", fg="#5ad1ff", relief="flat",
-            bd=0, font=("Arial", 10, "bold"))
-        self.status_entry.pack(anchor="w", fill="x",
-                               pady=(4, 8))  # selectable/copyable
 
         _instr = tk.Text(self.draw_panel, bg="#1e1e24", fg="#bbbbbb",
                          font=("Arial", 10), relief="flat", bd=0,
@@ -1183,7 +1211,13 @@ class _DecorateApp:
         _instr.pack(anchor="w", pady=(2, 8))
 
         btns = tk.Frame(side, bg="#1e1e24")
-        btns.pack(anchor="w", side="bottom", pady=(8, 2))
+        btns.pack(fill="x", side="bottom", pady=(4, 2))
+        self.status_entry = tk.Entry(
+            side, textvariable=self.status_var, state="readonly",
+            readonlybackground="#1e1e24", fg="#5ad1ff", relief="flat",
+            bd=0, font=("Arial", 10, "bold"))
+        self.status_entry.pack(side="bottom", fill="x",
+                               pady=(6, 4))  # selectable/copyable, pinned
         self.done_btn = tk.Button(btns, text="✓ Finish edits\n& move on",
                                   command=self._done, font=("Arial", 11, "bold"),
                                   bg="#2e7d32", fg="white", width=13)
@@ -1521,7 +1555,7 @@ class _DecorateApp:
         if self._busy:
             return
         if self._obj_frame is not None:
-            self._obj_frame._finish()   # Enter = apply object & come back
+            self._object_finish_session()   # Enter == the green button
             return
         if self._zoom_mode:
             self._zoom_complete()
@@ -1727,7 +1761,7 @@ class _DecorateApp:
             self._dial_shown = False
         self._highlight_entry(False)
         self.entry_frame.pack(anchor="w", fill="x", pady=(4, 2),
-                              before=self.status_entry)
+                              before=self._anchor)
         self.edit_btn.config(state="disabled")
         self.entry.focus_set()
         self.entry.select_range(0, "end")
@@ -1827,7 +1861,7 @@ class _DecorateApp:
         if show_dial:
             if not self._dial_shown:
                 self.dial_frame.pack(anchor="w", fill="x", pady=(4, 2),
-                                     before=self.status_entry)
+                                     before=self._anchor)
                 self._dial_shown = True
             self._redraw_dial()
         elif self._dial_shown:
@@ -1836,7 +1870,7 @@ class _DecorateApp:
         # Tweak panel: only meaningful for a placed (selected) item.
         if self.active is not None and self.mode != "typing":
             self.tweak_frame.pack(anchor="w", fill="x", pady=(4, 2),
-                                  before=self.status_entry)
+                                  before=self._anchor)
         else:
             self.tweak_frame.pack_forget()
         if target is not None:
@@ -2020,13 +2054,13 @@ class _DecorateApp:
             p.pack_forget()
         panel = {"stamp": self.stamp_panel, "zoom": self.zoom_panel,
                  "object": self.object_panel}.get(name, self.draw_panel)
-        panel.pack(anchor="w", fill="x")
+        panel.pack(anchor="w", fill="both", expand=True)
         # per-tab sidebar: item controls for draw + stamp (stamp without the
         # Edit-text button); zoom and object get ONLY their own panel.
         self.controls.pack_forget()
         if name in ("draw", "stamp"):
             self.controls.pack(anchor="w", fill="x", pady=(6, 2),
-                               before=self.status_entry)
+                               before=self._anchor)
             self.edit_btn.pack_forget()
             if name == "draw":
                 self.edit_btn.pack(anchor="w", pady=(0, 6),
@@ -2043,9 +2077,11 @@ class _DecorateApp:
         if self._obj_frame is not None:
             if name == "object":
                 return
-            # leaving the object tab = apply the object edit, then switch
+            # leaving the object tab applies the STILL edits and switches;
+            # an armed animated effect is NOT rendered here — only the green
+            # Finish button renders it (and ends the session).
             self._pending_tab = name
-            self._obj_frame._finish()
+            self._obj_frame._finish_still_only()
             return
         self._zoom_hide()
         self._pending = None
@@ -2219,6 +2255,10 @@ class _DecorateApp:
             self.undo_btn.config(command=self._saved_undo_cmd)
             self.root.geometry(geo)
             self._apply_object_result(saved)
+            if self._end_after_object:
+                self._end_after_object = False
+                self._done()          # green button = the session ENDS here
+                return
             nxt, self._pending_tab = self._pending_tab or "draw", None
             self._goto_tab(nxt)
 
@@ -2231,7 +2271,7 @@ class _DecorateApp:
                        "undo_btn": self.undo_btn})
             self._obj_frame.pack(side="left", fill="both", expand=True,
                                  padx=10, pady=10, before=self._side)
-            self.done_btn.config(command=self._obj_frame._finish)
+            self.done_btn.config(command=self._object_finish_session)
             self.undo_btn.config(command=self._obj_frame._undo,
                                  state="disabled")
             self.root.geometry(geo)   # hold the exact same window size
@@ -2241,6 +2281,13 @@ class _DecorateApp:
             self.canvas.pack(side="left", padx=10, pady=10,
                              before=self._side)
             self._goto_tab("draw")
+
+    def _object_finish_session(self):
+        """The green button while the object editor is mounted: finish the
+        object edit (rendering an armed animated effect) and END the whole
+        session — same button, same meaning, on every tab."""
+        self._end_after_object = True
+        self._obj_frame._finish()
 
     def _apply_object_result(self, result):
         if not result:

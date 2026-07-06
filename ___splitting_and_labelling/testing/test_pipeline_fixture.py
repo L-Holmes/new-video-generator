@@ -215,6 +215,17 @@ check("entire skulls" in fresh(),
 check(Path(str(out) + ".bak").exists(), "a .bak exists after the first edit")
 server.shutdown()
 
+print("\n===== Auto_add_mediatypes: checks + no-overwrite flowchart =====")
+import Auto_add_mediatypes as AUTO
+try:
+    AUTO.run_selftest()
+    check(True, "auto-tagger selftest: 3 checks fire right; existing tags "
+                "never overwritten")
+except AssertionError as exc:
+    check(False, f"auto-tagger selftest failed: {exc}")
+check(all(r.media_type in AUTO.MEDIA_TYPES for r in AUTO.FLOWCHART),
+      "every flowchart rule targets a REAL catalog type")
+
 print()
 print("FINAL RESULT:", "ALL PASS" if not fails else f"{len(fails)} FAILURES: {fails}")
 sys.exit(1 if fails else 0)

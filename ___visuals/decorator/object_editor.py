@@ -201,7 +201,7 @@ class ObjectSeparator(tk.Frame):
             side = self._hosts["sidebar"]
             self._embed_controls = tk.Frame(side, bg=SIDEBAR_BG)
             self._embed_controls.pack(fill="both", expand=True)
-            self._build_scroll_controls(self._embed_controls)
+            self._build_controls(self._embed_controls)  # host scroll wraps us
             return
 
         sidebar = tk.Frame(self, width=SIDEBAR_WIDTH, bg=SIDEBAR_BG)
@@ -1207,6 +1207,17 @@ class ObjectSeparator(tk.Frame):
             self.destroy()
             if cb:
                 cb(getattr(self, "saved_path", None))
+
+    def _finish_still_only(self):
+        """Save the still edits and close WITHOUT rendering an armed
+        animated effect — used when the host switches tabs. Only the green
+        Finish button renders MP4s."""
+        if self.anim_style:
+            print("[object-separation] leaving the object tab — armed "
+                  "animated effect NOT rendered (arm it again and press "
+                  "Finish on the object tab to render + finish)")
+            self.anim_style = None
+        self._finish()
 
     def _finish(self):
         os.makedirs(self.output_dir, exist_ok=True)
