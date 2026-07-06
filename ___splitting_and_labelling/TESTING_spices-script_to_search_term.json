@@ -1,8 +1,7 @@
 {
   "If you open": {
-    "search_term": "Kitchen cupboard opening",
-    "search_type": "stock",
-    "media_type": "stock",
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -15,51 +14,8 @@
       12
     ]
   },
-  "your kitchen cupboard right now,": {
-    "search_term": "\n-\n",
-    "search_type": "zoom_prev_img",
-    "media_type": "zoom_previous",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      12,
-      1,
-      1009,
-      18
-    ]
-  },
-  "you probably have a jar of nutmeg.": {
-    "search_term": "jar of nutmeg",
-    "search_type": "stickman_explain_wikipedia",
-    "media_type": "wikipedia_on_board",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      12,
-      1,
-      1009,
-      18
-    ],
-    "_split_before": {
-      "text": "It costs about two dollars.",
-      "glue": " "
-    }
-  },
-  "It costs about two dollars.": {
+  "your kitchen cupboard right now, you probably have": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -70,16 +26,44 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      12,
-      1,
+      12
+    ]
+  },
+  "a jar of nutmeg.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "It costs about two dollars.": {
+    "search_term": "",
+    "media_type": "wikipedia",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
       1009,
-      18
+      18,
+      1
     ]
   },
   "But in the 1600s,": {
     "search_term": "",
-    "search_type": "",
-    "media_type": "",
+    "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -96,9 +80,10 @@
   },
   "this little wrinkled seed was": {
     "search_term": "",
-    "search_type": "",
-    "media_type": "",
-    "modifiers": [],
+    "media_type": "stock",
+    "modifiers": [
+      "collage"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -110,31 +95,25 @@
       15
     ]
   },
-  "the single most contested resource": {
+  "the single most contested resource on": {
     "search_term": "",
-    "search_type": "",
-    "media_type": "",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      39,
-      1,
-      12
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
     ],
-    "_split_before": {
-      "text": "on the planet. It was worth more than its weight in gold. Nutmeg only grew",
-      "glue": " "
-    }
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      39
+    ]
   },
-  "on the planet. It was worth more than its weight in gold. Nutmeg only grew": {
+  "the planet.": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -145,15 +124,59 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      39,
-      1,
+      1
+    ]
+  },
+  "It was worth more than": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      39
+    ]
+  },
+  "its weight in gold.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "Nutmeg only grew": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
       12
     ]
   },
   "in one place on Earth:": {
-    "search_term": "Earth",
-    "search_type": "stickman",
-    "media_type": "ai_stock",
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -168,8 +191,7 @@
   },
   "the Banda Islands.": {
     "search_term": "",
-    "search_type": "static_of_previous",
-    "media_type": "hold_previous",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -184,9 +206,10 @@
   },
   "A tiny, incredibly remote volcanic archipelago in": {
     "search_term": "",
-    "search_type": "",
-    "media_type": "",
-    "modifiers": [],
+    "media_type": "hold_previous",
+    "modifiers": [
+      "caption"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -199,9 +222,8 @@
     ]
   },
   "modern-day Indonesia.": {
-    "search_term": "",
-    "search_type": "",
-    "media_type": "",
+    "search_term": "Indonesia",
+    "media_type": "map",
     "modifiers": [],
     "group_id": null,
     "position": "1",

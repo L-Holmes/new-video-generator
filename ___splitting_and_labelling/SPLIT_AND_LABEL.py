@@ -4,13 +4,19 @@ visual-beat lines and write the empty shot list.
 
     uv run SPLIT_AND_LABEL.py            (runs the bundled sample scripts)
 
-What it does (and ALL it does — there is no automatic media-type choosing):
+What it does:
   1. SPLIT   the script with sentence_splitter (spaCy) into phrase-lines,
              each tagged with the rule ids that cut it. Cached per script
              (the spaCy parse is the only expensive part).
   2. EMIT    [TESTING_]<prefix>-script_to_search_term.json — one row per
-             line with media_type / search_term EMPTY. You fill them in
-             step 2 with `uv run MANUAL_TAGGING.py` (point and click),
+             line with media_type / search_term EMPTY.
+  3. AUTO-TAG (if TURN_ON_AUTO_TAGGING) — Auto_add_mediatypes.py fills the
+             EASY rows (noun lists → collage, places → map, names →
+             wikipedia, dates/numbers/quotes/questions → hold + caption)
+             and, per its per-rule switches, their search_term. It only
+             ever touches EMPTY entries, so re-running is always safe.
+             Everything it leaves is yours in step 4.
+  4. MANUAL  `uv run MANUAL_TAGGING.py` (point and click) for the rest,
              optionally helped by the AI prompts in prompts/.
 
 The output format is documented field-by-field in FORMAT.md.
@@ -29,6 +35,12 @@ from sentence_splitter import split_text_into_sections_with_meta
 
 # When True, every file this script WRITES is prefixed with "TESTING_".
 TESTING_SCRIPT_SEARCH_TERM_GENERATION = True
+
+# When True, Auto_add_mediatypes.py runs on the emitted json BEFORE manual
+# tagging: easy rows get their media_type (and often search_term) filled;
+# rows that are already filled are always skipped. Turn off to emit fully
+# empty shot lists like before.
+TURN_ON_AUTO_TAGGING = True
 
 # The splitter prints its own progress; keep it quiet inside the pipeline.
 QUIET_SPLITTER = True
@@ -145,16 +157,50 @@ def build_rows(triples: List[Tuple[str, List[int], dict]]) -> dict:
     return out
 
 
+def _auto_tag(out_path: Path) -> None:
+    """Run the auto-tagger over the emitted json (empty rows only — it
+    never overwrites, so this is idempotent). Any failure here must never
+    break the split/emit itself. For the full True/False detection table,
+    run it standalone:  uv run Auto_add_mediatypes.py <json> --dry-run"""
+    try:
+        import Auto_add_mediatypes as auto
+    except ImportError:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        try:
+            import Auto_add_mediatypes as auto
+        except Exception as exc:
+            print(f"[auto-tag] unavailable ({exc}) — skipping")
+            return
+    try:
+        data = _load_json(out_path)
+        results, founds = auto.run_checks(data)
+        print(f"[auto-tag] flowchart over {len(data)} row(s) "
+              f"(EMPTY rows only):")
+        changed = auto.assign(data, results, founds)
+        if changed:
+            _save_json(out_path, data)
+            print(f"[auto-tag] filled {len(changed)} row(s) -> {out_path}")
+        else:
+            print("[auto-tag] nothing it could fill — all yours in "
+                  "MANUAL_TAGGING")
+    except Exception as exc:
+        print(f"[auto-tag] FAILED ({exc}) — the emitted json is untouched")
+
+
 def generate_script_to_search_term(script_name: str) -> Path:
     prefix = prefix_from_script_name(script_name)
     out_path = output_path(prefix)
     print(f"=== generate_script_to_search_term [prefix={prefix!r}] ===")
     if out_path.exists():
         print(f"[emit]    already exists -> {out_path} (delete it to re-emit)")
+        if TURN_ON_AUTO_TAGGING:
+            _auto_tag(out_path)     # idempotent: only ever fills EMPTY rows
         return out_path
     triples = stage_split(prefix, _resolve_script_path(script_name))
     _save_json(out_path, build_rows(triples))
     print(f"[emit]    {len(triples)} rows -> {out_path}")
+    if TURN_ON_AUTO_TAGGING:
+        _auto_tag(out_path)
     print(f"[emit]    now run: uv run MANUAL_TAGGING.py")
     return out_path
 

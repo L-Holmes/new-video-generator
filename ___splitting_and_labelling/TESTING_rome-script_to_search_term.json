@@ -1,7 +1,6 @@
 {
   "Rome was not built in a day.": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -17,7 +16,6 @@
   },
   "But it burned in six.": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -33,7 +31,6 @@
   },
   "In 64 AD,": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -49,9 +46,10 @@
   },
   "a fire started in": {
     "search_term": "",
-    "search_type": "",
-    "media_type": "",
-    "modifiers": [],
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -65,8 +63,7 @@
   },
   "the merchant stalls near": {
     "search_term": "",
-    "search_type": "",
-    "media_type": "",
+    "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -80,9 +77,8 @@
     ]
   },
   "the Circus Maximus.": {
-    "search_term": "",
-    "search_type": "",
-    "media_type": "",
+    "search_term": "Circus Maximus",
+    "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -97,7 +93,6 @@
   },
   "Driven by": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -113,7 +108,6 @@
   },
   "wind,": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -129,9 +123,10 @@
   },
   "this hungry blaze devoured": {
     "search_term": "",
-    "search_type": "",
-    "media_type": "",
-    "modifiers": [],
+    "media_type": "stock",
+    "modifiers": [
+      "collage"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -145,7 +140,6 @@
   },
   "temples,": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -161,7 +155,6 @@
   },
   "villas, and": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -177,7 +170,6 @@
   },
   "entire districts.": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -193,7 +185,6 @@
   },
   "The city was rebuilt by": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -211,7 +202,6 @@
   },
   "a very unpopular emperor.": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -226,9 +216,8 @@
     ]
   },
   "Which brings us to Nero.": {
-    "search_term": "",
-    "search_type": "",
-    "media_type": "",
+    "search_term": "Nero",
+    "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -243,7 +232,6 @@
   },
   "He blamed": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -259,9 +247,10 @@
   },
   "a small religious sect, and": {
     "search_term": "",
-    "search_type": "",
-    "media_type": "",
-    "modifiers": [],
+    "media_type": "stock",
+    "modifiers": [
+      "collage"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -275,7 +264,6 @@
   },
   "the rest is history.": {
     "search_term": "",
-    "search_type": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
