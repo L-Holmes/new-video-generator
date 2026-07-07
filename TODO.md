@@ -11,6 +11,13 @@ Ideas:
 
 
 TODO:
+- when I'm decorating an image...
+    - and it has a previous image... 
+    - we should get a preview of the previous image and sentence...
+    - so we know what is going on!
+- colour grading should only affect videos (mp4s) not images!
+- Make it so you can rotate text in OUR paint thing
+- Add the stamp thing back - for like 'traded for nutmeg!' etc?
 - perhaps integrate everything together..
     - so i just run via main.py..
     - and it'll run the sentence splitter if no cache available..
@@ -57,9 +64,6 @@ TODO THEN THEN:
 
 
 ---------------
-- Make it so you can rotate text in OUR paint thing
-- Add the stamp thing back - for like 'traded for nutmeg!' etc?
-- 
 
 
 ========================================================================
@@ -236,27 +240,10 @@ clip changes
 
 
 
-    - speed ramps:
+- speed ramps:
     - 100% -> 150% for boring middle section, snap back to 100% on beat. Great for walking, clouds, city timelapses.
 
 
-    - character reactions library
-    - Reuse a small library of stickman poses: thinking, pointing, shocked, shrug. Trigger by sentiment of line.
-
-
-
------
-could we make it a bit more straight foreward for media types?
-Like instead we have a sort of struct representing things like 'needs external candidates' etc.
-and instead of the current media types struct, we literally define the keys which are the media types, and then a map to a struct?
-e.g.
-{
-    STOCK:MediaType(True, False,True,False,False),
-    WIKIPEDIA:MediaType(True, False,True,False,False),
-    ...
-}
-ACTUALLY NO - thats just an object with extra steps!
-but don't want database.. or csv.. or anything not hardcoded...
-
-but don't want the over abstration that comes with objects...
+- character reactions library
+- Reuse a small library of stickman poses: thinking, pointing, shocked, shrug. Trigger by sentiment of line.
 
