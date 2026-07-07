@@ -318,6 +318,16 @@ MEDIA_TYPE_CATALOG: dict[str, dict] = {
                 "out (everything manual lives in the ONE decorate editor).",
         "example": "examples/hold_previous.png",
     },
+    "background": {
+        "tags": [Tag.NEW], "color": "#4a4a55",
+        "info": "nothing on top — the BACKGROUND VIDEO just plays for this "
+                "line (VIDEO_BACKGROUND_MODE only; the search term is "
+                "unused). stack decorate to draw straight onto the "
+                "background footage, or caption for a tilted caption over "
+                "it. outside background mode this renders NOTHING — don't "
+                "use it there.",
+        "example": "examples/background.png",
+    },
     "ai_edit_previous": {
         "tags": [Tag.EDIT_PREVIOUS, Tag.AI], "color": "#a93226",
         "info": "ai edits the previous ai image in place. the search term "
@@ -409,6 +419,9 @@ MEDIA_PROPERTIES: dict[MediaType, MediaProperties] = {
     MediaType.STOCK_ON_BOARD: MediaProperties(needs_external_candidates=True, is_on_board=True),
     MediaType.WIKIPEDIA_ON_BOARD: MediaProperties(needs_external_candidates=True, uses_wikipedia=True, is_on_board=True),
     MediaType.HOLD_PREVIOUS: MediaProperties(acts_on_previous=True, is_hold_previous=True),
+    MediaType.BACKGROUND: MediaProperties(),   # nothing fetched/generated/reviewed —
+    #   the scene stays footage-less until VIDEO_BACKGROUND_STAGE fills it with
+    #   the bare background segment (stage 2.655, VIDEO_BACKGROUND_MODE only).
     MediaType.AI_EDIT_PREVIOUS: MediaProperties(is_ai_base=True, is_ai_edit=True, acts_on_previous=True),
 }
 
@@ -500,6 +513,16 @@ def normalise_scene_row(script_text: str, row: dict) -> None:
             f"(group = one cell per LINE across neighbours; collage = many "
             f"images on THIS line)"
         )
+    row.setdefault("stamp_source", None)
+    if row["stamp_source"] == "":
+        row["stamp_source"] = None
+    if row["stamp_source"] is not None \
+            and row["stamp_source"] not in STAMP_SOURCE_TYPES:
+        raise ValueError(
+            f"unknown stamp_source {row['stamp_source']!r} on scene "
+            f"'{script_text[:60]}' "
+            f"(valid: {', '.join(STAMP_SOURCE_TYPES)}, or null)"
+        )
     row["media_type"] = MediaType(name)
 
 
@@ -523,6 +546,16 @@ def scene_wants_collage(row: dict) -> bool:
 
 def scene_wants_caption(row: dict) -> bool:
     return "caption" in (row.get("modifiers") or [])
+
+
+def scene_stamp_source(row: dict) -> "str | None":
+    """Where the decorate editor's stamp tab should be pre-loaded from
+    (row['stamp_source']), or None. Only meaningful together with a
+    non-empty search_term — the term IS the stamp query."""
+    src = (row or {}).get("stamp_source") or None
+    if not src or not (row.get("search_term") or "").strip():
+        return None
+    return str(src)
 
 
 def group_scene_rows(
@@ -560,6 +593,84 @@ def group_scene_rows(
 # stage lives in DECORATE_STAGE.py.
 DECORATE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_scenes")
 DECORATE_RENDER_SAFETY_PAD_SEC: float = 0.08
+
+# --- STAMP SOURCE (pre-loading the decorate editor's stamp tab) ------------
+# A hold_previous + decorate scene doesn't use its search_term for its own
+# footage (it reuses the previous image) — so when one HAS a term, the term
+# describes what to STAMP ("jar of nutmeg"). row["stamp_source"] says where
+# those pictures come from; DECORATE_STAGE fetches them (STAMP_FETCH) and
+# passes them to the editor, whose stamp tab opens pre-loaded (and active).
+# Valid values: the NEW-material types the fetcher supports, or null.
+# The tagging tool offers these as its step 3 (only when hold_previous +
+# decorate + a non-empty term), and search terms are OPTIONAL for the
+# TERM_OPTIONAL_TYPES (a bare hold/background line needs none).
+STAMP_SOURCE_TYPES: tuple[str, ...] = ("stock", "wikipedia")
+TERM_OPTIONAL_TYPES: tuple[str, ...] = ("hold_previous", "background")
+STAMPS_CACHE_DIR: Path = Path(f"{_CACHE_DIR}/stamp_fetch")
+STAMP_FETCH_COUNT: int = 6           # pictures offered per stamp term
+
+# --- LIVE VIDEO DECORATE (decorations layered over PLAYING footage) --------
+# When a stock VIDEO scene is followed by hold_previous scenes and ANY member
+# of that run (the video scene itself, or any of the holds) carries the
+# `decorate` modifier, the whole run becomes a CONTINUING CHAIN: the source
+# keeps playing across the scene cuts (each scene starts where the previous
+# one stopped — 2.3s + 1.2s + 1.0s reads as ONE 4.5s take) and each scene's
+# decorations are rendered as TRANSPARENT LAYERS burned over the moving
+# footage, ACCUMULATING down the chain. In the editor you decorate the exact
+# frame on screen when your scene starts (earlier layers included); only the
+# draw + stamp tools are offered (zoom/object change the picture's geometry,
+# which can't sit over moving video). Hold runs with no decorate anywhere
+# keep the old freeze behaviour, as does everything when this is False.
+# Machinery: VIDEO_CHAINS.py; wired into STATIC_RENDER (segments) and
+# DECORATE_STAGE (editor + burn).
+DECORATE_VIDEO_LIVE: bool = True
+# Extra tail on each continuing segment so the stitcher's frame budget never
+# runs out of file (the stitcher trims — same idea as the other pads).
+VIDEO_CHAIN_SEGMENT_PAD_SEC: float = 0.35
+
+# ===========================================================================
+# VIDEO BACKGROUND MODE  (the whole edit rides on YOUR footage)
+# ===========================================================================
+# OPTIONAL: instead of scenes replacing each other full-frame, ONE long
+# background video (e.g. 30 minutes of you walking) plays continuously under
+# the entire edit. It starts at VIDEO_BACKGROUND_START and is trimmed to the
+# narration's length (a FATAL error if there isn't enough video left).
+# Per scene, on top of the moving background:
+#   - a scene that ends with footage becomes an overlay: photographic stuff
+#     (stock video/images, wikipedia, ...) is scaled to VIDEO_BG_CARD_SCALE
+#     of the frame and shown as a CARD (white border + soft shadow, matching
+#     the collage look); anything with a TRANSPARENT or ~WHITE background
+#     (stickman renders, maps, cut-outs) is auto-detected and KEYED so the
+#     graphic floats directly over your footage;
+#   - a `background` scene (or any line that ends with no footage) shows the
+#     bare background — that's how "only when crucial" is expressed: leave
+#     the line as background and nothing pops on;
+#   - `background` + decorate opens the LIVE overlay editor ON the exact
+#     background frame where that line starts, so you draw arrows/text
+#     straight onto your own footage (same machinery as the decorate video
+#     chains); + caption burns the tilted caption over it.
+# Runs at stage 2.655 — after colour grade + Ken Burns (so cards carry their
+# grade/motion), before the auto-overlay badges (so badges land on the full
+# composited frame). Editing is unchanged: you review/decorate each scene's
+# own graphic exactly as today and never need to see the background while
+# doing it. NOTE: the background itself is NOT colour graded.
+VIDEO_BACKGROUND_MODE: bool = False
+# The long source video the edit rides on.
+VIDEO_BACKGROUND_FILE: str = ""
+# Where in that video the narration begins: seconds (float) or "mm:ss" /
+# "hh:mm:ss". The video must run at least the narration's length past this.
+VIDEO_BACKGROUND_START: float | str = 0.0
+VIDEO_BG_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/video_background_scenes")
+# --- card look (opaque/photographic overlays) ---
+VIDEO_BG_CARD_SCALE: float = 0.80      # card box, fraction of the frame
+VIDEO_BG_CARD_BORDER_PX: int = 10      # white polaroid border (0 = none)
+VIDEO_BG_CARD_SHADOW: bool = True      # soft drop shadow under the card
+# --- keying (transparent / white-backed overlays float directly) ---
+VIDEO_BG_KEY_AUTO: bool = True         # detect + key per CLIP (off = all cards)
+VIDEO_BG_KEY_WHITE_MIN: int = 235      # border pixel counts as white from here
+VIDEO_BG_KEY_BORDER_FRAC: float = 0.60 # ≥ this share of white border → keyed
+VIDEO_BG_KEY_SIMILARITY: float = 0.10  # ffmpeg colorkey similarity (video clips)
+VIDEO_BG_KEY_BLEND: float = 0.08       # ffmpeg colorkey edge blend
 
 # ===========================================================================
 # COLLAGE (the `collage` modifier — several review picks on ONE line)

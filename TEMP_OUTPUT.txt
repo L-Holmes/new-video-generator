@@ -1,3 +1,4 @@
+[auto-tag] boosters OFF: dateparser, price-parser, number-parser, geonamescache — enable with:  uv add dateparser price-parser number-parser geonamescache
 ======================================================================
 DETECTION — every check on every entry (False when in doubt)
 ======================================================================
@@ -88,7 +89,7 @@ DETECTION — every check on every entry (False when in doubt)
      Is_location() = False
      Is_quote_or_speech() = False
      Is_big_number_or_statistic() = False
-     Is_year_or_date() = True   → in the 1600s
+     Is_year_or_date() = True   → 1600s
      Is_famous_person_or_thing() = False
      Is_relative_position_phrase() = False
      Is_question_to_viewer() = False
@@ -164,7 +165,7 @@ DETECTION — every check on every entry (False when in doubt)
 "The Banda Islands. A tiny, incredibly remote volcanic archipelago"
      sentence: "Nutmeg only grew in one place on Earth: The Banda Islands. A tiny, incredibly remote volca"
      Is_noun_list() = False
-     Is_location() = True   → Indonesia
+     Is_location() = True   → The Banda Islands (map renders: Indonesia)
      Is_quote_or_speech() = False
      Is_big_number_or_statistic() = False
      Is_year_or_date() = False
@@ -243,7 +244,7 @@ DETECTION — every check on every entry (False when in doubt)
 
 "scurvy,"
      sentence: "If you were a European merchant, getting it meant sailing for months, surviving scurvy, pi"
-     Is_noun_list() = False
+     Is_noun_list() = True   → scurvy, pirates and shipwrecks
      Is_location() = False
      Is_quote_or_speech() = False
      Is_big_number_or_statistic() = False
@@ -263,7 +264,7 @@ DETECTION — every check on every entry (False when in doubt)
 
 "pirates and"
      sentence: "If you were a European merchant, getting it meant sailing for months, surviving scurvy, pi"
-     Is_noun_list() = False
+     Is_noun_list() = True   → scurvy, pirates and shipwrecks
      Is_location() = False
      Is_quote_or_speech() = False
      Is_big_number_or_statistic() = False
@@ -283,7 +284,7 @@ DETECTION — every check on every entry (False when in doubt)
 
 "shipwrecks. But if you made it back with a"
      sentence: "If you were a European merchant, getting it meant sailing for months, surviving scurvy, pi"
-     Is_noun_list() = False
+     Is_noun_list() = True   → scurvy, pirates and shipwrecks
      Is_location() = False
      Is_quote_or_speech() = False
      Is_big_number_or_statistic() = False

@@ -688,13 +688,12 @@ def _render_item(item) -> Image.Image:
 # Highlight rendering (brighten inside the boxes, darken outside)
 # ===========================================================================
 
-def _apply_highlights(rgb: Image.Image, highlights) -> Image.Image:
-    """Return a copy of `rgb` with the union of (potentially rotated) highlight
-    boxes brightened and everything else darkened, with a soft feathered edge."""
-    w, h = rgb.size
-    bright = ImageEnhance.Brightness(rgb).enhance(HIGHLIGHT_BRIGHTEN)
-    dark = ImageEnhance.Brightness(rgb).enhance(HIGHLIGHT_DARKEN)
-
+def _highlight_mask(highlights, size: tuple[int, int]) -> Image.Image:
+    """The feathered grayscale mask (white INSIDE the boxes) for a set of
+    highlight decorations at `size`. Shared by _apply_highlights (the still /
+    preview path) and render_highlight_mask (the burn-over-video path), so
+    the two are geometry-identical by construction."""
+    w, h = size
     mask = Image.new("L", (w, h), 0)
     md = ImageDraw.Draw(mask)
     for hl in highlights:
@@ -708,7 +707,15 @@ def _apply_highlights(rgb: Image.Image, highlights) -> Image.Image:
         md.polygon(pts, fill=255)
 
     feather = max(1, round(min(w, h) * HIGHLIGHT_FEATHER_FRAC))
-    mask = mask.filter(ImageFilter.GaussianBlur(feather))
+    return mask.filter(ImageFilter.GaussianBlur(feather))
+
+
+def _apply_highlights(rgb: Image.Image, highlights) -> Image.Image:
+    """Return a copy of `rgb` with the union of (potentially rotated) highlight
+    boxes brightened and everything else darkened, with a soft feathered edge."""
+    bright = ImageEnhance.Brightness(rgb).enhance(HIGHLIGHT_BRIGHTEN)
+    dark = ImageEnhance.Brightness(rgb).enhance(HIGHLIGHT_DARKEN)
+    mask = _highlight_mask(highlights, rgb.size)
     return Image.composite(bright, dark, mask)   # white(255)=bright, black=dark
 
 
@@ -754,6 +761,48 @@ def composite_text_decorations(base_image_path: str, items,
     out = Image.alpha_composite(base, layer).convert("RGB")
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     out.save(output_path)
+    return output_path
+
+
+def render_overlay_layer(items, size: tuple[int, int],
+                         output_path: str) -> str | None:
+    """Render the SPRITE decorations (text / arrows / circles / lines /
+    rects / stamps) onto a TRANSPARENT canvas of `size` — the burn-over-
+    moving-video counterpart of composite_text_decorations. Highlights are
+    not sprites (they modify the picture multiplicatively); export those
+    with render_highlight_mask instead. Same placement maths as the still
+    path, so an item lands on the video exactly where it sat in the editor.
+    Returns output_path, or None when the items contain no sprites."""
+    bw, bh = size
+    sprites = [it for it in items if not isinstance(it, HighlightDeco)]
+    if not sprites:
+        return None
+    layer = Image.new("RGBA", (bw, bh), (0, 0, 0, 0))
+    for it in sprites:
+        im = _render_item(it)
+        cx, cy = it.cx_frac * bw, it.cy_frac * bh
+        layer.alpha_composite(
+            im, (round(cx - im.width / 2), round(cy - im.height / 2)))
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    layer.save(output_path)
+    return output_path
+
+
+def render_highlight_mask(items, size: tuple[int, int],
+                          output_path: str) -> str | None:
+    """Export the feathered highlight mask (white inside the boxes) at
+    `size` as a grayscale PNG — the EXACT mask _apply_highlights composites
+    with, so a video render can reproduce brighten-inside / darken-outside
+    on MOVING footage: ×HIGHLIGHT_BRIGHTEN and ×HIGHLIGHT_DARKEN branches
+    (ffmpeg colorchannelmixer — multiplicative, like PIL Brightness) merged
+    through this mask (maskedmerge). Returns output_path, or None when the
+    items contain no highlights."""
+    highlights = [it for it in items if isinstance(it, HighlightDeco)]
+    if not highlights:
+        return None
+    mask = _highlight_mask(highlights, size)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    mask.save(output_path)
     return output_path
 
 
@@ -803,7 +852,7 @@ class _DecorateApp:
     """
 
     def __init__(self, base_path, title, initial, tabs=(),
-                 stamps=None, work_dir=None):
+                 stamps=None, work_dir=None, overlay_mode=False):
         try:
             self.root = tk.Tk()
         except tk.TclError as exc:
@@ -814,6 +863,14 @@ class _DecorateApp:
         self.root.configure(bg="#1e1e24")
 
         # ── session state: this ONE window hosts the whole edit ──────────
+        # overlay_mode: the base is a frame of PLAYING footage — nothing is
+        # ever baked into it; FINISH hands back self.ops, the ordered recipe
+        # [("layer", items), ("zoom", (wpct, cx, cy)), ...] the caller
+        # re-applies to the MOVING video (layers burn as transparent PNGs,
+        # zooms as real crops of the footage). Callers offer draw + stamp +
+        # zoom; object stays out (its result is an opaque re-render).
+        self.overlay_mode = bool(overlay_mode)
+        self.ops: list = []            # overlay mode's captured operations
         self.base_path = str(base_path)
         self.work_dir = Path(work_dir) if work_dir else Path(
             tempfile.mkdtemp(prefix="decorator_"))
@@ -920,8 +977,15 @@ class _DecorateApp:
         self._bind_keys()
         self._rebuild_composite()
         self._update_controls()
-        self._set_status("Add text, an arrow, a highlight, a circle, "
-                         "a line, or a rectangle to start.")
+        if self.overlay_mode:
+            self._set_status("LIVE VIDEO scene — this frame is where your "
+                             "scene starts; drawings/stamps layer over the "
+                             "PLAYING footage, zoom crops the footage itself.")
+        else:
+            self._set_status("Add text, an arrow, a highlight, a circle, "
+                             "a line, or a rectangle to start.")
+        if self.stamp_paths and "stamp" in self.tabs:
+            self._goto_tab("stamp")   # pictures are waiting — start there
 
         self.root.update_idletasks()
         self.root.lift()
@@ -2207,6 +2271,35 @@ class _DecorateApp:
         from ___visuals.MANUAL_STOCK_PLACEMENT import CropBox, crop_and_zoom
         self._zoom_hide()
         self._note_supersede()
+        if self.overlay_mode:
+            # LIVE video: nothing is baked — the items so far become a layer
+            # op and the crop a zoom op, re-applied to the MOVING footage at
+            # burn time (the video itself plays cropped from here on). Only
+            # the DISPLAY updates, exactly as the still path would look
+            # (composite + crop), so editing continues on the zoomed view
+            # with coordinates in the new space.
+            if self.items:
+                self.ops.append(("layer", list(self.items)))
+            self.ops.append(("zoom", (self._zoom_wpct,
+                                      self._zoom_cx, self._zoom_cy)))
+            self._bake_n += 1
+            shown = self.base_path
+            if self.items:
+                shown = str(self.work_dir / f"ovbake_{self._bake_n:02d}.png")
+                composite_text_decorations(self.base_path, list(self.items),
+                                           shown)
+                self.items = []
+                self.active = None
+                self._pending = None
+            out = str(self.work_dir / f"zoom_{self._bake_n:02d}.png")
+            crop_and_zoom(shown, CropBox(self._zoom_wpct, self._zoom_cx,
+                                         self._zoom_cy), out)
+            self._reload_base(out)
+            self._zoom_cx = self._zoom_cy = 0.5
+            self._goto_tab("draw")
+            self._set_status("Zoomed — the VIDEO plays cropped to this view "
+                             "from here on. Keep editing, or FINISH.")
+            return
         self._bake_to_base()
         self._bake_n += 1
         out = str(self.work_dir / f"zoom_{self._bake_n:02d}.png")
@@ -2346,7 +2439,12 @@ class _DecorateApp:
     def _done(self):
         self._cancel_draw()
         self.result = list(self.items)
-        if len(self.tabs) > 1:          # session mode: this window OWNS baking
+        if self.overlay_mode:           # video overlay: the OPS are the
+            if self.items:              # result — nothing is baked, the base
+                self.ops.append(("layer", list(self.items)))
+            self.action = "finish"      # (a frame of playing footage) stays
+            self.final_path = None
+        elif len(self.tabs) > 1:        # session mode: this window OWNS baking
             self._bake_to_base()
             self.action = "finish"
             if self.final_video:        # an exported animated MP4 wins
@@ -2400,7 +2498,8 @@ def run_editor_session(base_image_path,
                        window_title="decorate",
                        tabs=("stamp", "zoom", "object"),
                        stamps=None,
-                       work_dir=None):
+                       work_dir=None,
+                       overlay_mode=False):
     """Open the ONE decorator window for a whole session: the draw canvas
     with STAMP / ZOOM / OBJECT all working IN-window (the object extraction
     editor mounts under the tab strip). Returns (action, path):
@@ -2408,10 +2507,26 @@ def run_editor_session(base_image_path,
       path   — the session result on finish (a still, OR an animated MP4 if
                the object editor exported one and nothing was edited after),
                None on finish-with-no-edits / exit
+
+    overlay_mode=True is the LIVE-VIDEO session: the base is a frame of
+    playing footage; draw + stamp + zoom are offered (the object tab is
+    stripped from `tabs` — its result is an opaque re-render that can't sit
+    over moving video); nothing is ever baked; and the return becomes
+    (action, ops): the ordered recipe [("layer", [items...]) | ("zoom",
+    (wpct, cx_frac, cy_frac)), ...] on finish (None on exit / empty), for
+    the caller to re-apply to the video — layers as transparent PNGs
+    (render_overlay_layer / render_highlight_mask), zooms as real crops of
+    the moving footage.
     """
+    if overlay_mode:
+        tabs = tuple(t for t in tabs if t in ("stamp", "zoom"))
     app = _DecorateApp(base_image_path, window_title, None, tabs=tabs,
-                       stamps=stamps, work_dir=work_dir)
+                       stamps=stamps, work_dir=work_dir,
+                       overlay_mode=overlay_mode)
     app.run()
+    if overlay_mode:
+        return ("finish", list(app.ops)) if app.action == "finish" \
+            else ("exit", None)
     return ("finish", app.final_path) if app.action == "finish" \
         else ("exit", None)
 

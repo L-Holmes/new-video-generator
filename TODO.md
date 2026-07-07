@@ -1,36 +1,31 @@
 
 
-
-====================
-
-
-TODO NEXT TASK:
-- couple more issues with decorate... could fix.. or just leave..
-
-
-- the scroll box etc.
-
-
-
-THEN:
-
-===================================================================
-===================================================================
-===================================================================
-===================================================================
-
-(perhaps i simplify the below? just get the basic stuff?)
+Ideas:
 
 
 
 
-link up the auto media type tagger?
+- timeline for dates (maybe make this animated?)
+    - e.g. In 64 AD...
 
 
-===================================================================
-===================================================================
-===================================================================
-===================================================================
+- extend previous
+    - take the previous, put it side by side with a second image. 
+    e.g. Rome was not built in a day || but in burned in six
+        -> rome construction -> rome construction + fire
+
+
+
+TODO:
+- perhaps integrate everything together..
+    - so i just run via main.py..
+    - and it'll run the sentence splitter if no cache available..
+    - and the auto tagger...
+    - and the manual reviewer...
+- perhaps address the above.
+- perhaps try doing some actual start to finish run throughs... so i can get out content whilst actually identifying ways to improve...
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
@@ -51,16 +46,16 @@ tell me where to add stuff in an idiot proof way. before and after....
 ------------------------------------------------------------------------------------------------------------------
 
 
-THEN THEN:
+TODO THEN THEN:
+- for when a map is shown...
+    Add ability to show a map when:
+    - place names mentioned..
+    - show both places on the same map
+        - but create two pictures...
+            - so actually, this will be a new media type... 'addanothermappoint'... (?)
+    - ==> Ideally I want to mark where is is on the map... If it's a country, show world map, if it's a county/town/city, show national map... Etc. and have a marker of the place I'm after...
+    - (if it can't be done automatically, ask user to click where it should go, then add a pin and then text of what the place is called...) 
 
-
-
-Integrate optional ability for background video... 
-
-
----
-
-Structures / outlines for script that we will be generating with AI
 
 
 ========================================================================
@@ -72,61 +67,28 @@ Structures / outlines for script that we will be generating with AI
 ===============================================================
 
 
-0)
-- modify the prompt... textfile_to_final_json.md
-    - (I think it ignore ai etc..)
-1) Idea for video
-2) split_text.md
-3) textfile_to_final_json.md
-4) feed that in to generate the video
-
-
-------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------
-
-----------------------------------
 
 THEN:
-for when a map is shown...
-
-
-Add ability to show a map when:
-- place names mentioned..
-- show both places on the same map
-    - but create two pictures...
-        - so actually, this will be a new media type... 'addanothermappoint'... (?)
-- ==> Ideally I want to mark where is is on the map... If it's a country, show world map, if it's a county/town/city, show national map... Etc. and have a marker of the place I'm after...
-- (if it can't be done automatically, ask user to click where it should go, then add a pin and then text of what the place is called...) 
-------------------------------------------------------------------------------------------------------------------
-THEN:
-- actually create the rules... for when to add certain scenes / sound effects etc.
-    - don't shy away from it compadre!
 
 ------------------------------------------------------------------------------------------------------------------
 
-Grid background (2 or 3 variations)
----> then two, up to five pictures layered on top, like a collage, each slightly rotated
-(Perhaps also with slight box shadow etc. to look like it's been placed there...) 
-
-
---> I THINK THE PAPER MAY BE A BIT.. TACKY? NOT 'TIMELESS'...?
-
-------------------------------------------------------------------------------------------------------------------
+Manual TODO;
+- Grid background (2 or 3 variations)
+    ---> then two, up to five pictures layered on top, like a collage, each slightly rotated
+    (Perhaps also with slight box shadow etc. to look like it's been placed there...) 
+    --> I THINK THE PAPER MAY BE A BIT.. TACKY? NOT 'TIMELESS'...?
 
 
 Other ideas:
 - stock fallback
     - (if all the stock is just rubbish... do i allow backup of generate ai image?)
+    - or could i do open . on the image folder where they should add the file to... or the file path..
+    - then auto detect when a new file has been added and ask them to confirm; 'is image_1.jpg the image for "Big Tower collapses"'? Y/N: [answer]
 - 2 to 3 brand colours? (for like labels.. text .. arrows.. stock.. etc.)
-- highlighting layered things
-    - like adding shaddow...
-    - gaussian blur whatever that is...
-    - etc.
 - slight rotation for layered things...
     - hmmm . yeah so either layer on prexisting background
     - would this be a variation of the 3 row???
+    - i.e. better collage...
 - maybe transitions etc. for when I place something in a scene manually?? 
     - (even if i place multiple items in a scene? - e.g. adding 5 coins... could have default it adds them one by one, cutting one after the other... (unless the length of the clip isn't long enough?)
 - graphs / bars / ...
@@ -134,187 +96,22 @@ Other ideas:
     Numbers tick up, bar fills, pie chart draws on. Perfect for stats you mention.
     - hmmm - do i use manim for this? and generate code to then generate the thing? or what? 
 
-More questionable ideas:
-- masked text title cards
-    -  stock plays inside the letters. Works for titles and chapter cards.
-Comic panel grid
-    2x2 or 1x3 panels for rapid examples. Each panel gets its own mini caption.
+    i.e. custom animations (manim?)
+    - e.g. custom animated graph (e.g. bar chart or line going up.. . numbers ticking up...)
+- look at powerpoint etc. for ideas on auto generation / arranging
+- subjects / people should ideally be cut out and put on a background...????
+    - Get picture of the person
+    - pipe into remove background
+    - compose that on top of the animated background
 
+    --> would i make that a joint scene where i have the background as the first, then the second, user can choose to add 'wikipedia + decorate', where ...
+        - would they need a seperate tab/window for them to remove background for second picture? or to click on subject using our extract subject, then make background white, then keyout the background??
+        - then use that as the 'stamp' to stamp onto the existing background???
 
-
-------------------------------------------------------------------------------------------------------------------
-
-
-# ALL OTHER NOTES:
-
-----
-Hmmmmm..
-Do i add an easy way to have specficialy styled text? e.g. at a slight rotated angle and in that pixellated style? 
-    -> and then anything else I would commonly do like adding arrows that have a certain appearance? (or anything else like that???)
-
-    WAIT - am i not just making my own paint at that point???
-
-------
-Hmmmmm....
-what do i do if all of the stock images are just terrible?
---> Like there isn't just a jar of nutmeg or a cupboard...
-
------
-
---> or same as previous but rotate the other way (if its an image slightly rotated on a background... lol...)?????
-
----
-
-- add the same affects to all stock footage to make it all look aligned????
-    - (and maybe try out a sort of retro appearance to it?)
-    - apply same affects to all footage...
-        - film grain... crafted by cm... etc.
-
-
-- add reusable rules... the youtube rules
-    - e.g. things part of the same sentence / same concept... should be ai edit, not new pics...
-
--------
-
-TODO:
-
-consider:
-- just simple things like:
-    - overlaying text on the stock footage to keep things easy
-    - adding blank background and then my text coming on the screen as i say it..
-    - adding sound effects...?
-    - things like just presets - like adding question mark over existing picture for question... etc.
-
-Then:
-- maybe just for like lists (e.g. with like 'and'), add the thing to show three things one by one on a shared background...
---> perhaps for now just manually tag the lists? not sure how i'd do this!
-    -> type=stock (default)
-    -> type=row(3)::1 (first element of a row three) -> validatoin ensures that there are three of these in a row...
-
-
---------
-
-TODO MEGA MASTER PLAN:
-- Create a youtube formula!
-    - add to list of rules:
-        - go through the big best youtubers. (will of course need a list first! I think i have on already on the website...)
-        - analyse what they do.. how they structure, and add to my list of rules
-        - + perhaps also have a seperate document for general patterns underneath each.. (I could make a youtube video on this!)
-    - .......
-    - what lines should have what...
-    - ... have like 5 options to pick from for certain things...
-    - ... much like the script.. have a sort of formula or a few different variations for the script...
-    - Add line categroisation stage
-        - Go through the text.
-            - each line will need the context of the other lines/scenes
-            - identify what type of line it is. 
-            - if its linked to other scenes, need to identify those (e.g. via index or something)
-- also just research 'youtube formula' both on youtube and online...
-    - i assume it'll be mostly script guides but just write them down....
-
-----------
-
-TODO:
-- Add method for determining joint images...
-    - AI the original text?
-        - e.g. short, like 1 or 2 word sentences should be part of joint pics...
-        - things like landscapes of places etc. should be stock footage (just anything that works well as standalone stock footage...)
-        - subjects / people should ideally be cut out and put on a background...
-    - AI the new text with output of what pictures are used? (probs easier for determing people etc...) (may also identify people images for wikipedia fetching?)
-- Add better sentence splitter...
-    - perhaps with loads of tests...
-    - ask opus to add a few more clauses to the script generator thing.
-- Link up wikipedia etc. if possible...
-- hmmm other ways to add more scenes with the things I already have...
-    - do i add a thing like cgp grey where you zoom out and then you show the same picture but on like a whiteboard and then a stickman, representing the teacher, sitting there???
-    - what else could i use this method in? 
-        - (like a buid a library of reactions and add them at appropriate times in the video????)
-- maybe....
-    - can i add a system to identify sort of stock footage applicable scenes?
-    - because only clearly visible landscapes or whatever is good for stock footage... or maybe like black pepper type things... 
-    - but the rest will need to be more specific????
-- YEAH!
-    - I just need to build a system..
-    - so like 'for this [group of lines]... i do this...
-    - ... if longer than x seconds/words and its [this type of line].. i do this..
-    - ... and then I add this at a random point..
-    - SO:
-        - need to somehow categorize lines and groups of lines so that i can identify what to do!!!
-        - then make a document that details all of the rules
-        - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        - (need to watch some youtubers to get some ideas! ideally the good ones...)
-- hmmmm!!
-    - maybe just the explainer thing with teacher stickman each time?
-    - analyse the intros of the best faceless youtubers...
-    - get a plan for an intro.. or a few variations of intro which will always just work real good straight away...
-- hm
-    - do i overlay like question marks that are kind of transparent on screen if we have questions?!?!?!?
-    - what other repeatable things are easily recognisable with NLP???
-- hmm
-    - would it be possible to integrate my stickman idea?
-    --> like match the sentiment of the sentence to a stick man?  like always have a stick person for comments people... (everytime I say "now, you may be thinking..."
-    --> or have the stick man at the desk or in the science lab...
-    
-------------
-
-TODO:
-- Add things to make the intro better
-    - e.g. ??? whatever like highlighting or whatever to make intro more interesting...
-        - highlighting (feels manual...)
-        - darkening rest of area apart from the thing you're talking about (again, feels manual...)
-- Add the sound effects thing.
-    - Download loads of sound effects
-    - Have a system for adding the sound effects...
-
-------------
 
 TODO LATER:
 - maybe link up the other image providers??!?!?!?!? (or actually... just stick with pexels for now...)
 
-- load the background.
-- Get picture of the person
-- pipe into remove background
-- compose that on top of the animated background
-
-# Review against plan:
-
-1) Add things one by one
-- Add one by one, build on previous image..
-2) Paint..
-- Cut out pictures of subjects, places on blank background
-- ==> shadows, colour grading etc...
-3) custom animated
-- e.g. custom animated graph (e.g. bar chart or line going up.. . numbers ticking up...)
-4) visual hierarchy
-- blur unimportant
-- circle, highlight, arrow important..
-- bigger, brighter, moving...
-
-5) ==> reuse library of icons...
-
-
----------------
-
-FABLE TODO
-- create full automated test suite
---> including for the sentence splitter...
-    - For the first iteration:
-        1) generate an example test with lots of variation in sentences
-        2) run it through the current sentence splitter
-        3) assign the outputs of the current sentence splitter as the expected results for the test (so theoretically, after the first run, all tests will pass
-            --> but instead of having the test be the whole thing, make it split into sentences... so each sentence is its own test
-        4) But here's the key additon:
-            - make it easy to add variations to passing tests... so each test can have multiple correct answers...
-            - but it must be easy for the coder to add new passing examples.. so make that very easy to understand..
-                - e.g. like an array of arrays of correct answers...
-                - so then hte user just adds a new array with the correct answer (i.e. because the sentence splitter outputs arrays...)
-            - and make it easy to search for... e.g. so that the user can easily just search for the sentence and be at the right place
-
-
-
----------------
 
 For prod:
 - ADD WAY FOR USERS TO EASILY GET AI TO POPULATE THE TAGS;
@@ -430,13 +227,6 @@ clip changes
 
 
 
-seperate character from background:
-- Meta segment anything 2 ????
-???
-- Create seperate foreground and background, then add parallax effect?
-
-
-
 - synced music
     - have a theme, switch to different footage on the beats of a song??
 
@@ -466,14 +256,3 @@ but don't want database.. or csv.. or anything not hardcoded...
 
 but don't want the over abstration that comes with objects...
 
-
-
-
-==========
-more down the line;
-
-
-Also want a toggle for if we are applying affects over existing video!
-(So e.g. 30 mins of me walking... It trims the video down to the same length as the audios and then identifies moments where it should *overlay* graphics on screen (not all the time-- only when crucial...) 
-
-Then maybe ask Claude to identify other repeatable rules (like maps for places? So I can add all those editting things in...) 

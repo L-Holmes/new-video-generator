@@ -300,11 +300,14 @@ def _effective_block(is_pixel: bool, override: int | None) -> int:
     return 1 if is_pixel else max(1, PIXEL_BLOCK_WHEN_NO_PIXEL_FONT)
 
 
-def _place(base: Image.Image, caption_rgba: Image.Image,
-           anchor: str) -> Image.Image:
-    """Paste the (already-rotated) caption so its centre sits on the anchor,
-    nudged inward so it never spills off-frame."""
-    W, H = base.size
+def _placement(size: tuple[int, int], caption_rgba: Image.Image,
+               anchor: str) -> tuple[Image.Image, int, int]:
+    """Where the (already-rotated) caption goes on a `size` canvas: centre
+    on the anchor, nudged inward so it never spills off-frame. Returns the
+    (possibly safety-downscaled) caption and its paste position — shared by
+    the baked path (_place) and the transparent-layer path
+    (make_caption_layer), so the two land pixel-identically."""
+    W, H = size
     cw, ch = caption_rgba.size
 
     # Safety: if the caption is somehow bigger than the frame, scale it down.
@@ -323,15 +326,73 @@ def _place(base: Image.Image, caption_rgba: Image.Image,
     m = 24
     x = max(m, min(x, W - cw - m))
     y = max(m, min(y, H - ch - m))
+    return caption_rgba, x, y
 
+
+def _place(base: Image.Image, caption_rgba: Image.Image,
+           anchor: str) -> Image.Image:
+    """Paste the (already-rotated) caption so its centre sits on the anchor,
+    nudged inward so it never spills off-frame."""
+    caption_rgba, x, y = _placement(base.size, caption_rgba, anchor)
     out = base.convert("RGBA")
     out.alpha_composite(caption_rgba, (x, y))
     return out.convert("RGB")
 
 
 # ===========================================================================
-# PUBLIC ENTRY POINT
+# PUBLIC ENTRY POINTS
 # ===========================================================================
+
+def make_caption_layer(
+    text: str,
+    output_path: str,
+    *,
+    position: str | None = None,         # "TL" | "TR" | "C"
+    rotation: str | None = None,         # "ccw" | "cw"
+    font_size: int = FONT_SIZE,
+    pixel_block: int | None = None,      # None = auto (1 w/ pixel font else 3)
+    seed: str | None = None,
+) -> str:
+    """The tilted caption card on a TRANSPARENT frame-sized canvas (RGBA
+    PNG at 1920x1080) instead of baked onto a base — for LIVE VIDEO scenes,
+    where the caption is burned over the MOVING footage as an overlay
+    (VIDEO_CHAINS.burn_layers_onto_segment). Card, tilt and the
+    deterministic per-seed position/rotation pick are exactly
+    make_text_overlay's; only the background differs (transparent instead
+    of the fitted base). Returns output_path."""
+    output_path = str(output_path)
+    text = (text or "").strip()
+
+    pos, rot = _pick_combo(seed or text)
+    if position:
+        position = position.upper()
+        if position not in ANCHORS:
+            raise ValueError(f"position must be one of {list(ANCHORS)}")
+        pos = position
+    if rotation:
+        rotation = rotation.lower()
+        if rotation not in ROTATIONS:
+            raise ValueError(f"rotation must be one of {list(ROTATIONS)}")
+        rot = rotation
+
+    _, is_pixel = _resolve_caption_font()
+    block = _effective_block(is_pixel, pixel_block)
+    caption = _render_caption(text or " ", anchor=pos,
+                              font_size=font_size, pixel_block=block)
+    resample = Image.NEAREST if block > 1 else Image.BICUBIC
+    caption = caption.rotate(ROTATIONS[rot], expand=True, resample=resample)
+
+    layer = Image.new("RGBA", (FRAME_W, FRAME_H), (0, 0, 0, 0))
+    caption, x, y = _placement(layer.size, caption, pos)
+    layer.alpha_composite(caption, (x, y))
+
+    print(f"[text-overlay] LAYER (transparent)  pos={pos} rot={rot}  "
+          f"pixel_font={is_pixel} block={block}  "
+          f"text='{text[:50]}{'…' if len(text) > 50 else ''}'")
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    layer.save(output_path)
+    return output_path
+
 
 def make_text_overlay(
     base_image_path: str,

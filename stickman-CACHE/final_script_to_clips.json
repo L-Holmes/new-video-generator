@@ -3,15 +3,7 @@
         "script_text": "If you open your kitchen cupboard right now,",
         "footage": [
             {
-                "https://videos.pexels.com/video-files/19227878/19227878-uhd_3840_2160_30fps.mp4": 2.82
-            }
-        ]
-    },
-    {
-        "script_text": "you probably have a jar of nutmeg.",
-        "footage": [
-            {
-                "stickman-CACHE/manual_stock_placement/manual_place_001_you_probably_have_a_jar_of_nutmeg.mp4": 1.9
+                "https://images.pexels.com/photos/7303850/pexels-photo-7303850.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.82
             }
         ]
     },
@@ -94,7 +86,7 @@
         "script_text": "single ship full of nutmeg,",
         "footage": [
             {
-                "stickman-CACHE/object_generate_scenes/scene_015/sep-edit-pexels-img-bb5f070a7f4f.mp4": 1.32
+                "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32
             }
         ]
     },
@@ -139,6 +131,14 @@
         ]
     },
     {
+        "script_text": "you probably have a jar of nutmeg.",
+        "footage": [
+            {
+                "stickman-CACHE/manual_stock_placement/manual_static_001_you_probably_have_a_jar_of_nutmeg.mp4": 1.9
+            }
+        ]
+    },
+    {
         "script_text": "single most contested resource on the planet.",
         "footage": [
             {
@@ -150,7 +150,7 @@
         "script_text": "If you were a European merchant, getting it meant",
         "footage": [
             {
-                "stickman-CACHE/manual_stock_placement/manual_static_010_If_you_were_a_European_merchant_getting_it_meant.mp4": 1.82
+                "stickman-CACHE/manual_stock_placement/manual_live_010_If_you_were_a_European_merchant_getting_it_meant.mp4": 1.82
             }
         ]
     },

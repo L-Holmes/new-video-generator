@@ -74,6 +74,43 @@ def run_decorator(base_image_path: str,
     return str(out)
 
 
+def run_overlay_decorator(base_image_path: str,
+                          stamps: list[str] | tuple = (),
+                          title: str = "decorate (LIVE video)"):
+    """Open the decorate editor in LIVE-VIDEO overlay mode: the base is a
+    frame of the PLAYING footage (extract it at the moment the scene starts,
+    with any earlier chain ops applied), the draw + stamp + zoom tools are
+    offered (stamp opens pre-loaded and ACTIVE when `stamps` are passed),
+    and NOTHING is baked — what comes back is the ordered ops recipe
+        [("layer", [deco items...]) | ("zoom", (wpct, cx, cy)), ...]
+    for the caller to re-apply to the moving video: layers as transparent
+    PNGs (draw.render_overlay_layer / draw.render_highlight_mask), zooms as
+    real crops of the footage (VIDEO_CHAINS.burn_ops_onto_segment).
+
+    Returns the ops list, or None if the window was closed or nothing was
+    placed."""
+    from ___visuals.decorator.draw import run_editor_session
+
+    work = Path(tempfile.mkdtemp(prefix="decorator_ov_"))
+    print(f"[decorator] LIVE overlay editing {Path(str(base_image_path)).name}"
+          f"  (tabs: draw, stamp, zoom — over playing footage"
+          f"{f'; {len(stamps)} stamp(s) ready' if stamps else ''})")
+    action, ops = run_editor_session(
+        str(base_image_path), window_title=title, tabs=("stamp", "zoom"),
+        stamps=[str(s) for s in stamps], work_dir=work, overlay_mode=True)
+    if action == "exit":
+        print("[decorator] window closed — abandoning (footage kept)")
+        return None
+    if not ops:
+        print("[decorator] finished with no edits — nothing to layer")
+        return None
+    n_layers = sum(1 for k, _ in ops if k == "layer")
+    n_zooms = sum(1 for k, _ in ops if k == "zoom")
+    print(f"[decorator] ✓ {n_layers} layer(s) + {n_zooms} zoom(s) to apply "
+          f"to the video")
+    return ops
+
+
 def _main() -> None:
     """Direct run — the ONE editor window (draw canvas + tab sidebar):
 

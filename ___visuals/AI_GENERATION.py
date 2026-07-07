@@ -88,7 +88,7 @@ def generate_stickman_candidates(
 
     # Lazy import keeps the fal / dotenv dependency out of pipeline runs that
     # don't use stickman scenes.
-    from ai_generate_stickman_images import generate_stickman_images
+    from ___visuals.ai_generate_stickman_images import generate_stickman_images
 
     print(
         f"[stickman] generating {STICKMAN_NUM_VARIANTS} variant(s) per scene "
@@ -203,7 +203,7 @@ def generate_stickman_joint_candidates(
 
     # Lazy import — keeps the fal / dotenv dependency out of runs that don't
     # use any AI-generated scenes.
-    from ai_generate_stickman_images import generate_stickman_images
+    from  ___visuals.ai_generate_stickman_images import generate_stickman_images
 
     STICKMAN_JOINT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -289,7 +289,7 @@ def _regenerate_stickman_joint_scene(
     candidates for the review GUI's 'try again' (R). Same generator + prompt
     engineering as stickman, just the joint type/dir/variant count.
     """
-    from ai_generate_stickman_images import _scene_stem, generate_stickman_images
+    from ___visuals.ai_generate_stickman_images import _scene_stem, generate_stickman_images
 
     stem = _scene_stem(script_text)
     for v in range(STICKMAN_JOINT_NUM_VARIANTS):
@@ -345,7 +345,7 @@ def _regenerate_stickman_scene(
     actually re-renders it (it skips files that already exist); every OTHER
     stickman scene keeps its cached image.
     """
-    from ai_generate_stickman_images import _scene_stem, generate_stickman_images
+    from ___visuals.ai_generate_stickman_images import _scene_stem, generate_stickman_images
 
     stem = _scene_stem(script_text)
     for v in range(STICKMAN_NUM_VARIANTS):
@@ -404,7 +404,7 @@ def _regenerate_ai_edit_scene(
     (same base/context the user is reviewing), and refreshes the per-edit
     candidate cache so a later resume uses the new images.
     """
-    from ai_generate_stickman_images import _scene_stem
+    from ___visuals.ai_generate_stickman_images import _scene_stem
 
     stem = _scene_stem(edit_text)
     for v in range(AI_EDIT_NUM_VARIANTS):
@@ -448,7 +448,7 @@ def build_ai_edit_candidates_for_target(
     exactly one scene's images; every other scene is offered purely as a
     potential walk-back base (is_ai_base + chosen_image).
     """
-    from ai_edit import generate_ai_edits
+    from ___visuals.ai_edit import generate_ai_edits
 
     # Resolve each decided scene's CHOSEN image (first footage entry) to disk.
     chosen_by_text: dict[str, str | None] = {}

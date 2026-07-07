@@ -237,8 +237,30 @@ def run_manual_image_stage(
         return final_data
 
     from ___visuals.MANUAL_STOCK_PLACEMENT import extract_frame
+    from ___visuals.VIDEO_CHAINS import (
+        SourceExhausted,
+        cut_continuing_segment,
+        detect_video_chains,
+    )
 
     scene_timings = _load_scene_timings()
+
+    # LIVE chains (DECORATE_VIDEO_LIVE): a video scene + its hold run where
+    # someone decorates. Those holds don't freeze — they CONTINUE the source
+    # at a cumulative offset (2.3s in, then 3.5s in, ...), so the footage
+    # keeps playing across the cuts. DECORATE_STAGE (2.645) then burns the
+    # accumulated decoration layers onto these segments. Detection is the
+    # same pure function DECORATE_STAGE calls, so the stages always agree.
+    continuing: dict[str, tuple[str, float]] = {}   # text → (source, offset)
+    for _chain in detect_video_chains(script_to_search_term, final_data,
+                                      scene_timings):
+        for _m in _chain.members:
+            if not _m.is_anchor:
+                continuing[_m.text] = (_chain.source, _m.offset)
+    if continuing:
+        print(f"[manual-img] {len(continuing)} hold scene(s) CONTINUE their "
+              f"video (live decorated chain) instead of freezing")
+
     by_script = {e["script_text"]: i for i, e in enumerate(final_data)}
     script_index = {txt: i for i, txt in enumerate(script_to_search_term)}
 
@@ -356,7 +378,27 @@ def run_manual_image_stage(
         output_mp4 = out_dir / f"manual_{kind}_{idx:03d}_{safe_stem}.mp4"
         print(f"[manual-img]   duration = {duration:.3f}s")
 
-        if kind == "static":
+        # LIVE chain member: the previous video keeps PLAYING — cut its
+        # continuing segment (normalised to the stitcher frame) instead of
+        # freezing a still. If the source has already run out, fall back to
+        # the normal freeze below.
+        did_live = False
+        if text in continuing:
+            src, offset = continuing[text]
+            output_mp4 = out_dir / f"manual_live_{idx:03d}_{safe_stem}.mp4"
+            print(f"[manual-img]   LIVE: continuing {Path(src).name} "
+                  f"@ {offset:.3f}s (+{duration:.3f}s) — no freeze")
+            try:
+                cut_continuing_segment(src, offset, duration, str(output_mp4))
+                did_live = True
+            except SourceExhausted as exc:
+                print(f"[manual-img]   WARNING: {exc} — falling back to the "
+                      f"freeze-frame behaviour")
+                output_mp4 = out_dir / f"manual_{kind}_{idx:03d}_{safe_stem}.mp4"
+
+        if did_live:
+            pass  # segment written straight to output_mp4 — skip the freeze
+        elif kind == "static":
             # Non-interactive: reuse prev image, or freeze prev video's last frame.
             src_still, _src_text = _resolve_static_source(idx)
             if not src_still:
@@ -375,14 +417,18 @@ def run_manual_image_stage(
                 )
                 sys.exit(1)
 
-        print(
-            f"[manual-img]   result = {Path(result_png).name} ({_dims(str(result_png))})"
-        )
-        try:
-            _render_image_to_static_mp4(str(result_png), duration, str(output_mp4))
-        except Exception as exc:
-            print(f"[manual-img] FATAL: MP4 render failed: {exc}")
-            sys.exit(1)
+        if did_live:
+            print(f"[manual-img]   result = {Path(output_mp4).name} "
+                  f"(continuing segment)")
+        else:
+            print(
+                f"[manual-img]   result = {Path(result_png).name} ({_dims(str(result_png))})"
+            )
+            try:
+                _render_image_to_static_mp4(str(result_png), duration, str(output_mp4))
+            except Exception as exc:
+                print(f"[manual-img] FATAL: MP4 render failed: {exc}")
+                sys.exit(1)
 
         entries = [{str(output_mp4): round(duration, 3)}]
         if text in by_script:

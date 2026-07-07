@@ -9,7 +9,9 @@ search term in a point-and-click page (localhost, zero dependencies).
 What's on the page
 ------------------
   - the whole script scrollable on the left (that IS the context). one dot
-    per row: gold when BOTH required steps are done (media type + term).
+    per row: gold when the required steps are done (media type + term —
+    the term is OPTIONAL for hold_previous/background; hold_previous +
+    decorate + a term additionally needs step 3's stamp source).
     grouped lines share a coloured stripe. no badge until a type is picked.
   - SPLIT, inline on the left: hover a line's text — it expands to full
     length, a golden cursor snaps to the nearest gap between letters with a
@@ -57,6 +59,13 @@ from typing import Dict, List, Optional
 from MEDIA_TYPES import (COLLAGEABLE_TYPES, GROUPABLE_TYPES, MEDIA_TYPES,
                          MODIFIERS, Tag)
 
+try:    # new names — re-export them from MEDIA_TYPES.py (one line) to keep
+        # this in sync with CONFIG; the fallback mirrors CONFIG's defaults.
+    from MEDIA_TYPES import STAMP_SOURCE_TYPES, TERM_OPTIONAL_TYPES
+except ImportError:
+    STAMP_SOURCE_TYPES = ("stock", "wikipedia")
+    TERM_OPTIONAL_TYPES = ("hold_previous", "background")
+
 HERE = Path(__file__).resolve().parent
 _PLACE_LABELS = {"GPE", "LOC"}
 _NAME_LABELS = {"PERSON", "ORG", "FAC", "EVENT", "WORK_OF_ART", "NORP"}
@@ -71,6 +80,8 @@ def build_catalog() -> dict:
               "color": d["color"], "tags": [t.value for t in d["tags"]],
               "groupable": n in GROUPABLE_TYPES,
               "collageable": n in COLLAGEABLE_TYPES,
+              "term_optional": n in TERM_OPTIONAL_TYPES,
+              "stampable": n in STAMP_SOURCE_TYPES,
               "info": d["info"], "example": d["example"]}
              for n, d in MEDIA_TYPES.items()]
     mods = [{"name": n, "label": n, "color": d["color"],
@@ -227,8 +238,20 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
         drop = "collage" if "group" in newly else "group"
         mods = [m for m in mods if m != drop]
         patch = dict(patch, modifiers=mods)
-    for key in {"media_type", "modifiers", "search_term"} & set(patch):
+    if "stamp_source" in patch and patch["stamp_source"] is not None \
+            and patch["stamp_source"] not in STAMP_SOURCE_TYPES:
+        return ("stamp source must be one of "
+                + ", ".join(STAMP_SOURCE_TYPES).replace("_", " "))
+    for key in {"media_type", "modifiers", "search_term",
+                "stamp_source"} & set(patch):
         row[key] = patch[key]
+    # stamp_source only means something on hold_previous + decorate + a
+    # non-empty term — clear it the moment the combo breaks so a stale
+    # choice can never linger in the json.
+    if (row.get("media_type") != "hold_previous"
+            or "decorate" not in (row.get("modifiers") or [])
+            or not (row.get("search_term") or "").strip()):
+        row["stamp_source"] = None
     if "modifiers" in patch:
         if "group" in row["modifiers"] and row.get("group_id") is None:
             assign_group_id(data, line)
@@ -534,7 +557,7 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
   <div id="bottomstick">
   <div class="card" id="termcard">
     <div class="head" onclick="expand('term')">
-      <h3>step 2 · search term</h3><span class="req">required</span>
+      <h3>step 2 · search term</h3><span class="req" id="termreq">required</span>
     </div>
     <div class="body">
       <div id="termwrap">
@@ -542,6 +565,15 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
         <div id="ghost"></div>
       </div>
       <div class="chips" id="chips"></div>
+    </div>
+  </div>
+  <div class="card" id="stampcard" style="display:none">
+    <div class="head">
+      <h3>step 3 · stamp pictures from</h3><span class="req">required — pick one</span>
+      <i class="info" data-info="_stamp">i</i>
+    </div>
+    <div class="body">
+      <div class="cols"><div class="col" id="stamppanel"></div></div>
     </div>
   </div>
   <button id="nextbtn"></button>
@@ -597,7 +629,15 @@ async function load(keepLine){
  renderKey(); renderList(); renderEditor(); updateFinish();
 }
 function baseOf(n){return D.catalog.bases.find(b=>b.name===n);}
-function lineDone(L){return !!L.row.media_type && !!(L.row.search_term||'').trim();}
+function stampNeeded(L,term){
+ term=term===undefined?(L.row.search_term||''):term;
+ return L.row.media_type==='hold_previous'
+  &&(L.row.modifiers||[]).includes('decorate')&&!!term.trim();}
+function lineDone(L){
+ if(!L.row.media_type)return false;
+ const b=baseOf(L.row.media_type);
+ const termOk=!!(L.row.search_term||'').trim()||!!(b&&b.term_optional);
+ return termOk&&(!stampNeeded(L)||!!L.row.stamp_source);}
 function updateFinish(){
  const all=D.lines.every(lineDone);
  $('#finish').classList.toggle('ready',all);
@@ -845,6 +885,10 @@ function renderMods(){
 function renderTerm(){
  const L=D.lines[sel];
  $('#term').value=L.row.search_term||'';
+ const b=baseOf(L.row.media_type);
+ $('#termreq').textContent=(b&&b.term_optional)
+   ?'optional for this type'
+   :'required';
  updateGhost();
  const s=L.suggest; let chips='';
  const add=(lbl,arr,cls)=>{if(arr&&arr.length){chips+=`<span class="chiplbl">${lbl}:</span>`+
@@ -852,8 +896,21 @@ function renderTerm(){
  add('places',s.places,'big place'); add('names',s.names,'big place');
  add('nouns',s.nouns,'big'); add('keywords',s.keywords,'small'); add('words',s.words,'small');
  $('#chips').innerHTML=chips||'<span class="chiplbl">(no extracted suggestions for this line)</span>';
+ renderStamp(L);
  renderNext(L);
 }
+function renderStamp(L){
+ const card=$('#stampcard'); const need=stampNeeded(L);
+ card.style.display=need?'block':'none';
+ if(!need)return;
+ $('#stamppanel').innerHTML=D.catalog.bases.filter(b=>b.stampable).map(b=>{
+  const on=L.row.stamp_source===b.name?' on':'';
+  return `<button class="tpl${on}" style="background:${b.color}" onclick="pickStamp('${b.name}')">`+
+    `<span>${b.label}</span><i class="info" data-info="${b.name}">i</i></button>`;}).join('');
+ hookInfos($('#stamppanel'));
+}
+async function pickStamp(name){const L=D.lines[sel];
+ await post('/save',{line:L.line,patch:{stamp_source:name}},L.line);}
 function renderNext(L){
  const nb=$('#nextbtn');
  if(!lineDone(L)){nb.style.visibility='hidden';return;}
@@ -886,7 +943,11 @@ $('#term').addEventListener('keydown',e=>{
    updateGhost();debSave();return;}
  const L=D.lines[sel];
  if(L.row.media_type&&$('#term').value.trim()){
-   e.preventDefault();$('#nextbtn').click();}   // straight to the next line
+   e.preventDefault();
+   if(stampNeeded(L,$('#term').value)&&!L.row.stamp_source){
+     flash('#stampcard');                     // step 3 still needs a pick
+     $('#stampcard').style.display='block';
+   } else $('#nextbtn').click();}   // straight to the next line
 });
 function chip(w){const t=$('#term');t.value=(t.value?t.value+' ':'')+w;updateGhost();debSave();}
 let tmr=null;
@@ -922,6 +983,7 @@ function cardHTML(name){
  const e=all.find(x=>x.name===name);
  if(name==='_types')return '<div class="nm">media type</div><div class="hint">every line needs exactly one base media type. NEW fetches brand-new material; EDIT PREVIOUS reuses or changes the image already on screen. colours show the family — ai in reds.</div>';
  if(name==='_mods')return '<div class="nm">stack on top</div><div class="hint">optional extras layered onto the base you picked: decorate (draw on it), caption (text on it), group (this line is one cell of a multi-cell group with its neighbours — rule of n).</div>';
+ if(name==='_stamp')return '<div class="nm">stamp pictures from</div><div class="hint">hold previous + decorate + a search term: the term describes what to STAMP onto the held image ("jar of nutmeg"), and these pictures wait ready in the editor\'s STAMP tab (which opens first). pick where they are fetched from.</div>';
  if(!e)return '';
  return `<div class="icard"><img src="/example/${e.name}" onerror="this.src='${PLACEHOLDER}'">`+
    `<div><div class="nm">${e.label||e.name}</div><div class="hint">${esc(e.info)}</div></div></div>`;

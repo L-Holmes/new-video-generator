@@ -26,25 +26,6 @@
         "max_runtime_per_clip_seconds": 2.82
     },
     {
-        "script_text": "you probably have a jar of nutmeg.",
-        "candidates": {
-            "videos": [],
-            "images": [
-                {
-                    "https://images.pexels.com/photos/4778354/pexels-photo-4778354.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
-                },
-                {
-                    "https://images.pexels.com/photos/7236723/pexels-photo-7236723.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
-                },
-                {
-                    "https://images.pexels.com/photos/33316024/pexels-photo-33316024.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
-                }
-            ]
-        },
-        "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 1.9
-    },
-    {
         "script_text": "It costs about",
         "candidates": {
             "videos": [],
@@ -202,7 +183,14 @@
     {
         "script_text": "single ship full of nutmeg,",
         "candidates": {
-            "videos": [],
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/38401642/16306178_1920_1080_60fps.mp4": 1.32
+                },
+                {
+                    "https://videos.pexels.com/video-files/38400422/16306030_1920_1080_60fps.mp4": 1.32
+                }
+            ],
             "images": [
                 {
                     "https://images.pexels.com/photos/4089907/pexels-photo-4089907.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.32

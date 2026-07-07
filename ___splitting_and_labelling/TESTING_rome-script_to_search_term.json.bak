@@ -45,8 +45,8 @@
     ]
   },
   "a fire started in": {
-    "search_term": "fire",
-    "media_type": "background",
+    "search_term": "",
+    "media_type": "hold_previous",
     "modifiers": [
       "decorate"
     ],

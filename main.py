@@ -84,6 +84,7 @@ from ___visuals.SCENE_GENERATORS import (
 )
 from ___visuals.STATIC_RENDER import run_manual_image_stage
 from ___visuals.TIMING_MERGE import integrate_generated_footage
+from ___visuals.VIDEO_BACKGROUND_STAGE import run_video_background_stage
 
 # ===========================================================================
 # IMPORTS - LOCAL (external pipeline stages driven directly by main)
@@ -472,6 +473,24 @@ def main() -> None:
         save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
         print(f"💾 Updated final_data with Ken Burns MP4s → {FINAL_SCRIPT_AND_CLIPS}")
         _dump_final(final_data, "POST-KEN-BURNS")
+
+    # 2.655) VIDEO BACKGROUND MODE (optional) — the whole edit rides on ONE
+    #        long background video (VIDEO_BACKGROUND_FILE @ _START), trimmed
+    #        to the narration and playing continuously under every scene.
+    #        Scenes with footage become overlays (80% cards, or keyed if
+    #        white/transparent-backed); `background` / footage-less scenes
+    #        show the bare background; background+decorate draws straight
+    #        onto it. After grade + KB (cards carry their grade/motion),
+    #        before the badges (they land on the composited frame).
+    final_data, video_bg_remap = run_video_background_stage(
+        final_data,
+        scriptTextToPexelSearch,
+    )
+    if video_bg_remap:
+        add_path_remap_to_history(video_bg_remap, label="video-background")
+        save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
+        print(f"💾 Updated final_data with background composites → {FINAL_SCRIPT_AND_CLIPS}")
+        _dump_final(final_data, "POST-VIDEO-BACKGROUND")
 
     # 2.66) Auto-detected overlays — small FIXED corner badges (question mark,
     #       metric/imperial measurement chips) burned onto each scene's final
