@@ -26,6 +26,32 @@
         "max_runtime_per_clip_seconds": 2.82
     },
     {
+        "script_text": "you probably have a jar of nutmeg.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/28283516/12351476_3840_2160_30fps.mp4": 1.9
+                },
+                {
+                    "https://videos.pexels.com/video-files/5559609/5559609-hd_1920_1080_25fps.mp4": 1.9
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/8176604/pexels-photo-8176604.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
+                },
+                {
+                    "https://images.pexels.com/photos/30370491/pexels-photo-30370491.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
+                },
+                {
+                    "https://images.pexels.com/photos/35339664/pexels-photo-35339664.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.9
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.9
+    },
+    {
         "script_text": "It costs about",
         "candidates": {
             "videos": [],
@@ -50,6 +76,32 @@
         },
         "num_clips_needed": 1,
         "max_runtime_per_clip_seconds": 3.32
+    },
+    {
+        "script_text": "single most contested resource on the planet.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/28283516/12351476_3840_2160_30fps.mp4": 2.34
+                },
+                {
+                    "https://videos.pexels.com/video-files/28283517/12351606_3840_2160_30fps.mp4": 2.34
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/35339664/pexels-photo-35339664.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.34
+                },
+                {
+                    "https://images.pexels.com/photos/1471387/pexels-photo-1471387.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.34
+                },
+                {
+                    "https://images.pexels.com/photos/13093699/pexels-photo-13093699.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.34
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 2.34
     },
     {
         "script_text": "It was worth more than its weight in gold.",
@@ -127,6 +179,32 @@
         },
         "num_clips_needed": 1,
         "max_runtime_per_clip_seconds": 3.82
+    },
+    {
+        "script_text": "If you were a European merchant, getting it meant",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/31099425/13288222_3840_2160_60fps.mp4": 1.82
+                },
+                {
+                    "https://videos.pexels.com/video-files/33752857/14329542_1920_1080_25fps.mp4": 1.82
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/35531243/pexels-photo-35531243.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.82
+                },
+                {
+                    "https://images.pexels.com/photos/9328777/pexels-photo-9328777.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.82
+                },
+                {
+                    "https://images.pexels.com/photos/6199455/pexels-photo-6199455.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.82
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.82
     },
     {
         "script_text": "sailing for months, surviving",
@@ -244,5 +322,31 @@
         },
         "num_clips_needed": 1,
         "max_runtime_per_clip_seconds": 2.48
+    },
+    {
+        "script_text": "traded for nutmeg.",
+        "candidates": {
+            "videos": [
+                {
+                    "https://videos.pexels.com/video-files/28283514/12351590_3840_2160_30fps.mp4": 1.26
+                },
+                {
+                    "https://videos.pexels.com/video-files/34141386/14475818_3840_2160_24fps.mp4": 1.26
+                }
+            ],
+            "images": [
+                {
+                    "https://images.pexels.com/photos/5769700/pexels-photo-5769700.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
+                },
+                {
+                    "https://images.pexels.com/photos/17870116/pexels-photo-17870116.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
+                },
+                {
+                    "https://images.pexels.com/photos/18649134/pexels-photo-18649134.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.26
+                }
+            ]
+        },
+        "num_clips_needed": 1,
+        "max_runtime_per_clip_seconds": 1.26
     }
 ]

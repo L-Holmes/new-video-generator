@@ -107,8 +107,8 @@
     ]
   },
   "wind,": {
-    "search_term": "",
-    "media_type": "",
+    "search_term": "wind",
+    "media_type": "stock",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -119,13 +119,14 @@
     "music_fade_out": 0,
     "rule_ids": [
       7
-    ]
+    ],
+    "stamp_source": null
   },
   "this hungry blaze devoured": {
-    "search_term": "",
-    "media_type": "stock",
+    "search_term": "fire",
+    "media_type": "hold_previous",
     "modifiers": [
-      "collage"
+      "decorate"
     ],
     "group_id": null,
     "position": "1",
@@ -136,11 +137,12 @@
     "music_fade_out": 0,
     "rule_ids": [
       61
-    ]
+    ],
+    "stamp_source": "stock"
   },
   "temples,": {
-    "search_term": "",
-    "media_type": "",
+    "search_term": "temple",
+    "media_type": "stock_on_board",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -151,7 +153,8 @@
     "music_fade_out": 0,
     "rule_ids": [
       8
-    ]
+    ],
+    "stamp_source": null
   },
   "villas, and": {
     "search_term": "",
@@ -170,7 +173,7 @@
   },
   "entire districts.": {
     "search_term": "",
-    "media_type": "",
+    "media_type": "stock",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -181,12 +184,16 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ]
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null
   },
   "The city was rebuilt by": {
-    "search_term": "",
-    "media_type": "",
-    "modifiers": [],
+    "search_term": "city",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -198,7 +205,9 @@
       1000,
       59,
       29
-    ]
+    ],
+    "stamp_decorate": true,
+    "stamp_source": "wikipedia"
   },
   "a very unpopular emperor.": {
     "search_term": "",

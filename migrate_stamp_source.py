@@ -40,6 +40,7 @@ def migrate(path: Path) -> None:
         if "stamp_source" not in row:
             row["stamp_source"] = None
             added += 1
+        row.setdefault("stamp_decorate", False)
         if row["stamp_source"] is None \
                 and row.get("media_type") == "hold_previous" \
                 and "decorate" in (row.get("modifiers") or []) \

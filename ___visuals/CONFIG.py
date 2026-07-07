@@ -523,6 +523,7 @@ def normalise_scene_row(script_text: str, row: dict) -> None:
             f"'{script_text[:60]}' "
             f"(valid: {', '.join(STAMP_SOURCE_TYPES)}, or null)"
         )
+    row["stamp_decorate"] = bool(row.get("stamp_decorate", False))
     row["media_type"] = MediaType(name)
 
 
@@ -594,20 +595,23 @@ def group_scene_rows(
 DECORATE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_scenes")
 DECORATE_RENDER_SAFETY_PAD_SEC: float = 0.08
 
-# --- STAMP SOURCE (pre-loading the decorate editor's stamp tab) ------------
+# --- STAMP SOURCE (the editor's stamp tab, fed by the NORMAL review) -------
 # A hold_previous + decorate scene doesn't use its search_term for its own
 # footage (it reuses the previous image) — so when one HAS a term, the term
-# describes what to STAMP ("jar of nutmeg"). row["stamp_source"] says where
-# those pictures come from; DECORATE_STAGE fetches them (STAMP_FETCH) and
-# passes them to the editor, whose stamp tab opens pre-loaded (and active).
-# Valid values: the NEW-material types the fetcher supports, or null.
-# The tagging tool offers these as its step 3 (only when hold_previous +
-# decorate + a non-empty term), and search terms are OPTIONAL for the
-# TERM_OPTIONAL_TYPES (a bare hold/background line needs none).
-STAMP_SOURCE_TYPES: tuple[str, ...] = ("stock", "wikipedia")
+# describes what to STAMP ("jar of nutmeg"). row["stamp_source"] says which
+# media type those candidates are fetched AS, and the scene then goes
+# through the ORDINARY candidates fetch + stage-1 review like any stock /
+# wikipedia / ai_stock scene (main() swaps its media_type to the source for
+# those two stages — DECORATE_STAGE.swap/restore_stamp_rows_…): you CLICK
+# the picture you want in the review, and that pick becomes the stamp
+# waiting (pre-loaded + active) in the decorate editor's stamp tab.
+# row["stamp_decorate"] additionally opens the pick in the decorator FIRST
+# (cut it out / clean it up) before it's offered as a stamp.
+# The tagging tool's step 3 sets both (only shown on hold_previous /
+# background + decorate + a non-empty term), and search terms are OPTIONAL
+# for the TERM_OPTIONAL_TYPES (a bare hold/background line needs none).
+STAMP_SOURCE_TYPES: tuple[str, ...] = ("stock", "wikipedia", "ai_stock")
 TERM_OPTIONAL_TYPES: tuple[str, ...] = ("hold_previous", "background")
-STAMPS_CACHE_DIR: Path = Path(f"{_CACHE_DIR}/stamp_fetch")
-STAMP_FETCH_COUNT: int = 6           # pictures offered per stamp term
 
 # --- LIVE VIDEO DECORATE (decorations layered over PLAYING footage) --------
 # When a stock VIDEO scene is followed by hold_previous scenes and ANY member

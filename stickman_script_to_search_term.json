@@ -11,7 +11,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "you probably have a jar of nutmeg.": {
     "search_term": "jar of nutmeg",
@@ -27,7 +28,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": "stock"
+    "stamp_source": "stock",
+    "stamp_decorate": true
   },
   "It costs about": {
     "search_term": "one dollar coin",
@@ -41,7 +43,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "two dollars": {
     "search_term": "add a second one dollar coin",
@@ -55,7 +58,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "But in the 1600s, this little wrinkled seed was the": {
     "search_term": "whole nutmeg seeds wrinkled",
@@ -69,7 +73,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 15,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "single most contested resource on the planet.": {
     "search_term": "whole nutmeg seeds wrinkled",
@@ -85,7 +90,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": "stock"
+    "stamp_source": "stock",
+    "stamp_decorate": false
   },
   "It was worth more than its weight in gold.": {
     "search_term": "gold bar",
@@ -99,7 +105,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "Nutmeg only grew in one place on Earth:": {
     "search_term": "antique world map",
@@ -113,7 +120,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "The Banda Islands. A tiny, incredibly remote volcanic archipelago": {
     "search_term": "Banda Islands Indonesia aerial volcanic",
@@ -127,7 +135,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "in modern-day Indonesia.": {
     "search_term": "Indonesia",
@@ -141,7 +150,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "If you were a European merchant, getting it meant": {
     "search_term": "old European merchant ship painting",
@@ -157,7 +167,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": "stock"
+    "stamp_source": "stock",
+    "stamp_decorate": false
   },
   "sailing for months, surviving": {
     "search_term": "tall ship sailing ocean storm",
@@ -171,7 +182,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "scurvy,": {
     "search_term": "scurvy sailor historical painting",
@@ -187,7 +199,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "pirates and": {
     "search_term": "pirate flag jolly roger",
@@ -203,7 +216,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "shipwrecks. But if you made it back with a": {
     "search_term": "shipwreck ocean rocks",
@@ -219,7 +233,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "single ship full of nutmeg,": {
     "search_term": "single tall ship ocean treasure",
@@ -235,7 +250,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "you were set for life.": {
     "search_term": "single tall ship ocean treasure",
@@ -249,7 +265,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "The Dutch and the British fought bloody, brutal wars over these tiny islands.": {
     "search_term": "Anglo Dutch naval battle painting",
@@ -263,7 +280,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "In fact, to secure a monopoly on nutmeg, the Dutch formally traded a different island they owned to the British. That island was ": {
     "search_term": "antique treaty parchment signing",
@@ -277,7 +295,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "Manhattan. Yep... New York City was": {
     "search_term": "Manhattan New York City skyline",
@@ -291,7 +310,8 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "traded for nutmeg.": {
     "search_term": "TRADED FOR NUTMEG!",
@@ -307,6 +327,7 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [],
-    "stamp_source": "stock"
+    "stamp_source": "stock",
+    "stamp_decorate": false
   }
 }

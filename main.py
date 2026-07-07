@@ -76,7 +76,11 @@ from ___visuals.DOWNLOADS import load_stock_footage
 from ___visuals.KEN_BURNS import apply_ken_burns_to_final_data
 from ___visuals.ADD_RELEVANT_OVERLAYS import apply_relevant_overlays_to_final_data
 from ___visuals.COLLAGE_STAGE import run_collage_stage
-from ___visuals.DECORATE_STAGE import run_decorate_stage
+from ___visuals.DECORATE_STAGE import (
+    restore_stamp_rows_after_review,
+    run_decorate_stage,
+    swap_stamp_rows_for_review,
+)
 from ___visuals.PIXELLATE_STAGE import pixellate_candidate_bundles
 from ___visuals.SCENE_GENERATORS import (
     generate_stickman_explain_scenes,
@@ -226,9 +230,27 @@ def main() -> None:
     print("====================================================================")
     print("Loading stock footage candidates...")
 
+    # Stamp scenes (hold/background + decorate + term + stamp_source) join
+    # the NORMAL fetch + review as their source type — swapped in memory
+    # here, swapped back (picks stashed as stamps) right after the review.
+    swap_stamp_rows_for_review(scriptTextToPexelSearch)
+
     candidates_data = load_from_cache(CANDIDATES_CACHE_FILE)
     if candidates_data:
         print(f"✅ Loaded {len(candidates_data)} candidate bundle(s) from cache.")
+        # Top-up: stamp scenes enabled AFTER this cache was built have no
+        # bundle yet — fetch just those and extend the cache.
+        _have = {c["script_text"] for c in candidates_data}
+        _missing = {t: r for t, r in scriptTextToPexelSearch.items()
+                    if "_stamp_orig_type" in r and t not in _have}
+        if _missing:
+            print(f"🔍 Fetching candidates for {len(_missing)} stamp "
+                  f"scene(s) missing from the cache...")
+            candidates_data.extend(load_stock_footage(_missing))
+            _sm = generate_stickman_candidates(_missing)
+            if _sm:
+                candidates_data.extend(_sm)
+            save_to_cache(candidates_data, CANDIDATES_CACHE_FILE)
     else:
         print("🔍 Cache miss. Fetching candidates...")
 
@@ -350,6 +372,11 @@ def main() -> None:
     if has_manual:
         print("\n[main] Exiting so you can perform the manual fixes above.")
         sys.exit(0)
+
+    # Stamp scenes: real media types back, review PICKS stashed as the
+    # stamps waiting in the decorate editor (their entries leave final_data
+    # — those picks were stamp choices, not scene footage).
+    restore_stamp_rows_after_review(scriptTextToPexelSearch, final_data)
 
     # 2.55) ai_edit scenes — generated + reviewed ONE AT A TIME, in script
     #       order, so chains of consecutive ai_edits work to any depth (each

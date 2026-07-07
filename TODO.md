@@ -1,14 +1,8 @@
 
 
 Ideas:
-
-
-
-
 - timeline for dates (maybe make this animated?)
     - e.g. In 64 AD...
-
-
 - extend previous
     - take the previous, put it side by side with a second image. 
     e.g. Rome was not built in a day || but in burned in six
@@ -40,6 +34,10 @@ find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/out
 
 tell me where to add stuff in an idiot proof way. before and after....
 
+
+
+
+
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
@@ -56,6 +54,12 @@ TODO THEN THEN:
     - ==> Ideally I want to mark where is is on the map... If it's a country, show world map, if it's a county/town/city, show national map... Etc. and have a marker of the place I'm after...
     - (if it can't be done automatically, ask user to click where it should go, then add a pin and then text of what the place is called...) 
 
+
+
+---------------
+- Make it so you can rotate text in OUR paint thing
+- Add the stamp thing back - for like 'traded for nutmeg!' etc?
+- 
 
 
 ========================================================================

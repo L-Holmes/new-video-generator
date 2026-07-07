@@ -63,7 +63,7 @@ try:    # new names — re-export them from MEDIA_TYPES.py (one line) to keep
         # this in sync with CONFIG; the fallback mirrors CONFIG's defaults.
     from MEDIA_TYPES import STAMP_SOURCE_TYPES, TERM_OPTIONAL_TYPES
 except ImportError:
-    STAMP_SOURCE_TYPES = ("stock", "wikipedia")
+    STAMP_SOURCE_TYPES = ("stock", "wikipedia", "ai_stock")
     TERM_OPTIONAL_TYPES = ("hold_previous", "background")
 
 HERE = Path(__file__).resolve().parent
@@ -243,15 +243,17 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
         return ("stamp source must be one of "
                 + ", ".join(STAMP_SOURCE_TYPES).replace("_", " "))
     for key in {"media_type", "modifiers", "search_term",
-                "stamp_source"} & set(patch):
+                "stamp_source", "stamp_decorate"} & set(patch):
         row[key] = patch[key]
-    # stamp_source only means something on hold_previous + decorate + a
-    # non-empty term — clear it the moment the combo breaks so a stale
-    # choice can never linger in the json.
-    if (row.get("media_type") != "hold_previous"
+    row["stamp_decorate"] = bool(row.get("stamp_decorate", False))
+    # stamp settings only mean something on hold_previous/background +
+    # decorate + a non-empty term — clear them the moment the combo breaks
+    # so a stale choice can never linger in the json.
+    if (row.get("media_type") not in TERM_OPTIONAL_TYPES
             or "decorate" not in (row.get("modifiers") or [])
             or not (row.get("search_term") or "").strip()):
         row["stamp_source"] = None
+        row["stamp_decorate"] = False
     if "modifiers" in patch:
         if "group" in row["modifiers"] and row.get("group_id") is None:
             assign_group_id(data, line)
@@ -631,7 +633,8 @@ async function load(keepLine){
 function baseOf(n){return D.catalog.bases.find(b=>b.name===n);}
 function stampNeeded(L,term){
  term=term===undefined?(L.row.search_term||''):term;
- return L.row.media_type==='hold_previous'
+ const b=baseOf(L.row.media_type);
+ return !!(b&&b.term_optional)
   &&(L.row.modifiers||[]).includes('decorate')&&!!term.trim();}
 function lineDone(L){
  if(!L.row.media_type)return false;
@@ -903,14 +906,19 @@ function renderStamp(L){
  const card=$('#stampcard'); const need=stampNeeded(L);
  card.style.display=need?'block':'none';
  if(!need)return;
+ const deco=L.row.stamp_decorate?' on':'';
  $('#stamppanel').innerHTML=D.catalog.bases.filter(b=>b.stampable).map(b=>{
   const on=L.row.stamp_source===b.name?' on':'';
   return `<button class="tpl${on}" style="background:${b.color}" onclick="pickStamp('${b.name}')">`+
-    `<span>${b.label}</span><i class="info" data-info="${b.name}">i</i></button>`;}).join('');
+    `<span>${b.label}</span><i class="info" data-info="${b.name}">i</i></button>`;}).join('')
+  +`<button class="tpl${deco}" style="background:#7a4a8a" onclick="toggleStampDeco()">`+
+   `<span>✎ decorate the pick first</span><i class="info" data-info="_stampdeco">i</i></button>`;
  hookInfos($('#stamppanel'));
 }
 async function pickStamp(name){const L=D.lines[sel];
  await post('/save',{line:L.line,patch:{stamp_source:name}},L.line);}
+async function toggleStampDeco(){const L=D.lines[sel];
+ await post('/save',{line:L.line,patch:{stamp_decorate:!L.row.stamp_decorate}},L.line);}
 function renderNext(L){
  const nb=$('#nextbtn');
  if(!lineDone(L)){nb.style.visibility='hidden';return;}
@@ -983,7 +991,8 @@ function cardHTML(name){
  const e=all.find(x=>x.name===name);
  if(name==='_types')return '<div class="nm">media type</div><div class="hint">every line needs exactly one base media type. NEW fetches brand-new material; EDIT PREVIOUS reuses or changes the image already on screen. colours show the family — ai in reds.</div>';
  if(name==='_mods')return '<div class="nm">stack on top</div><div class="hint">optional extras layered onto the base you picked: decorate (draw on it), caption (text on it), group (this line is one cell of a multi-cell group with its neighbours — rule of n).</div>';
- if(name==='_stamp')return '<div class="nm">stamp pictures from</div><div class="hint">hold previous + decorate + a search term: the term describes what to STAMP onto the held image ("jar of nutmeg"), and these pictures wait ready in the editor\'s STAMP tab (which opens first). pick where they are fetched from.</div>';
+ if(name==='_stamp')return '<div class="nm">stamp pictures from</div><div class="hint">hold previous/background + decorate + a search term: the term describes what to STAMP ("jar of nutmeg"). the scene joins the NORMAL candidates review as this type — you click the picture you want there, and it waits ready (and active) in the decorate editor\'s STAMP tab.</div>';
+ if(name==='_stampdeco')return '<div class="nm">decorate the pick first</div><div class="hint">after you click your pick in the review, it opens in the decorator ON ITS OWN first — cut it out, remove its background, clean it up — BEFORE it\'s offered as a stamp.</div>';
  if(!e)return '';
  return `<div class="icard"><img src="/example/${e.name}" onerror="this.src='${PLACEHOLDER}'">`+
    `<div><div class="nm">${e.label||e.name}</div><div class="hint">${esc(e.info)}</div></div></div>`;

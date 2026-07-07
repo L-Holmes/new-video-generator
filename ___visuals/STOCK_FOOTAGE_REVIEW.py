@@ -32,17 +32,12 @@ image in KolourPaint for touch-ups, with a control bar offering:
                          then advances to the next review item.
     • Exit             → discards the edit and returns to the five options.
 
-KolourPaint is embedded directly in the window via X11 reparenting (needs
-`xdotool`). On sessions where reparenting isn't possible (or `xdotool` is
-missing) it falls back to opening KolourPaint as a separate window while the
-Save & Continue / Exit controls stay in this window.
-
-Requirements for edit mode (Debian/Ubuntu):
-    sudo apt install kolourpaint   # the editor itself (required)
-    sudo apt install xdotool       # only needed to EMBED it in the window
-
-If KolourPaint isn't installed, edit mode refuses to turn on and tells you how
-to install it. Videos can't be edited (KolourPaint is an image editor).
+Edit mode opens the pipeline's OWN decorate editor (draw / stamp / zoom /
+object — ___visuals/decorator/) in its own window while this one hides:
+press FINISH there to save the edit as this scene's pick, or close the
+editor window to cancel. No external programs are needed any more
+(KolourPaint/xdotool are obsolete for this; the old embedding helpers
+remain below, unused). Videos can't be edited (it's an image editor).
 
 Multi-clip scenes
 -----------------
@@ -858,26 +853,10 @@ class _MediaReviewer:
             return
 
         if not self._edit_mode:
-            # Turning ON requires KolourPaint to be installed.
-            if not _have_cmd("kolourpaint"):
-                messagebox.showerror(
-                    "KolourPaint not found",
-                    "Edit mode needs KolourPaint, which doesn't appear to be "
-                    "installed.\n\nInstall it with:\n\n"
-                    "    sudo apt install kolourpaint\n\n"
-                    "Then press E again. (Your review progress is safe.)",
-                )
-                self.status_var.set("KolourPaint isn't installed — see the dialog.")
-                return
             self._edit_mode = True
             self._remove_bg_mode = False        # the two modes are exclusive
-            if not _have_cmd("xdotool"):
-                self.status_var.set(
-                    "Edit mode ON — note: install 'xdotool' "
-                    "(sudo apt install xdotool) to embed KolourPaint in this window."
-                )
-            else:
-                self.status_var.set("Edit mode ON — pick an image to edit it.")
+            self.status_var.set("Edit mode ON — pick an image to open it in "
+                                "the decorate editor.")
         else:
             self._edit_mode = False
             self.status_var.set("")
@@ -1201,15 +1180,18 @@ class _MediaReviewer:
     def _open_editor(self, original_url: str, trim: float, source_local: str,
                      preserve_alpha: bool = False):
         """
-        Make a PNG working copy of the chosen image and open it in KolourPaint
-        inside an overlay with Save & Continue / Exit controls.
+        Make a PNG working copy of the chosen image and open it in OUR OWN
+        decorate editor (draw / stamp / zoom / object) instead of
+        KolourPaint. It runs as a separate process (its own Tk root +
+        mainloop must not nest inside this GUI's) while this window hides;
+        FINISH in the editor saves and the result becomes this scene's
+        pick, closing the editor window cancels.
 
-        Normally we flatten onto white (RGBA→RGB) so Ctrl+S never triggers a
-        lossy-format dialog. When `preserve_alpha` is True (editing a
-        background-removed cut-out) we keep RGBA instead, so the transparency
-        survives the touch-up — KolourPaint edits + saves PNG-with-alpha
-        without a format prompt either way. The original candidate file is
-        left untouched.
+        Normally we flatten onto white (RGBA→RGB) so the editor starts from
+        what the frame will show. When `preserve_alpha` is True (editing a
+        background-removed cut-out) we keep RGBA — note the decorator
+        flattens transparency at FINISH; its object tab can re-cut. The
+        original candidate file is left untouched.
         """
         self._stop_all_videos()
 
@@ -1234,13 +1216,45 @@ class _MediaReviewer:
             self._advancing = False
             return
 
-        self._edit_original_url = original_url
-        self._edit_trim         = float(trim)
-        self._edit_path         = str(edited)
+        self._edit_mode = False
+        out = src.parent / f"edited-{uuid4().hex[:10]}-deco.png"
+        api = Path(__file__).resolve().parent / "decorator" / "api.py"
+        self.status_var.set("Decorate editor open in its own window — "
+                            "FINISH saves, closing cancels…")
+        self.root.update_idletasks()
+        try:
+            self.root.withdraw()                  # get out of the editor's way
+            subprocess.run([sys.executable, str(api), str(edited),
+                            "--out", str(out)], check=False)
+        finally:
+            try:
+                self.root.deiconify()
+                self.root.lift()
+            except tk.TclError:
+                pass
+        Path(edited).unlink(missing_ok=True)      # the working copy
 
-        self._build_editor_overlay(edited.name)
-        self.root.update_idletasks()  # realise geometry before reading size/id
-        self._launch_and_embed_kolourpaint(str(edited))
+        result = None
+        if out.exists() and out.stat().st_size > 0:
+            result = str(out)
+        else:                                     # armed animated object export
+            vid = out.with_suffix(".mp4")
+            if vid.exists() and vid.stat().st_size > 0:
+                result = str(vid)
+
+        self._apply_edit_mode_visuals()
+        if not result:
+            self.status_var.set("Edit cancelled / no changes — "
+                                "choose an option.")
+            self._advancing = False
+            self._load_current()
+            return
+
+        # Resolve this local file for the rest of the session. (Downstream
+        # resolves local paths by existence, so no history.json write needed.)
+        self.history[result] = result
+        self._commit_choice(result, float(trim),
+                            block_urls={original_url} if original_url else set())
 
     def _build_editor_overlay(self, filename: str):
         """Overlay covering the whole window: control bar + embed area."""

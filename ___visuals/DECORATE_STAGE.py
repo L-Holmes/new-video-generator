@@ -76,23 +76,134 @@ def _scene_base_image(entry: dict, out_dir: Path, stem: str) -> str | None:
     return extract_frame(local, frame)
 
 
+def swap_stamp_rows_for_review(
+    script_to_search_term: dict[str, SearchTermData],
+) -> int:
+    """Called by main() BEFORE the candidates fetch: every row with a
+    stamp_source (hold_previous/background + decorate + a term) temporarily
+    BECOMES that media type, so the ordinary machinery fetches and reviews
+    its stamp candidates exactly like any stock / wikipedia / ai_stock
+    scene — no special cases anywhere in the fetch or the review. The
+    original type is kept on the row and put back (with the picks stashed
+    as stamps) by restore_stamp_rows_after_review(). In-memory only — the
+    tagging json is never touched. Returns the number of rows swapped."""
+    from ___visuals.CONFIG import MediaType, scene_stamp_source
+
+    n = 0
+    for text, row in script_to_search_term.items():
+        src = scene_stamp_source(row)
+        if not src or "_stamp_orig_type" in row:
+            continue
+        row["_stamp_orig_type"] = row["media_type"]
+        row["media_type"] = MediaType(src)
+        n += 1
+        print(f"[stamps] '{text[:50]}' reviews as {src} "
+              f"(stamp: '{(row.get('search_term') or '')[:40]}')")
+    if n:
+        print(f"[stamps] {n} stamp scene(s) join the normal fetch + review")
+    return n
+
+
+def restore_stamp_rows_after_review(
+    script_to_search_term: dict[str, SearchTermData],
+    final_data: list[dict],
+) -> None:
+    """Called by main() AFTER the stage-1 review: puts every swapped row's
+    real media type back and moves its review PICKS out of final_data into
+    row['stamp_paths'] (resolved to local files; a picked video contributes
+    its first frame). The scene's entry is REMOVED from final_data — the
+    picks were stamp choices, not scene footage; the hold/background stages
+    decide the scene's own picture exactly as before."""
+    from ___visuals.CACHE_IO import _classify_footage_path
+
+    swapped = [t for t, r in script_to_search_term.items()
+               if "_stamp_orig_type" in r]
+    if not swapped:
+        return
+    by = {e["script_text"]: e for e in final_data}
+    for text in swapped:
+        row = script_to_search_term[text]
+        row["media_type"] = row.pop("_stamp_orig_type")
+        entry = by.get(text)
+        picks = [k for item in (entry or {}).get("footage") or []
+                 for k in item]
+        paths: list[str] = []
+        for key in picks:
+            local = _resolve_to_local_path(key)
+            if not local:
+                print(f"[stamps] WARNING: pick unresolved for "
+                      f"'{text[:45]}': {str(key)[:60]}")
+                continue
+            if _classify_footage_path(local) == "video":
+                from ___visuals.MANUAL_STOCK_PLACEMENT import extract_frame
+                import hashlib
+                DECORATE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+                frame = str(DECORATE_OUTPUT_DIR / (
+                    "stampfrm_"
+                    + hashlib.md5(local.encode()).hexdigest()[:10] + ".png"))
+                try:
+                    extract_frame(local, frame)
+                    local = frame
+                except Exception as exc:
+                    print(f"[stamps] WARNING: frame extract failed "
+                          f"({exc}) — skipping that pick")
+                    continue
+            paths.append(local)
+        row["stamp_paths"] = paths
+        if entry is not None:
+            final_data.remove(entry)   # stamp picks, not scene footage
+        state = f"{len(paths)} stamp(s) ready" if paths \
+            else "NO stamps (was it reviewed?)"
+        print(f"[stamps] '{text[:50]}' → {state}")
+
+
+def _decorate_stamp(path: str) -> str:
+    """stamp_decorate: open the picked stamp itself in the FULL decorator
+    (draw / stamp / zoom / object — cut it out, clean it up) BEFORE it's
+    offered in the scene's stamp tab. The result caches per source image;
+    delete the cached file to redo it."""
+    import hashlib
+    out = DECORATE_OUTPUT_DIR / (
+        "stamp_deco_" + hashlib.md5(str(path).encode()).hexdigest()[:12] + ".png")
+    if out.exists() and out.stat().st_size > 0:
+        print(f"[stamps]   pre-decorated stamp cached: {out.name} "
+              f"(delete it to redo)")
+        return str(out)
+    DECORATE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    result = run_decorator(
+        base_image_path=str(path), out_path=str(out),
+        title=f"decorate STAMP: {Path(path).name}")
+    if not result:
+        return str(path)                       # no edits — use it as picked
+    if Path(result).suffix.lower() == ".mp4":  # armed animated object export
+        print("[stamps]   WARNING: the stamp editor exported an ANIMATED "
+              "result — stamps are stills, using its first frame")
+        from ___visuals.MANUAL_STOCK_PLACEMENT import extract_frame
+        frame = str(out.with_suffix(".frame.png"))
+        try:
+            return extract_frame(result, frame)
+        except Exception:
+            return str(path)
+    return result
+
+
 def _stamps_for_row(row: dict) -> list[str]:
-    """Pre-fetched pictures for the editor's stamp tab: rows with a
-    stamp_source use their search_term as the stamp query (STAMP_FETCH,
-    cached). [] when not configured or the fetch fails — the editor's own
-    'pick a file' always remains."""
+    """The pictures for the editor's stamp tab: the user's REVIEW PICKS
+    (stashed on the row by restore_stamp_rows_after_review), each optionally
+    pre-decorated first (stamp_decorate). [] when the row has no stamp
+    source or nothing was picked — the editor's own 'pick a file' always
+    remains."""
     from ___visuals.CONFIG import scene_stamp_source
-    src = scene_stamp_source(row)
-    if not src:
+    if not scene_stamp_source(row):
         return []
-    term = (row.get("search_term") or "").strip()
-    try:
-        from ___visuals.STAMP_FETCH import fetch_stamps
-        return fetch_stamps(term, src)
-    except Exception as exc:
-        print(f"[decorate]   WARNING: stamp fetch failed for '{term[:40]}' "
-              f"({src}): {exc}")
+    stamps = [p for p in (row.get("stamp_paths") or []) if Path(p).exists()]
+    if not stamps:
+        print("[decorate]   WARNING: stamp scene has no reviewed picks — "
+              "the stamp tab starts empty (was the review completed?)")
         return []
+    if row.get("stamp_decorate"):
+        stamps = [_decorate_stamp(p) for p in stamps]
+    return stamps
 
 
 def _ops_from_editor(raw_ops: list, out_dir: Path, stem: str):
