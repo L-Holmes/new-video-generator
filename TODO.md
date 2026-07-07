@@ -11,10 +11,61 @@ Ideas:
 
 
 TODO:
-- when I'm decorating an image...
+- when I'm decorating an image...  (or doing the media stock review and picking form the available options...)
     - and it has a previous image... 
-    - we should get a preview of the previous image and sentence...
-    - so we know what is going on!
+        - i.e. from a json entry like; 
+        "media_type": "hold_previous",
+        "modifiers": [
+          "decorate"
+        ],
+    - we should get a preview of the previous image and sentence... somewhere in the decorate page...  (perhaps in like a thing in the bottom left that expands, showing the previous text and prevoious image)
+
+    e.g. 
+    for the entry;
+    ```
+    "If you open your kitchen cupboard right now,": {
+    "search_term": "kitchen cupboard open",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [],
+    "stamp_source": null,
+    "stamp_decorate": false
+  },
+  "you probably have a jar of nutmeg.": {
+    "search_term": "jar of nutmeg",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "se-pop.mp3",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [],
+    "stamp_source": "stock",
+    "stamp_decorate": true
+  },
+
+    ```
+    when we are doing the decorate for the jar of nutmeg (as indicated by 'stamp decorate' we should see a popup in the bottom left. It should say prevoius entry; "If you open your kitchen cupboard right now," 
+            <the image for that /  a still of the first frame if its a video..)
+
+
+    We should also do this for the media review! So when we're picking from the 5 options for the nutmeg... I should see the kitchen cupboard for the entry before it! (if we don't know what the image is for whatever reason.. just show the text! (obviously not for the very first entry since theres nothing before it!)
+
+    for both the stock footage review and the decorate window... the bottom left popup should have an arrow which will collpase the thing to the left, so that the user can see the full image if need be... then they can click the little translucent arrow again to re-expand it...
+
+
 - colour grading should only affect videos (mp4s) not images!
 - Make it so you can rotate text in OUR paint thing
 - Add the stamp thing back - for like 'traded for nutmeg!' etc?
