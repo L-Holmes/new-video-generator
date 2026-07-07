@@ -14,6 +14,7 @@ from __future__ import annotations
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
+
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import sys
@@ -30,18 +31,18 @@ from ___visuals.CACHE_IO import (
 )
 from ___visuals.CONFIG import (
     _CACHE_DIR,
-    FINAL_SCRIPT_AND_CLIPS,
-    HISTORY_FILE,
     AI_EDIT_CONTEXT_NUM_IMAGES,
     AI_EDIT_NUM_VARIANTS,
     AI_EDIT_OUTPUT_DIR,
-    MediaType,
+    FINAL_SCRIPT_AND_CLIPS,
+    HISTORY_FILE,
     STICKMAN_CONTEXT_NUM_IMAGES,
     STICKMAN_JOINT_NUM_VARIANTS,
     STICKMAN_JOINT_OUTPUT_DIR,
     STICKMAN_NUM_VARIANTS,
     STICKMAN_OUTPUT_DIR,
     STICKMAN_PROMPTS_FILE,
+    MediaType,
     SearchTermData,
     media_props,
     scene_is_grouped,
@@ -49,7 +50,6 @@ from ___visuals.CONFIG import (
 from ___visuals.PIXELLATE_STAGE import _maybe_pixellate_entries
 from ___visuals.STOCK_FOOTAGE_REVIEW import run_media_review
 from ___visuals.TIMING_MERGE import _load_scene_timings
-
 
 # === BEGIN verbatim move from main.py (AI generation) ===
 # ===========================================================================
@@ -203,7 +203,7 @@ def generate_stickman_joint_candidates(
 
     # Lazy import — keeps the fal / dotenv dependency out of runs that don't
     # use any AI-generated scenes.
-    from  ___visuals.ai_generate_stickman_images import generate_stickman_images
+    from ___visuals.ai_generate_stickman_images import generate_stickman_images
 
     STICKMAN_JOINT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -289,7 +289,10 @@ def _regenerate_stickman_joint_scene(
     candidates for the review GUI's 'try again' (R). Same generator + prompt
     engineering as stickman, just the joint type/dir/variant count.
     """
-    from ___visuals.ai_generate_stickman_images import _scene_stem, generate_stickman_images
+    from ___visuals.ai_generate_stickman_images import (
+        _scene_stem,
+        generate_stickman_images,
+    )
 
     stem = _scene_stem(script_text)
     for v in range(STICKMAN_JOINT_NUM_VARIANTS):
@@ -345,7 +348,10 @@ def _regenerate_stickman_scene(
     actually re-renders it (it skips files that already exist); every OTHER
     stickman scene keeps its cached image.
     """
-    from ___visuals.ai_generate_stickman_images import _scene_stem, generate_stickman_images
+    from ___visuals.ai_generate_stickman_images import (
+        _scene_stem,
+        generate_stickman_images,
+    )
 
     stem = _scene_stem(script_text)
     for v in range(STICKMAN_NUM_VARIANTS):
@@ -640,6 +646,7 @@ def run_ai_edit_stage(
             cache_dir=_CACHE_DIR,
             regenerate_fn=_regen_edit,
             regenerable_texts={edit_text},
+            script_to_search_term=script_to_search_term,
         )
 
         if has_manual:
@@ -673,4 +680,3 @@ def run_ai_edit_stage(
 # ===========================================================================
 # GENERATOR: JOINT SCENES
 # ===========================================================================
-

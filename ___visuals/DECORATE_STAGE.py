@@ -34,6 +34,7 @@ from __future__ import annotations
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
+
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import re
@@ -41,19 +42,24 @@ from pathlib import Path
 
 from ___visuals.CACHE_IO import _resolve_to_local_path
 from ___visuals.CONFIG import (
-    IMAGE_EXTENSIONS,
     DECORATE_OUTPUT_DIR,
     DECORATE_RENDER_SAFETY_PAD_SEC,
+    IMAGE_EXTENSIONS,
     SearchTermData,
     scene_wants_caption,
     scene_wants_decorate,
 )
-from ___visuals.TIMING_MERGE import _load_scene_timings
 from ___visuals.decorator import run_decorator
+from ___visuals.PREVIOUS_ENTRY_PREVIEW import (
+    PreviousEntryPreview,
+    build_previous_preview,
+)
+from ___visuals.TIMING_MERGE import _load_scene_timings
 
 
 def _is_image(path: str) -> bool:
     from pathlib import Path as _P
+
     return _P(path).suffix.lower() in IMAGE_EXTENSIONS
 
 
@@ -97,8 +103,10 @@ def swap_stamp_rows_for_review(
         row["_stamp_orig_type"] = row["media_type"]
         row["media_type"] = MediaType(src)
         n += 1
-        print(f"[stamps] '{text[:50]}' reviews as {src} "
-              f"(stamp: '{(row.get('search_term') or '')[:40]}')")
+        print(
+            f"[stamps] '{text[:50]}' reviews as {src} "
+            f"(stamp: '{(row.get('search_term') or '')[:40]}')"
+        )
     if n:
         print(f"[stamps] {n} stamp scene(s) join the normal fetch + review")
     return n
@@ -116,8 +124,7 @@ def restore_stamp_rows_after_review(
     decide the scene's own picture exactly as before."""
     from ___visuals.CACHE_IO import _classify_footage_path
 
-    swapped = [t for t, r in script_to_search_term.items()
-               if "_stamp_orig_type" in r]
+    swapped = [t for t, r in script_to_search_term.items() if "_stamp_orig_type" in r]
     if not swapped:
         return
     by = {e["script_text"]: e for e in final_data}
@@ -125,60 +132,80 @@ def restore_stamp_rows_after_review(
         row = script_to_search_term[text]
         row["media_type"] = row.pop("_stamp_orig_type")
         entry = by.get(text)
-        picks = [k for item in (entry or {}).get("footage") or []
-                 for k in item]
+        picks = [k for item in (entry or {}).get("footage") or [] for k in item]
         paths: list[str] = []
         for key in picks:
             local = _resolve_to_local_path(key)
             if not local:
-                print(f"[stamps] WARNING: pick unresolved for "
-                      f"'{text[:45]}': {str(key)[:60]}")
+                print(
+                    f"[stamps] WARNING: pick unresolved for "
+                    f"'{text[:45]}': {str(key)[:60]}"
+                )
                 continue
             if _classify_footage_path(local) == "video":
-                from ___visuals.MANUAL_STOCK_PLACEMENT import extract_frame
                 import hashlib
+
+                from ___visuals.MANUAL_STOCK_PLACEMENT import extract_frame
+
                 DECORATE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-                frame = str(DECORATE_OUTPUT_DIR / (
-                    "stampfrm_"
-                    + hashlib.md5(local.encode()).hexdigest()[:10] + ".png"))
+                frame = str(
+                    DECORATE_OUTPUT_DIR
+                    / (
+                        "stampfrm_"
+                        + hashlib.md5(local.encode()).hexdigest()[:10]
+                        + ".png"
+                    )
+                )
                 try:
                     extract_frame(local, frame)
                     local = frame
                 except Exception as exc:
-                    print(f"[stamps] WARNING: frame extract failed "
-                          f"({exc}) — skipping that pick")
+                    print(
+                        f"[stamps] WARNING: frame extract failed "
+                        f"({exc}) — skipping that pick"
+                    )
                     continue
             paths.append(local)
         row["stamp_paths"] = paths
         if entry is not None:
-            final_data.remove(entry)   # stamp picks, not scene footage
-        state = f"{len(paths)} stamp(s) ready" if paths \
-            else "NO stamps (was it reviewed?)"
+            final_data.remove(entry)  # stamp picks, not scene footage
+        state = (
+            f"{len(paths)} stamp(s) ready" if paths else "NO stamps (was it reviewed?)"
+        )
         print(f"[stamps] '{text[:50]}' → {state}")
 
 
-def _decorate_stamp(path: str) -> str:
+def _decorate_stamp(
+    path: str, previous_preview: PreviousEntryPreview | None = None
+) -> str:
     """stamp_decorate: open the picked stamp itself in the FULL decorator
     (draw / stamp / zoom / object — cut it out, clean it up) BEFORE it's
     offered in the scene's stamp tab. The result caches per source image;
     delete the cached file to redo it."""
     import hashlib
+
     out = DECORATE_OUTPUT_DIR / (
-        "stamp_deco_" + hashlib.md5(str(path).encode()).hexdigest()[:12] + ".png")
+        "stamp_deco_" + hashlib.md5(str(path).encode()).hexdigest()[:12] + ".png"
+    )
     if out.exists() and out.stat().st_size > 0:
-        print(f"[stamps]   pre-decorated stamp cached: {out.name} "
-              f"(delete it to redo)")
+        print(f"[stamps]   pre-decorated stamp cached: {out.name} (delete it to redo)")
         return str(out)
     DECORATE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     result = run_decorator(
-        base_image_path=str(path), out_path=str(out),
-        title=f"decorate STAMP: {Path(path).name}")
+        base_image_path=str(path),
+        out_path=str(out),
+        title=f"decorate STAMP: {Path(path).name}",
+        previous_preview=previous_preview,
+    )
     if not result:
-        return str(path)                       # no edits — use it as picked
+        return str(path)  # no edits — use it as picked
     if Path(result).suffix.lower() == ".mp4":  # armed animated object export
-        print("[stamps]   WARNING: the stamp editor exported an ANIMATED "
-              "result — stamps are stills, using its first frame")
+        print(
+            "[stamps]   WARNING: the stamp editor exported an ANIMATED "
+            "result — stamps are stills, using its first frame"
+        )
         from ___visuals.MANUAL_STOCK_PLACEMENT import extract_frame
+
         frame = str(out.with_suffix(".frame.png"))
         try:
             return extract_frame(result, frame)
@@ -187,35 +214,58 @@ def _decorate_stamp(path: str) -> str:
     return result
 
 
-def _stamps_for_row(row: dict) -> list[str]:
+def _stamps_for_row(
+    row: dict,
+    previous_preview: PreviousEntryPreview | None = None,
+) -> list[str]:
     """The pictures for the editor's stamp tab: the user's REVIEW PICKS
     (stashed on the row by restore_stamp_rows_after_review), each optionally
     pre-decorated first (stamp_decorate). [] when the row has no stamp
     source or nothing was picked — the editor's own 'pick a file' always
     remains."""
     from ___visuals.CONFIG import scene_stamp_source
+
     if not scene_stamp_source(row):
         return []
     stamps = [p for p in (row.get("stamp_paths") or []) if Path(p).exists()]
     if not stamps:
-        print("[decorate]   WARNING: stamp scene has no reviewed picks — "
-              "the stamp tab starts empty (was the review completed?)")
+        print(
+            "[decorate]   WARNING: stamp scene has no reviewed picks — "
+            "the stamp tab starts empty (was the review completed?)"
+        )
         return []
     if row.get("stamp_decorate"):
-        stamps = [_decorate_stamp(p) for p in stamps]
+        stamps = [_decorate_stamp(p, previous_preview) for p in stamps]
     return stamps
+
+
+def _previous_preview_for_scene(
+    text: str,
+    script_to_search_term: dict[str, SearchTermData],
+    final_data: list[dict],
+    stem: str,
+    fallback_image_path: str | None = None,
+) -> PreviousEntryPreview | None:
+    return build_previous_preview(
+        text,
+        script_to_search_term,
+        final_data=final_data,
+        frame_dir=DECORATE_OUTPUT_DIR,
+        frame_stem=f"{stem}_previous",
+        fallback_image_path=fallback_image_path,
+    )
 
 
 def _ops_from_editor(raw_ops: list, out_dir: Path, stem: str):
     """Turn the editor's raw ops recipe ([("layer", items) | ("zoom", box)])
     into burn-ready ops: each layer's sprites + highlight mask rendered to
     PNGs (DecoLayer), zooms passed through. Empty layers are dropped."""
-    from ___visuals.VIDEO_CHAINS import FRAME_H, FRAME_W, DecoLayer
     from ___visuals.decorator.draw import (
         HighlightDeco,
         render_highlight_mask,
         render_overlay_layer,
     )
+    from ___visuals.VIDEO_CHAINS import FRAME_H, FRAME_W, DecoLayer
 
     ops = []
     for oi, (kind, payload) in enumerate(raw_ops or []):
@@ -226,20 +276,21 @@ def _ops_from_editor(raw_ops: list, out_dir: Path, stem: str):
         layer = DecoLayer()
         layer.highlights = [it for it in items if isinstance(it, HighlightDeco)]
         layer.sprites_png = render_overlay_layer(
-            items, (FRAME_W, FRAME_H),
-            str(out_dir / f"{stem}_l{oi}_sprites.png"))
+            items, (FRAME_W, FRAME_H), str(out_dir / f"{stem}_l{oi}_sprites.png")
+        )
         layer.highlight_mask = render_highlight_mask(
-            items, (FRAME_W, FRAME_H),
-            str(out_dir / f"{stem}_l{oi}_hlmask.png"))
+            items, (FRAME_W, FRAME_H), str(out_dir / f"{stem}_l{oi}_hlmask.png")
+        )
         if not layer.empty:
             ops.append(("layer", layer))
     return ops
 
 
 def _run_video_chain(
-    chain,                       # VIDEO_CHAINS.VideoChain
+    chain,  # VIDEO_CHAINS.VideoChain
     chain_idx: int,
     script_to_search_term: dict[str, SearchTermData],
+    final_data: list[dict],
     final_by_text: dict[str, dict],
     path_remap: dict[str, str],
 ) -> int:
@@ -261,6 +312,7 @@ def _run_video_chain(
          carries everything drawn (and any zoom) before it.
 
     Returns the number of scenes whose footage changed."""
+    from ___visuals.decorator.api import run_overlay_decorator
     from ___visuals.MAKE_TEXT_OVERLAY import make_caption_layer
     from ___visuals.VIDEO_CHAINS import (
         DecoLayer,
@@ -270,9 +322,8 @@ def _run_video_chain(
         cut_continuing_segment,
         extract_frame_normalised,
     )
-    from ___visuals.decorator.api import run_overlay_decorator
 
-    ops: list = []                    # accumulated down the chain
+    ops: list = []  # accumulated down the chain
     changed = 0
     total = len(chain.members)
 
@@ -280,8 +331,10 @@ def _run_video_chain(
         row = script_to_search_term.get(m.text, {})
         entry = final_by_text.get(m.text)
         stem = f"chain_{chain_idx:03d}_{k:02d}_{_safe_stem(m.text)}"
-        print(f"\n[decorate] [chain {chain_idx + 1} · {k + 1}/{total}] "
-              f"'{m.text[:55]}'  (source @ {m.offset:.2f}s)")
+        print(
+            f"\n[decorate] [chain {chain_idx + 1} · {k + 1}/{total}] "
+            f"'{m.text[:55]}'  (source @ {m.offset:.2f}s)"
+        )
 
         if not entry or not entry.get("footage"):
             print(f"[decorate]   WARNING: no footage entry — skipping")
@@ -297,9 +350,19 @@ def _run_video_chain(
             extract_frame_normalised(chain.source, m.offset, frame)
             if ops:
                 composite_ops_for_preview(frame, ops, frame)
+            previous_preview = _previous_preview_for_scene(
+                m.text,
+                script_to_search_term,
+                final_data,
+                stem,
+                fallback_image_path=frame,
+            )
             raw = run_overlay_decorator(
-                frame, stamps=_stamps_for_row(row),
-                title=f"decorate (LIVE video): {m.text[:40]}")
+                frame,
+                stamps=_stamps_for_row(row, previous_preview),
+                title=f"decorate (LIVE video): {m.text[:40]}",
+                previous_preview=previous_preview,
+            )
             ops.extend(_ops_from_editor(raw, DECORATE_OUTPUT_DIR, stem))
 
         # 2) the AUTOMATIC caption — as a transparent layer here, so it sits
@@ -308,13 +371,15 @@ def _run_video_chain(
         if m.wants_caption:
             text = (row.get("caption_text") or row.get("search_term") or "").strip()
             if not text:
-                print(f"[decorate]   WARNING: caption has no text "
-                      f"(caption_text/search_term empty) — skipping it")
+                print(
+                    f"[decorate]   WARNING: caption has no text "
+                    f"(caption_text/search_term empty) — skipping it"
+                )
             else:
                 cap = DecoLayer()
                 cap.caption_png = make_caption_layer(
-                    text, str(DECORATE_OUTPUT_DIR / f"{stem}_caption.png"),
-                    seed=m.text)
+                    text, str(DECORATE_OUTPUT_DIR / f"{stem}_caption.png"), seed=m.text
+                )
                 ops.append(("layer", cap))
                 print(f"[decorate]   auto caption (layer): '{text[:40]}'")
 
@@ -329,15 +394,17 @@ def _run_video_chain(
             seg = str(DECORATE_OUTPUT_DIR / f"{stem}_seg.mp4")
             try:
                 cut_continuing_segment(chain.source, 0.0, m.duration, seg)
-            except SourceExhausted as exc:   # can't happen at offset 0, but…
+            except SourceExhausted as exc:  # can't happen at offset 0, but…
                 print(f"[decorate]   WARNING: {exc} — leaving as-is")
                 continue
         else:
             key = next(iter(entry["footage"][0]))
             seg = _resolve_to_local_path(key)
             if not seg:
-                print(f"[decorate]   WARNING: segment unresolved "
-                      f"({key[:60]}) — leaving as-is")
+                print(
+                    f"[decorate]   WARNING: segment unresolved "
+                    f"({key[:60]}) — leaving as-is"
+                )
                 continue
 
         mp4 = str(DECORATE_OUTPUT_DIR / f"{stem}.mp4")
@@ -346,8 +413,10 @@ def _run_video_chain(
         entry["footage"] = [{mp4: round(float(m.duration), 3)}]
         path_remap[old_key] = mp4
         changed += 1
-        print(f"[decorate]   ✓ {Path(mp4).name} "
-              f"({len(ops)} op(s), trim {round(float(m.duration), 3)}s)")
+        print(
+            f"[decorate]   ✓ {Path(mp4).name} "
+            f"({len(ops)} op(s), trim {round(float(m.duration), 3)}s)"
+        )
 
     return changed
 
@@ -362,28 +431,41 @@ def run_decorate_stage(
     print("[decorate] decorate (editor) + caption (automatic) scenes")
     print("=" * 70)
 
-    from ___visuals.VIDEO_CHAINS import detect_video_chains
-
     scene_timings = _load_scene_timings()
     final_by_text = {e["script_text"]: e for e in final_data}
 
-    # LIVE chains: video anchor + hold run where someone decorates → the
-    # source keeps playing and decorations are LAYERS over the moving
-    # footage (accumulating). Their members are handled by _run_video_chain
-    # (decorate, caption and all) and excluded from the still loop below —
-    # the same detection STATIC_RENDER used to cut the continuing segments.
-    chains = detect_video_chains(script_to_search_term, final_data,
-                                 scene_timings)
+    wanting_all = [
+        txt
+        for txt, row in script_to_search_term.items()
+        if scene_wants_decorate(row) or scene_wants_caption(row)
+    ]
+    if not wanting_all:
+        print("[decorate] no decorate/caption scenes — skipping")
+        return final_data, {}
+
+    chains = []
+    if any(scene_wants_decorate(row) for row in script_to_search_term.values()):
+        try:
+            from ___visuals.VIDEO_CHAINS import detect_video_chains
+        except ImportError as exc:
+            print(
+                f"[decorate] WARNING: live video chain detection unavailable "
+                f"({exc}) — using still decorate path"
+            )
+        else:
+            # LIVE chains: video anchor + hold run where someone decorates → the
+            # source keeps playing and decorations are LAYERS over the moving
+            # footage (accumulating). Their members are handled by _run_video_chain
+            # (decorate, caption and all) and excluded from the still loop below —
+            # the same detection STATIC_RENDER used to cut the continuing segments.
+            chains = detect_video_chains(
+                script_to_search_term, final_data, scene_timings
+            )
     chain_texts: set[str] = set()
     for _c in chains:
         chain_texts |= _c.member_texts
 
-    wanting = [txt for txt, row in script_to_search_term.items()
-               if (scene_wants_decorate(row) or scene_wants_caption(row))
-               and txt not in chain_texts]
-    if not wanting and not chains:
-        print("[decorate] no decorate/caption scenes — skipping")
-        return final_data, {}
+    wanting = [txt for txt in wanting_all if txt not in chain_texts]
 
     from ___visuals.STATIC_RENDER import _render_image_to_static_mp4  # lazy
 
@@ -391,11 +473,19 @@ def run_decorate_stage(
     path_remap: dict[str, str] = {}
 
     if chains:
-        print(f"\n[decorate] {len(chains)} LIVE video chain(s) — the footage "
-              f"keeps playing; decorations become layers")
+        print(
+            f"\n[decorate] {len(chains)} LIVE video chain(s) — the footage "
+            f"keeps playing; decorations become layers"
+        )
         for chain_idx, chain in enumerate(chains):
-            _run_video_chain(chain, chain_idx, script_to_search_term,
-                             final_by_text, path_remap)
+            _run_video_chain(
+                chain,
+                chain_idx,
+                script_to_search_term,
+                final_data,
+                final_by_text,
+                path_remap,
+            )
 
     for idx, txt in enumerate(wanting):
         row = script_to_search_term[txt]
@@ -403,13 +493,16 @@ def run_decorate_stage(
         stem = f"decorate_{idx:03d}_{_safe_stem(txt)}"
         base = _scene_base_image(entry, DECORATE_OUTPUT_DIR, stem)
         if not base:
-            print(f"[decorate] WARNING: no resolved footage for '{txt[:60]}' "
-                  f"— leaving as-is")
+            print(
+                f"[decorate] WARNING: no resolved footage for '{txt[:60]}' "
+                f"— leaving as-is"
+            )
             continue
         duration = float(scene_timings.get(txt, 0.0))
         if duration <= 0:
-            print(f"[decorate] WARNING: no/zero timing for '{txt[:60]}' "
-                  f"— leaving as-is")
+            print(
+                f"[decorate] WARNING: no/zero timing for '{txt[:60]}' — leaving as-is"
+            )
             continue
 
         print(f"\n[decorate] [{idx + 1}/{len(wanting)}] '{txt[:60]}'")
@@ -420,11 +513,19 @@ def run_decorate_stage(
         #    The stamp tab is pre-loaded (and opens active) when the row has
         #    a stamp_source — its search_term fetched via STAMP_FETCH.
         if scene_wants_decorate(row):
+            previous_preview = _previous_preview_for_scene(
+                txt,
+                script_to_search_term,
+                final_data,
+                stem,
+                fallback_image_path=current,
+            )
             edited = run_decorator(
                 base_image_path=current,
                 out_path=str(DECORATE_OUTPUT_DIR / f"{stem}.png"),
-                stamps=_stamps_for_row(row),
+                stamps=_stamps_for_row(row, previous_preview),
                 title=f"decorate: {txt[:40]}",
+                previous_preview=previous_preview,
             )
             if edited:
                 current = edited
@@ -436,10 +537,13 @@ def run_decorate_stage(
         if scene_wants_caption(row):
             text = (row.get("caption_text") or row.get("search_term") or "").strip()
             if not text:
-                print(f"[decorate] WARNING: caption on '{txt[:50]}' has no "
-                      f"text (caption_text/search_term empty) — skipping it")
+                print(
+                    f"[decorate] WARNING: caption on '{txt[:50]}' has no "
+                    f"text (caption_text/search_term empty) — skipping it"
+                )
             else:
                 from ___visuals.MAKE_TEXT_OVERLAY import make_text_overlay
+
                 cap_png = str(DECORATE_OUTPUT_DIR / f"{stem}_caption.png")
                 make_text_overlay(current, text, cap_png, seed=txt)
                 current = cap_png
@@ -459,10 +563,12 @@ def run_decorate_stage(
             # shutil.SameFileError.
             if Path(edited).resolve() != Path(mp4).resolve():
                 import shutil
+
                 shutil.copy2(edited, mp4)
         else:
             _render_image_to_static_mp4(
-                edited, duration + DECORATE_RENDER_SAFETY_PAD_SEC, mp4)
+                edited, duration + DECORATE_RENDER_SAFETY_PAD_SEC, mp4
+            )
         old_key = next(iter(entry["footage"][0]))
         entry["footage"] = [{mp4: round(duration, 3)}]
         path_remap[old_key] = mp4

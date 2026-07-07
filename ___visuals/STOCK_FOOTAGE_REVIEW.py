@@ -77,11 +77,12 @@ from __future__ import annotations
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
+
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
+import gc
 import json
 import os
-import gc
 import queue
 import shutil
 import subprocess
@@ -95,6 +96,10 @@ from uuid import uuid4
 
 from PIL import Image, ImageDraw, ImageTk
 
+from ___visuals.PREVIOUS_ENTRY_PREVIEW import (
+    PreviousEntryPreviewPopup,
+    build_previous_preview,
+)
 
 # ── DISPLAY CONSTANTS ─────────────────────────────────────────────────────────
 
@@ -106,26 +111,27 @@ VIDEO_H = 260
 IMAGE_W = 320
 IMAGE_H = 200
 
-BG          = "#1a1a2e"
-PANEL_BG    = "#16213e"
-ACCENT      = "#e94560"
-TEXT_COL    = "#eaeaea"
-HINT_COL    = "#888"
-SLOT_BG     = "#0f1626"
+BG = "#1a1a2e"
+PANEL_BG = "#16213e"
+ACCENT = "#e94560"
+TEXT_COL = "#eaeaea"
+HINT_COL = "#888"
+SLOT_BG = "#0f1626"
 DISABLED_BG = "#2a2a3a"
-CHOSEN_BG   = "#2ecc71"
-EDIT_OUTLINE = "#3498db"   # blue ring shown on editable slots in edit mode
-REMOVE_BG_OUTLINE = "#16a085"   # teal ring shown on editable slots in remove-bg mode
+CHOSEN_BG = "#2ecc71"
+EDIT_OUTLINE = "#3498db"  # blue ring shown on editable slots in edit mode
+REMOVE_BG_OUTLINE = "#16a085"  # teal ring shown on editable slots in remove-bg mode
 
-FONT_MONO  = ("Courier New", 13)
-FONT_UI    = ("Segoe UI", 11)
+FONT_MONO = ("Courier New", 13)
+FONT_UI = ("Segoe UI", 11)
 FONT_LABEL = ("Segoe UI", 14, "bold")
-FONT_KEY   = ("Segoe UI", 18, "bold")
+FONT_KEY = ("Segoe UI", 18, "bold")
 
 VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 
 
 # ── JSON / FILE HELPERS ───────────────────────────────────────────────────────
+
 
 def _load_json_safe(path: str | Path, default):
     p = Path(path)
@@ -164,9 +170,11 @@ def _resolve_local(url: str, history: dict) -> str | None:
     p = history.get(url)
     return p if p and Path(p).exists() else None
 
+
 def _rembg_available() -> bool:
     """True if the rembg package is importable (without importing it yet)."""
     import importlib.util
+
     return importlib.util.find_spec("rembg") is not None
 
 
@@ -179,9 +187,11 @@ def _remove_background_to_file(source_local: str) -> str:
     (only the original it derived from may be culled).
     """
     from REMOVE_BACKGROUND import remove_background
+
     src = Path(source_local)
     out = src.parent / f"nobg-{uuid4().hex[:10]}.png"
     return remove_background(str(src), str(out))
+
 
 # ── EDIT-MODE / KOLOURPAINT (X11 EMBED) HELPERS ────────────────────────────────
 # These shell out to `xdotool` to reparent KolourPaint's X11 window into a Tk
@@ -189,6 +199,7 @@ def _remove_background_to_file(source_local: str) -> str:
 # X11 clients there, so reparenting between them works). Every call is
 # best-effort and never raises; the caller falls back to a separate window if
 # embedding can't be established.
+
 
 def _have_cmd(name: str) -> bool:
     """True if `name` is on PATH."""
@@ -222,10 +233,14 @@ def _window_area(wid: str) -> int:
 def _search_windows(args: list[str]) -> list[str]:
     """Run `xdotool search --onlyvisible <args>` → list of window ids."""
     try:
-        out = subprocess.check_output(
-            ["xdotool", "search", "--onlyvisible"] + args,
-            stderr=subprocess.DEVNULL,
-        ).decode().split()
+        out = (
+            subprocess.check_output(
+                ["xdotool", "search", "--onlyvisible"] + args,
+                stderr=subprocess.DEVNULL,
+            )
+            .decode()
+            .split()
+        )
         return out
     except Exception:
         return []
@@ -262,20 +277,35 @@ def _wait_kolourpaint_window(pid: int, timeout: float = 15.0, proc=None) -> str 
 
 def _reparent_window(wid: str, parent_id: int, w: int, h: int) -> None:
     """Reparent `wid` into the X window `parent_id`, then fill it."""
-    subprocess.run(["xdotool", "windowreparent", str(wid), str(parent_id)],
-                   check=False, stderr=subprocess.DEVNULL)
-    subprocess.run(["xdotool", "windowmove", str(wid), "0", "0"],
-                   check=False, stderr=subprocess.DEVNULL)
-    subprocess.run(["xdotool", "windowsize", str(wid), str(w), str(h)],
-                   check=False, stderr=subprocess.DEVNULL)
+    subprocess.run(
+        ["xdotool", "windowreparent", str(wid), str(parent_id)],
+        check=False,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["xdotool", "windowmove", str(wid), "0", "0"],
+        check=False,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["xdotool", "windowsize", str(wid), str(w), str(h)],
+        check=False,
+        stderr=subprocess.DEVNULL,
+    )
 
 
 def _resize_window(wid: str, w: int, h: int) -> None:
     """Keep an embedded window pinned to (0,0) at the frame's size."""
-    subprocess.run(["xdotool", "windowmove", str(wid), "0", "0"],
-                   check=False, stderr=subprocess.DEVNULL)
-    subprocess.run(["xdotool", "windowsize", str(wid), str(w), str(h)],
-                   check=False, stderr=subprocess.DEVNULL)
+    subprocess.run(
+        ["xdotool", "windowmove", str(wid), "0", "0"],
+        check=False,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["xdotool", "windowsize", str(wid), str(w), str(h)],
+        check=False,
+        stderr=subprocess.DEVNULL,
+    )
 
 
 def _send_ctrl_s(wid: str) -> None:
@@ -286,14 +316,19 @@ def _send_ctrl_s(wid: str) -> None:
     fallback. Because we always edit a PNG copy, KolourPaint saves it without
     a format dialog.
     """
-    subprocess.run(["xdotool", "windowfocus", str(wid)],
-                   check=False, stderr=subprocess.DEVNULL)
+    subprocess.run(
+        ["xdotool", "windowfocus", str(wid)], check=False, stderr=subprocess.DEVNULL
+    )
     time.sleep(0.15)
-    subprocess.run(["xdotool", "key", "--clearmodifiers", "ctrl+s"],
-                   check=False, stderr=subprocess.DEVNULL)
+    subprocess.run(
+        ["xdotool", "key", "--clearmodifiers", "ctrl+s"],
+        check=False,
+        stderr=subprocess.DEVNULL,
+    )
     subprocess.run(
         ["xdotool", "key", "--clearmodifiers", "--window", str(wid), "ctrl+s"],
-        check=False, stderr=subprocess.DEVNULL,
+        check=False,
+        stderr=subprocess.DEVNULL,
     )
 
 
@@ -305,6 +340,7 @@ def _send_ctrl_s(wid: str) -> None:
 #
 # File shape:
 #   {"by_count": {"1": {"samples": 5, "total_seconds": 232.4}, "2": {...}}}
+
 
 def _load_gen_timings(path: str) -> dict:
     try:
@@ -359,6 +395,7 @@ def _estimate_gen_seconds(path: str, n_images: int) -> float | None:
 
 # ── REVIEWER GUI ──────────────────────────────────────────────────────────────
 
+
 class _MediaReviewer:
     """
     Multi-candidate review GUI.
@@ -379,16 +416,31 @@ class _MediaReviewer:
     to `state_file` after every selection.
     """
 
-    def __init__(self, pending_items, history_map, state_file, review_state,
-                 regenerate_fn=None, regenerable_texts=None,
-                 timings_file=".ai_generation_timings.json"):
-        self.items        = pending_items
-        self.history      = history_map
-        self.state_file   = state_file
+    def __init__(
+        self,
+        pending_items,
+        history_map,
+        state_file,
+        review_state,
+        regenerate_fn=None,
+        regenerable_texts=None,
+        timings_file=".ai_generation_timings.json",
+        script_to_search_term=None,
+        preview_frame_dir=None,
+        candidates_data=None,
+        final_cache_data=None,
+    ):
+        self.items = pending_items
+        self.history = history_map
+        self.state_file = state_file
         self.review_state = review_state
+        self.script_to_search_term = script_to_search_term or {}
+        self.preview_frame_dir = preview_frame_dir
+        self.candidates_data = candidates_data or []
+        self.final_cache_data = final_cache_data or []
 
-        self.item_idx       = 0
-        self.clip_slot_idx  = 0
+        self.item_idx = 0
+        self.clip_slot_idx = 0
         self.chosen: list[dict] = []
         self.chosen_urls: set[str] = set()
 
@@ -409,19 +461,19 @@ class _MediaReviewer:
 
         # ── Edit-mode state ──────────────────────────────────────────────
         self._edit_mode = False
-        self._editable_slots: set[int] = set()   # slot nums holding an image
+        self._editable_slots: set[int] = set()  # slot nums holding an image
         # Active KolourPaint edit session (None when not editing)
-        self._editor_frame = None                 # Tk overlay Frame
-        self._embed_frame  = None                 # Frame KolourPaint reparents into
-        self._embed_status = None                 # status label inside embed frame
-        self._save_btn     = None
-        self._exit_btn     = None
-        self._embedded_wid = None                 # X11 id of embedded KolourPaint
-        self._edit_proc    = None                 # KolourPaint subprocess
-        self._edit_path    = None                 # working PNG copy being edited
-        self._edit_trim    = 0.0
-        self._edit_original_url = None            # candidate this edit derived from
-        self._finalizing_edit = False             # guard during save/exit
+        self._editor_frame = None  # Tk overlay Frame
+        self._embed_frame = None  # Frame KolourPaint reparents into
+        self._embed_status = None  # status label inside embed frame
+        self._save_btn = None
+        self._exit_btn = None
+        self._embedded_wid = None  # X11 id of embedded KolourPaint
+        self._edit_proc = None  # KolourPaint subprocess
+        self._edit_path = None  # working PNG copy being edited
+        self._edit_trim = 0.0
+        self._edit_original_url = None  # candidate this edit derived from
+        self._finalizing_edit = False  # guard during save/exit
 
         # ── "Try again" (regenerate) state ───────────────────────────────
         # regenerate_fn(script_text) -> list[{local_path: trim}] | None
@@ -429,36 +481,35 @@ class _MediaReviewer:
         #   or None if regeneration isn't applicable / produced nothing.
         # regenerable_texts: optional set of script_texts that support it; when
         #   given, R is gated to those (so non-AI scenes don't even try).
-        self._regenerate_fn     = regenerate_fn
+        self._regenerate_fn = regenerate_fn
         self._regenerable_texts = regenerable_texts
-        self._regen_frame       = None            # "Regenerating…" overlay
+        self._regen_frame = None  # "Regenerating…" overlay
         # Spinner + ETA state for the regenerate overlay
-        self._timings_file      = timings_file
-        self._spin_canvas       = None
-        self._spin_arc          = None
-        self._spin_after        = None            # scheduled after() id
-        self._spin_angle        = 0
-        self._regen_status_lbl  = None
-        self._regen_start       = None            # time.time() at regen start
-        self._regen_estimate    = None            # estimated total seconds | None
-        self._regen_n           = 0               # expected image count
+        self._timings_file = timings_file
+        self._spin_canvas = None
+        self._spin_arc = None
+        self._spin_after = None  # scheduled after() id
+        self._spin_angle = 0
+        self._regen_status_lbl = None
+        self._regen_start = None  # time.time() at regen start
+        self._regen_estimate = None  # estimated total seconds | None
+        self._regen_n = 0  # expected image count
 
         # ── Remove-background ("B") state ─────────────────────────────────
         # B arms remove-bg mode (parallels edit mode). Picking an image then
         # runs rembg on a worker thread behind a busy overlay; the result is
         # previewed with Accept / Edit / Reject.
-        self._remove_bg_mode          = False
-        self._bg_busy_frame           = None   # "Removing background…" cover
-        self._busy_spin_canvas        = None
-        self._busy_spin_arc           = None
-        self._busy_spin_angle         = 0
-        self._busy_after              = None   # scheduled spinner after() id
-        self._bg_result_frame         = None   # Accept/Edit/Reject preview
-        self._bg_removed_path         = None   # the rembg PNG (RGBA)
-        self._bg_pending_original_url = None   # candidate the cut-out derived from
-        self._bg_pending_trim         = 0.0
-        self._bg_source_local         = None
-
+        self._remove_bg_mode = False
+        self._bg_busy_frame = None  # "Removing background…" cover
+        self._busy_spin_canvas = None
+        self._busy_spin_arc = None
+        self._busy_spin_angle = 0
+        self._busy_after = None  # scheduled spinner after() id
+        self._bg_result_frame = None  # Accept/Edit/Reject preview
+        self._bg_removed_path = None  # the rembg PNG (RGBA)
+        self._bg_pending_original_url = None  # candidate the cut-out derived from
+        self._bg_pending_trim = 0.0
+        self._bg_source_local = None
 
         # Tk
         self.root = tk.Tk()
@@ -480,29 +531,51 @@ class _MediaReviewer:
         top = tk.Frame(self.root, bg=PANEL_BG, pady=6)
         top.pack(fill="x")
         self.progress_var = tk.StringVar()
-        tk.Label(top, textvariable=self.progress_var, bg=PANEL_BG,
-                 fg=HINT_COL, font=FONT_UI).pack(side="left", padx=12)
-        tk.Label(top, text="MEDIA REVIEW", bg=PANEL_BG, fg=ACCENT,
-                 font=("Segoe UI", 13, "bold")).pack(side="left", expand=True)
+        tk.Label(
+            top, textvariable=self.progress_var, bg=PANEL_BG, fg=HINT_COL, font=FONT_UI
+        ).pack(side="left", padx=12)
+        tk.Label(
+            top,
+            text="MEDIA REVIEW",
+            bg=PANEL_BG,
+            fg=ACCENT,
+            font=("Segoe UI", 13, "bold"),
+        ).pack(side="left", expand=True)
 
         # Edit-mode banner (single line → constant height, no layout jump)
-        self.edit_banner = tk.Label(self.root, text="", bg=BG, fg="white",
-                                    font=("Segoe UI", 11, "bold"), pady=4)
+        self.edit_banner = tk.Label(
+            self.root, text="", bg=BG, fg="white", font=("Segoe UI", 11, "bold"), pady=4
+        )
         self.edit_banner.pack(fill="x")
 
         # Script panel
         script_frame = tk.Frame(self.root, bg=PANEL_BG, padx=18, pady=8)
         script_frame.pack(fill="x", padx=14, pady=(6, 4))
-        tk.Label(script_frame, text="SCRIPT", bg=PANEL_BG, fg=ACCENT,
-                 font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        tk.Label(
+            script_frame,
+            text="SCRIPT",
+            bg=PANEL_BG,
+            fg=ACCENT,
+            font=("Segoe UI", 9, "bold"),
+        ).pack(anchor="w")
         self.script_var = tk.StringVar()
-        tk.Label(script_frame, textvariable=self.script_var, bg=PANEL_BG,
-                 fg=TEXT_COL, font=FONT_MONO,
-                 wraplength=WINDOW_W - 60, justify="left"
-                 ).pack(anchor="w", pady=(4, 0))
+        tk.Label(
+            script_frame,
+            textvariable=self.script_var,
+            bg=PANEL_BG,
+            fg=TEXT_COL,
+            font=FONT_MONO,
+            wraplength=WINDOW_W - 60,
+            justify="left",
+        ).pack(anchor="w", pady=(4, 0))
         self.runtime_var = tk.StringVar()
-        tk.Label(script_frame, textvariable=self.runtime_var, bg=PANEL_BG,
-                 fg=HINT_COL, font=("Segoe UI", 9)).pack(anchor="w", pady=(4, 0))
+        tk.Label(
+            script_frame,
+            textvariable=self.runtime_var,
+            bg=PANEL_BG,
+            fg=HINT_COL,
+            font=("Segoe UI", 9),
+        ).pack(anchor="w", pady=(4, 0))
 
         # Top row: 2 videos
         video_row = tk.Frame(self.root, bg=BG)
@@ -523,27 +596,49 @@ class _MediaReviewer:
             self.image_slots.append(slot)
 
         # Hint
-        tk.Label(self.root,
-                 text="1 / 2 = video    "
-                      "3 / 4 / 5 = image    "
-                      "E = edit    "
-                      "B = remove bg    "
-                      "R = try again (AI)    "
-                      "F / BACKSPACE = manual",
-                 bg=BG, fg=TEXT_COL, font=("Segoe UI", 10)).pack(pady=(2, 2))
+        tk.Label(
+            self.root,
+            text="1 / 2 = video    "
+            "3 / 4 / 5 = image    "
+            "E = edit    "
+            "B = remove bg    "
+            "R = try again (AI)    "
+            "F / BACKSPACE = manual",
+            bg=BG,
+            fg=TEXT_COL,
+            font=("Segoe UI", 10),
+        ).pack(pady=(2, 2))
         self.status_var = tk.StringVar(value="")
-        tk.Label(self.root, textvariable=self.status_var, bg=BG, fg=HINT_COL,
-                 font=("Segoe UI", 9)).pack(pady=(0, 6))
+        tk.Label(
+            self.root,
+            textvariable=self.status_var,
+            bg=BG,
+            fg=HINT_COL,
+            font=("Segoe UI", 9),
+        ).pack(pady=(0, 6))
+
+        self.previous_preview = PreviousEntryPreviewPopup(
+            self.root,
+            bg=BG,
+            panel_bg=PANEL_BG,
+            text_fg=TEXT_COL,
+            hint_fg=HINT_COL,
+            accent=ACCENT,
+            expanded_width=320,
+            image_size=(290, 165),
+        )
 
     def _make_slot(self, parent, slot_num, w, h, kind_label):
         wrap = tk.Frame(parent, bg=SLOT_BG, padx=6, pady=6, bd=0)
 
         head = tk.Frame(wrap, bg=SLOT_BG)
         head.pack(fill="x")
-        tk.Label(head, text=f"({slot_num})", bg=SLOT_BG, fg=ACCENT,
-                 font=FONT_KEY).pack(side="left")
-        tk.Label(head, text=f"   {kind_label}", bg=SLOT_BG, fg=HINT_COL,
-                 font=("Segoe UI", 9)).pack(side="left")
+        tk.Label(head, text=f"({slot_num})", bg=SLOT_BG, fg=ACCENT, font=FONT_KEY).pack(
+            side="left"
+        )
+        tk.Label(
+            head, text=f"   {kind_label}", bg=SLOT_BG, fg=HINT_COL, font=("Segoe UI", 9)
+        ).pack(side="left")
 
         # Fixed-size pixel container so all slots stay the same size
         media_container = tk.Frame(wrap, width=w, height=h, bg=SLOT_BG)
@@ -552,15 +647,14 @@ class _MediaReviewer:
         media = tk.Label(media_container, bg=SLOT_BG, fg=HINT_COL)
         media.pack(expand=True, fill="both")
 
-        cap = tk.Label(wrap, text="", bg=SLOT_BG, fg=HINT_COL,
-                       font=("Segoe UI", 9))
+        cap = tk.Label(wrap, text="", bg=SLOT_BG, fg=HINT_COL, font=("Segoe UI", 9))
         cap.pack(anchor="w", pady=(2, 0))
 
         wrap.media_label = media
-        wrap.cap_label   = cap
-        wrap.slot_num    = slot_num
-        wrap.target_w    = w
-        wrap.target_h    = h
+        wrap.cap_label = cap
+        wrap.slot_num = slot_num
+        wrap.target_w = w
+        wrap.target_h = h
         return wrap
 
     def _bind_keys(self):
@@ -597,9 +691,9 @@ class _MediaReviewer:
             self._on_close()
             return
 
-        item   = self.items[self.item_idx]
+        item = self.items[self.item_idx]
         nclips = int(item.get("num_clips_needed", 1) or 1)
-        maxrt  = float(item.get("max_runtime_per_clip_seconds", 0.0) or 0.0)
+        maxrt = float(item.get("max_runtime_per_clip_seconds", 0.0) or 0.0)
 
         self.progress_var.set(
             f"Item {self.item_idx + 1} / {len(self.items)}   ·   "
@@ -610,6 +704,7 @@ class _MediaReviewer:
             f"Each clip up to {maxrt:.2f}s · this scene needs {nclips} "
             f"clip{'s' if nclips != 1 else ''}"
         )
+        self._update_previous_preview(item["script_text"])
 
         candidates = item.get("candidates", {}) or {}
         videos = candidates.get("videos", []) or []
@@ -621,8 +716,10 @@ class _MediaReviewer:
         # hold images 3, 4, 5.
         is_image_only = len(videos) == 0 and len(images) > 3
         if is_image_only:
-            print(f"[review] image-only scene with {len(images)} image(s) — "
-                  f"promoting first 2 into video slots")
+            print(
+                f"[review] image-only scene with {len(images)} image(s) — "
+                f"promoting first 2 into video slots"
+            )
             videos = images[:2]
             images = images[2:5]
 
@@ -691,6 +788,19 @@ class _MediaReviewer:
         # UI is ready for input again
         self._advancing = False
 
+    def _update_previous_preview(self, script_text: str):
+        preview = build_previous_preview(
+            script_text,
+            self.script_to_search_term,
+            final_data=self.final_cache_data,
+            review_state=self.review_state,
+            candidates_data=self.candidates_data,
+            history_map=self.history,
+            frame_dir=self.preview_frame_dir,
+            frame_stem="review_previous",
+        )
+        self.previous_preview.set_preview(preview)
+
     def _render_image_in_slot(self, slot, path: str):
         try:
             img = Image.open(path)
@@ -723,7 +833,7 @@ class _MediaReviewer:
         # Cap at ~24 fps — plenty for preview, and prevents the UI loop from
         # being saturated when both video slots are active.
         target_fps = min(max(fps, 1.0), 24.0)
-        delay      = max(42, int(1000 / target_fps))
+        delay = max(42, int(1000 / target_fps))
 
         stop = self._video_stop  # snapshot the current event for this run
         label = slot.media_label
@@ -775,7 +885,7 @@ class _MediaReviewer:
                 return
             try:
                 frame = frame_q.get_nowait()
-                img    = Image.fromarray(frame)
+                img = Image.fromarray(frame)
                 tk_img = ImageTk.PhotoImage(img)
                 label.config(image=tk_img, text="", bg=SLOT_BG)
                 label._img_ref = tk_img
@@ -796,14 +906,16 @@ class _MediaReviewer:
             return
 
     def _render_unavailable(self, slot, msg: str):
-        slot.media_label.config(image="", text=msg, fg=HINT_COL,
-                                bg=DISABLED_BG, font=FONT_UI)
+        slot.media_label.config(
+            image="", text=msg, fg=HINT_COL, bg=DISABLED_BG, font=FONT_UI
+        )
         slot.media_label._img_ref = None
         slot.cap_label.config(text="—", fg=HINT_COL)
 
     def _render_already_chosen(self, slot):
-        slot.media_label.config(image="", text="✓ already chosen",
-                                fg="white", bg=CHOSEN_BG, font=FONT_LABEL)
+        slot.media_label.config(
+            image="", text="✓ already chosen", fg="white", bg=CHOSEN_BG, font=FONT_LABEL
+        )
         slot.media_label._img_ref = None
         slot.cap_label.config(text="locked", fg=CHOSEN_BG)
 
@@ -814,31 +926,35 @@ class _MediaReviewer:
         mode (edit OR remove-bg) is active. Same name as before so existing
         call sites are untouched; it now covers both modes."""
         edit_on = self._edit_mode
-        bg_on   = self._remove_bg_mode
+        bg_on = self._remove_bg_mode
 
         if edit_on:
             self.edit_banner.config(
                 text="✏  EDIT MODE — press an image key (3 / 4 / 5) to edit it "
-                     "in KolourPaint    ·    press E to cancel",
-                bg=EDIT_OUTLINE, fg="white",
+                "in KolourPaint    ·    press E to cancel",
+                bg=EDIT_OUTLINE,
+                fg="white",
             )
         elif bg_on:
             self.edit_banner.config(
                 text="✂  REMOVE-BG MODE — press an image key (3 / 4 / 5) to cut "
-                     "out its background    ·    press B to cancel",
-                bg=REMOVE_BG_OUTLINE, fg="white",
+                "out its background    ·    press B to cancel",
+                bg=REMOVE_BG_OUTLINE,
+                fg="white",
             )
         else:
             self.edit_banner.config(text="", bg=BG)
 
         outline = EDIT_OUTLINE if edit_on else REMOVE_BG_OUTLINE
-        show    = edit_on or bg_on
+        show = edit_on or bg_on
         for slot in (*self.video_slots, *self.image_slots):
             try:
                 if show and slot.slot_num in self._editable_slots:
-                    slot.config(highlightthickness=3,
-                                highlightbackground=outline,
-                                highlightcolor=outline)
+                    slot.config(
+                        highlightthickness=3,
+                        highlightbackground=outline,
+                        highlightcolor=outline,
+                    )
                 else:
                     slot.config(highlightthickness=0)
             except tk.TclError:
@@ -847,16 +963,20 @@ class _MediaReviewer:
     def _toggle_edit_mode(self):
         # Ignore while transitioning, an edit session is open, or a remove-bg
         # overlay is up.
-        if (self._advancing or self._editor_frame is not None
-                or self._bg_result_frame is not None
-                or self._bg_busy_frame is not None):
+        if (
+            self._advancing
+            or self._editor_frame is not None
+            or self._bg_result_frame is not None
+            or self._bg_busy_frame is not None
+        ):
             return
 
         if not self._edit_mode:
             self._edit_mode = True
-            self._remove_bg_mode = False        # the two modes are exclusive
-            self.status_var.set("Edit mode ON — pick an image to open it in "
-                                "the decorate editor.")
+            self._remove_bg_mode = False  # the two modes are exclusive
+            self.status_var.set(
+                "Edit mode ON — pick an image to open it in the decorate editor."
+            )
         else:
             self._edit_mode = False
             self.status_var.set("")
@@ -876,8 +996,11 @@ class _MediaReviewer:
         thread when it returns.
         """
         # Inert while transitioning, during an edit session, or mid-regen.
-        if (self._advancing or self._editor_frame is not None
-                or self._regen_frame is not None):
+        if (
+            self._advancing
+            or self._editor_frame is not None
+            or self._regen_frame is not None
+        ):
             return
         if self.item_idx >= len(self.items):
             return
@@ -902,15 +1025,17 @@ class _MediaReviewer:
             n_images = 1
 
         estimate = _estimate_gen_seconds(self._timings_file, n_images)
-        self._regen_n        = n_images
-        self._regen_start    = time.time()
+        self._regen_n = n_images
+        self._regen_start = time.time()
         self._regen_estimate = estimate
 
         est_txt = f"~{estimate:0.0f}s" if estimate else "unknown (no timing data yet)"
-        print(f"[review] regenerating '{script_text[:60]}' — "
-              f"{n_images} image(s), estimated {est_txt}")
+        print(
+            f"[review] regenerating '{script_text[:60]}' — "
+            f"{n_images} image(s), estimated {est_txt}"
+        )
 
-        self._advancing = True            # block other keys until it returns
+        self._advancing = True  # block other keys until it returns
         self._stop_all_videos()
         self._build_regen_overlay(n_images, estimate)
         self.root.update_idletasks()
@@ -921,7 +1046,7 @@ class _MediaReviewer:
             result, err = None, None
             try:
                 result = fn(script_text)
-            except Exception as exc:       # never let a generator crash the GUI
+            except Exception as exc:  # never let a generator crash the GUI
                 err = exc
             try:
                 self.root.after(0, lambda: self._finish_try_again(result, err))
@@ -939,25 +1064,40 @@ class _MediaReviewer:
         box.place(relx=0.5, rely=0.5, anchor="center")
 
         # Spinner: a faint full ring with a brighter arc that rotates.
-        self._spin_canvas = tk.Canvas(box, width=72, height=72, bg=BG,
-                                      highlightthickness=0)
+        self._spin_canvas = tk.Canvas(
+            box, width=72, height=72, bg=BG, highlightthickness=0
+        )
         self._spin_canvas.pack(pady=(0, 14))
         self._spin_canvas.create_oval(10, 10, 62, 62, outline=PANEL_BG, width=6)
         self._spin_arc = self._spin_canvas.create_arc(
-            10, 10, 62, 62, start=0, extent=90, style="arc",
-            outline=EDIT_OUTLINE, width=6)
+            10,
+            10,
+            62,
+            62,
+            start=0,
+            extent=90,
+            style="arc",
+            outline=EDIT_OUTLINE,
+            width=6,
+        )
 
-        tk.Label(box, text="Regenerating…", bg=BG, fg=ACCENT,
-                 font=("Segoe UI", 20, "bold")).pack()
+        tk.Label(
+            box, text="Regenerating…", bg=BG, fg=ACCENT, font=("Segoe UI", 20, "bold")
+        ).pack()
         plural = "s" if n_images != 1 else ""
-        tk.Label(box,
-                 text=f"Re-running the AI request for this scene "
-                      f"({n_images} image{plural}).",
-                 bg=BG, fg=TEXT_COL, font=FONT_UI, justify="center"
-                 ).pack(pady=(6, 10))
+        tk.Label(
+            box,
+            text=f"Re-running the AI request for this scene "
+            f"({n_images} image{plural}).",
+            bg=BG,
+            fg=TEXT_COL,
+            font=FONT_UI,
+            justify="center",
+        ).pack(pady=(6, 10))
 
-        self._regen_status_lbl = tk.Label(box, text="", bg=BG, fg=HINT_COL,
-                                          font=("Segoe UI", 10))
+        self._regen_status_lbl = tk.Label(
+            box, text="", bg=BG, fg=HINT_COL, font=("Segoe UI", 10)
+        )
         self._regen_status_lbl.pack()
 
         self._spin_angle = 0
@@ -978,8 +1118,7 @@ class _MediaReviewer:
             if self._regen_estimate:
                 remaining = self._regen_estimate - elapsed
                 if remaining > 0:
-                    txt = (f"elapsed {elapsed:0.0f}s   ·   "
-                           f"~{remaining:0.0f}s remaining")
+                    txt = f"elapsed {elapsed:0.0f}s   ·   ~{remaining:0.0f}s remaining"
                 else:
                     txt = f"elapsed {elapsed:0.0f}s   ·   almost there…"
             else:
@@ -1000,9 +1139,9 @@ class _MediaReviewer:
                 self.root.after_cancel(self._spin_after)
             except (tk.TclError, AttributeError):
                 pass
-        self._spin_after       = None
-        self._spin_canvas      = None
-        self._spin_arc         = None
+        self._spin_after = None
+        self._spin_canvas = None
+        self._spin_arc = None
         self._regen_status_lbl = None
         frame = self._regen_frame
         self._regen_frame = None
@@ -1028,14 +1167,18 @@ class _MediaReviewer:
         if elapsed is not None and err is None and result:
             n_got = len(result) or self._regen_n or 1
             _record_gen_timing(self._timings_file, n_got, elapsed)
-            print(f"[review] regeneration done in {elapsed:0.1f}s "
-                  f"({n_got} image(s)) — timing averages updated")
+            print(
+                f"[review] regeneration done in {elapsed:0.1f}s "
+                f"({n_got} image(s)) — timing averages updated"
+            )
         elif elapsed is not None:
             why = f"error: {err}" if err else "nothing returned"
-            print(f"[review] regeneration ended after {elapsed:0.1f}s "
-                  f"({why}) — not recording timing")
+            print(
+                f"[review] regeneration ended after {elapsed:0.1f}s "
+                f"({why}) — not recording timing"
+            )
 
-        self._regen_start    = None
+        self._regen_start = None
         self._regen_estimate = None
 
         if err is not None:
@@ -1043,15 +1186,13 @@ class _MediaReviewer:
             self._advancing = False
             return
         if not result:
-            self.status_var.set(
-                "Nothing came back — keeping the current options."
-            )
+            self.status_var.set("Nothing came back — keeping the current options.")
             self._advancing = False
             return
 
         # Swap in the fresh image candidates and make their local paths
         # resolvable (generated files are keyed by their own path).
-        item  = self.items[self.item_idx]
+        item = self.items[self.item_idx]
         cands = item.setdefault("candidates", {})
         cands.setdefault("videos", [])
         cands["images"] = result
@@ -1067,8 +1208,9 @@ class _MediaReviewer:
 
     # ── Decisions ────────────────────────────────────────────────────────────
 
-    def _commit_choice(self, footage_key: str, trim: float,
-                       block_urls: set[str] | None = None):
+    def _commit_choice(
+        self, footage_key: str, trim: float, block_urls: set[str] | None = None
+    ):
         """
         Record `footage_key` (a URL or local path) as a pick for the current
         clip slot, then either advance to the next clip slot or finalise the
@@ -1122,8 +1264,7 @@ class _MediaReviewer:
                 self.status_var.set("Can't find that file on disk to edit.")
                 return
             self._advancing = True  # pause review while the editor is open
-            self._open_editor(original_url=url, trim=float(trim),
-                              source_local=local)
+            self._open_editor(original_url=url, trim=float(trim), source_local=local)
             return
 
         # ── Remove-BG branch: cut out the chosen IMAGE's background ──────────
@@ -1139,8 +1280,9 @@ class _MediaReviewer:
                 self.status_var.set("Can't find that file on disk.")
                 return
             self._advancing = True  # pause review while rembg + preview run
-            self._start_remove_bg(original_url=url, trim=float(trim),
-                                  source_local=local)
+            self._start_remove_bg(
+                original_url=url, trim=float(trim), source_local=local
+            )
             return
 
         # ── Normal selection ────────────────────────────────────────────────
@@ -1157,19 +1299,19 @@ class _MediaReviewer:
         self.review_state[item["script_text"]] = {
             "footage": [],
             "manual_intervention": True,
-            "max_runtime_per_clip_seconds":
-                float(item.get("max_runtime_per_clip_seconds", 0.0) or 0.0),
-            "num_clips_needed":
-                int(item.get("num_clips_needed", 1) or 1),
+            "max_runtime_per_clip_seconds": float(
+                item.get("max_runtime_per_clip_seconds", 0.0) or 0.0
+            ),
+            "num_clips_needed": int(item.get("num_clips_needed", 1) or 1),
         }
         self._save_state()
         self._advance_to_next_item()
 
     def _advance_to_next_item(self):
-        self.item_idx       += 1
-        self.clip_slot_idx   = 0
-        self.chosen          = []
-        self.chosen_urls     = set()
+        self.item_idx += 1
+        self.clip_slot_idx = 0
+        self.chosen = []
+        self.chosen_urls = set()
         self._load_current()
 
     def _save_state(self):
@@ -1177,8 +1319,13 @@ class _MediaReviewer:
 
     # ── KolourPaint edit session ──────────────────────────────────────────────
 
-    def _open_editor(self, original_url: str, trim: float, source_local: str,
-                     preserve_alpha: bool = False):
+    def _open_editor(
+        self,
+        original_url: str,
+        trim: float,
+        source_local: str,
+        preserve_alpha: bool = False,
+    ):
         """
         Make a PNG working copy of the chosen image and open it in OUR OWN
         decorate editor (draw / stamp / zoom / object) instead of
@@ -1200,7 +1347,7 @@ class _MediaReviewer:
         try:
             im = Image.open(src)
             if preserve_alpha:
-                im = im.convert("RGBA")            # keep the cut-out transparent
+                im = im.convert("RGBA")  # keep the cut-out transparent
             elif im.mode in ("RGBA", "LA", "P"):
                 im = im.convert("RGBA")
                 white = Image.new("RGBA", im.size, (255, 255, 255, 255))
@@ -1219,33 +1366,34 @@ class _MediaReviewer:
         self._edit_mode = False
         out = src.parent / f"edited-{uuid4().hex[:10]}-deco.png"
         api = Path(__file__).resolve().parent / "decorator" / "api.py"
-        self.status_var.set("Decorate editor open in its own window — "
-                            "FINISH saves, closing cancels…")
+        self.status_var.set(
+            "Decorate editor open in its own window — FINISH saves, closing cancels…"
+        )
         self.root.update_idletasks()
         try:
-            self.root.withdraw()                  # get out of the editor's way
-            subprocess.run([sys.executable, str(api), str(edited),
-                            "--out", str(out)], check=False)
+            self.root.withdraw()  # get out of the editor's way
+            subprocess.run(
+                [sys.executable, str(api), str(edited), "--out", str(out)], check=False
+            )
         finally:
             try:
                 self.root.deiconify()
                 self.root.lift()
             except tk.TclError:
                 pass
-        Path(edited).unlink(missing_ok=True)      # the working copy
+        Path(edited).unlink(missing_ok=True)  # the working copy
 
         result = None
         if out.exists() and out.stat().st_size > 0:
             result = str(out)
-        else:                                     # armed animated object export
+        else:  # armed animated object export
             vid = out.with_suffix(".mp4")
             if vid.exists() and vid.stat().st_size > 0:
                 result = str(vid)
 
         self._apply_edit_mode_visuals()
         if not result:
-            self.status_var.set("Edit cancelled / no changes — "
-                                "choose an option.")
+            self.status_var.set("Edit cancelled / no changes — choose an option.")
             self._advancing = False
             self._load_current()
             return
@@ -1253,8 +1401,9 @@ class _MediaReviewer:
         # Resolve this local file for the rest of the session. (Downstream
         # resolves local paths by existence, so no history.json write needed.)
         self.history[result] = result
-        self._commit_choice(result, float(trim),
-                            block_urls={original_url} if original_url else set())
+        self._commit_choice(
+            result, float(trim), block_urls={original_url} if original_url else set()
+        )
 
     def _build_editor_overlay(self, filename: str):
         """Overlay covering the whole window: control bar + embed area."""
@@ -1263,42 +1412,72 @@ class _MediaReviewer:
 
         bar = tk.Frame(self._editor_frame, bg=PANEL_BG, pady=8)
         bar.pack(fill="x")
-        tk.Label(bar, text=f"✏  EDITING:  {filename}", bg=PANEL_BG, fg=ACCENT,
-                 font=("Segoe UI", 12, "bold")).pack(side="left", padx=14)
+        tk.Label(
+            bar,
+            text=f"✏  EDITING:  {filename}",
+            bg=PANEL_BG,
+            fg=ACCENT,
+            font=("Segoe UI", 12, "bold"),
+        ).pack(side="left", padx=14)
 
         self._save_btn = tk.Button(
-            bar, text="✓  Save & Continue",
+            bar,
+            text="✓  Save & Continue",
             command=self._editor_save_and_continue,
-            bg=CHOSEN_BG, fg="white",
-            activebackground=CHOSEN_BG, activeforeground="white",
-            font=("Segoe UI", 11, "bold"), relief="flat",
-            padx=14, pady=6, cursor="hand2")
+            bg=CHOSEN_BG,
+            fg="white",
+            activebackground=CHOSEN_BG,
+            activeforeground="white",
+            font=("Segoe UI", 11, "bold"),
+            relief="flat",
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        )
         self._save_btn.pack(side="right", padx=(8, 14))
 
         self._exit_btn = tk.Button(
-            bar, text="✕  Exit (back to options)",
+            bar,
+            text="✕  Exit (back to options)",
             command=self._editor_exit,
-            bg=ACCENT, fg="white",
-            activebackground=ACCENT, activeforeground="white",
-            font=("Segoe UI", 11, "bold"), relief="flat",
-            padx=14, pady=6, cursor="hand2")
+            bg=ACCENT,
+            fg="white",
+            activebackground=ACCENT,
+            activeforeground="white",
+            font=("Segoe UI", 11, "bold"),
+            relief="flat",
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        )
         self._exit_btn.pack(side="right", padx=8)
 
         tk.Label(
             self._editor_frame,
             text="Draw in KolourPaint → press Ctrl+S → click \u201cSave & Continue\u201d.   "
-                 "\u201cExit\u201d discards this edit and returns to the five options.",
-            bg=BG, fg=HINT_COL, font=("Segoe UI", 9)).pack(fill="x", pady=(6, 2))
+            "\u201cExit\u201d discards this edit and returns to the five options.",
+            bg=BG,
+            fg=HINT_COL,
+            font=("Segoe UI", 9),
+        ).pack(fill="x", pady=(6, 2))
 
         self._embed_frame = tk.Frame(
-            self._editor_frame, bg="#000000",
-            highlightthickness=2, highlightbackground=EDIT_OUTLINE)
+            self._editor_frame,
+            bg="#000000",
+            highlightthickness=2,
+            highlightbackground=EDIT_OUTLINE,
+        )
         self._embed_frame.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         self._embed_frame.pack_propagate(False)
 
         self._embed_status = tk.Label(
-            self._embed_frame, text="Launching KolourPaint…",
-            bg="#000000", fg=TEXT_COL, font=FONT_UI, justify="center")
+            self._embed_frame,
+            text="Launching KolourPaint…",
+            bg="#000000",
+            fg=TEXT_COL,
+            font=FONT_UI,
+            justify="center",
+        )
         self._embed_status.pack(expand=True)
         self._embed_frame.bind("<Configure>", self._on_embed_configure)
 
@@ -1307,7 +1486,9 @@ class _MediaReviewer:
         try:
             self._edit_proc = subprocess.Popen(
                 ["kolourpaint", path],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         except Exception as exc:
             if self._embed_status is not None:
                 self._embed_status.config(text=f"Failed to launch KolourPaint:\n{exc}")
@@ -1317,8 +1498,9 @@ class _MediaReviewer:
             if self._embed_status is not None:
                 self._embed_status.config(
                     text="KolourPaint opened in a SEPARATE window.\n\n"
-                         "Install 'xdotool' (sudo apt install xdotool) to embed it here.\n\n"
-                         "Edit it, press Ctrl+S, then click \u201cSave & Continue\u201d.")
+                    "Install 'xdotool' (sudo apt install xdotool) to embed it here.\n\n"
+                    "Edit it, press Ctrl+S, then click \u201cSave & Continue\u201d."
+                )
             return
 
         # Find KolourPaint's window off-thread (polling is slow), then embed it
@@ -1346,9 +1528,10 @@ class _MediaReviewer:
             if self._embed_status is not None:
                 self._embed_status.config(
                     text="Couldn't embed KolourPaint (your session may block "
-                         "window reparenting).\n\n"
-                         "It's open in a SEPARATE window — edit it, press Ctrl+S, "
-                         "then click \u201cSave & Continue\u201d.")
+                    "window reparenting).\n\n"
+                    "It's open in a SEPARATE window — edit it, press Ctrl+S, "
+                    "then click \u201cSave & Continue\u201d."
+                )
             return
 
         self.root.update_idletasks()
@@ -1377,8 +1560,9 @@ class _MediaReviewer:
 
     def _on_embed_configure(self, event):
         if self._embedded_wid:
-            _resize_window(self._embedded_wid,
-                           max(100, event.width), max(100, event.height))
+            _resize_window(
+                self._embedded_wid, max(100, event.width), max(100, event.height)
+            )
 
     def _set_editor_busy(self, msg: str):
         for btn in (self._save_btn, self._exit_btn):
@@ -1399,15 +1583,19 @@ class _MediaReviewer:
         self._finalizing_edit = True
         self._set_editor_busy("Saving your edit…")
 
-        wid  = self._embedded_wid
+        wid = self._embedded_wid
         proc = self._edit_proc
 
         def worker():
             # Best-effort: tell KolourPaint to save, give it time to flush.
             try:
                 target = wid
-                if (not target and proc is not None
-                        and proc.poll() is None and _have_cmd("xdotool")):
+                if (
+                    not target
+                    and proc is not None
+                    and proc.poll() is None
+                    and _have_cmd("xdotool")
+                ):
                     target = _wait_kolourpaint_window(proc.pid, timeout=3.0, proc=proc)
                 if target and _have_cmd("xdotool"):
                     _send_ctrl_s(target)
@@ -1426,8 +1614,8 @@ class _MediaReviewer:
 
     def _finalize_save(self):
         self._finalizing_edit = False
-        edited_path  = self._edit_path
-        trim         = self._edit_trim
+        edited_path = self._edit_path
+        trim = self._edit_trim
         original_url = self._edit_original_url
 
         self._teardown_editor_overlay()
@@ -1466,10 +1654,10 @@ class _MediaReviewer:
 
     def _teardown_editor_overlay(self):
         self._embedded_wid = None
-        self._save_btn     = None
-        self._exit_btn     = None
+        self._save_btn = None
+        self._exit_btn = None
         self._embed_status = None
-        self._embed_frame  = None
+        self._embed_frame = None
         frame = self._editor_frame
         self._editor_frame = None
         if frame is not None:
@@ -1488,14 +1676,16 @@ class _MediaReviewer:
         except tk.TclError:
             pass
 
-
     # ── Remove-background ("B") flow ──────────────────────────────────────────
     def _toggle_remove_bg_mode(self):
         # Ignore while transitioning, an edit session is open, or a remove-bg
         # overlay is already up.
-        if (self._advancing or self._editor_frame is not None
-                or self._bg_result_frame is not None
-                or self._bg_busy_frame is not None):
+        if (
+            self._advancing
+            or self._editor_frame is not None
+            or self._bg_result_frame is not None
+            or self._bg_busy_frame is not None
+        ):
             return
 
         if not self._remove_bg_mode:
@@ -1510,7 +1700,7 @@ class _MediaReviewer:
                 self.status_var.set("rembg isn't installed — see the dialog.")
                 return
             self._remove_bg_mode = True
-            self._edit_mode = False             # the two modes are exclusive
+            self._edit_mode = False  # the two modes are exclusive
             self.status_var.set(
                 "Remove-BG mode ON — pick an image to cut out its background."
             )
@@ -1524,8 +1714,8 @@ class _MediaReviewer:
         """Kick off rembg on a worker thread behind a busy overlay."""
         self._stop_all_videos()
         self._bg_pending_original_url = original_url
-        self._bg_pending_trim         = float(trim)
-        self._bg_source_local         = source_local
+        self._bg_pending_trim = float(trim)
+        self._bg_source_local = source_local
 
         self._build_busy_overlay(
             "Removing background…",
@@ -1539,7 +1729,7 @@ class _MediaReviewer:
             result, err = None, None
             try:
                 result = _remove_background_to_file(src)
-            except Exception as exc:           # never let rembg crash the GUI
+            except Exception as exc:  # never let rembg crash the GUI
                 err = exc
             try:
                 self.root.after(0, lambda: self._finish_remove_bg(result, err))
@@ -1561,11 +1751,11 @@ class _MediaReviewer:
             )
             self._remove_bg_mode = False
             self._advancing = False
-            self._apply_edit_mode_visuals()    # clear the teal highlights
+            self._apply_edit_mode_visuals()  # clear the teal highlights
             return
 
         self._bg_removed_path = result
-        self.history[result] = result          # resolvable for the session
+        self.history[result] = result  # resolvable for the session
         self._show_bg_result_overlay(result)
 
     # ── Busy spinner overlay (reusable) ───────────────────────────────────────
@@ -1578,18 +1768,29 @@ class _MediaReviewer:
         box = tk.Frame(self._bg_busy_frame, bg=BG)
         box.place(relx=0.5, rely=0.5, anchor="center")
 
-        self._busy_spin_canvas = tk.Canvas(box, width=72, height=72, bg=BG,
-                                           highlightthickness=0)
+        self._busy_spin_canvas = tk.Canvas(
+            box, width=72, height=72, bg=BG, highlightthickness=0
+        )
         self._busy_spin_canvas.pack(pady=(0, 14))
         self._busy_spin_canvas.create_oval(10, 10, 62, 62, outline=PANEL_BG, width=6)
         self._busy_spin_arc = self._busy_spin_canvas.create_arc(
-            10, 10, 62, 62, start=0, extent=90, style="arc",
-            outline=REMOVE_BG_OUTLINE, width=6)
+            10,
+            10,
+            62,
+            62,
+            start=0,
+            extent=90,
+            style="arc",
+            outline=REMOVE_BG_OUTLINE,
+            width=6,
+        )
 
-        tk.Label(box, text=title, bg=BG, fg=ACCENT,
-                 font=("Segoe UI", 20, "bold")).pack()
-        tk.Label(box, text=subtitle, bg=BG, fg=TEXT_COL, font=FONT_UI,
-                 justify="center").pack(pady=(6, 0))
+        tk.Label(
+            box, text=title, bg=BG, fg=ACCENT, font=("Segoe UI", 20, "bold")
+        ).pack()
+        tk.Label(
+            box, text=subtitle, bg=BG, fg=TEXT_COL, font=FONT_UI, justify="center"
+        ).pack(pady=(6, 0))
 
         self._busy_spin_angle = 0
         self._animate_busy_spinner()
@@ -1599,8 +1800,9 @@ class _MediaReviewer:
             return
         try:
             self._busy_spin_angle = (self._busy_spin_angle - 14) % 360
-            self._busy_spin_canvas.itemconfig(self._busy_spin_arc,
-                                              start=self._busy_spin_angle)
+            self._busy_spin_canvas.itemconfig(
+                self._busy_spin_arc, start=self._busy_spin_angle
+            )
         except tk.TclError:
             return
         try:
@@ -1614,9 +1816,9 @@ class _MediaReviewer:
                 self.root.after_cancel(self._busy_after)
             except (tk.TclError, AttributeError):
                 pass
-        self._busy_after       = None
+        self._busy_after = None
         self._busy_spin_canvas = None
-        self._busy_spin_arc    = None
+        self._busy_spin_arc = None
         frame = self._bg_busy_frame
         self._bg_busy_frame = None
         if frame is not None:
@@ -1634,36 +1836,71 @@ class _MediaReviewer:
 
         bar = tk.Frame(self._bg_result_frame, bg=PANEL_BG, pady=8)
         bar.pack(fill="x")
-        tk.Label(bar, text="✂  BACKGROUND REMOVED — preview", bg=PANEL_BG,
-                 fg=ACCENT, font=("Segoe UI", 12, "bold")).pack(side="left", padx=14)
+        tk.Label(
+            bar,
+            text="✂  BACKGROUND REMOVED — preview",
+            bg=PANEL_BG,
+            fg=ACCENT,
+            font=("Segoe UI", 12, "bold"),
+        ).pack(side="left", padx=14)
 
         reject_btn = tk.Button(
-            bar, text="✕  Reject (back to options)", command=self._bg_reject,
-            bg=ACCENT, fg="white", activebackground=ACCENT,
-            activeforeground="white", font=("Segoe UI", 11, "bold"),
-            relief="flat", padx=14, pady=6, cursor="hand2")
+            bar,
+            text="✕  Reject (back to options)",
+            command=self._bg_reject,
+            bg=ACCENT,
+            fg="white",
+            activebackground=ACCENT,
+            activeforeground="white",
+            font=("Segoe UI", 11, "bold"),
+            relief="flat",
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        )
         reject_btn.pack(side="right", padx=(8, 14))
 
         edit_btn = tk.Button(
-            bar, text="✏  Edit", command=self._bg_edit,
-            bg=EDIT_OUTLINE, fg="white", activebackground=EDIT_OUTLINE,
-            activeforeground="white", font=("Segoe UI", 11, "bold"),
-            relief="flat", padx=14, pady=6, cursor="hand2")
+            bar,
+            text="✏  Edit",
+            command=self._bg_edit,
+            bg=EDIT_OUTLINE,
+            fg="white",
+            activebackground=EDIT_OUTLINE,
+            activeforeground="white",
+            font=("Segoe UI", 11, "bold"),
+            relief="flat",
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        )
         edit_btn.pack(side="right", padx=8)
 
         accept_btn = tk.Button(
-            bar, text="✓  Accept & Continue", command=self._bg_accept,
-            bg=CHOSEN_BG, fg="white", activebackground=CHOSEN_BG,
-            activeforeground="white", font=("Segoe UI", 11, "bold"),
-            relief="flat", padx=14, pady=6, cursor="hand2")
+            bar,
+            text="✓  Accept & Continue",
+            command=self._bg_accept,
+            bg=CHOSEN_BG,
+            fg="white",
+            activebackground=CHOSEN_BG,
+            activeforeground="white",
+            font=("Segoe UI", 11, "bold"),
+            relief="flat",
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        )
         accept_btn.pack(side="right", padx=8)
 
         tk.Label(
             self._bg_result_frame,
             text="Background replaced.   "
-                 "Accept to use this · Edit to touch it up in KolourPaint · "
-                 "Reject to return to the five options.",
-            bg=BG, fg=HINT_COL, font=("Segoe UI", 9)).pack(fill="x", pady=(6, 2))
+            "Accept to use this · Edit to touch it up in KolourPaint · "
+            "Reject to return to the five options.",
+            bg=BG,
+            fg=HINT_COL,
+            font=("Segoe UI", 9),
+        ).pack(fill="x", pady=(6, 2))
 
         disp = tk.Frame(self._bg_result_frame, bg=BG)
         disp.pack(fill="both", expand=True, padx=8, pady=(0, 8))
@@ -1691,7 +1928,7 @@ class _MediaReviewer:
         trim = self._bg_pending_trim
         orig = self._bg_pending_original_url
         self._teardown_bg_result_overlay()
-        self._remove_bg_mode  = False
+        self._remove_bg_mode = False
         self._bg_removed_path = None
 
         if not path or not Path(path).exists():
@@ -1724,14 +1961,15 @@ class _MediaReviewer:
         # _advancing is already True (set when remove-bg started); the editor
         # owns the screen from here. preserve_alpha keeps the cut-out's
         # transparency through the edit.
-        self._open_editor(original_url=orig, trim=float(trim),
-                          source_local=path, preserve_alpha=True)
+        self._open_editor(
+            original_url=orig, trim=float(trim), source_local=path, preserve_alpha=True
+        )
 
     def _bg_reject(self):
         """Discard the cut-out and return to the five options."""
         path = self._bg_removed_path
         self._teardown_bg_result_overlay()
-        self._remove_bg_mode  = False
+        self._remove_bg_mode = False
         self._bg_removed_path = None
 
         if path:
@@ -1756,7 +1994,6 @@ class _MediaReviewer:
         # Buttons may have held focus; make sure number/letter keys work again.
         self._refocus_main_window()
 
-
     def _refocus_main_window(self):
         """Best-effort: return keyboard focus to the review window."""
         if self.root is None:
@@ -1771,10 +2008,16 @@ class _MediaReviewer:
         if _have_cmd("xdotool"):
             try:
                 wid = self.root.winfo_id()
-                subprocess.run(["xdotool", "windowactivate", str(wid)],
-                               check=False, stderr=subprocess.DEVNULL)
-                subprocess.run(["xdotool", "windowfocus", str(wid)],
-                               check=False, stderr=subprocess.DEVNULL)
+                subprocess.run(
+                    ["xdotool", "windowactivate", str(wid)],
+                    check=False,
+                    stderr=subprocess.DEVNULL,
+                )
+                subprocess.run(
+                    ["xdotool", "windowfocus", str(wid)],
+                    check=False,
+                    stderr=subprocess.DEVNULL,
+                )
             except Exception:
                 pass
 
@@ -1815,7 +2058,6 @@ class _MediaReviewer:
         self._kill_edit_proc()
         self._stop_all_videos()
 
-
         # Cancel the remove-bg busy spinner callback if one is scheduled.
         if getattr(self, "_busy_after", None) is not None:
             try:
@@ -1824,10 +2066,10 @@ class _MediaReviewer:
                 pass
             self._busy_after = None
 
-
-
-        for slot in (*getattr(self, "video_slots", []),
-                     *getattr(self, "image_slots", [])):
+        for slot in (
+            *getattr(self, "video_slots", []),
+            *getattr(self, "image_slots", []),
+        ):
             try:
                 slot.media_label._img_ref = None
                 slot.media_label.config(image="")
@@ -1848,6 +2090,7 @@ class _MediaReviewer:
 
 
 # ── CLEANUP ───────────────────────────────────────────────────────────────────
+
 
 def _cleanup_unchosen(review_state, candidates_data, history_file, history_map):
     """
@@ -1900,6 +2143,7 @@ def _cleanup_unchosen(review_state, candidates_data, history_file, history_map):
 
 # ── MANUAL INTERVENTION (interactive CLI resolver) ────────────────────────────
 
+
 def _resolve_manual_interventions_interactively(
     review_state, review_state_file, history_file, cache_dir
 ):
@@ -1920,7 +2164,8 @@ def _resolve_manual_interventions_interactively(
 
     while True:
         manual_items = [
-            (st, entry) for st, entry in review_state.items()
+            (st, entry)
+            for st, entry in review_state.items()
             if isinstance(entry, dict) and entry.get("manual_intervention")
         ]
         if not manual_items:
@@ -1935,9 +2180,9 @@ def _resolve_manual_interventions_interactively(
 
         for n, (st_text, entry) in enumerate(manual_items, 1):
             nclips = int(entry.get("num_clips_needed", 1) or 1)
-            maxrt  = float(entry.get("max_runtime_per_clip_seconds", 0.0) or 0.0)
+            maxrt = float(entry.get("max_runtime_per_clip_seconds", 0.0) or 0.0)
             preview = st_text if len(st_text) <= 70 else st_text[:67] + "..."
-            print(f"  [{n}] \"{preview}\"")
+            print(f'  [{n}] "{preview}"')
             print(f"      → {nclips} clip(s), each ≤ {maxrt:.2f}s")
 
         print()
@@ -1958,15 +2203,15 @@ def _resolve_manual_interventions_interactively(
 
         st_text, entry = manual_items[idx]
         nclips = int(entry.get("num_clips_needed", 1) or 1)
-        maxrt  = float(entry.get("max_runtime_per_clip_seconds", 0.0) or 0.0)
+        maxrt = float(entry.get("max_runtime_per_clip_seconds", 0.0) or 0.0)
 
-        print(f"\nResolving [{idx + 1}]: \"{st_text}\"")
+        print(f'\nResolving [{idx + 1}]: "{st_text}"')
         print(f"  needs {nclips} clip(s), each ≤ {maxrt:.2f}s\n")
 
         # Reload history fresh in case it was edited externally
-        history     = _load_json_safe(history_file, {}) or {}
+        history = _load_json_safe(history_file, {}) or {}
         new_footage = []
-        aborted     = False
+        aborted = False
 
         for c in range(nclips):
             try:
@@ -1984,7 +2229,7 @@ def _resolve_manual_interventions_interactively(
                 break
 
             # Strip any path components if the user pasted a full path
-            fname     = Path(fname).name
+            fname = Path(fname).name
             full_path = drop_dir / fname
 
             if not full_path.exists():
@@ -1996,8 +2241,8 @@ def _resolve_manual_interventions_interactively(
             # URL key just needs to be unique per local file. Using the
             # basename keeps history.json readable and de-dupes if the same
             # file is reused across scenes.
-            url_key            = f"local:{fname}"
-            history[url_key]   = str(full_path)
+            url_key = f"local:{fname}"
+            history[url_key] = str(full_path)
             new_footage.append({url_key: round(maxrt, 2)})
             print(f"  ✓ {fname}")
 
@@ -2016,6 +2261,7 @@ def _resolve_manual_interventions_interactively(
 
 # ── PUBLIC ENTRY POINT ────────────────────────────────────────────────────────
 
+
 def run_media_review(
     candidates_data: list[dict],
     history_file: str,
@@ -2024,6 +2270,7 @@ def run_media_review(
     regenerate_fn=None,
     regenerable_texts=None,
     timings_file: str = ".ai_generation_timings.json",
+    script_to_search_term: dict | None = None,
 ) -> tuple[list[dict] | None, bool]:
     """
     Display the multi-candidate review GUI and return the final ordered footage
@@ -2101,27 +2348,42 @@ def run_media_review(
         review_state = {}
     # Filter out malformed entries (e.g. from older bool-based formats)
     review_state = {
-        k: v for k, v in review_state.items()
-        if isinstance(v, dict) and "footage" in v
+        k: v for k, v in review_state.items() if isinstance(v, dict) and "footage" in v
     }
 
     history_map = _load_json_safe(history_file, {}) or {}
     if not isinstance(history_map, dict):
         history_map = {}
 
+    final_cache_data = (
+        _load_json_safe(Path(cache_dir) / "final_script_to_clips.json", []) or []
+    )
+    if not isinstance(final_cache_data, list):
+        final_cache_data = []
+
     # ── Determine which scenes still need review ────────────────────────────
     pending = [
-        item for item in candidates_data
-        if item.get("script_text") not in review_state
+        item for item in candidates_data if item.get("script_text") not in review_state
     ]
 
     if pending:
-        print(f"[review] {len(pending)} item(s) need review "
-              f"({len(review_state)} already decided). Launching GUI…")
-        reviewer = _MediaReviewer(pending, history_map, review_state_file, review_state,
-                                  regenerate_fn=regenerate_fn,
-                                  regenerable_texts=regenerable_texts,
-                                  timings_file=timings_file)
+        print(
+            f"[review] {len(pending)} item(s) need review "
+            f"({len(review_state)} already decided). Launching GUI…"
+        )
+        reviewer = _MediaReviewer(
+            pending,
+            history_map,
+            review_state_file,
+            review_state,
+            regenerate_fn=regenerate_fn,
+            regenerable_texts=regenerable_texts,
+            timings_file=timings_file,
+            script_to_search_term=script_to_search_term,
+            preview_frame_dir=Path(cache_dir) / "previous_previews",
+            candidates_data=candidates_data,
+            final_cache_data=final_cache_data,
+        )
         # Tk teardown MUST finish on this (main) thread. If a later GC pass on a
         # worker thread (the stitcher's ThreadPoolExecutor) finalizes any
         # lingering Tcl-backed objects, the process dies with
@@ -2161,16 +2423,20 @@ def run_media_review(
         st = item["script_text"]
         entry = review_state.get(st)
         if entry and entry.get("footage"):
-            final_data.append({
-                "script_text": st,
-                "footage": entry["footage"],
-            })
+            final_data.append(
+                {
+                    "script_text": st,
+                    "footage": entry["footage"],
+                }
+            )
         else:
             skipped.append(st)
 
     if skipped:
-        print(f"[review] WARNING: {len(skipped)} scene(s) had no footage and "
-              f"were skipped: {skipped[:3]}{'…' if len(skipped) > 3 else ''}")
+        print(
+            f"[review] WARNING: {len(skipped)} scene(s) had no footage and "
+            f"were skipped: {skipped[:3]}{'…' if len(skipped) > 3 else ''}"
+        )
 
     return final_data, False
 

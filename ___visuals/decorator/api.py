@@ -20,26 +20,32 @@ FINISH saves; closing the window abandons (the caller keeps the original).
 Captions are NOT here — they're the automatic `caption` modifier
 (DECORATE_STAGE). Hand-placed text is the canvas's own Add text.
 """
+
 from __future__ import annotations
 
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
+
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent.parent))
 
 import shutil
 import tempfile
 from pathlib import Path
 
+from ___visuals.PREVIOUS_ENTRY_PREVIEW import PreviousEntryPreview
+
 VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".m4v"}
 
 
-def run_decorator(base_image_path: str,
-                  out_path: str,
-                  stamps: list[str] | tuple = (),
-                  title: str = "decorate",
-                  tools: tuple[str, ...] = ("stamp", "zoom", "object"),
-                  ) -> str | None:
+def run_decorator(
+    base_image_path: str,
+    out_path: str,
+    stamps: list[str] | tuple = (),
+    title: str = "decorate",
+    tools: tuple[str, ...] = ("stamp", "zoom", "object"),
+    previous_preview: PreviousEntryPreview | None = None,
+) -> str | None:
     """Open the decorate editor on base_image_path. Returns the saved result
     path once anything changed and FINISH was pressed (normally out_path;
     with the matching video suffix instead if the session result is an
@@ -50,12 +56,20 @@ def run_decorator(base_image_path: str,
     base_image_path = str(base_image_path)
     work = Path(tempfile.mkdtemp(prefix="decorator_"))
     tabs = tuple(t for t in tools if t in ("stamp", "zoom", "object"))
-    print(f"[decorator] editing {Path(base_image_path).name}  "
-          f"(tabs: draw, {', '.join(tabs)})")
+    print(
+        f"[decorator] editing {Path(base_image_path).name}  "
+        f"(tabs: draw, {', '.join(tabs)})"
+    )
 
-    action, result = run_editor_session(
-        base_image_path, window_title=title, tabs=tabs,
-        stamps=[str(s) for s in stamps], work_dir=work)
+    kwargs = {
+        "window_title": title,
+        "tabs": tabs,
+        "stamps": [str(s) for s in stamps],
+        "work_dir": work,
+    }
+    if previous_preview is not None:
+        kwargs["previous_preview"] = previous_preview
+    action, result = run_editor_session(base_image_path, **kwargs)
 
     if action == "exit":
         print("[decorator] window closed — abandoning (footage kept)")
@@ -67,16 +81,19 @@ def run_decorator(base_image_path: str,
     out = Path(out_path)
     suffix = Path(result).suffix.lower()
     if suffix in VIDEO_EXTS and out.suffix.lower() not in VIDEO_EXTS:
-        out = out.with_suffix(suffix)   # the session result is an animated MP4
+        out = out.with_suffix(suffix)  # the session result is an animated MP4
     out.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(result, out)
     print(f"[decorator] ✓ saved {out}")
     return str(out)
 
 
-def run_overlay_decorator(base_image_path: str,
-                          stamps: list[str] | tuple = (),
-                          title: str = "decorate (LIVE video)"):
+def run_overlay_decorator(
+    base_image_path: str,
+    stamps: list[str] | tuple = (),
+    title: str = "decorate (LIVE video)",
+    previous_preview: PreviousEntryPreview | None = None,
+):
     """Open the decorate editor in LIVE-VIDEO overlay mode: the base is a
     frame of the PLAYING footage (extract it at the moment the scene starts,
     with any earlier chain ops applied), the draw + stamp + zoom tools are
@@ -92,12 +109,21 @@ def run_overlay_decorator(base_image_path: str,
     from ___visuals.decorator.draw import run_editor_session
 
     work = Path(tempfile.mkdtemp(prefix="decorator_ov_"))
-    print(f"[decorator] LIVE overlay editing {Path(str(base_image_path)).name}"
-          f"  (tabs: draw, stamp, zoom — over playing footage"
-          f"{f'; {len(stamps)} stamp(s) ready' if stamps else ''})")
-    action, ops = run_editor_session(
-        str(base_image_path), window_title=title, tabs=("stamp", "zoom"),
-        stamps=[str(s) for s in stamps], work_dir=work, overlay_mode=True)
+    print(
+        f"[decorator] LIVE overlay editing {Path(str(base_image_path)).name}"
+        f"  (tabs: draw, stamp, zoom — over playing footage"
+        f"{f'; {len(stamps)} stamp(s) ready' if stamps else ''})"
+    )
+    kwargs = {
+        "window_title": title,
+        "tabs": ("stamp", "zoom"),
+        "stamps": [str(s) for s in stamps],
+        "work_dir": work,
+        "overlay_mode": True,
+    }
+    if previous_preview is not None:
+        kwargs["previous_preview"] = previous_preview
+    action, ops = run_editor_session(str(base_image_path), **kwargs)
     if action == "exit":
         print("[decorator] window closed — abandoning (footage kept)")
         return None
@@ -106,35 +132,46 @@ def run_overlay_decorator(base_image_path: str,
         return None
     n_layers = sum(1 for k, _ in ops if k == "layer")
     n_zooms = sum(1 for k, _ in ops if k == "zoom")
-    print(f"[decorator] ✓ {n_layers} layer(s) + {n_zooms} zoom(s) to apply "
-          f"to the video")
+    print(
+        f"[decorator] ✓ {n_layers} layer(s) + {n_zooms} zoom(s) to apply to the video"
+    )
     return ops
 
 
 def _main() -> None:
     """Direct run — the ONE editor window (draw canvas + tab sidebar):
 
-        uv run ___visuals/decorator/api.py PIC.png
-        uv run ___visuals/decorator/api.py PIC.png --stamps coin.png jar.png
-        uv run ___visuals/decorator/api.py PIC.png --out edited.png
+    uv run ___visuals/decorator/api.py PIC.png
+    uv run ___visuals/decorator/api.py PIC.png --stamps coin.png jar.png
+    uv run ___visuals/decorator/api.py PIC.png --out edited.png
     """
     import argparse
 
     ap = argparse.ArgumentParser(description=_main.__doc__)
     ap.add_argument("base", help="the picture to start with")
-    ap.add_argument("--stamps", nargs="*", default=[],
-                    help="pictures offered by the stamp tab")
-    ap.add_argument("--out", default=None,
-                    help="output path (default: <base>_decorated.png)")
-    ap.add_argument("--tabs", nargs="*", default=["stamp", "zoom", "object"],
-                    help="which tool tabs to offer besides draw")
+    ap.add_argument(
+        "--stamps", nargs="*", default=[], help="pictures offered by the stamp tab"
+    )
+    ap.add_argument(
+        "--out", default=None, help="output path (default: <base>_decorated.png)"
+    )
+    ap.add_argument(
+        "--tabs",
+        nargs="*",
+        default=["stamp", "zoom", "object"],
+        help="which tool tabs to offer besides draw",
+    )
     args = ap.parse_args()
 
     base = Path(args.base)
     out = args.out or str(base.with_name(base.stem + "_decorated.png"))
-    result = run_decorator(str(base), out, stamps=args.stamps,
-                           tools=tuple(args.tabs),
-                           title=f"decorate: {base.name}")
+    result = run_decorator(
+        str(base),
+        out,
+        stamps=args.stamps,
+        tools=tuple(args.tabs),
+        title=f"decorate: {base.name}",
+    )
     if result is None:
         print("[decorator] no edits — nothing saved")
 

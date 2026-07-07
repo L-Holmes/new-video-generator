@@ -30,6 +30,7 @@ from pathlib import Path
 
 import ollama
 
+from ___visuals.ADD_RELEVANT_OVERLAYS import apply_relevant_overlays_to_final_data
 from ___visuals.AI_GENERATION import (
     _regenerate_stickman_joint_scene,
     _regenerate_stickman_scene,
@@ -38,12 +39,18 @@ from ___visuals.AI_GENERATION import (
     run_ai_edit_stage,
 )
 from ___visuals.AUDIO_EVENTS import build_audio_events_map
+
+# ===========================================================================
+# IMPORTS - LOCAL (external pipeline stages driven directly by main)
+# ===========================================================================
+from ___visuals.AUDIO_SCRIPT_SYNCHRONIZER import run as run_audio_script_synchronizer
 from ___visuals.CACHE_IO import (
     add_path_remap_to_history,
     load_from_cache,
     load_json,
     save_to_cache,
 )
+from ___visuals.COLLAGE_STAGE import run_collage_stage
 from ___visuals.COLOUR_GRADE_STAGE import apply_colour_grading_to_final_data
 from ___visuals.CONFIG import (
     _CACHE_DIR,
@@ -64,39 +71,32 @@ from ___visuals.CONFIG import (
     SCRIPT_FILE,
     SFX_VOLUME,
     SYNCHRONIZED_SCRIPT_OUTPUT_FILE,
+    TIMESTAMPS_ABSOLUTE_FILE,
+    MediaType,
+    SearchTermData,
     ensure_runtime_dirs,
     media_props,
     normalise_scene_row,
     scene_is_grouped,
-    TIMESTAMPS_ABSOLUTE_FILE,
-    MediaType,
-    SearchTermData,
 )
-from ___visuals.DOWNLOADS import load_stock_footage
-from ___visuals.KEN_BURNS import apply_ken_burns_to_final_data
-from ___visuals.ADD_RELEVANT_OVERLAYS import apply_relevant_overlays_to_final_data
-from ___visuals.COLLAGE_STAGE import run_collage_stage
 from ___visuals.DECORATE_STAGE import (
     restore_stamp_rows_after_review,
     run_decorate_stage,
     swap_stamp_rows_for_review,
 )
+from ___visuals.DOWNLOADS import load_stock_footage
+from ___visuals.KEN_BURNS import apply_ken_burns_to_final_data
 from ___visuals.PIXELLATE_STAGE import pixellate_candidate_bundles
 from ___visuals.SCENE_GENERATORS import (
     generate_stickman_explain_scenes,
     run_all_local_generators,
 )
-from ___visuals.STATIC_RENDER import run_manual_image_stage
-from ___visuals.TIMING_MERGE import integrate_generated_footage
-from ___visuals.VIDEO_BACKGROUND_STAGE import run_video_background_stage
-
-# ===========================================================================
-# IMPORTS - LOCAL (external pipeline stages driven directly by main)
-# ===========================================================================
-from ___visuals.AUDIO_SCRIPT_SYNCHRONIZER import run as run_audio_script_synchronizer
 from ___visuals.SCRIPT_AUDIO_CUTDOWN_AND_PROCESS import run as run_audio_cutdown
+from ___visuals.STATIC_RENDER import run_manual_image_stage
 from ___visuals.STITCH_TOGETHER import stitch_together_video
 from ___visuals.STOCK_FOOTAGE_REVIEW import run_media_review
+from ___visuals.TIMING_MERGE import integrate_generated_footage
+from ___visuals.VIDEO_BACKGROUND_STAGE import run_video_background_stage
 
 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 print("running main")
@@ -241,11 +241,16 @@ def main() -> None:
         # Top-up: stamp scenes enabled AFTER this cache was built have no
         # bundle yet — fetch just those and extend the cache.
         _have = {c["script_text"] for c in candidates_data}
-        _missing = {t: r for t, r in scriptTextToPexelSearch.items()
-                    if "_stamp_orig_type" in r and t not in _have}
+        _missing = {
+            t: r
+            for t, r in scriptTextToPexelSearch.items()
+            if "_stamp_orig_type" in r and t not in _have
+        }
         if _missing:
-            print(f"🔍 Fetching candidates for {len(_missing)} stamp "
-                  f"scene(s) missing from the cache...")
+            print(
+                f"🔍 Fetching candidates for {len(_missing)} stamp "
+                f"scene(s) missing from the cache..."
+            )
             candidates_data.extend(load_stock_footage(_missing))
             _sm = generate_stickman_candidates(_missing)
             if _sm:
@@ -324,13 +329,12 @@ def main() -> None:
     # 2.5) STAGE 1 review — everything EXCEPT (things that don't need reviewing...)
     print("====================================================================")
     print("Launching media review GUI (stage 1: stock / wiki / joint / stickman)...")
+
     # Exclude from the stage-1 review GUI (property-driven, no type lists):
     #   - ai-edit scenes: reviewed later in stage 2 (need the stage-1 picks)
     #   - hold-previous scenes: nothing to review, they derive their image
     def _skip_stage1(script_text: str) -> bool:
-        p = media_props(
-            scriptTextToPexelSearch.get(script_text, {}).get("media_type")
-        )
+        p = media_props(scriptTextToPexelSearch.get(script_text, {}).get("media_type"))
         return p.is_ai_edit or p.is_hold_previous
 
     non_edit_candidates = [
@@ -339,8 +343,7 @@ def main() -> None:
 
     def _is_ai_stock(d: dict, grouped: bool) -> bool:
         return (
-            d.get("media_type") == MediaType.AI_STOCK
-            and scene_is_grouped(d) == grouped
+            d.get("media_type") == MediaType.AI_STOCK and scene_is_grouped(d) == grouped
         )
 
     _stickman_texts = {
@@ -368,6 +371,7 @@ def main() -> None:
         cache_dir=_CACHE_DIR,
         regenerate_fn=_regen_stage1,
         regenerable_texts=_regenerable_stage1,
+        script_to_search_term=scriptTextToPexelSearch,
     )
     if has_manual:
         print("\n[main] Exiting so you can perform the manual fixes above.")
@@ -516,7 +520,9 @@ def main() -> None:
     if video_bg_remap:
         add_path_remap_to_history(video_bg_remap, label="video-background")
         save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
-        print(f"💾 Updated final_data with background composites → {FINAL_SCRIPT_AND_CLIPS}")
+        print(
+            f"💾 Updated final_data with background composites → {FINAL_SCRIPT_AND_CLIPS}"
+        )
         _dump_final(final_data, "POST-VIDEO-BACKGROUND")
 
     # 2.66) Auto-detected overlays — small FIXED corner badges (question mark,
