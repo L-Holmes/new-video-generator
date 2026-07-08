@@ -2642,7 +2642,18 @@ class _DecorateApp:
             )
 
     def _show_panel(self, name):
-        for p in (self.draw_panel, self.stamp_panel, self.zoom_panel):
+        # Forget EVERY tool panel, then pack only the one for the active tab.
+        # object_panel must be forgotten too: the object editor mounts its
+        # controls INTO it (and destroys them on close), so if it's left
+        # packed when switching away the empty frame stays in tool_area
+        # alongside the new panel — both expand=True, so they split the space
+        # and the new tab reads as blank/unusable.
+        for p in (
+            self.draw_panel,
+            self.stamp_panel,
+            self.zoom_panel,
+            self.object_panel,
+        ):
             p.pack_forget()
         panel = {
             "stamp": self.stamp_panel,
