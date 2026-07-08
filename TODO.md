@@ -20,13 +20,6 @@ TODO:
     - and the auto tagger... (again- checking for cache)
     - and the manual reviewer... (if any of the entries in the json have no mediatype...
 
-- For decorator, if i do 'object' tab, then do an action (e.g. select object, then remove background) then the rest of the tabs become blank and unususable... 
-- For decorator:
-    - Make it so you can rotate text in OUR paint thing
-    - Reuse code for this- ideally use that thing circle with the arrow that we already use for other things.
-- For decorator:
-    - For the decorate's 'zoom', reverse the plus and minus, so that plus makes hte box bigger. Also, as soon as you click, it should complete the zoom- just remove the 'complete zoom' button.
-    Also, 'undo' button doesn't seem to undo the zoom. (It should!)
 
 
 
