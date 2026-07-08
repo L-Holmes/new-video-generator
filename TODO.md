@@ -60,7 +60,27 @@ It will then update an ongoing log file we have, which will do before and after,
 
 
 11) We shouldn't allow brand new clips (i.e. wikipedia or stock) (but edit previous or things like that are fine) to be shorter than a threshold which we define in the config (e.g. like 0.5 seconds)... If they are shorter than that... we should make the user instead either manually edit the tag file... or use an 'edit prevoius' instead...
+(instead of setting 1 second, we just use a hardcoded value for narrator words per minute (slightly faster than average)...
 
+ Then in the manual tagger we give the user options (it would be fantastic if the user could click on an option to apply an option, then undo if they didn't like it..) (it would be even better if when they hover over an option, if it shows what will happen (e.g. if the option infers joining to the previous, then we use our existing code as if the user had hovered over the 'join to previous')...
+
+    Give these options to the user, in very close to my wording;
+
+
+That sentence is too short to have new footage.
+It will just flash on the screen for th user 
+You need *[x]* more words to make the scene long enough to stand by itself 
+Your options;
+(1) Edit and add to the previous scene [recommended] 
+(2) Join this scene to the previous scene, thus making the previous scene be on the screen for longer
+(3) Split the previous scene, join it to the start of this scene
+(4) Make the scene after this scene be an edit of this scene 
+(5) Join [at least part of] the scene after this scene to this scene 
+(X) Manual override and use quick stock anyway 
+
+
+We'll also want the auto tagger to generally follow these rules as well...
+make it have some intelliggence when deciding whether to just edit previous, adding decorated stock (do this most of the time), or just joining to previous scene or next scene (do this very rarely...)
 
 
 12) need an actual reliable thing for the words on screen... and perhaps have a flag that we change in config that determines whether it shows like the whole sentence on screen, but one word at once... or just each word one by one as it does now..
