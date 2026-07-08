@@ -383,8 +383,14 @@ def burn_ops_onto_segment(segment: str, ops: list, out_path: str) -> str:
         if kind == "zoom":
             w, h, x, y = _zoom_rect_px(payload)
             o = f"zm{n}"
+            # crop then scale back to the frame, preserving the crop's aspect
+            # ratio and padding the rest white (letterbox) so a non-aspect-
+            # locked crop is NEVER stretched.
             fc.append(
-                f"[{cur}]crop={w}:{h}:{x}:{y},scale={FRAME_W}:{FRAME_H},setsar=1[{o}]"
+                f"[{cur}]crop={w}:{h}:{x}:{y},"
+                f"scale={FRAME_W}:{FRAME_H}:force_original_aspect_ratio=decrease,"
+                f"pad={FRAME_W}:{FRAME_H}:(ow-iw)/2:(oh-ih)/2:color=white,"
+                f"setsar=1[{o}]"
             )
             cur, n = o, n + 1
             continue
@@ -519,7 +525,19 @@ def composite_ops_for_preview(frame_png: str, ops: list, out_png: str) -> str:
     for kind, payload in ops:
         if kind == "zoom":
             w, h, x, y = _zoom_rect_px(payload, *img.size)
-            img = img.crop((x, y, x + w, y + h)).resize(img.size, _RES)
+            crop = img.crop((x, y, x + w, y + h))
+            bw, bh = img.size
+            # preserve the crop's aspect ratio; letterbox the rest white
+            # (matches crop_and_zoom / the ffmpeg burn, so no stretching)
+            scale = min(bw / w, bh / h)
+            nw, nh = max(1, round(w * scale)), max(1, round(h * scale))
+            scaled = crop.resize((nw, nh), _RES)
+            if (nw, nh) == (bw, bh):
+                img = scaled
+            else:
+                canvas = Image.new("RGB", (bw, bh), (255, 255, 255))
+                canvas.paste(scaled, ((bw - nw) // 2, (bh - nh) // 2))
+                img = canvas
             continue
         layer = payload
         if layer.highlights:

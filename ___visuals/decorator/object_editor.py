@@ -59,6 +59,7 @@ TESTING
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
+
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import os
@@ -79,14 +80,13 @@ except Exception as exc:  # pragma: no cover
 import numpy as np
 from PIL import Image, ImageTk
 
-
-MODEL_NAME = "mobile_sam.pt"      # or "sam2_t.pt", "sam2_b.pt", "sam_b.pt"
+MODEL_NAME = "mobile_sam.pt"  # or "sam2_t.pt", "sam2_b.pt", "sam_b.pt"
 SIDEBAR_WIDTH = 300
 WINDOW_SIZE = "1320x900"
 UNDO_LIMIT = 20
-BLUE = (40, 110, 255)             # selection outline colour (RGB)
-ACTIVE_BG = "#2f6fed"             # "drawing in progress" highlight
-ARMED_BG = "#1f9d3d"             # armed animated effect (green)
+BLUE = (40, 110, 255)  # selection outline colour (RGB)
+ACTIVE_BG = "#2f6fed"  # "drawing in progress" highlight
+ARMED_BG = "#1f9d3d"  # armed animated effect (green)
 SIDEBAR_BG = "#f2f2f2"
 
 DRAW_LABEL = "Extend selected area (manual draw)"
@@ -108,8 +108,9 @@ class ObjectSeparator(tk.Frame):
     decorator mounts it under its tab strip, so the same window hosts it —
     and calls on_done(saved_path_or_None) when finished/closed."""
 
-    def __init__(self, image_path: str, output_dir: str,
-                 master=None, on_done=None, hosts=None):
+    def __init__(
+        self, image_path: str, output_dir: str, master=None, on_done=None, hosts=None
+    ):
         # hosts (embedded only): {"sidebar": Frame for the controls,
         #   "status": the host's StringVar, "undo_btn": the host's Undo
         #   button} — the DECORATOR's own Finish / Undo / status become this
@@ -132,10 +133,16 @@ class ObjectSeparator(tk.Frame):
         self.output_dir = output_dir
         # embedded: no immediate "export" wording — everything applies when
         # the DECORATOR session finishes.
-        self._lbl_plain = ("Finish edits and continue" if self._owns_root
-                           else "\u2713 apply & back to decorate")
-        self._lbl_armed = ("Finish & export MP4 \u25B6" if self._owns_root
-                           else "\u2713 apply effect & back (renders on finish)")
+        self._lbl_plain = (
+            "Finish edits and continue"
+            if self._owns_root
+            else "\u2713 apply & back to decorate"
+        )
+        self._lbl_armed = (
+            "Finish & export MP4 \u25b6"
+            if self._owns_root
+            else "\u2713 apply effect & back (renders on finish)"
+        )
 
         pil = Image.open(image_path)
         self.alpha = pil.getchannel("A") if "A" in pil.getbands() else None
@@ -167,8 +174,8 @@ class ObjectSeparator(tk.Frame):
         # interaction / view / output
         self.mode = "select"
         self.show_result = False
-        self.anim_style = None        # None or one of ANIM_DEFS keys
-        self.saved_path = None        # set on finish; returned by run_editor
+        self.anim_style = None  # None or one of ANIM_DEFS keys
+        self.saved_path = None  # set on finish; returned by run_editor
         self._stroke_img = []
         self._stroke_canvas = []
         self.undo_stack = []
@@ -197,7 +204,7 @@ class ObjectSeparator(tk.Frame):
             self.canvas.bind("<ButtonRelease-1>", self._on_release)
             self.status = self._hosts["status"]
             self.undo_btn = self._hosts["undo_btn"]
-            self.finish_btn = None          # the host's Finish drives _finish
+            self.finish_btn = None  # the host's Finish drives _finish
             side = self._hosts["sidebar"]
             self._embed_controls = tk.Frame(side, bg=SIDEBAR_BG)
             self._embed_controls.pack(fill="both", expand=True)
@@ -220,28 +227,41 @@ class ObjectSeparator(tk.Frame):
         topbar = tk.Frame(sidebar, bg=SIDEBAR_BG)
         topbar.pack(side="top", fill="x", padx=12, pady=(10, 2))
         self._undo_icon = self._make_undo_icon()
-        self.undo_btn = tk.Button(topbar, text=" Undo", command=self._undo,
-                                  state="disabled", compound="left")
+        self.undo_btn = tk.Button(
+            topbar, text=" Undo", command=self._undo, state="disabled", compound="left"
+        )
         if self._undo_icon is not None:
             self.undo_btn.config(image=self._undo_icon)
         else:
-            self.undo_btn.config(text="\u21B6 Undo")
+            self.undo_btn.config(text="\u21b6 Undo")
         self.undo_btn.pack(side="left")
-        tk.Frame(sidebar, height=1, bg="#cccccc").pack(side="top", fill="x",
-                                                       padx=12, pady=6)
+        tk.Frame(sidebar, height=1, bg="#cccccc").pack(
+            side="top", fill="x", padx=12, pady=6
+        )
 
         # --- pinned bottom: status + finish --------------------------------
         self.finish_btn = tk.Button(
-            sidebar, text=self._lbl_plain, command=self._finish,
-            bg=ARMED_BG, fg="white", activebackground="#178233",
-            activeforeground="white", font=("TkDefaultFont", 10, "bold"),
+            sidebar,
+            text=self._lbl_plain,
+            command=self._finish,
+            bg=ARMED_BG,
+            fg="white",
+            activebackground="#178233",
+            activeforeground="white",
+            font=("TkDefaultFont", 10, "bold"),
             relief="flat",
         )
         self.finish_btn.pack(side="bottom", fill="x", padx=12, pady=12, ipady=6)
         self.status = tk.StringVar(value="Click an object to begin.")
-        tk.Label(sidebar, textvariable=self.status, bg=SIDEBAR_BG, fg="#444",
-                 wraplength=SIDEBAR_WIDTH - 24, justify="left", anchor="w"
-                 ).pack(side="bottom", fill="x", padx=12, pady=(0, 4))
+        tk.Label(
+            sidebar,
+            textvariable=self.status,
+            bg=SIDEBAR_BG,
+            fg="#444",
+            wraplength=SIDEBAR_WIDTH - 24,
+            justify="left",
+            anchor="w",
+        ).pack(side="bottom", fill="x", padx=12, pady=(0, 4))
 
         self._build_scroll_controls(sidebar)
 
@@ -251,17 +271,25 @@ class ObjectSeparator(tk.Frame):
         mid.pack(side="top", fill="both", expand=True)
         vsb = tk.Scrollbar(mid, orient="vertical")
         vsb.pack(side="right", fill="y")
-        self._scroll_canvas = tk.Canvas(mid, bg=SIDEBAR_BG, highlightthickness=0,
-                                        yscrollcommand=vsb.set)
+        self._scroll_canvas = tk.Canvas(
+            mid, bg=SIDEBAR_BG, highlightthickness=0, yscrollcommand=vsb.set
+        )
         self._scroll_canvas.pack(side="left", fill="both", expand=True)
         vsb.config(command=self._scroll_canvas.yview)
         inner = tk.Frame(self._scroll_canvas, bg=SIDEBAR_BG)
-        self._inner_win = self._scroll_canvas.create_window((0, 0), window=inner,
-                                                            anchor="nw")
-        inner.bind("<Configure>", lambda e: self._scroll_canvas.configure(
-            scrollregion=self._scroll_canvas.bbox("all")))
-        self._scroll_canvas.bind("<Configure>", lambda e: self._scroll_canvas.itemconfig(
-            self._inner_win, width=e.width))
+        self._inner_win = self._scroll_canvas.create_window(
+            (0, 0), window=inner, anchor="nw"
+        )
+        inner.bind(
+            "<Configure>",
+            lambda e: self._scroll_canvas.configure(
+                scrollregion=self._scroll_canvas.bbox("all")
+            ),
+        )
+        self._scroll_canvas.bind(
+            "<Configure>",
+            lambda e: self._scroll_canvas.itemconfig(self._inner_win, width=e.width),
+        )
         self._scroll_canvas.bind("<Enter>", lambda e: self._bind_wheel())
         self._scroll_canvas.bind("<Leave>", lambda e: self._unbind_wheel())
 
@@ -269,81 +297,122 @@ class ObjectSeparator(tk.Frame):
 
     def _build_controls(self, inner):
         pad = {"padx": 12, "pady": (4, 0)}
-        tk.Label(inner, text="How to select", bg=SIDEBAR_BG,
-                 font=("TkDefaultFont", 11, "bold")).pack(anchor="w", **pad)
         tk.Label(
-            inner, bg=SIDEBAR_BG, justify="left", wraplength=SIDEBAR_WIDTH - 40,
+            inner,
+            text="How to select",
+            bg=SIDEBAR_BG,
+            font=("TkDefaultFont", 11, "bold"),
+        ).pack(anchor="w", **pad)
+        tk.Label(
+            inner,
+            bg=SIDEBAR_BG,
+            justify="left",
+            wraplength=SIDEBAR_WIDTH - 40,
             text="Click an object to select it.\n"
-                 "Click another area to add it too.\n"
-                 "Shift+Click an area to remove it.",
+            "Click another area to add it too.\n"
+            "Shift+Click an area to remove it.",
         ).pack(anchor="w", padx=12, pady=(0, 6))
 
         tk.Frame(inner, height=1, bg="#cccccc").pack(fill="x", padx=12, pady=6)
 
-        tk.Label(inner, text="Selected", bg=SIDEBAR_BG,
-                 font=("TkDefaultFont", 11, "bold")).pack(anchor="w", **pad)
-        self.listbox = tk.Listbox(inner, height=3, exportselection=False,
-                                  activestyle="dotbox")
+        tk.Label(
+            inner, text="Selected", bg=SIDEBAR_BG, font=("TkDefaultFont", 11, "bold")
+        ).pack(anchor="w", **pad)
+        self.listbox = tk.Listbox(
+            inner, height=3, exportselection=False, activestyle="dotbox"
+        )
         self.listbox.pack(fill="x", padx=12, pady=(2, 4))
         self.listbox.bind("<<ListboxSelect>>", self._on_item_select)
 
-        self.draw_btn = tk.Button(inner, text=DRAW_LABEL,
-                                  command=lambda: self._toggle_mode("draw"))
+        self.draw_btn = tk.Button(
+            inner, text=DRAW_LABEL, command=lambda: self._toggle_mode("draw")
+        )
         self.draw_btn.pack(fill="x", padx=12, pady=(0, 4))
         self._btn_bg = self.draw_btn.cget("background")
         self._btn_fg = self.draw_btn.cget("foreground")
         self._btn_abg = self.draw_btn.cget("activebackground")
         self._btn_afg = self.draw_btn.cget("activeforeground")
 
-        self.cut_btn = tk.Button(inner, text=CUT_LABEL,
-                                 command=lambda: self._toggle_mode("cut"))
+        self.cut_btn = tk.Button(
+            inner, text=CUT_LABEL, command=lambda: self._toggle_mode("cut")
+        )
         self.cut_btn.pack(fill="x", padx=12, pady=(0, 4))
-        self.toggle_cut_btn = tk.Button(inner, text="Toggle removed area",
-                                        state="disabled",
-                                        command=self._toggle_removed_area)
+        self.toggle_cut_btn = tk.Button(
+            inner,
+            text="Toggle removed area",
+            state="disabled",
+            command=self._toggle_removed_area,
+        )
         self.toggle_cut_btn.pack(fill="x", padx=12, pady=(0, 4))
-        self.reset_btn = tk.Button(inner, text="Discard selection & try again",
-                                   command=self._reset_selection)
+        self.reset_btn = tk.Button(
+            inner, text="Discard selection & try again", command=self._reset_selection
+        )
         self.reset_btn.pack(fill="x", padx=12, pady=(0, 6))
 
         tk.Frame(inner, height=1, bg="#cccccc").pack(fill="x", padx=12, pady=6)
 
-        tk.Label(inner, text="Still effects (saved as image)", bg=SIDEBAR_BG,
-                 font=("TkDefaultFont", 11, "bold")).pack(anchor="w", **pad)
-        self.outline_btn = tk.Button(inner, text="Add outline", state="disabled",
-                                     command=self._add_outline)
-        self.outline_btn.pack(fill="x", padx=12, pady=(2, 4))
-        self.hl_btn = tk.Button(inner, text="Highlight subject", state="disabled",
-                                command=self._highlight)
+        tk.Label(
+            inner,
+            text="Still effects (saved as image)",
+            bg=SIDEBAR_BG,
+            font=("TkDefaultFont", 11, "bold"),
+        ).pack(anchor="w", **pad)
+        self.bg_btn = tk.Button(
+            inner,
+            text="Remove background \u2192 white",
+            state="disabled",
+            command=self._remove_background,
+        )
+        self.bg_btn.pack(fill="x", padx=12, pady=(2, 4))
+        self.outline_btn = tk.Button(
+            inner, text="Add outline", state="disabled", command=self._add_outline
+        )
+        self.outline_btn.pack(fill="x", padx=12, pady=(0, 4))
+        self.hl_btn = tk.Button(
+            inner, text="Highlight subject", state="disabled", command=self._highlight
+        )
         self.hl_btn.pack(fill="x", padx=12, pady=(0, 4))
-        self.shadow_btn = tk.Button(inner, text="Add soft shadow", state="disabled",
-                                    command=self._soft_shadow)
+        self.shadow_btn = tk.Button(
+            inner, text="Add soft shadow", state="disabled", command=self._soft_shadow
+        )
         self.shadow_btn.pack(fill="x", padx=12, pady=(0, 4))
-        self.bokeh_btn = tk.Button(inner, text="Bokeh background", state="disabled",
-                                   command=self._bokeh)
+        self.bokeh_btn = tk.Button(
+            inner, text="Bokeh background", state="disabled", command=self._bokeh
+        )
         self.bokeh_btn.pack(fill="x", padx=12, pady=(0, 4))
-        self.mono_btn = tk.Button(inner, text="Monochrome background",
-                                  state="disabled", command=self._mono_background)
-        self.mono_btn.pack(fill="x", padx=12, pady=(0, 4))
-        self.bg_btn = tk.Button(inner, text="Remove background \u2192 white",
-                                state="disabled", command=self._remove_background)
-        self.bg_btn.pack(fill="x", padx=12, pady=(0, 6))
+        self.mono_btn = tk.Button(
+            inner,
+            text="Monochrome background",
+            state="disabled",
+            command=self._mono_background,
+        )
+        self.mono_btn.pack(fill="x", padx=12, pady=(0, 6))
 
         tk.Frame(inner, height=1, bg="#cccccc").pack(fill="x", padx=12, pady=6)
 
-        tk.Label(inner, text="Animated effects (saved as MP4)", bg=SIDEBAR_BG,
-                 font=("TkDefaultFont", 11, "bold")).pack(anchor="w", **pad)
+        tk.Label(
+            inner,
+            text="Animated effects (saved as MP4)",
+            bg=SIDEBAR_BG,
+            font=("TkDefaultFont", 11, "bold"),
+        ).pack(anchor="w", **pad)
         self._anim_buttons = []
         for style, label in ANIM_DEFS:
-            b = tk.Button(inner, text=label, state="disabled",
-                          command=lambda s=style: self._toggle_anim(s))
+            b = tk.Button(
+                inner,
+                text=label,
+                state="disabled",
+                command=lambda s=style: self._toggle_anim(s),
+            )
             b.pack(fill="x", padx=12, pady=(2, 2))
             self._anim_buttons.append((style, b, label))
 
     def _make_undo_icon(self):
         try:
             import math
+
             from PIL import ImageDraw
+
             size = 20
             img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
             d = ImageDraw.Draw(img)
@@ -358,10 +427,14 @@ class ObjectSeparator(tk.Frame):
             (x0, y0), (x1, y1) = pts[0], pts[1]
             ang = math.atan2(y0 - y1, x0 - x1)
             L = 5.5
-            p1 = (x0 - L * math.cos(ang - math.radians(30)),
-                  y0 - L * math.sin(ang - math.radians(30)))
-            p2 = (x0 - L * math.cos(ang + math.radians(30)),
-                  y0 - L * math.sin(ang + math.radians(30)))
+            p1 = (
+                x0 - L * math.cos(ang - math.radians(30)),
+                y0 - L * math.sin(ang - math.radians(30)),
+            )
+            p2 = (
+                x0 - L * math.cos(ang + math.radians(30)),
+                y0 - L * math.sin(ang + math.radians(30)),
+            )
             d.polygon([(x0, y0), p1, p2], fill=col)
             return ImageTk.PhotoImage(img)
         except Exception:
@@ -388,8 +461,14 @@ class ObjectSeparator(tk.Frame):
 
     def _set_effect_buttons(self, enabled):
         st = "normal" if enabled else "disabled"
-        for b in (self.outline_btn, self.hl_btn, self.shadow_btn,
-                  self.bokeh_btn, self.mono_btn, self.bg_btn):
+        for b in (
+            self.outline_btn,
+            self.hl_btn,
+            self.shadow_btn,
+            self.bokeh_btn,
+            self.mono_btn,
+            self.bg_btn,
+        ):
             b.config(state=st)
         for _, b, _ in self._anim_buttons:
             b.config(state=st)
@@ -419,15 +498,17 @@ class ObjectSeparator(tk.Frame):
         img = Image.fromarray(frame).resize((disp_w, disp_h), Image.LANCZOS)
         self._photo = ImageTk.PhotoImage(img)
         self.canvas.delete("all")
-        self.canvas.create_image(self._off_x, self._off_y, anchor="nw",
-                                 image=self._photo)
+        self.canvas.create_image(
+            self._off_x, self._off_y, anchor="nw", image=self._photo
+        )
         if not self.show_result:
             for (x, y), lab in zip(self.points, self.labels):
                 sx = self._off_x + x * self._scale
                 sy = self._off_y + y * self._scale
                 color = "#2ecc71" if lab == 1 else "#e74c3c"
-                self.canvas.create_oval(sx - 4, sy - 4, sx + 4, sy + 4,
-                                        fill=color, outline="white")
+                self.canvas.create_oval(
+                    sx - 4, sy - 4, sx + 4, sy + 4, fill=color, outline="white"
+                )
 
     def _composite_display(self):
         out = self.work.copy()
@@ -437,15 +518,20 @@ class ObjectSeparator(tk.Frame):
             import cv2
         except Exception:
             cv2 = None
-        dim_region = (self.object_mask if self.selected_item == "background"
-                      else ~self.object_mask)
+        dim_region = (
+            self.object_mask
+            if self.selected_item == "background"
+            else ~self.object_mask
+        )
         out[dim_region] = (out[dim_region] * 0.45).astype(np.uint8)
         if cv2 is not None:
             m = self.object_mask.astype(np.uint8)
-            contours, _ = cv2.findContours(m, cv2.RETR_EXTERNAL,
-                                           cv2.CHAIN_APPROX_SIMPLE)
-            cv2.drawContours(out, contours, -1, BLUE,
-                             max(2, int(round(min(self.H, self.W) / 500))))
+            contours, _ = cv2.findContours(
+                m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
+            cv2.drawContours(
+                out, contours, -1, BLUE, max(2, int(round(min(self.H, self.W) / 500)))
+            )
         return out
 
     # --------------------------------------------------------- mouse events
@@ -465,8 +551,9 @@ class ObjectSeparator(tk.Frame):
         self._stroke_img.append(self._canvas_to_image(event.x, event.y, clamp=True))
         if self._stroke_canvas:
             px, py = self._stroke_canvas[-1]
-            self.canvas.create_line(px, py, event.x, event.y, fill="#ffcc00",
-                                    width=2, tags="stroke")
+            self.canvas.create_line(
+                px, py, event.x, event.y, fill="#ffcc00", width=2, tags="stroke"
+            )
         self._stroke_canvas.append((event.x, event.y))
 
     def _on_release(self, event):
@@ -490,24 +577,43 @@ class ObjectSeparator(tk.Frame):
 
     def _style_mode_btn(self, btn, active, on_text, off_text):
         if active:
-            btn.config(text=on_text, bg=ACTIVE_BG, fg="white",
-                       activebackground=ACTIVE_BG, activeforeground="white",
-                       font=("TkDefaultFont", 9, "bold"), relief="sunken")
+            btn.config(
+                text=on_text,
+                bg=ACTIVE_BG,
+                fg="white",
+                activebackground=ACTIVE_BG,
+                activeforeground="white",
+                font=("TkDefaultFont", 9, "bold"),
+                relief="sunken",
+            )
         else:
-            btn.config(text=off_text, bg=self._btn_bg, fg=self._btn_fg,
-                       activebackground=self._btn_abg, activeforeground=self._btn_afg,
-                       font=("TkDefaultFont", 9, "normal"), relief="raised")
+            btn.config(
+                text=off_text,
+                bg=self._btn_bg,
+                fg=self._btn_fg,
+                activebackground=self._btn_abg,
+                activeforeground=self._btn_afg,
+                font=("TkDefaultFont", 9, "normal"),
+                relief="raised",
+            )
 
     def _set_mode(self, mode):
         self.mode = mode
-        self._style_mode_btn(self.draw_btn, mode == "draw",
-                             "\u25CF DRAWING - click to stop", DRAW_LABEL)
-        self._style_mode_btn(self.cut_btn, mode == "cut",
-                             "\u25CF DRAWING LINE - click to stop", CUT_LABEL)
+        self._style_mode_btn(
+            self.draw_btn, mode == "draw", "\u25cf DRAWING - click to stop", DRAW_LABEL
+        )
+        self._style_mode_btn(
+            self.cut_btn,
+            mode == "cut",
+            "\u25cf DRAWING LINE - click to stop",
+            CUT_LABEL,
+        )
         self.canvas.config(cursor="crosshair" if mode in ("draw", "cut") else "")
         if mode == "draw":
-            self.status.set(f"Draw a loop to add to the "
-                            f"{self.selected_item or 'object'}. Release to apply.")
+            self.status.set(
+                f"Draw a loop to add to the "
+                f"{self.selected_item or 'object'}. Release to apply."
+            )
         elif mode == "cut":
             self.status.set("Draw a line across a part of the subject to remove it.")
         else:
@@ -524,14 +630,25 @@ class ObjectSeparator(tk.Frame):
     def _refresh_anim_buttons(self):
         for style, btn, label in self._anim_buttons:
             if self.anim_style == style:
-                btn.config(text="\u2713 " + label, bg=ARMED_BG, fg="white",
-                           activebackground="#178233", activeforeground="white",
-                           font=("TkDefaultFont", 9, "bold"), relief="sunken")
+                btn.config(
+                    text="\u2713 " + label,
+                    bg=ARMED_BG,
+                    fg="white",
+                    activebackground="#178233",
+                    activeforeground="white",
+                    font=("TkDefaultFont", 9, "bold"),
+                    relief="sunken",
+                )
             else:
-                btn.config(text=label, bg=self._btn_bg, fg=self._btn_fg,
-                           activebackground=self._btn_abg,
-                           activeforeground=self._btn_afg,
-                           font=("TkDefaultFont", 9, "normal"), relief="raised")
+                btn.config(
+                    text=label,
+                    bg=self._btn_bg,
+                    fg=self._btn_fg,
+                    activebackground=self._btn_abg,
+                    activeforeground=self._btn_afg,
+                    font=("TkDefaultFont", 9, "normal"),
+                    relief="raised",
+                )
         if self.anim_style:
             if self.finish_btn is not None:
                 self.finish_btn.config(text=self._lbl_armed)
@@ -561,17 +678,19 @@ class ObjectSeparator(tk.Frame):
 
     # --------------------------------------------------------------- undo
     def _snapshot(self):
-        self.undo_stack.append({
-            "work": self.work,
-            "click_masks": list(self.click_masks),
-            "manual_add": self.manual_add.copy(),
-            "manual_remove": self.manual_remove.copy(),
-            "points": list(self.points),
-            "labels": list(self.labels),
-            "selected_item": self.selected_item,
-            "show_result": self.show_result,
-            "alpha": self.alpha,
-        })
+        self.undo_stack.append(
+            {
+                "work": self.work,
+                "click_masks": list(self.click_masks),
+                "manual_add": self.manual_add.copy(),
+                "manual_remove": self.manual_remove.copy(),
+                "points": list(self.points),
+                "labels": list(self.labels),
+                "selected_item": self.selected_item,
+                "show_result": self.show_result,
+                "alpha": self.alpha,
+            }
+        )
         if len(self.undo_stack) > UNDO_LIMIT:
             self.undo_stack.pop(0)
         self.undo_btn.config(state="normal")
@@ -602,6 +721,7 @@ class ObjectSeparator(tk.Frame):
         flags that _poll_model (main thread) checks."""
         try:
             from ultralytics import SAM
+
             self.model = SAM(MODEL_NAME)
             self._model_ready = True
         except Exception as exc:
@@ -634,7 +754,7 @@ class ObjectSeparator(tk.Frame):
             return
         if self.model is None:
             if self._model_error not in (None, "__shown__"):
-                self._poll_model()   # surface the error dialog
+                self._poll_model()  # surface the error dialog
             else:
                 self.status.set("Model still loading — one moment...")
             return
@@ -665,8 +785,9 @@ class ObjectSeparator(tk.Frame):
         self._recompute_from_clicks()
         n_add = sum(1 for _, l in self.click_masks if l == 1)
         n_sub = sum(1 for _, l in self.click_masks if l == 0)
-        self.status.set(f"{n_add} area(s) added, {n_sub} removed. "
-                        f"Click more, draw, or add effects.")
+        self.status.set(
+            f"{n_add} area(s) added, {n_sub} removed. Click more, draw, or add effects."
+        )
 
     def _best_mask(self, results):
         if not results:
@@ -680,8 +801,12 @@ class ObjectSeparator(tk.Frame):
         if m.shape != (self.H, self.W):
             try:
                 import cv2
-                m = cv2.resize(m.astype(np.uint8), (self.W, self.H),
-                               interpolation=cv2.INTER_NEAREST).astype(bool)
+
+                m = cv2.resize(
+                    m.astype(np.uint8),
+                    (self.W, self.H),
+                    interpolation=cv2.INTER_NEAREST,
+                ).astype(bool)
             except Exception:
                 return None
         return m
@@ -698,8 +823,11 @@ class ObjectSeparator(tk.Frame):
         self._recompute_mask()
 
     def _recompute_mask(self):
-        combined = (self.sam_mask.copy() if self.sam_mask is not None
-                    else np.zeros((self.H, self.W), bool))
+        combined = (
+            self.sam_mask.copy()
+            if self.sam_mask is not None
+            else np.zeros((self.H, self.W), bool)
+        )
         combined |= self.manual_add
         combined &= ~self.manual_remove
         self.object_mask = combined if combined.any() else None
@@ -799,8 +927,10 @@ class ObjectSeparator(tk.Frame):
                 self.show_result = False
                 self.manual_remove |= inside
                 self._recompute_mask()
-                self.status.set("Circled region removed from the subject. "
-                                "(A line ACROSS a part splits it instead.)")
+                self.status.set(
+                    "Circled region removed from the subject. "
+                    "(A line ACROSS a part splits it instead.)"
+                )
                 return
             self.status.set("That circle didn't enclose any of the subject.")
             return
@@ -823,8 +953,10 @@ class ObjectSeparator(tk.Frame):
         subpieces = [lblt == i for i in range(1, numt)]
         subpieces = [c for c in subpieces if int(c.sum()) >= min_area]
         if len(subpieces) < 2:
-            self.status.set("The line didn't split that part - draw fully "
-                            "across it (or CIRCLE a region to remove it).")
+            self.status.set(
+                "The line didn't split that part - draw fully "
+                "across it (or CIRCLE a region to remove it)."
+            )
             return
 
         self._snapshot()
@@ -838,12 +970,15 @@ class ObjectSeparator(tk.Frame):
         self._cut_removed_idx = int(np.argmin([c.sum() for c in subpieces]))
         self._apply_cut()
         self.toggle_cut_btn.config(state="normal")
-        self.status.set(f"Split that part into {len(subpieces)}; removed the "
-                        f"smallest. Wrong one? Use 'Toggle removed area'.")
+        self.status.set(
+            f"Split that part into {len(subpieces)}; removed the "
+            f"smallest. Wrong one? Use 'Toggle removed area'."
+        )
 
     def _apply_cut(self):
-        removed = (self._cut_components[self._cut_removed_idx]
-                   | (self._cut_line & self._cut_target))
+        removed = self._cut_components[self._cut_removed_idx] | (
+            self._cut_line & self._cut_target
+        )
         self.manual_remove = self._cut_base_remove | removed
         self._recompute_mask()
 
@@ -852,8 +987,10 @@ class ObjectSeparator(tk.Frame):
             return
         self._cut_removed_idx = (self._cut_removed_idx + 1) % len(self._cut_components)
         self._apply_cut()
-        self.status.set(f"Now removing piece {self._cut_removed_idx + 1} "
-                        f"of {len(self._cut_components)} from that part.")
+        self.status.set(
+            f"Now removing piece {self._cut_removed_idx + 1} "
+            f"of {len(self._cut_components)} from that part."
+        )
 
     # --------------------------------------------------------- still effects
     def _add_outline(self):
@@ -868,8 +1005,7 @@ class ObjectSeparator(tk.Frame):
         self._clear_cut()
         new = self.work.copy()
         m = self.object_mask.astype(np.uint8)
-        contours, _ = cv2.findContours(m, cv2.RETR_EXTERNAL,
-                                       cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         thickness = max(2, int(round(min(self.H, self.W) / 400)))
         cv2.drawContours(new, contours, -1, (0, 0, 0), thickness)
         self.work = new
@@ -884,8 +1020,8 @@ class ObjectSeparator(tk.Frame):
         self._clear_cut()
         m = self.object_mask
         new = self.work.astype(np.float32)
-        new[~m] *= 0.72          # darken the background (stacks on repeat clicks)
-        new[m] *= 1.18           # lift the subject so it stands out
+        new[~m] *= 0.72  # darken the background (stacks on repeat clicks)
+        new[m] *= 1.18  # lift the subject so it stands out
         self.work = np.clip(new, 0, 255).astype(np.uint8)
         self.show_result = True
         self.status.set("Subject highlighted, background dimmed. Use Undo to go back.")
@@ -926,7 +1062,7 @@ class ObjectSeparator(tk.Frame):
             return
         self._snapshot()
         self._clear_cut()
-        k = max(5, int(min(self.H, self.W) / 110) | 1)   # slight blur kernel
+        k = max(5, int(min(self.H, self.W) / 110) | 1)  # slight blur kernel
         blurred = cv2.GaussianBlur(self.work, (k, k), 0)
         new = self.work.copy()
         new[~self.object_mask] = blurred[~self.object_mask]  # subject stays sharp
@@ -969,11 +1105,11 @@ class ObjectSeparator(tk.Frame):
         """Per-edge-pixel glow intensity (0..1) for phase t in [0,1)."""
         two_pi = 2 * np.pi
         if style == "glow":
-            pulse = 0.5 * (1.0 - np.cos(two_pi * t))   # 0 -> 1 -> 0, smooth
+            pulse = 0.5 * (1.0 - np.cos(two_pi * t))  # 0 -> 1 -> 0, smooth
             return np.full_like(ang, 0.15 + 0.85 * pulse)
-        head = -np.pi + two_pi * t                      # sweep
+        head = -np.pi + two_pi * t  # sweep
         d = (ang - head + np.pi) % two_pi - np.pi
-        return np.exp(-(d / 0.45) ** 2)
+        return np.exp(-((d / 0.45) ** 2))
 
     def _render_animation(self, out_path):
         try:
@@ -981,11 +1117,13 @@ class ObjectSeparator(tk.Frame):
         except Exception as exc:
             messagebox.showerror("OpenCV missing", str(exc))
             return False
-        vw = cv2.VideoWriter(out_path, cv2.VideoWriter_fourcc(*"mp4v"),
-                             30, (self.W, self.H))
+        vw = cv2.VideoWriter(
+            out_path, cv2.VideoWriter_fourcc(*"mp4v"), 30, (self.W, self.H)
+        )
         if not vw.isOpened():
-            messagebox.showerror("Video error",
-                                 "Could not open the MP4 writer (mp4v codec).")
+            messagebox.showerror(
+                "Video error", "Could not open the MP4 writer (mp4v codec)."
+            )
             return False
         self.config(cursor="watch")
         try:
@@ -1009,17 +1147,20 @@ class ObjectSeparator(tk.Frame):
         mask = self.object_mask
         k = max(3, int(min(H, W) / 100) | 1)
         ker = np.ones((k, k), np.uint8)
-        band = (cv2.dilate(mask.astype(np.uint8), ker) > 0) & \
-               (cv2.erode(mask.astype(np.uint8), ker) == 0)
+        band = (cv2.dilate(mask.astype(np.uint8), ker) > 0) & (
+            cv2.erode(mask.astype(np.uint8), ker) == 0
+        )
         ys, xs = np.where(band)
         if len(ys) == 0:
-            messagebox.showerror("Animation", "The subject edge is too small to animate.")
+            messagebox.showerror(
+                "Animation", "The subject edge is too small to animate."
+            )
             return False
         cy, cx = ys.mean(), xs.mean()
         ang = np.arctan2(ys - cy, xs - cx)
         frames = 60 if self.anim_style == "glow" else 90
         blur_k = max(5, int(min(H, W) / 110) | 1)
-        col_bgr = np.array([255, 245, 210], np.float32)   # warm white light (BGR)
+        col_bgr = np.array([255, 245, 210], np.float32)  # warm white light (BGR)
         base_bgr = self.work[:, :, ::-1].astype(np.float32)
         for f in range(frames):
             t = f / frames
@@ -1050,23 +1191,29 @@ class ObjectSeparator(tk.Frame):
         subj = work_bgr.astype(np.float32)
         fa = max(3, int(min(H, W) / 200) | 1)
         alpha = cv2.GaussianBlur(mask.astype(np.float32), (fa, fa), 0)  # soft edge
-        A = 0.68 * max(1.5, min(H, W) / 140.0)   # 20% less travel than before
-        R = 0.6                                    # gentle rotation amplitude (deg)
-        frames = 24                                # ~0.8s loop (fast game-item wobble)
+        A = 0.68 * max(1.5, min(H, W) / 140.0)  # 20% less travel than before
+        R = 0.6  # gentle rotation amplitude (deg)
+        frames = 24  # ~0.8s loop (fast game-item wobble)
         two_pi = 2 * np.pi
         for f in range(frames):
             t = f / frames
             dx = A * np.sin(two_pi * t)
-            dy = A * 0.6 * np.sin(two_pi * t + np.pi / 2)   # slight elliptical sway
+            dy = A * 0.6 * np.sin(two_pi * t + np.pi / 2)  # slight elliptical sway
             rot = R * np.sin(two_pi * t)
             M = cv2.getRotationMatrix2D((cx, cy), rot, 1.0)
             M[0, 2] += dx
             M[1, 2] += dy
-            ws = cv2.warpAffine(subj, M, (W, H), flags=cv2.INTER_LINEAR,
-                                borderMode=cv2.BORDER_REFLECT)
-            wa = cv2.warpAffine(alpha, M, (W, H), flags=cv2.INTER_LINEAR,
-                                borderMode=cv2.BORDER_CONSTANT,
-                                borderValue=0)[..., None]
+            ws = cv2.warpAffine(
+                subj, M, (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT
+            )
+            wa = cv2.warpAffine(
+                alpha,
+                M,
+                (W, H),
+                flags=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=0,
+            )[..., None]
             frame = plate * (1.0 - wa) + ws * wa
             vw.write(np.clip(frame, 0, 255).astype(np.uint8))
             if f % 6 == 0:
@@ -1090,25 +1237,37 @@ class ObjectSeparator(tk.Frame):
         fa = max(3, int(min(H, W) / 200) | 1)
         alpha = cv2.GaussianBlur(mask.astype(np.float32), (fa, fa), 0)
         cx, cy = W / 2.0, H / 2.0
-        amp = max(3.0, min(H, W) * 0.015)      # camera orbit radius (px)
-        s_bg, s_fg = 1.07, 1.03                # slight zoom so edges never show
-        frames = 90                            # ~3s slow loop
+        amp = max(3.0, min(H, W) * 0.015)  # camera orbit radius (px)
+        s_bg, s_fg = 1.07, 1.03  # slight zoom so edges never show
+        frames = 90  # ~3s slow loop
         two_pi = 2 * np.pi
         for f in range(frames):
             t = f / frames
-            ox, oy = np.sin(two_pi * t), np.cos(two_pi * t)   # circular orbit
+            ox, oy = np.sin(two_pi * t), np.cos(two_pi * t)  # circular orbit
             mbg = cv2.getRotationMatrix2D((cx, cy), 0, s_bg)
             mbg[0, 2] += -0.45 * amp * ox
             mbg[1, 2] += -0.30 * amp * oy
-            bg = cv2.warpAffine(plate, mbg, (W, H), flags=cv2.INTER_LINEAR,
-                                borderMode=cv2.BORDER_REFLECT)
+            bg = cv2.warpAffine(
+                plate,
+                mbg,
+                (W, H),
+                flags=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_REFLECT,
+            )
             mfg = cv2.getRotationMatrix2D((cx, cy), 0, s_fg)
-            mfg[0, 2] += -1.0 * amp * ox          # foreground moves more -> nearer
+            mfg[0, 2] += -1.0 * amp * ox  # foreground moves more -> nearer
             mfg[1, 2] += -0.65 * amp * oy
-            fg = cv2.warpAffine(subj, mfg, (W, H), flags=cv2.INTER_LINEAR,
-                                borderMode=cv2.BORDER_REFLECT)
-            wa = cv2.warpAffine(alpha, mfg, (W, H), flags=cv2.INTER_LINEAR,
-                                borderMode=cv2.BORDER_CONSTANT, borderValue=0)[..., None]
+            fg = cv2.warpAffine(
+                subj, mfg, (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT
+            )
+            wa = cv2.warpAffine(
+                alpha,
+                mfg,
+                (W, H),
+                flags=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=0,
+            )[..., None]
             frame = bg * (1.0 - wa) + fg * wa
             vw.write(np.clip(frame, 0, 255).astype(np.uint8))
             if f % 6 == 0:
@@ -1133,18 +1292,30 @@ class ObjectSeparator(tk.Frame):
         cx, cy = W / 2.0, H / 2.0
         frames = 90
         two_pi = 2 * np.pi
-        amp_bg, amp_fg = 0.03, 0.07     # foreground breathes more -> reads nearer
+        amp_bg, amp_fg = 0.03, 0.07  # foreground breathes more -> reads nearer
         for f in range(frames):
             t = f / frames
-            breath = 0.5 - 0.5 * np.cos(two_pi * t)   # 0->1->0; scale stays >= 1
+            breath = 0.5 - 0.5 * np.cos(two_pi * t)  # 0->1->0; scale stays >= 1
             mbg = cv2.getRotationMatrix2D((cx, cy), 0, 1.0 + amp_bg * breath)
-            bg = cv2.warpAffine(plate, mbg, (W, H), flags=cv2.INTER_LINEAR,
-                                borderMode=cv2.BORDER_REFLECT)
+            bg = cv2.warpAffine(
+                plate,
+                mbg,
+                (W, H),
+                flags=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_REFLECT,
+            )
             mfg = cv2.getRotationMatrix2D((cx, cy), 0, 1.0 + amp_fg * breath)
-            fg = cv2.warpAffine(subj, mfg, (W, H), flags=cv2.INTER_LINEAR,
-                                borderMode=cv2.BORDER_REFLECT)
-            wa = cv2.warpAffine(alpha, mfg, (W, H), flags=cv2.INTER_LINEAR,
-                                borderMode=cv2.BORDER_CONSTANT, borderValue=0)[..., None]
+            fg = cv2.warpAffine(
+                subj, mfg, (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT
+            )
+            wa = cv2.warpAffine(
+                alpha,
+                mfg,
+                (W, H),
+                flags=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=0,
+            )[..., None]
             frame = bg * (1.0 - wa) + fg * wa
             vw.write(np.clip(frame, 0, 255).astype(np.uint8))
             if f % 6 == 0:
@@ -1178,9 +1349,9 @@ class ObjectSeparator(tk.Frame):
 
         for f in range(frames):
             t = f / frames
-            p = 0.5 - 0.5 * np.cos(two_pi * t)   # 0=focus bg -> 1=focus subject -> 0
-            bg = blur(plate, p)                  # bg softens as focus moves to subject
-            sj = blur(subj, 1.0 - p)             # subject softens as focus moves to bg
+            p = 0.5 - 0.5 * np.cos(two_pi * t)  # 0=focus bg -> 1=focus subject -> 0
+            bg = blur(plate, p)  # bg softens as focus moves to subject
+            sj = blur(subj, 1.0 - p)  # subject softens as focus moves to bg
             a = np.clip(blur(alpha0, 1.0 - p), 0, 1)[..., None]
             frame = bg * (1.0 - a) + sj * a
             vw.write(np.clip(frame, 0, 255).astype(np.uint8))
@@ -1213,9 +1384,11 @@ class ObjectSeparator(tk.Frame):
         animated effect — used when the host switches tabs. Only the green
         Finish button renders MP4s."""
         if self.anim_style:
-            print("[object-separation] leaving the object tab — armed "
-                  "animated effect NOT rendered (arm it again and press "
-                  "Finish on the object tab to render + finish)")
+            print(
+                "[object-separation] leaving the object tab — armed "
+                "animated effect NOT rendered (arm it again and press "
+                "Finish on the object tab to render + finish)"
+            )
             self.anim_style = None
         self._finish()
 
@@ -1234,8 +1407,9 @@ class ObjectSeparator(tk.Frame):
             self._close()
             return
 
-        out_path = os.path.join(self.output_dir,
-                                f"sep-edit-{os.path.basename(self.image_path)}")
+        out_path = os.path.join(
+            self.output_dir, f"sep-edit-{os.path.basename(self.image_path)}"
+        )
         result = Image.fromarray(self.work)
         if self.alpha is not None:
             result = result.convert("RGBA")
@@ -1272,9 +1446,7 @@ def main(argv=None) -> int:
     beside = "--beside" in argv
     argv = [a for a in argv if a != "--beside"]
     if len(argv) != 1:
-        sys.stderr.write(
-            "Usage: uv run OBJECT_SEPERATION.py <image-path> [--beside]\n"
-        )
+        sys.stderr.write("Usage: uv run OBJECT_SEPERATION.py <image-path> [--beside]\n")
         return 2
     image_path = argv[0]
     if not os.path.isfile(image_path):

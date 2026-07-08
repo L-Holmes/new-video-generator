@@ -847,7 +847,9 @@ def _render_item(item) -> Image.Image:
         return render_rect_image(item.width, item.height, item.angle, item.thickness)
     txt = render_text_image(item.text, item.font_size)
     if getattr(item, "angle", 0.0):
-        txt = txt.rotate(item.angle, resample=Image.BICUBIC, expand=True)
+        # negative: PIL rotate is CCW, but the dial angle is clockwise-positive
+        # (screen coords) — match the dial so the text turns the SAME way it's aimed.
+        txt = txt.rotate(-item.angle, resample=Image.BICUBIC, expand=True)
     return txt
 
 
@@ -1298,6 +1300,7 @@ class _DecorateApp:
         self.canvas.bind("<ButtonPress-1>", self._on_press)
         self.canvas.bind("<B1-Motion>", self._on_drag)
         self.canvas.bind("<ButtonRelease-1>", self._on_release)
+        self.canvas.bind("<ButtonPress-3>", self._on_right_click)
 
         side = tk.Frame(self.root, bg="#1e1e24", width=360)
         side.pack(side="right", fill="y", padx=(0, 10), pady=10)
@@ -1324,16 +1327,26 @@ class _DecorateApp:
             justify="left",
             font=("Arial", 11, "bold"),
         ).pack(anchor="w", pady=(2, 8))
+        # Stamp pre-decoration (stamp_decorate): the image being edited IS a
+        # picked stamp that will later be stamped onto the previous scene. Show
+        # a dismissible banner in the BOTTOM-LEFT (with a big ✕ to close it) so
+        # it's unmistakable during this initial stamp-editing session.
         if self.stamp_mode:
-            # This session edits a picked STAMP picture that will be stamped
-            # onto the previous scene — make that unmistakable up top.
+            self.stamp_banner = tk.Frame(
+                self.root,
+                bg="#3b2a05",
+                highlightthickness=1,
+                highlightbackground="#7a5a10",
+            )
+            inner = tk.Frame(self.stamp_banner, bg="#3b2a05")
+            inner.pack(side="left", fill="both", expand=True, padx=2, pady=2)
             tk.Label(
-                side,
+                inner,
                 text=(
                     "★ STAMP MODE ★\n"
                     "This image will be STAMPED onto the\n"
                     "previous scene. Edit it here (cut it out,\n"
-                    "clean it up), then Finish to use it as a stamp."
+                    "clean it up), then Finish to use as a stamp."
                 ),
                 bg="#3b2a05",
                 fg="#ffd166",
@@ -1341,8 +1354,25 @@ class _DecorateApp:
                 font=("Arial", 10, "bold"),
                 padx=8,
                 pady=6,
-                wraplength=330,
-            ).pack(anchor="w", fill="x", pady=(0, 8))
+                wraplength=290,
+            ).pack(side="left")
+            tk.Button(
+                self.stamp_banner,
+                text="✕",
+                command=self.stamp_banner.place_forget,
+                bg="#3b2a05",
+                fg="#ffd166",
+                activebackground="#5a3f08",
+                activeforeground="#ffffff",
+                font=("Arial", 14, "bold"),
+                bd=0,
+                padx=8,
+                pady=2,
+                cursor="hand2",
+            ).pack(side="right", fill="y")
+            # place bottom-left, above the previous-entry preview popup
+            self.stamp_banner.place(x=8, rely=1.0, y=-210, anchor="sw")
+            self.root.after(120, lambda: self.stamp_banner.lift())
 
         # ── scrollable middle: hosts every per-tab panel + controls ──────
         # (small window → this scrolls; the Finish/Undo row and status are
@@ -1489,33 +1519,25 @@ class _DecorateApp:
             command=self._stamp_add_file,
             font=("Arial", 10),
         ).pack(anchor="w", pady=(0, 4))
-        # "key out white background" toggle. Wrapped in a Frame so the WHOLE
-        # row is a click target — a bare Checkbutton's hit area is just the
-        # tiny indicator + text glyphs, which is fiddly to click.
-        _rbg = tk.Frame(self.stamp_panel, bg="#1e1e24")
-        _rbg.pack(anchor="w", pady=(0, 4), fill="x")
-        self._remove_bg_btn = tk.Checkbutton(
-            _rbg,
-            text="  key out white background",
-            variable=self.stamp_remove_bg,
-            command=self._stamp_rearm,
+        # "key out white background" toggle. A plain Button (the WHOLE thing
+        # is a click target) whose text reflects the on/off state — a
+        # Checkbutton's hit area is only the tiny indicator + text glyphs,
+        # which is fiddly to click reliably.
+        self._remove_bg_btn = tk.Button(
+            self.stamp_panel,
+            text=self._remove_bg_label(),
+            command=self._toggle_remove_bg,
             bg="#1e1e24",
             fg="#bbbbbb",
-            selectcolor="#14141a",
             activebackground="#1e1e24",
             activeforeground="#dddddd",
             font=("Arial", 10),
-            padx=6,
+            anchor="w",
+            padx=8,
             pady=4,
+            relief="flat",
         )
-        self._remove_bg_btn.pack(anchor="w", fill="x")
-
-        # Clicking anywhere on the row toggles the checkbox too.
-        def _toggle_bg(_e=None):
-            self.stamp_remove_bg.set(not self.stamp_remove_bg.get())
-            self._stamp_rearm()
-
-        _rbg.bind("<Button-1>", _toggle_bg)
+        self._remove_bg_btn.pack(anchor="w", fill="x", pady=(0, 4))
         tk.Label(
             self.stamp_panel,
             bg="#1e1e24",
@@ -1685,6 +1707,16 @@ class _DecorateApp:
             wraplength=320,
             pady=10,
         )
+        # "complete crop" button — shown after a right-click freezes the box in
+        # place (so the user can finish without clicking the canvas).
+        self.zoom_complete_btn = tk.Button(
+            self.zoom_panel,
+            text="✓  complete crop",
+            command=self._zoom_complete,
+            font=("Arial", 12, "bold"),
+            bg="#2e7d32",
+            fg="white",
+        )
 
         # Text-entry group (hidden unless typing).
         self.entry_frame = tk.Frame(self._panel_host, bg="#1e1e24")
@@ -1827,15 +1859,6 @@ class _DecorateApp:
             side="left", padx=(6, 0)
         )
 
-        self.count_var = tk.StringVar(value="Items: 0")
-        tk.Label(
-            self.controls,
-            textvariable=self.count_var,
-            bg="#1e1e24",
-            fg="#7CFC00",
-            font=("Arial", 13, "bold"),
-        ).pack(anchor="w", pady=(8, 0))
-
         self.status_var = tk.StringVar(value="")
 
         btns = tk.Frame(side, bg="#1e1e24")
@@ -1968,7 +1991,8 @@ class _DecorateApp:
         fs = self._disp_font(item.font_size) if display else item.font_size
         txt = render_text_image(item.text, fs)
         if item.angle:
-            txt = txt.rotate(item.angle, resample=Image.BICUBIC, expand=True)
+            # negative: match the dial's clockwise-positive direction (see _render_item)
+            txt = txt.rotate(-item.angle, resample=Image.BICUBIC, expand=True)
         return txt
 
     def _rebuild_composite(self):
@@ -2091,6 +2115,31 @@ class _DecorateApp:
 
     def _on_release(self, event):
         pass  # zoom applies on click; draw tools are click-move-click
+
+    def _on_right_click(self, event):
+        """In zoom mode: freeze the crop box where it is, teleport the cursor
+        over to the sidebar (so the width/height buttons are reachable without
+        disturbing the box), and reveal a 'complete crop' button to finish
+        without clicking the canvas."""
+        if not self._zoom_mode:
+            return
+        # keep the box at the click position (freeze it there)
+        self._zoom_move(event.x, event.y)
+        self._zoom_frozen = True
+        # show the complete-crop button in the sidebar
+        self.zoom_complete_btn.pack(anchor="w", fill="x", pady=(4, 4))
+        self._set_status(
+            "Box frozen in place. Adjust width/height here, then press "
+            "✓ complete crop (or left-click the image to apply there)."
+        )
+        # warp the pointer onto the sidebar (over the zoom controls)
+        try:
+            self.root.update_idletasks()
+            sx = self._side.winfo_rootx() + 60
+            sy = self._side.winfo_rooty() + 120
+            self.root.tk.call("tk", "warp_pointer", str(sx), str(sy))
+        except Exception:
+            pass
 
     def _place_pending(self, x, y):
         """Drop the floating pending item, select it, then re-arm the tool so
@@ -2904,6 +2953,19 @@ class _DecorateApp:
             self.stamp_preview.config(image="", text=f"preview failed: {exc}")
         self._stamp_rearm()
 
+    def _remove_bg_label(self) -> str:
+        return (
+            "☑ key out white background (ON)"
+            if self.stamp_remove_bg.get()
+            else "☐ key out white background"
+        )
+
+    def _toggle_remove_bg(self):
+        self.stamp_remove_bg.set(not self.stamp_remove_bg.get())
+        if hasattr(self, "_remove_bg_btn"):
+            self._remove_bg_btn.config(text=self._remove_bg_label())
+        self._stamp_rearm()
+
     def _stamp_rearm(self):
         """(Re)float the selected picture on the cursor, keeping the last
         used width, so every click drops another copy."""
@@ -2935,11 +2997,10 @@ class _DecorateApp:
 
     def _tab_stamp(self):
         if not self.stamp_paths:
-            self._stamp_add_file()
-            if not self.stamp_paths:
-                self._set_status("Stamp: no picture chosen.")
-                self._goto_tab("draw")
-                return
+            # Don't auto-open the file picker — just tell the user nothing's
+            # loaded yet (they can use 'pick a picture' if the tab has one).
+            self._set_status("No stamp pictures loaded yet.")
+            return
         self._stamp_select(self.stamp_i)
         self._set_status("Click the image to stamp — click again for more.")
 
@@ -2997,11 +3058,14 @@ class _DecorateApp:
     def _zoom_resize(self, delta_pct, axis=None):
         """Resize the crop. axis=None (the dual control) moves BOTH width and
         height by the fixed amount; axis='w'/'h' moves just that one. Touching
-        height independently unlocks it from the aspect ratio."""
+        EITHER axis independently unlocks it from the aspect ratio (so width
+        +/- changes ONLY width, height +/- changes ONLY height)."""
         if axis == "w":
+            # editing width independently: unlock height first (freeze it at its
+            # current effective value) so only width changes.
+            if self._zoom_hpct is None:
+                self._zoom_hpct = self._zoom_wpct
             self._zoom_wpct = min(100, max(10, self._zoom_wpct + delta_pct))
-            # if aspect-locked, height follows automatically (box derives h
-            # from w); if unlocked, leave hpct alone.
         elif axis == "h":
             # editing height independently unlocks it.
             cur = self._zoom_hpct if self._zoom_hpct is not None else self._zoom_wpct
@@ -3025,6 +3089,9 @@ class _DecorateApp:
             return
         v = min(100, max(10, int(text)))
         if axis == "w":
+            # typing width independently unlocks height first.
+            if self._zoom_hpct is None:
+                self._zoom_hpct = self._zoom_wpct
             self._zoom_wpct = v
         elif axis == "h":
             self._zoom_hpct = v  # typing height unlocks it
@@ -3047,10 +3114,11 @@ class _DecorateApp:
         self._zoom_frozen = False
         if self._zoom_rect is not None:
             self.canvas.itemconfig(self._zoom_rect, state="hidden")
-        try:
-            self.zoom_warn.pack_forget()
-        except tk.TclError:
-            pass
+        for w in (self.zoom_warn, self.zoom_complete_btn):
+            try:
+                w.pack_forget()
+            except tk.TclError:
+                pass
 
     def _zoom_complete(self):
         from ___visuals.MANUAL_STOCK_PLACEMENT import CropBox, crop_and_zoom
@@ -3284,7 +3352,6 @@ class _DecorateApp:
         if self._destroyed:
             return
         n = len(self.items)
-        self.count_var.set(f"Items: {n}")
         # Undo is available when there's an item to remove OR a destructive
         # base edit (zoom crop / object edit / bake) on the undo stack.
         can_undo = bool(n) or bool(self._base_undo_stack)

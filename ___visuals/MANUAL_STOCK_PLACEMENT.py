@@ -268,8 +268,12 @@ def composite_overlay(
 
 
 def crop_and_zoom(base_image_path: str, cropbox: CropBox, output_path: str) -> str:
-    """Crop the base to `cropbox` (base aspect ratio, kept inside the image)
-    and upscale back to the base resolution. Saves a PNG."""
+    """Crop the base to `cropbox` (kept inside the image) and upscale back to
+    the base resolution. When the crop's aspect ratio differs from the base's
+    (an independent width/height was used), the crop is scaled to FIT within
+    the base dimensions preserving its own aspect ratio, and the remaining
+    space is filled with white (letterbox) — it is NEVER stretched/distorted.
+    Saves a PNG."""
     base = Image.open(base_image_path).convert("RGB")
     bw, bh = base.size
 
@@ -285,7 +289,19 @@ def crop_and_zoom(base_image_path: str, cropbox: CropBox, output_path: str) -> s
     top = max(0, min(round(cy - box_h / 2), bh - box_h))
 
     crop = base.crop((left, top, left + box_w, top + box_h))
-    zoomed = crop.resize((bw, bh), _RESAMPLE)
+    # Scale the crop to fit inside (bw, bh) preserving ITS aspect ratio, then
+    # centre it on a white canvas — so a non-aspect-locked crop letterboxes
+    # instead of stretching.
+    scale = min(bw / box_w, bh / box_h)
+    new_w = max(1, round(box_w * scale))
+    new_h = max(1, round(box_h * scale))
+    scaled = crop.resize((new_w, new_h), _RESAMPLE)
+    if (new_w, new_h) == (bw, bh):
+        zoomed = scaled
+    else:
+        canvas = Image.new("RGB", (bw, bh), (255, 255, 255))
+        canvas.paste(scaled, ((bw - new_w) // 2, (bh - new_h) // 2))
+        zoomed = canvas
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     zoomed.save(output_path)
