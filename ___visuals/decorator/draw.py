@@ -847,7 +847,7 @@ def _render_item(item) -> Image.Image:
         return render_rect_image(item.width, item.height, item.angle, item.thickness)
     txt = render_text_image(item.text, item.font_size)
     if getattr(item, "angle", 0.0):
-        txt = txt.rotate(item.angle, resample=_RESAMPLE, expand=True)
+        txt = txt.rotate(item.angle, resample=Image.BICUBIC, expand=True)
     return txt
 
 
@@ -1536,6 +1536,18 @@ class _DecorateApp:
             font=("Arial", 13, "bold"),
             command=lambda: self._zoom_resize(+10),
         ).pack(side="left")
+        # Big warning, shown only while zoom mode is live (box visible but the
+        # crop not yet applied). Hidden once the zoom is applied/cancelled.
+        self.zoom_warn = tk.Label(
+            self.zoom_panel,
+            text=("IMAGE NOT CROPPED YET!\nCLICK WHERE YOU WANT THE CROP TO OCCUR."),
+            bg="#3b1414",
+            fg="#ff5555",
+            font=("Arial", 12, "bold"),
+            justify="center",
+            wraplength=320,
+            pady=10,
+        )
 
         # Text-entry group (hidden unless typing).
         self.entry_frame = tk.Frame(self._panel_host, bg="#1e1e24")
@@ -1689,41 +1701,6 @@ class _DecorateApp:
 
         self.status_var = tk.StringVar(value="")
 
-        _instr = tk.Text(
-            self.draw_panel,
-            bg="#1e1e24",
-            fg="#bbbbbb",
-            font=("Arial", 10),
-            relief="flat",
-            bd=0,
-            height=10,
-            wrap="word",
-            highlightthickness=0,
-        )
-        _instr.insert(
-            "1.0",
-            "Add text → type → click to drop (auto-ready).\n"
-            "Add arrow → aim on the dial → click to drop.\n"
-            "Add highlight → drag a box over the area.\n"
-            "Circle / line / rect → click through each step.\n"
-            "Each tool stays on, so click again = a NEW item.\n\n"
-            "  A          add text\n"
-            "  R          add arrow\n"
-            "  H          add highlight\n"
-            "  C          add circle\n"
-            "  L          add line\n"
-            "  B          add rectangle (box)\n"
-            "  E          edit the selected text\n"
-            "  \u2190\u2191\u2192\u2193   nudge the selected item (Shift = more)\n"
-            "  , / .      rotate selected arrow / line / rect\n"
-            "  + / \u2212      size  (type a number for exact)\n"
-            "  Ctrl-Z / U undo last item · Bksp cancel shape\n"
-            "  Enter / D  confirm draw step \u00b7 else finish\n"
-            "  Esc / Q    exit (resume later)",
-        )
-        _instr.config(state="disabled")  # disabled Text is still selectable
-        _instr.pack(anchor="w", pady=(2, 8))
-
         btns = tk.Frame(side, bg="#1e1e24")
         btns.pack(fill="x", side="bottom", pady=(4, 2))
         self.status_entry = tk.Entry(
@@ -1854,7 +1831,7 @@ class _DecorateApp:
         fs = self._disp_font(item.font_size) if display else item.font_size
         txt = render_text_image(item.text, fs)
         if item.angle:
-            txt = txt.rotate(item.angle, resample=_RESAMPLE, expand=True)
+            txt = txt.rotate(item.angle, resample=Image.BICUBIC, expand=True)
         return txt
 
     def _rebuild_composite(self):
@@ -2834,6 +2811,7 @@ class _DecorateApp:
         self._zoom_mode = True
         self._zoom_frozen = False
         self._zoom_redraw()
+        self.zoom_warn.pack(anchor="w", fill="x", pady=(4, 4))
         self._set_status(
             "The gold box follows your cursor — − / + sizes it, "
             "click on the image to apply the zoom."
@@ -2873,6 +2851,10 @@ class _DecorateApp:
         self._zoom_frozen = False
         if self._zoom_rect is not None:
             self.canvas.itemconfig(self._zoom_rect, state="hidden")
+        try:
+            self.zoom_warn.pack_forget()
+        except tk.TclError:
+            pass
 
     def _zoom_complete(self):
         from ___visuals.MANUAL_STOCK_PLACEMENT import CropBox, crop_and_zoom
@@ -3096,7 +3078,10 @@ class _DecorateApp:
             return
         n = len(self.items)
         self.count_var.set(f"Items: {n}")
-        self.undo_btn.config(state="normal" if n else "disabled")
+        # Undo is available when there's an item to remove OR a destructive
+        # base edit (zoom crop / object edit / bake) on the undo stack.
+        can_undo = bool(n) or bool(self._base_undo_stack)
+        self.undo_btn.config(state="normal" if can_undo else "disabled")
         self.edit_btn.config(
             state="normal"
             if (isinstance(self.active, TextDeco) and self.mode != "typing")

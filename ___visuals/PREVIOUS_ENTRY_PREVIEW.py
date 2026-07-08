@@ -260,19 +260,20 @@ def _resolve_previous_visual(
 ) -> str | None:
     """The image that was actually ON SCREEN during `prev_text`.
 
-    Many entries carry no picture of their own — hold_previous rows, short
-    connective beats, an unreviewed/mid-review scene — they just reuse whatever
-    was already showing. So "the previous image" isn't necessarily attached to
-    the previous entry itself; it's whatever the most recent entry AT OR BEFORE
-    it actually resolved. This walks backwards in script order (starting at
-    prev_text) trying every source (final_data -> review_state -> candidates)
-    at each step, and returns the first image found. Returns None only if
-    nothing before it (all the way to the start of the script) has resolved a
-    visual yet.
+    Starts at prev_text and walks backwards through the script looking for the
+    most recent entry that has a resolvable picture — BUT only walks through
+    hold_previous entries. hold_previous genuinely reuses the prior image, so
+    reaching past one to the scene it froze is correct.
+
+    Any OTHER entry with no resolvable image STOPS the walk: an ai_edit_previous
+    / ai_stock / unreviewed stock scene's picture either doesn't exist yet (it's
+    generated/applied LATER in the pipeline) or will differ from anything
+    earlier, so showing an older image would be misleading. In that case return
+    None (text-only popup) rather than a wrong picture.
     """
     order = list(script_to_search_term or {})
     if prev_text in order:
-        walk_back_through = reversed(order[: order.index(prev_text) + 1])
+        walk_back_through = list(reversed(order[: order.index(prev_text) + 1]))
     else:
         # Not in the map (shouldn't normally happen) — just probe it directly.
         walk_back_through = [prev_text]
@@ -289,6 +290,12 @@ def _resolve_previous_visual(
         )
         if image:
             return image
+        # No image for this entry. Only keep walking back if it's a
+        # hold_previous (which forwards the prior image by design); any other
+        # type without a picture means that picture doesn't exist yet, so stop.
+        row = (script_to_search_term or {}).get(text, {})
+        if not row_is_hold_previous(row):
+            return None
     return None
 
 
