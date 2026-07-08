@@ -187,9 +187,17 @@ def _auto_tag(out_path: Path) -> None:
         print(f"[auto-tag] FAILED ({exc}) — the emitted json is untouched")
 
 
-def generate_script_to_search_term(script_name: str) -> Path:
+def generate_script_to_search_term(
+    script_name: str, out_path: Path | None = None
+) -> Path:
+    """out_path lets a caller (main.py) target CONFIG's own filename
+    convention directly instead of this module's TESTING_/hyphen default —
+    the cache dir (cache_dir_for) already matches CONFIG._CACHE_DIR as long
+    as the script name follows the usual script-<name>.txt pattern, so no
+    override is needed there."""
     prefix = prefix_from_script_name(script_name)
-    out_path = output_path(prefix)
+    if out_path is None:
+        out_path = output_path(prefix)
     print(f"=== generate_script_to_search_term [prefix={prefix!r}] ===")
     if out_path.exists():
         print(f"[emit]    already exists -> {out_path} (delete it to re-emit)")

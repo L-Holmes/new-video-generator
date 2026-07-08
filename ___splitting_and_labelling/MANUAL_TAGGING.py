@@ -271,11 +271,18 @@ class _State:
         self.json_path = json_path
         self.data: Dict[str, dict] = json.loads(
             json_path.read_text(encoding="utf-8"))
-        m = re.match(r"(?:TESTING_)?(.+?)-script_to_search_term",
+        # CONFIG.py's own convention is "<name>_script_to_search_term.json"
+        # (underscore, no TESTING_ prefix) — accept either separator so the
+        # split-meta cache (for noun/place suggestion chips) is still found
+        # when this tool is driven by main.py instead of run standalone.
+        m = re.match(r"(?:TESTING_)?(.+?)[-_]script_to_search_term",
                      json_path.stem)
         prefix = m.group(1) if m else json_path.stem
         triples = None
-        hits = sorted(HERE.glob(
+        # cwd, not HERE: standalone use runs from this directory (cwd==HERE)
+        # per MASTER_README; embedded use (main.py) runs from the repo root,
+        # where CONFIG._CACHE_DIR ("<prefix>-CACHE") actually lives.
+        hits = sorted(Path.cwd().glob(
             f"{prefix}-CACHE/split-and-lable/*SPLITMETA*-{prefix}.json"))
         if hits:
             triples = json.loads(hits[-1].read_text(encoding="utf-8"))
@@ -284,6 +291,10 @@ class _State:
                         for line in self.data}
         self.catalog = build_catalog()
         self.backed_up = False
+        # set by the browser's finish button (POST /finish) — lets
+        # run_manual_tagging() block only until the user is actually done,
+        # instead of forever (the standalone CLI still just uses Ctrl-C).
+        self.finished_event = threading.Event()
         recompute(self.data)
 
     def payload(self) -> dict:
@@ -363,6 +374,10 @@ def make_handler(state: _State):
                 req = json.loads(self.rfile.read(n) or b"{}")
             except Exception:
                 req = {}
+            if op == "finish":
+                state.finished_event.set()
+                self._send(json.dumps({"ok": True}))
+                return
             err = state.mutate(op, req)
             body = json.dumps({"ok": err is None, "error": err})
             self._send(body, code=200 if err is None else 400)
@@ -1015,7 +1030,8 @@ function finish(){
    toast('not finished yet — this line still needs tagging','#e6c15a');return;}
  showFinish();
 }
-function showFinish(){$('#finwrap').classList.add('open');}
+function showFinish(){$('#finwrap').classList.add('open');
+ fetch('/finish',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{});}
 function hideFinish(){$('#finwrap').classList.remove('open');closeEditor();}
 document.addEventListener('keydown',e=>{
  if(e.target.tagName==='TEXTAREA')return;
@@ -1032,6 +1048,30 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{if(!e.target.closest('.info,#pop'))$('#pop').style.display='none';});
 load();
 </script></body></html>'''
+
+
+def run_manual_tagging(json_path: Path, port: int = 0,
+                        auto_open_browser: bool = True) -> None:
+    """Blocking helper for embedding (main.py): opens the tagging page and
+    returns once the user clicks finish in the browser (every line done),
+    or Ctrl-C. Unlike main() below, the server runs in a background thread
+    so the finish button can shut it down instead of running forever."""
+    server = make_server(json_path, port)
+    url = f"http://127.0.0.1:{server.server_address[1]}/"
+    print(f"manual tagging: {json_path.name}\n  open {url}  "
+          f"(finish in the browser, or Ctrl-C here)")
+    if auto_open_browser:
+        threading.Timer(0.4, lambda: webbrowser.open(url)).start()
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        server.state.finished_event.wait()
+    except KeyboardInterrupt:
+        print("\n  stopped manually. edits are already saved.")
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+    print("  manual tagging done — resuming pipeline.")
 
 
 def main() -> None:

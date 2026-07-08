@@ -132,6 +132,58 @@ def verify_environment():
     pass
 
 
+# ===========================================================================
+# STAGE 0 - split + auto-tag + (if needed) manual tagging
+# ===========================================================================
+# Wires ___splitting_and_labelling's two standalone tools (normally run by
+# hand per MASTER_README.md) into the pipeline so `uv run main.py` alone is
+# enough: split (spaCy, cached) -> emit the shot list at the SAME path
+# CONFIG expects -> auto-tag the easy rows (idempotent) -> if anything is
+# STILL untagged, open the manual tagging GUI and block until it's done.
+_SPLIT_LABEL_DIR = Path(__file__).resolve().parent / "___splitting_and_labelling"
+
+
+def _untagged_lines(json_path: Path) -> list[str]:
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    return [line for line, row in data.items()
+            if not (row.get("media_type") or "").strip()]
+
+
+def ensure_script_to_search_term_ready() -> None:
+    if str(_SPLIT_LABEL_DIR) not in sys.path:
+        sys.path.insert(0, str(_SPLIT_LABEL_DIR))
+    import SPLIT_AND_LABEL
+
+    # main.py drives the REAL run, not the module's bundled self-test —
+    # keep cache/filenames clean of the TESTING_ prefix that flag adds.
+    SPLIT_AND_LABEL.TESTING_SCRIPT_SEARCH_TERM_GENERATION = False
+
+    out_path = Path(LINE_INDEX_TO_SEARCH_TERM_FILE)
+    print("====================================================================")
+    print(f"Ensuring shot list is ready: {out_path}")
+    SPLIT_AND_LABEL.generate_script_to_search_term(SCRIPT_FILE, out_path=out_path)
+
+    unresolved = _untagged_lines(out_path)
+    if not unresolved:
+        print(f"  ✓ every line already has a media type -> {out_path}")
+        return
+
+    print(f"  {len(unresolved)} line(s) still need a media type "
+          f"— opening manual tagging...")
+    import MANUAL_TAGGING
+
+    MANUAL_TAGGING.run_manual_tagging(out_path)
+
+    unresolved = _untagged_lines(out_path)
+    if unresolved:
+        print(
+            f"ERROR: {len(unresolved)} line(s) still have no media_type "
+            f"after manual tagging (e.g. {unresolved[0]!r}). Re-run "
+            f"`uv run main.py` to resume tagging."
+        )
+        sys.exit(1)
+
+
 def split_text_into_sections(section):
     lines = section.split("\n")
     cleaned = []
@@ -171,6 +223,10 @@ def main() -> None:
     """
 
     verify_environment()
+
+    # 0) Split the raw script into shot lines + auto-tag + (if anything is
+    #    left empty) block on manual tagging — see ensure_script_to_search_term_ready.
+    ensure_script_to_search_term_ready()
 
     # 1) Break into scenes / load search-term map
     print("====================================================================")

@@ -14,18 +14,6 @@ TODO:
 - Add the stamp thing back - for like 'traded for nutmeg!' etc?
     - or do we sort of auto-populate the 'text' portion of the decorator to use that text, and then apply a 'stamp' affect to the text where it does the same styling with the red background?
 
-- perhaps integrate everything together..
-    - so i just run via: uv run main.py..
-    - and it'll run the 
-        uv run SPLIT_AND_LABEL.py
-        uv run MANUAL_TAGGING.py
-        (then continue with the rest of main.py...)
-
-    (ensuring that it passes in the right json script to search term file name etc.)
-    (and ensuring that all cache stuff in those files end up in the appropriate cache place... indicated by the var in CONFIG.py
- if no cache available..
-    - and the auto tagger... (again- checking for cache)
-    - and the manual reviewer... (if any of the entries in the json have no mediatype...
 
 
 
