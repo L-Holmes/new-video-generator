@@ -35,7 +35,7 @@ def check(cond, label):
     print(("  PASS  " if cond else "  FAIL  ") + label)
     if not cond: fails.append(label)
 
-from ___visuals.CONFIG import (
+from CONFIG import (
     GROUPABLE_TYPES, JOINT_LAYOUT_POSITIONS, JOINT_TYPE_SFX_MAP,
     MEDIA_PROPERTIES, MEDIA_TYPE_CATALOG, MODIFIERS, MediaType,
     group_scene_rows, media_props, normalise_scene_row,
@@ -141,7 +141,7 @@ if sg:
           "raw-file filter: media_type + grouped-ness (string or enum)")
 
 print("\n===== collage modifier =====")
-from ___visuals.CONFIG import COLLAGEABLE_TYPES, scene_wants_collage
+from CONFIG import COLLAGEABLE_TYPES, scene_wants_collage
 check("caption" in MODIFIERS and COLLAGEABLE_TYPES == {"stock"},
       "caption is a modifier again (automatic); collage is stock-only")
 row = {"search_term": "x", "media_type": "stock", "modifiers": ["collage"]}

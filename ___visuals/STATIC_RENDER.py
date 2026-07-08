@@ -29,7 +29,7 @@ from ___visuals.CACHE_IO import (
     add_local_paths_to_history,
     save_to_cache,
 )
-from ___visuals.CONFIG import (
+from CONFIG import (
     CANDIDATES_CACHE_FILE,
     DEBUG,
     FINAL_SCRIPT_AND_CLIPS,

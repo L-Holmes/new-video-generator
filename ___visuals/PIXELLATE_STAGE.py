@@ -16,7 +16,7 @@ import hashlib
 from pathlib import Path
 
 from ___visuals.CACHE_IO import _is_image_path, _load_history, _resolve_to_local_path, _save_history
-from ___visuals.CONFIG import _CACHE_DIR, DEBUG, MediaType, SearchTermData
+from CONFIG import _CACHE_DIR, DEBUG, MediaType, SearchTermData
 from ___visuals.PIXELLATE import pixellate_image
 
 

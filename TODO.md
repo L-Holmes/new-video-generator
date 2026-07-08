@@ -7,22 +7,6 @@ tasks:
 
 
 
-0.5) need a config var to turn off colour grading entirely.
-i.e.:
-APPLY_COLOUR_GRADING  = False
-(I think we already have this as 'TOGGLE_STOCK_COLOUR_GRADING_ETC' ?
-
-13) config.py should be moved to the root of the project. 
-
-
-
-
-
-9) On the decorator, after I click 'key out the white background' there should be some loading affect to show that it is keying out the white background and hasn't frozen! 
-
--------------
-
-
 6) For the manual tagger, if there is a setence like 'New York city', then by default it will assume the first word is just capitalised because it is a random word at the start of a sentence.. however, is there a way for us to check if 'New York' is a visualisable noun? and if it doesn't make sense... (i.e. if you put that phrase in the middle of a sentence, would the autocorrect try and capitalise the 'N' in 'new'? if not, then its just new, and not part of a place name, if it does, lets assume its part of a phrase that is a name of an important visualisable noun. 
 
 

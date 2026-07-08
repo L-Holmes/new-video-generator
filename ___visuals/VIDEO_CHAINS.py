@@ -52,7 +52,7 @@ from pathlib import Path
 from PIL import Image
 
 from ___visuals.CACHE_IO import _classify_footage_path, _resolve_to_local_path
-from ___visuals.CONFIG import (
+from CONFIG import (
     DECORATE_VIDEO_LIVE,
     VIDEO_CHAIN_SEGMENT_PAD_SEC,
     media_props,

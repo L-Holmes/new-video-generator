@@ -41,7 +41,7 @@ import re
 from pathlib import Path
 
 from ___visuals.CACHE_IO import _resolve_to_local_path
-from ___visuals.CONFIG import (
+from CONFIG import (
     DECORATE_OUTPUT_DIR,
     DECORATE_RENDER_SAFETY_PAD_SEC,
     IMAGE_EXTENSIONS,
@@ -94,7 +94,7 @@ def swap_stamp_rows_for_review(
     original type is kept on the row and put back (with the picks stashed
     as stamps) by restore_stamp_rows_after_review(). In-memory only — the
     tagging json is never touched. Returns the number of rows swapped."""
-    from ___visuals.CONFIG import MediaType, scene_stamp_source
+    from CONFIG import MediaType, scene_stamp_source
 
     n = 0
     for text, row in script_to_search_term.items():
@@ -225,7 +225,7 @@ def _stamps_for_row(
     pre-decorated first (stamp_decorate). [] when the row has no stamp
     source or nothing was picked — the editor's own 'pick a file' always
     remains."""
-    from ___visuals.CONFIG import scene_stamp_source
+    from CONFIG import scene_stamp_source
 
     if not scene_stamp_source(row):
         return []

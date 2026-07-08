@@ -2,12 +2,12 @@
 MEDIA_TYPES.py — the tagging tool's view of the media-type catalog.
 
 The catalog lives in ONE place, inside the video builder's config:
-    ___visuals/CONFIG.py   (the MEDIA TYPES section near the top)
+    CONFIG.py   (repo root — the MEDIA TYPES section near the top)
 This file just imports it, so the buttons/colours/info in MANUAL_TAGGING
 and the types the renderer understands can never drift apart.
 
 To add a media type: one entry in MEDIA_TYPE_CATALOG plus its enum property
-row in MEDIA_PROPERTIES — both in ___visuals/CONFIG.py, right next to each
+row in MEDIA_PROPERTIES — both in CONFIG.py, right next to each
 other (CONFIG refuses to import if they drift). It then appears in
 MANUAL_TAGGING automatically: button, colour, info popup, key. Optionally
 drop an example image at examples/<name>.png.
@@ -29,7 +29,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 try:
-    from ___visuals.CONFIG import (  # noqa: F401  (re-exports)
+    from CONFIG import (  # noqa: F401  (re-exports)
         COLLAGEABLE_TYPES,
         GROUPABLE_TYPES,
         MEDIA_TYPE_CATALOG as MEDIA_TYPES,
@@ -39,7 +39,6 @@ try:
 except ImportError as exc:  # pragma: no cover - setup guidance
     raise ImportError(
         "MEDIA_TYPES.py could not import the shared catalog from "
-        "___visuals/CONFIG.py. This folder must live next to ___visuals "
-        "in the repo (or add the repo root to PYTHONPATH). "
+        "CONFIG.py at the repo root (or add the repo root to PYTHONPATH). "
         f"Underlying error: {exc}"
     ) from exc

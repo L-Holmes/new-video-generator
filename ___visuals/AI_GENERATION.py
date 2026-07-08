@@ -29,7 +29,7 @@ from ___visuals.CACHE_IO import (
     load_from_cache,
     save_to_cache,
 )
-from ___visuals.CONFIG import (
+from CONFIG import (
     _CACHE_DIR,
     AI_EDIT_CONTEXT_NUM_IMAGES,
     AI_EDIT_NUM_VARIANTS,

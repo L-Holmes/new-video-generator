@@ -28,7 +28,7 @@ from pathlib import Path
 
 import requests
 
-from ___visuals.CONFIG import (
+from CONFIG import (
     PEXELS_API_KEY,
     STAMP_FETCH_COUNT,
     STAMP_SOURCE_TYPES,

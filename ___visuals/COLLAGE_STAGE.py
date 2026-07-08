@@ -32,7 +32,7 @@ from pathlib import Path
 from PIL import Image
 
 from ___visuals.CACHE_IO import _resolve_to_local_path
-from ___visuals.CONFIG import (
+from CONFIG import (
     IMAGE_EXTENSIONS,
     COLLAGE_BACKGROUND,
     COLLAGE_OUTPUT_DIR,

@@ -49,7 +49,7 @@ from pathlib import Path
 from PIL import Image
 
 from ___visuals.CACHE_IO import _is_image_path, _resolve_to_local_path
-from ___visuals.CONFIG import (
+from CONFIG import (
     _CACHE_DIR,
     DEBUG,
     ProgressTracker,

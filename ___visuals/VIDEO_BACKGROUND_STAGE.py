@@ -62,7 +62,7 @@ from ___visuals.CACHE_IO import (
     _resolve_to_local_path,
     add_local_paths_to_history,
 )
-from ___visuals.CONFIG import (
+from CONFIG import (
     SCRIPT_AUDIO_FILE,
     TIMESTAMPS_ABSOLUTE_FILE,
     VIDEO_BACKGROUND_FILE,

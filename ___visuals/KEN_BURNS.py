@@ -23,7 +23,7 @@ from enum import Enum
 from pathlib import Path
 
 from ___visuals.CACHE_IO import _classify_footage_path, _is_image_path, _resolve_to_local_path
-from ___visuals.CONFIG import _CACHE_DIR, APPLY_KEN_BURNS_AFFECT, DEBUG, ProgressTracker
+from CONFIG import _CACHE_DIR, APPLY_KEN_BURNS_AFFECT, DEBUG, ProgressTracker
 
 
 # === BEGIN verbatim move from main.py (Ken Burns) ===

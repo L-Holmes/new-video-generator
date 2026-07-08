@@ -52,7 +52,7 @@ from ___visuals.CACHE_IO import (
 )
 from ___visuals.COLLAGE_STAGE import run_collage_stage
 from ___visuals.COLOUR_GRADE_STAGE import apply_colour_grading_to_final_data
-from ___visuals.CONFIG import (
+from CONFIG import (
     _CACHE_DIR,
     AUDIO_CUTDOWN_WHISPER_MODEL,
     AUDIO_EVENTS_FILE,

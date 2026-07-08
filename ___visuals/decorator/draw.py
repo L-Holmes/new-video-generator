@@ -2961,10 +2961,28 @@ class _DecorateApp:
         )
 
     def _toggle_remove_bg(self):
-        self.stamp_remove_bg.set(not self.stamp_remove_bg.get())
+        turning_on = not self.stamp_remove_bg.get()
+        self.stamp_remove_bg.set(turning_on)
+        # Keying out the background is a synchronous flood-fill over the
+        # whole image (no ML, but not instant on a big picture either) —
+        # without this, the app just sits there with no feedback while it
+        # runs and looks frozen. Force the busy state onto the screen with
+        # update_idletasks() BEFORE the blocking call, since Tkinter won't
+        # repaint on its own until this event handler returns.
         if hasattr(self, "_remove_bg_btn"):
-            self._remove_bg_btn.config(text=self._remove_bg_label())
-        self._stamp_rearm()
+            if turning_on:
+                self._remove_bg_btn.config(
+                    text="⏳ keying out background…", state="disabled"
+                )
+                self.root.config(cursor="watch")
+                self.root.update_idletasks()
+            try:
+                self._stamp_rearm()
+            finally:
+                self._remove_bg_btn.config(text=self._remove_bg_label(), state="normal")
+                self.root.config(cursor="")
+        else:
+            self._stamp_rearm()
 
     def _stamp_rearm(self):
         """(Re)float the selected picture on the cursor, keeping the last

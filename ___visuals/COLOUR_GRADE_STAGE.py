@@ -22,7 +22,7 @@ from pathlib import Path
 
 from ___visuals import COLOUR_GRADE_ETC
 from ___visuals.CACHE_IO import _classify_footage_path, _resolve_to_local_path
-from ___visuals.CONFIG import (
+from CONFIG import (
     _CACHE_DIR,
     APPLY_COLOUR_GRADING_TO_ALL,
     APPLY_COLOUR_GRADING_TO_VIDEOS_ONLY,

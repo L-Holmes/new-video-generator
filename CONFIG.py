@@ -7,20 +7,15 @@ MediaType enum + type-classification sets, the joint-scene layout/SFX maps,
 the shared HTTP sessions + threading locks, and the ProgressTracker.
 
 main.py and every extracted helper module import what they need from here, so
-this is the ONE place to flip knobs / change paths.
+this is the ONE place to flip knobs / change paths. Lives at the REPO ROOT
+(not inside ___visuals/) so every other module — root or package — just
+does `from CONFIG import ...` with no path bootstrap needed for this file
+specifically. Package files under ___visuals/ still need their own "allow
+`uv run ___visuals/<file>.py`" bootstrap to put the root back on sys.path;
+that's what makes `from CONFIG import ...` resolve from inside the package.
 """
 
 from __future__ import annotations
-
-# Allow `uv run ___visuals/<file>.py` from the repo root: when a package file
-# is executed directly, python puts ___visuals/ (not the root) on sys.path,
-# so `from ___visuals...` imports fail. This puts the root back. Paste the
-# same 4 lines at the top of any package file you want to run directly.
-if __package__ in (None, ""):
-    import sys as _sys
-    from pathlib import Path as _Path
-
-    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import argparse
 import sys

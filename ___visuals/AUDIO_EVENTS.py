@@ -12,7 +12,7 @@ if __package__ in (None, ""):
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 
-from ___visuals.CONFIG import (
+from CONFIG import (
     JOINT_TYPE_SFX_MAP,
     MUSIC_VOLUME,
     SFX_VOLUME,

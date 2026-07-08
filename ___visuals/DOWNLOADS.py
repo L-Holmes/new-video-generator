@@ -27,7 +27,7 @@ from pathlib import Path
 import requests
 
 from ___visuals.CACHE_IO import _load_history, _save_history
-from ___visuals.CONFIG import (
+from CONFIG import (
     DOWNLOAD_WORKERS,
     MAX_CLIP_SECONDS,
     PEXELS_API_KEY,

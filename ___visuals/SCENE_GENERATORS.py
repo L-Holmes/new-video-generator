@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Callable
 
 from ___visuals.CACHE_IO import _resolve_to_local_path, load_json
-from ___visuals.CONFIG import (
+from CONFIG import (
     _CACHE_DIR,
     CANDIDATES_CACHE_FILE,
     JOINT_BASE_DURATION_FALLBACK_SEC,

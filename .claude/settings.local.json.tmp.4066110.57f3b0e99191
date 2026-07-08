@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import ast; ast.parse\\(open\\('main.py'\\).read\\(\\)\\); print\\('AST parse OK'\\)\")",
+      "Bash(.venv/bin/python -c \"import ast; ast.parse\\(open\\('main.py'\\).read\\(\\)\\); print\\('AST parse OK'\\)\")",
+      "Bash(timeout 300 .venv/bin/python -c \"import main; print\\('IMPORT MAIN OK'\\)\")",
+      "Bash(timeout 120 uvx ruff --version)",
+      "Bash(uvx ruff *)",
+      "Bash(timeout 120 .venv/bin/python -c \"import CONFIG; print\\('CONFIG import OK; _CACHE_DIR=', CONFIG._CACHE_DIR, '; MediaType has', len\\(list\\(CONFIG.MediaType\\)\\), 'members'\\)\")",
+      "Bash(timeout 60 .venv/bin/python -c \"import CACHE_IO; print\\('CACHE_IO OK'\\)\")",
+      "Bash(timeout 120 .venv/bin/python -c \"import DOWNLOADS; print\\('DOWNLOADS OK'\\)\")",
+      "Bash(timeout 60 .venv/bin/python -c \"import TIMING_MERGE; print\\('TIMING_MERGE OK'\\)\")",
+      "Bash(sed -n '2723,3239p' main.py)",
+      "Bash(sed -n '1333,1961p' main.py)",
+      "Bash(timeout 180 .venv/bin/python -c \"import SCENE_GENERATORS; print\\('SCENE_GENERATORS OK'\\)\")",
+      "Bash(python3 *)",
+      "Bash(uv run *)",
+      "Bash(node -e \"new Function\\(require\\('fs'\\).readFileSync\\('___splitting_and_labelling/MANUAL_TAGGING.py','utf8'\\).match\\(/<script>\\([\\\\s\\\\S]*\\)<\\\\/script>/\\)[1]\\); console.log\\('JS PARSE OK'\\)\")",
+      "Bash(git mv *)",
+      "Bash(git stash *)"
+    ]
+  }
+}
