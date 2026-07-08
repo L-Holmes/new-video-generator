@@ -12,6 +12,7 @@ Ideas:
 
 TODO:
 - Add the stamp thing back - for like 'traded for nutmeg!' etc?
+    - or do we sort of auto-populate the 'text' portion of the decorator to use that text, and then apply a 'stamp' affect to the text where it does the same styling with the red background?
 
 - perhaps integrate everything together..
     - so i just run via main.py..
@@ -19,7 +20,6 @@ TODO:
     - and the auto tagger... (again- checking for cache)
     - and the manual reviewer... (if any of the entries in the json have no mediatype...
 
-- make 'zoom' the default selected tab for dcorating.
 - For decorator, if i do 'object' tab, then do an action (e.g. select object, then remove background) then the rest of the tabs become blank and unususable... 
 - For decorator:
     - Make it so you can rotate text in OUR paint thing
