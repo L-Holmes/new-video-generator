@@ -226,6 +226,7 @@ class TextDeco:
     font_size: int  # glyph height in BASE-image px
     cx_frac: float  # center x as a fraction of base width, 0..1
     cy_frac: float  # center y as a fraction of base height, 0..1
+    angle: float = 0.0  # degrees, 0 = upright, +clockwise (screen)
 
 
 @dataclass(eq=False)
@@ -390,6 +391,7 @@ def deco_to_dict(d) -> dict:
         "font_size": d.font_size,
         "cx_frac": d.cx_frac,
         "cy_frac": d.cy_frac,
+        "angle": d.angle,
     }
 
 
@@ -445,9 +447,21 @@ def deco_from_dict(r: dict):
             float(r["cx_frac"]),
             float(r["cy_frac"]),
         )
+    if t == "text" or ("text" in r and "length" not in r):
+        return TextDeco(
+            r["text"],
+            int(r["font_size"]),
+            float(r["cx_frac"]),
+            float(r["cy_frac"]),
+            float(r.get("angle", 0.0)),
+        )
     # Backward-compatible: old saved files were bare text dicts (no "type").
     return TextDeco(
-        r["text"], int(r["font_size"]), float(r["cx_frac"]), float(r["cy_frac"])
+        r["text"],
+        int(r["font_size"]),
+        float(r["cx_frac"]),
+        float(r["cy_frac"]),
+        float(r.get("angle", 0.0)),
     )
 
 
@@ -831,7 +845,10 @@ def _render_item(item) -> Image.Image:
         return render_line_image(item.length, item.angle, item.thickness)
     if isinstance(item, RectDeco):
         return render_rect_image(item.width, item.height, item.angle, item.thickness)
-    return render_text_image(item.text, item.font_size)
+    txt = render_text_image(item.text, item.font_size)
+    if getattr(item, "angle", 0.0):
+        txt = txt.rotate(item.angle, resample=_RESAMPLE, expand=True)
+    return txt
 
 
 # ===========================================================================
@@ -1056,6 +1073,10 @@ class _DecorateApp:
         self.stamp_remove_bg = tk.BooleanVar(value=False)
         self._session_edited = False
         self._bake_n = 0
+        # Snapshot stack for undoing DESTRUCTIVE base edits (zoom crops, object
+        # edits, bakes). Each entry is (base_path, items_copy, active, ops_len)
+        # captured BEFORE the change; _undo pops it and reloads that base.
+        self._base_undo_stack: list = []
         self._destroyed = False
         self.action = "exit"  # "finish" | "exit"
         self.final_path = None
@@ -1485,9 +1506,9 @@ class _DecorateApp:
             justify="left",
             wraplength=330,
             text=(
-                "The gold box is the crop. Click (or drag) on the "
-                "image to move it; − / + below changes its size. "
-                "Nothing happens until you press complete."
+                "The gold box is the crop. Move it over the image; "
+                "− / + below changes its size. Click on the image "
+                "to apply the zoom instantly."
             ),
         ).pack(anchor="w", pady=(0, 6))
         zrow = tk.Frame(self.zoom_panel, bg="#1e1e24")
@@ -1497,7 +1518,7 @@ class _DecorateApp:
             text="−",
             width=3,
             font=("Arial", 13, "bold"),
-            command=lambda: self._zoom_resize(+10),
+            command=lambda: self._zoom_resize(-10),
         ).pack(side="left")
         self.zoom_pct_var = tk.StringVar(value="")
         tk.Label(
@@ -1513,16 +1534,8 @@ class _DecorateApp:
             text="+",
             width=3,
             font=("Arial", 13, "bold"),
-            command=lambda: self._zoom_resize(-10),
+            command=lambda: self._zoom_resize(+10),
         ).pack(side="left")
-        tk.Button(
-            self.zoom_panel,
-            text="✓  complete zoom",
-            command=self._zoom_complete,
-            font=("Arial", 12, "bold"),
-            bg="#2e7d32",
-            fg="white",
-        ).pack(anchor="w", pady=(2, 4), fill="x")
 
         # Text-entry group (hidden unless typing).
         self.entry_frame = tk.Frame(self._panel_host, bg="#1e1e24")
@@ -1562,15 +1575,16 @@ class _DecorateApp:
             erow, text="Cancel", command=self._cancel_typing, font=("Arial", 11)
         ).pack(side="left", padx=(6, 0))
 
-        # Arrow-direction dial (hidden unless an arrow is the active/pending item).
+        # Rotation dial (hidden unless a rotatable item is the active/pending item).
         self.dial_frame = tk.Frame(side, bg="#1e1e24")
-        tk.Label(
+        self.dial_label = tk.Label(
             self.dial_frame,
-            text="Arrow direction (drag to aim):",
+            text="Rotation (drag to aim):",
             bg="#1e1e24",
             fg="#bbbbbb",
             font=("Arial", 10),
-        ).pack(anchor="w")
+        )
+        self.dial_label.pack(anchor="w")
         self.dial = tk.Canvas(
             self.dial_frame, width=150, height=150, bg="#2a2a33", highlightthickness=0
         )
@@ -1838,7 +1852,10 @@ class _DecorateApp:
                 t = item.thickness
             return render_rect_image(w, h, item.angle, t)
         fs = self._disp_font(item.font_size) if display else item.font_size
-        return render_text_image(item.text, fs)
+        txt = render_text_image(item.text, fs)
+        if item.angle:
+            txt = txt.rotate(item.angle, resample=_RESAMPLE, expand=True)
+        return txt
 
     def _rebuild_composite(self):
         highlights = [it for it in self.items if isinstance(it, HighlightDeco)]
@@ -1914,15 +1931,10 @@ class _DecorateApp:
         if self._busy:
             return
         if self._zoom_mode:
-            self._zoom_frozen = not self._zoom_frozen
-            if not self._zoom_frozen:
-                self._zoom_move(event.x, event.y)
-            self._set_status(
-                "Box frozen — press ✓ complete zoom (or Enter), or click to "
-                "move it again."
-                if self._zoom_frozen
-                else "Box follows the cursor — click to freeze it in place."
-            )
+            # Clicking the image centres the crop box there and applies the
+            # zoom immediately — no separate "complete" step.
+            self._zoom_move(event.x, event.y)
+            self._zoom_complete()
             return
         # Requirement: clicking the canvas with the text tool open but nothing
         # typed must warn the user rather than silently doing nothing.
@@ -1964,7 +1976,7 @@ class _DecorateApp:
             return
 
     def _on_release(self, event):
-        pass  # zoom applies via its ✓ button; draw tools are click-move-click
+        pass  # zoom applies on click; draw tools are click-move-click
 
     def _place_pending(self, x, y):
         """Drop the floating pending item, select it, then re-arm the tool so
@@ -2434,13 +2446,20 @@ class _DecorateApp:
         the current pending / selected item."""
         target = self._pending if self._pending is not None else self.active
         # Dial: visible whenever a rotatable item is active/pending.
-        show_dial = isinstance(target, (ArrowDeco, LineDeco, RectDeco, HighlightDeco))
+        show_dial = isinstance(
+            target, (ArrowDeco, LineDeco, RectDeco, HighlightDeco, TextDeco)
+        )
         if show_dial:
             if not self._dial_shown:
                 self.dial_frame.pack(
                     anchor="w", fill="x", pady=(4, 2), before=self._anchor
                 )
                 self._dial_shown = True
+            self.dial_label.config(
+                text="Direction (drag to aim):"
+                if isinstance(target, ArrowDeco)
+                else "Rotation (drag to aim):"
+            )
             self._redraw_dial()
         elif self._dial_shown:
             self.dial_frame.pack_forget()
@@ -2470,9 +2489,15 @@ class _DecorateApp:
         return 75.0, 75.0
 
     def _dial_target(self):
-        if isinstance(self._pending, (ArrowDeco, LineDeco, RectDeco, HighlightDeco)):
+        if isinstance(
+            self._pending,
+            (ArrowDeco, LineDeco, RectDeco, HighlightDeco, TextDeco),
+        ):
             return self._pending
-        if isinstance(self.active, (ArrowDeco, LineDeco, RectDeco, HighlightDeco)):
+        if isinstance(
+            self.active,
+            (ArrowDeco, LineDeco, RectDeco, HighlightDeco, TextDeco),
+        ):
             return self.active
         return None
 
@@ -2517,7 +2542,9 @@ class _DecorateApp:
             arrow="last",
         )
         c.create_oval(cx - 3, cy - 3, cx + 3, cy + 3, fill="#5ad1ff", outline="")
-        self.angle_var.set(f"Direction: {ang:+.0f}\u00b0")
+        tgt = self._dial_target()
+        label = "Direction" if isinstance(tgt, ArrowDeco) else "Rotation"
+        self.angle_var.set(f"{label}: {ang:+.0f}\u00b0")
 
     def _rotate_active(self, delta):
         tgt = self.active
@@ -2525,8 +2552,10 @@ class _DecorateApp:
             tgt.angle += delta
             self.cur_arrow_angle = tgt.angle
             self._redraw_dial()
-        elif isinstance(tgt, (LineDeco, RectDeco)):
+        elif isinstance(tgt, (LineDeco, RectDeco, TextDeco)):
             tgt.angle += delta
+            if self._dial_shown:
+                self._redraw_dial()
         else:
             self._set_status("Selected item can't be rotated.")
             return
@@ -2615,6 +2644,14 @@ class _DecorateApp:
         return None
 
     # -- finish / undo / exit ---------------------------------------------
+    def _push_base_undo(self):
+        """Snapshot the current base + placed items so a later _undo can
+        reverse a destructive base edit (zoom crop, object edit, bake).
+        Call BEFORE the operation replaces the base."""
+        self._base_undo_stack.append(
+            (self.base_path, list(self.items), self.active, len(self.ops))
+        )
+
     def _undo(self):
         # Mid-draw shape in progress → cancel just that shape.
         if self._draw_tool is not None and self._draw_anchor is not None:
@@ -2622,6 +2659,23 @@ class _DecorateApp:
             self._draw_tool = self._rearm  # keep the tool armed
             self._update_controls()
             self._set_status("Cancelled the shape you were drawing.")
+            return
+        # No pending items to remove, but a destructive base edit (e.g. a
+        # zoom crop) was applied → restore the previous base + items.
+        if not self.items and self._base_undo_stack:
+            prev_path, prev_items, prev_active, prev_ops_len = (
+                self._base_undo_stack.pop()
+            )
+            self.items = prev_items
+            self.active = prev_active
+            self._pending = None
+            # Overlay mode: drop the ops this edit appended (layer/zoom) so the
+            # final burn no longer re-applies the undone crop.
+            if self.overlay_mode and len(self.ops) > prev_ops_len:
+                del self.ops[prev_ops_len:]
+            self._reload_base(prev_path)
+            self._update_controls()
+            self._set_status("Undid the last base edit (e.g. zoom).")
             return
         if not self.items:
             self._set_status("Nothing to undo yet.")
@@ -2781,8 +2835,8 @@ class _DecorateApp:
         self._zoom_frozen = False
         self._zoom_redraw()
         self._set_status(
-            "The gold box follows your cursor — click to "
-            "freeze it, − / + sizes it, ✓ (or Enter) applies."
+            "The gold box follows your cursor — − / + sizes it, "
+            "click on the image to apply the zoom."
         )
 
     def _zoom_box_px(self):
@@ -2825,6 +2879,9 @@ class _DecorateApp:
 
         self._zoom_hide()
         self._note_supersede()
+        # Snapshot BEFORE the crop so _undo can reverse it (restoring the
+        # pre-zoom base + any items that get baked in below).
+        self._push_base_undo()
         if self.overlay_mode:
             # LIVE video: nothing is baked — the items so far become a layer
             # op and the crop a zoom op, re-applied to the MOVING footage at
@@ -2965,6 +3022,7 @@ class _DecorateApp:
         else:
             self._note_supersede()
             self._session_edited = True
+            self._push_base_undo()
             self._reload_base(str(result))
             self._set_status("Object edit applied. Keep editing, or FINISH.")
 
