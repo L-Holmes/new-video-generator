@@ -477,7 +477,7 @@ _FINAL_OUT_DIR = _TEST_OUT_DIR / "colour_graded_FINAL"
 
 # Also grade full videos end-to-end (slower). The BEFORE | AFTER comparison
 # still is produced either way; set False to skip the full-video render.
-GRADE_FULL_VIDEOS = True
+GRADE_FULL_VIDEOS = False
 
 
 def _extract_frame(video_path: str, out_png: str, at_seconds: float = 1.0) -> bool:

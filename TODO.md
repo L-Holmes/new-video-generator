@@ -1,4 +1,126 @@
 
+0.5) need a config var to turn off colour grading entirely.
+
+i.e.:
+
+APPLY_COLOUR_GRADING  = False
+
+(I think we already have this as 'TOGGLE_STOCK_COLOUR_GRADING_ETC' ?
+
+
+
+1) - option for just 'blank' / 'random background' in the mediatype chooser 
+
+
+
+- blank is just white
+
+
+
+- 'random background' picks a random background from our backgrounds folder.
+
+
+
+
+
+
+
+2) If 'typography', then manual reviewer should auto populate the search term to just be the exact text of that full entry. 
+
+
+
+3) new media type option for 'timeline'... uses manim to generate a timeline affect where it shows a timeline and a moving thing that goes back to the given date. It then holds on that after doing the initial. 
+
+ movement. 
+
+
+
+4) stop 'collage' from being selected as an option by the auto tagger...
+
+also, if 'collage' isn't an available option in hte manual tagger... then just remove it- don't do a warning saying that collage isn't an option... same for anything that isn't an option...
+
+
+
+5) When I click 'finish' on the manual tagger, it should close that tab and return back to the terminal where my code is running... 
+
+
+
+6) For the manual tagger, if there is a setence like 'New York city', then by default it will assume the first word is just capitalised because it is a random word at the start of a sentence.. however, is there a way for us to check if 'New York' is a visualisable noun? and if it doesn't make sense... (i.e. if you put that phrase in the middle of a sentence, would the autocorrect try and capitalise the 'N' in 'new'? if not, then its just new, and not part of a place name, if it does, lets assume its part of a phrase that is a name of an important visualisable noun. 
+
+
+
+
+
+7) If no options are good, from the stock that I searched (this is in the media review stage)...
+
+I should have an option... 
+
+to;
+
+perhaps try again, with a different search term, which this time searches both stock and wikipedia? and then gives you 5 more options to choose from - 3 from stock, and 2 from wikipedia? 
+
+
+
+7.5) Same for if we choose wikipedia as the option, but non of the options are good... but in that scenario, just get 5 stock, and no wikipedia...
+
+
+
+7.7) In fact, lets have a second additional option, which is just try again, but with a different search term.
+
+
+
+8) When I'm doing manual intervention, where I place my own image in the stock footage folder... is there any way we could open a window which the user can just paste into, which will then paste the image which we are using for that? (as an alternative option available... so they can manually place in the folder, or they can just paste in a picture that they've copied...
+
+Also, if we manually add to the folder... and we've entered the number we are resolving.. can it not auto detect the most recent file that was added to the folder, and ask you to confirm it? (and ideally open a window which displays the image, so the user can confirm that they want to use that image/clip for the given entry...?)
+
+
+
+9) On the decorator, after I click 'key out the white background' there should be some loading affect to show that it is keying out the white background and hasn't frozen! 
+
+
+
+10) On the manual tagger, need a way for me to quickly log the change I made and why.
+
+so everytime I either: join a line, split a line, Or change a media type [and search text], it should ask for the reason why.
+
+
+
+It will then update an ongoing log file we have, which will do before and after, and then give the user's reason (if they gave one) 
+
+
+
+11) We shouldn't allow brand new clips to be shorter than a threshold which we define in the config (e.g. like 0.5 seconds)... If they are shorter than that... we should make the user instead either manually edit the tag file... or use an 'edit prevoius' instead...
+
+
+
+12) need an actual reliable thing for the words on screen... and perhaps have a flag that we change in config that determines whether it shows like the whole sentence on screen, but one word at once... or just each word one by one as it does now..
+
+
+
+13) config.py should be moved to the root of the project. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+===========================================
+
 
 Ideas:
 - timeline for dates (maybe make this animated?)

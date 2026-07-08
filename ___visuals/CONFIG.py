@@ -85,13 +85,13 @@ APPLY_KEN_BURNS_AFFECT = False
 # COLOUR_GRADE_STAGE module for the full machinery.
 #
 # Preview / pick a look first:   uv run COLOUR_GRADE_ETC.py
-TOGGLE_STOCK_COLOUR_GRADING_ETC: bool = True
+TOGGLE_STOCK_COLOUR_GRADING_ETC: bool = False
 # When True, grade EVERY scene (stickman / ai_edit / read-out / maps included),
 # not just real-world stock. Ignored unless TOGGLE_STOCK_COLOUR_GRADING_ETC.
 APPLY_COLOUR_GRADING_TO_ALL: bool = False
 # When True, only VIDEO footage (mp4 etc.) gets colour graded — still images are
 # left untouched entirely. Ignored unless TOGGLE_STOCK_COLOUR_GRADING_ETC.
-APPLY_COLOUR_GRADING_TO_VIDEOS_ONLY: bool = False
+APPLY_COLOUR_GRADING_TO_VIDEOS_ONLY: bool = True
 # COLOUR_GRADE_ETC now has ONE unified cinematic look (no variations); this just
 # selects it. Run `uv run COLOUR_GRADE_ETC.py` to preview before/after stills.
 STOCK_COLOUR_GRADE_PRESET: str = COLOUR_GRADE_ETC.DEFAULT_PRESET
