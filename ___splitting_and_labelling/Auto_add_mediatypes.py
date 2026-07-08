@@ -523,7 +523,14 @@ def _name_runs(ctx: Ctx, text: str) -> "list[str]":
       • a SINGLE-word run only counts mid-sentence, or when coordinated
         with an accepted name ('Ronaldo and Bradd Pitt' vouches for
         Ronaldo even at the sentence start),
-      • with the NLP model, single-word runs must also be NER-confirmed."""
+      • with the NLP model, single-word runs must also be NER-confirmed,
+      • a run that STARTS the sentence — of ANY length — must also be
+        NER-confirmed: sentence-initial capitalisation alone proves
+        nothing ('New' capitalises the same way whether it's 'New taxes
+        were introduced' or 'New York City never sleeps'; the run only
+        earns a pass when spaCy's NER agrees it's a genuine entity, the
+        same signal a lone mid-sentence word already needs). No model ->
+        reject rather than guess (false when in doubt)."""
     tokens = list(re.finditer(r"[\w'-]+|[^\w\s]", text))
     words = [t.group(0) for t in tokens]
 
@@ -575,10 +582,20 @@ def _name_runs(ctx: Ctx, text: str) -> "list[str]":
             continue                       # is_location's job
         if _GEO_SUFFIX_RX.fullmatch(t) or _GEO_SUFFIX_RX.search(t):
             continue                       # 'Banda Islands' → is_location
-        if r["n"] >= 2:
+        ner_confirmed = ner_ok is not None and any(
+            t in e or e in t for e in ner_ok)
+        if r["sentence_initial"]:
+            # The leading word's capital proves nothing on its own — it
+            # capitalises the same way whether it's really a name or just
+            # sentence-initial orthography ('New' in 'New taxes were
+            # introduced' vs 'New' in 'New York City never sleeps'). Trust
+            # NER instead of the capital letter, for a run of ANY length;
+            # no model -> reject rather than guess.
+            if ner_confirmed:
+                accepted.append(r)
+        elif r["n"] >= 2:
             accepted.append(r)
-        elif not r["sentence_initial"] and ner_ok is not None \
-                and any(t in e or e in t for e in ner_ok):
+        elif ner_confirmed:
             # single mid-sentence word: only with NER confirmation —
             # without the model, 'European' and friends would slip in.
             # (coordination rescue below still vouches for e.g. Ronaldo.)

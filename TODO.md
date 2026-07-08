@@ -3,14 +3,6 @@
 tasks:
 
 
-----------
-
-
-
-6) For the manual tagger, if there is a setence like 'New York city', then by default it will assume the first word is just capitalised because it is a random word at the start of a sentence.. however, is there a way for us to check if 'New York' is a visualisable noun? and if it doesn't make sense... (i.e. if you put that phrase in the middle of a sentence, would the autocorrect try and capitalise the 'N' in 'new'? if not, then its just new, and not part of a place name, if it does, lets assume its part of a phrase that is a name of an important visualisable noun. 
-
-
-
 -------------
 
 
