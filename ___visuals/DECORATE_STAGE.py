@@ -53,6 +53,7 @@ from ___visuals.decorator import run_decorator
 from ___visuals.PREVIOUS_ENTRY_PREVIEW import (
     PreviousEntryPreview,
     build_previous_preview,
+    row_is_hold_previous,
 )
 from ___visuals.TIMING_MERGE import _load_scene_timings
 
@@ -357,11 +358,16 @@ def _run_video_chain(
                 stem,
                 fallback_image_path=frame,
             )
+            # Same reasoning as the still path: a hold_previous member's
+            # frame IS the previous visual (continuing/frozen) already on
+            # screen, so the popup is suppressed for the main overlay editor
+            # only — the stamp sub-editor still gets the cue.
+            main_preview = None if row_is_hold_previous(row) else previous_preview
             raw = run_overlay_decorator(
                 frame,
                 stamps=_stamps_for_row(row, previous_preview),
                 title=f"decorate (LIVE video): {m.text[:40]}",
-                previous_preview=previous_preview,
+                previous_preview=main_preview,
             )
             ops.extend(_ops_from_editor(raw, DECORATE_OUTPUT_DIR, stem))
 
@@ -520,12 +526,19 @@ def run_decorate_stage(
                 stem,
                 fallback_image_path=current,
             )
+            # hold_previous scenes already load the previous entry's image as
+            # the base canvas being decorated (it's already big on screen) —
+            # showing the popup on top of it is redundant, so it's suppressed
+            # for the main editor. The stamp sub-editor below (which decorates
+            # a DIFFERENT picture — the stamp asset, not the previous image)
+            # still gets the cue via the un-suppressed `previous_preview`.
+            main_preview = None if row_is_hold_previous(row) else previous_preview
             edited = run_decorator(
                 base_image_path=current,
                 out_path=str(DECORATE_OUTPUT_DIR / f"{stem}.png"),
                 stamps=_stamps_for_row(row, previous_preview),
                 title=f"decorate: {txt[:40]}",
-                previous_preview=previous_preview,
+                previous_preview=main_preview,
             )
             if edited:
                 current = edited

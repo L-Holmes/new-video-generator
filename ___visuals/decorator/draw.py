@@ -1198,6 +1198,8 @@ class _DecorateApp:
             )
         if self.stamp_paths and "stamp" in self.tabs:
             self._goto_tab("stamp")  # pictures are waiting — start there
+        elif "zoom" in self.tabs:
+            self._goto_tab("zoom")  # zoom is the default tool tab
 
         self.root.update_idletasks()
         self.root.lift()
