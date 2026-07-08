@@ -7,27 +7,6 @@ tasks:
 
 
 
-2) If 'typography' media type selected in manaual tagger, then manual tagger should auto populate the search term to just be the exact text of that full entry. 
-
-
-4) stop 'collage' from being selected as an option by the auto tagger...
-
-also, if 'collage' isn't an available option in hte manual tagger...(i.e. if you pick a media type that doesn't have collage available) then just remove it- don't do a warning saying that collage isn't an option... same for anything that isn't an option...
-
-
-
-5) When I click 'finish' on the manual tagger, it should close that tab and return back to the terminal where my code is running... 
-
-
-
-
-
-
-
-
--------
-
-
 0.5) need a config var to turn off colour grading entirely.
 i.e.:
 APPLY_COLOUR_GRADING  = False
