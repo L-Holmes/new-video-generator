@@ -220,12 +220,16 @@ def _visual_for_text(
     frame_dir: str | Path | None,
     frame_stem: str,
 ) -> str | None:
-    """Find the best known image for this exact script row.
+    """Find the best known image for this exact script row (no walking back).
 
-    The previous-entry popup must never silently walk back to an older sentence:
-    its text is always the immediate previous entry, and any image must come from
-    that exact previous entry's cache/review/candidate data. If the exact row has
-    no resolvable visual, callers should show text only.
+    Tries final_data (the resolved pick), then review_state (an in-progress
+    review's committed pick), then candidates_data (falls back to the first
+    offered candidate if nothing was committed yet). Returns None if this exact
+    row has no resolvable visual in any of them — callers that want "the image
+    that was on screen" for a row with no picture of its own (hold_previous,
+    connective beats, ...) should walk backwards themselves; see
+    _resolve_previous_visual, which is what the previous-entry popup actually
+    uses. The popup's TEXT is always the immediate previous entry regardless.
     """
     for footage in (
         _footage_from_final_data(text, final_data),
@@ -234,6 +238,51 @@ def _visual_for_text(
     ):
         image = preview_image_from_footage(
             footage,
+            history_map=history_map,
+            frame_dir=frame_dir,
+            frame_stem=frame_stem,
+        )
+        if image:
+            return image
+    return None
+
+
+def _resolve_previous_visual(
+    prev_text: str,
+    script_to_search_term: dict[str, Any] | None,
+    *,
+    final_data: list[dict] | None,
+    review_state: dict | None,
+    candidates_data: list[dict] | None,
+    history_map: dict | None,
+    frame_dir: str | Path | None,
+    frame_stem: str,
+) -> str | None:
+    """The image that was actually ON SCREEN during `prev_text`.
+
+    Many entries carry no picture of their own — hold_previous rows, short
+    connective beats, an unreviewed/mid-review scene — they just reuse whatever
+    was already showing. So "the previous image" isn't necessarily attached to
+    the previous entry itself; it's whatever the most recent entry AT OR BEFORE
+    it actually resolved. This walks backwards in script order (starting at
+    prev_text) trying every source (final_data -> review_state -> candidates)
+    at each step, and returns the first image found. Returns None only if
+    nothing before it (all the way to the start of the script) has resolved a
+    visual yet.
+    """
+    order = list(script_to_search_term or {})
+    if prev_text in order:
+        walk_back_through = reversed(order[: order.index(prev_text) + 1])
+    else:
+        # Not in the map (shouldn't normally happen) — just probe it directly.
+        walk_back_through = [prev_text]
+
+    for text in walk_back_through:
+        image = _visual_for_text(
+            text,
+            final_data=final_data,
+            review_state=review_state,
+            candidates_data=candidates_data,
             history_map=history_map,
             frame_dir=frame_dir,
             frame_stem=frame_stem,
@@ -257,30 +306,33 @@ def build_previous_preview(
 ) -> PreviousEntryPreview | None:
     """Build a preview for the entry directly before current_text.
 
-    The text is always the immediate previous JSON entry. The image is shown only
-    when the current row is a real hold_previous row; otherwise the popup remains
-    text-only so stock/decorate rows do not accidentally show unrelated visuals.
+    The text is always the immediate previous JSON entry. The image is the
+    picture that was on screen during that entry — resolved by walking
+    backwards (see _resolve_previous_visual) so hold_previous/connective beats
+    with no picture of their own still surface the right image, for EVERY
+    current row (not just hold_previous ones) so plain stock/decorate scenes
+    get useful context too. A caller-supplied fallback (e.g. a hold_previous
+    decorate scene's own canvas, which already IS the previous image) is only
+    used as an absolute last resort, and only for hold_previous current rows,
+    so it never mislabels an unrelated scene's own image as "previous".
     """
     prev_text = previous_text_for(current_text, script_to_search_term)
     if not prev_text:
         return None
 
-    current_row = (script_to_search_term or {}).get(current_text, {})
-    image = None
-    if row_is_hold_previous(current_row):
-        image = _visual_for_text(
-            prev_text,
-            final_data=final_data,
-            review_state=review_state,
-            candidates_data=candidates_data,
-            history_map=history_map,
-            frame_dir=frame_dir,
-            frame_stem=frame_stem,
-        )
-        if not image and fallback_image_path and Path(fallback_image_path).exists():
-            # Static hold_previous decorate scenes already open the previous image
-            # on the editor canvas; use that as the last-resort visual for this
-            # current hold row only. Non-hold rows stay text-only.
+    image = _resolve_previous_visual(
+        prev_text,
+        script_to_search_term,
+        final_data=final_data,
+        review_state=review_state,
+        candidates_data=candidates_data,
+        history_map=history_map,
+        frame_dir=frame_dir,
+        frame_stem=frame_stem,
+    )
+    if not image and fallback_image_path and Path(fallback_image_path).exists():
+        current_row = (script_to_search_term or {}).get(current_text, {})
+        if row_is_hold_previous(current_row):
             image = fallback_image_path
 
     return PreviousEntryPreview(text=prev_text, image_path=image)
@@ -316,10 +368,6 @@ class PreviousEntryPreviewPopup:
         self.preview: PreviousEntryPreview | None = None
         self.collapsed = False
         self._photo = None
-        self._collapsed_win = None
-        self._parent_config_bind = parent.bind(
-            "<Configure>", self._on_parent_configure, add="+"
-        )
 
         self.frame = tk.Frame(
             parent,
@@ -420,7 +468,6 @@ class PreviousEntryPreviewPopup:
             pass
 
     def hide(self) -> None:
-        self._hide_collapsed_arrow()
         try:
             self.frame.place_forget()
         except tk.TclError:
@@ -429,82 +476,28 @@ class PreviousEntryPreviewPopup:
     def toggle(self) -> None:
         self.collapsed = not self.collapsed
         self._layout()
+        try:
+            self.frame.lift()
+        except tk.TclError:
+            pass
 
     def _layout(self) -> None:
+        # Collapse/expand swaps the ONE placed frame's own contents for the
+        # arrow button — no separate popup window. A prior version spawned a
+        # detached overrideredirect Toplevel as the "expand" arrow when
+        # collapsed; those rarely receive clicks reliably (focus/stacking
+        # quirks vary by window manager), which is why expanding silently did
+        # nothing. Keeping everything in the single, always-placed frame
+        # means the same click binding works both ways every time.
         for child in self.frame.winfo_children():
             child.pack_forget()
 
         if self.collapsed:
-            try:
-                self.frame.place_forget()
-            except tk.TclError:
-                pass
-            self._show_collapsed_arrow()
-            return
+            self.toggle_btn.config(text="▶")
+            self.toggle_btn.pack(side="left", fill="y", padx=0, pady=0)
+        else:
+            self.toggle_btn.config(text="◀")
+            self.content.pack(side="left", fill="both", expand=True)
+            self.toggle_btn.pack(side="right", fill="y", padx=0, pady=0)
 
-        self._hide_collapsed_arrow()
-        self.toggle_btn.config(text="◀")
-        self.content.pack(side="left", fill="both", expand=True)
-        self.toggle_btn.pack(side="right", fill="y", padx=0, pady=0)
         self.frame.place(x=self.x, rely=1.0, y=self.y, anchor="sw")
-
-    def _on_parent_configure(self, _event=None) -> None:
-        if self.collapsed and self._collapsed_win is not None:
-            self._position_collapsed_arrow()
-
-    def _show_collapsed_arrow(self) -> None:
-        if self._collapsed_win is None:
-            win = tk.Toplevel(self.parent)
-            win.overrideredirect(True)
-            try:
-                win.attributes("-alpha", 0.45)
-            except tk.TclError:
-                pass
-            try:
-                win.attributes("-topmost", True)
-            except tk.TclError:
-                pass
-            try:
-                win.transient(self.parent)
-            except tk.TclError:
-                pass
-            lbl = tk.Label(
-                win,
-                text="›",
-                bg="#000000",
-                fg="#ffffff",
-                font=("Segoe UI", 8, "bold"),
-                padx=1,
-                pady=0,
-                cursor="hand2",
-            )
-            lbl.pack(fill="both", expand=True)
-            lbl.bind("<Button-1>", lambda _e: self.toggle())
-            win.bind("<Button-1>", lambda _e: self.toggle())
-            self._collapsed_win = win
-        self._position_collapsed_arrow()
-        try:
-            self._collapsed_win.deiconify()
-            self._collapsed_win.attributes("-topmost", True)
-            self._collapsed_win.lift()
-        except tk.TclError:
-            pass
-
-    def _hide_collapsed_arrow(self) -> None:
-        if self._collapsed_win is not None:
-            try:
-                self._collapsed_win.withdraw()
-            except tk.TclError:
-                pass
-
-    def _position_collapsed_arrow(self) -> None:
-        if self._collapsed_win is None:
-            return
-        try:
-            self.parent.update_idletasks()
-            w, h = 14, 30
-            left = self.parent.winfo_rootx() + self.x
-            top = self.parent.winfo_rooty() + self.parent.winfo_height() + self.y - h
-            self._collapsed_win.geometry(f"{w}x{h}+{left}+{top}")
-        except tk.TclError:
-            pass
