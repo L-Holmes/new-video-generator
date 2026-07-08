@@ -792,9 +792,11 @@ class Rule:
 # hold_previous never fetches stock, so search_term safely doubles as the
 # caption text (DECORATE_STAGE reads caption_text or search_term).
 FLOWCHART = [
-    Rule("is_noun_list", "stock", ("collage",),
-         "noun list → collage of the picks", first_of_run=True,
-         fill_search=True),
+    # collage is never auto-assigned — the boss picks it by hand in
+    # MANUAL_TAGGING when a noun list actually warrants several images.
+    Rule("is_noun_list", "stock", (),
+         "noun list → stock (add collage yourself if it needs several picks)",
+         first_of_run=True, fill_search=True),
     Rule("is_location", "map", (),
          "a renderable place → the map", fill_search=True),
     Rule("is_famous_person_or_thing", "wikipedia", (),

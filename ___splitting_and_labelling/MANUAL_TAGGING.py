@@ -119,8 +119,13 @@ def recompute(data: Dict[str, dict]) -> None:
             data[key].pop("_split_before", None)
 
     prev_gid, pos = None, 0
-    for row in data.values():
+    for key, row in data.items():
         row.pop("search_type", None)   # legacy column — purged on every save
+        # typography renders the line's OWN words — the term is never
+        # freeform, it's always exactly this line's text (kept in sync
+        # through splits/joins/base switches, not just set once on pick).
+        if row.get("media_type") == "typography":
+            row["search_term"] = key
         gid = row.get("group_id")
         if gid is not None and gid == prev_gid:
             pos += 1
@@ -223,12 +228,15 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
     row = data[line]
     mods = list(patch.get("modifiers", row.get("modifiers", [])) or [])
     base = patch.get("media_type", row.get("media_type", ""))
+    # a modifier this base doesn't support (leftover from before a base
+    # switch, say) is dropped silently — no warning, it simply isn't an
+    # option for this type any more, same as the modifier bar just not
+    # rendering a button for it.
+    orig_mods = mods
     if "group" in mods and base not in GROUPABLE_TYPES:
-        return ("only " + " and ".join(sorted(GROUPABLE_TYPES)).replace("_", " ")
-                + " can be grouped")
+        mods = [m for m in mods if m != "group"]
     if "collage" in mods and base not in COLLAGEABLE_TYPES:
-        return ("only " + " and ".join(sorted(COLLAGEABLE_TYPES)).replace("_", " ")
-                + " can be collaged")
+        mods = [m for m in mods if m != "collage"]
     # group and collage are mutually exclusive — picking one drops the other
     # (group = one cell per LINE across neighbours; collage = many images on
     # THIS line). Last toggled wins.
@@ -237,6 +245,7 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
         newly = set(mods) - prev
         drop = "collage" if "group" in newly else "group"
         mods = [m for m in mods if m != drop]
+    if mods != orig_mods:
         patch = dict(patch, modifiers=mods)
     if "stamp_source" in patch and patch["stamp_source"] is not None \
             and patch["stamp_source"] not in STAMP_SOURCE_TYPES:
@@ -604,7 +613,7 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
 <div id="finwrap"><div id="finbox">
  <div style="font-size:42px;color:#7bd88f">✓</div>
  <div>finished — everything is saved to the json.</div>
- <div class="hint">you can close this tab and stop the server (Ctrl-C in the terminal).</div>
+ <div class="hint">your terminal has already resumed. this tab is trying to close itself now — if your browser blocks that, feel free to close it by hand.</div>
  <button onclick="hideFinish()">← return back to list</button>
 </div></div>
 <div id="mobactions">
@@ -887,25 +896,31 @@ function renderTypes(){
  $('#typepanel').innerHTML=html;
  hookInfos($('#typepanel'));
 }
+function modAllowed(m,b){
+ // not available for this base -> not offered at all (no disabled+warning)
+ if(m.name==='group')return !!(b&&b.groupable);
+ if(m.name==='collage')return !!(b&&b.collageable);
+ return true;
+}
 function renderMods(){
  const L=D.lines[sel]; const has=!!L.row.media_type;
  const b=baseOf(L.row.media_type);
- $('#modbar').innerHTML=D.catalog.modifiers.map(m=>{
+ const avail=has?D.catalog.modifiers.filter(m=>modAllowed(m,b)):D.catalog.modifiers;
+ $('#modbar').innerHTML=avail.map(m=>{
   const on=(L.row.modifiers||[]).includes(m.name)?' on':'';
-  const dis=!has||(m.name==='group'&&!(b&&b.groupable))||(m.name==='collage'&&!(b&&b.collageable));
-  const why=m.name==='group'&&has&&!(b&&b.groupable)?'only stock and ai stock can be grouped'
-           :m.name==='collage'&&has&&!(b&&b.collageable)?'only stock can be collaged':'';
-  return `<button class="mod${on}" ${dis?'disabled':''} title="${why}" onclick="toggleMod('${m.name}')">${m.label}`+
+  return `<button class="mod${on}" ${has?'':'disabled'} onclick="toggleMod('${m.name}')">${m.label}`+
          ` <i class="info" data-info="${m.name}">i</i></button>`;}).join('');
  $('#modhint').textContent=has?'':'pick a base first — there must be something to put these on';
  hookInfos($('#modbar').parentElement);
 }
 function renderTerm(){
  const L=D.lines[sel];
+ const isTypo=L.row.media_type==='typography';
  $('#term').value=L.row.search_term||'';
+ $('#term').readOnly=isTypo;
  const b=baseOf(L.row.media_type);
- $('#termreq').textContent=(b&&b.term_optional)
-   ?'optional for this type'
+ $('#termreq').textContent=isTypo?"auto-set to this line's own text"
+   :(b&&b.term_optional)?'optional for this type'
    :'required';
  updateGhost();
  const s=L.suggest; let chips='';
@@ -1031,7 +1046,11 @@ function finish(){
  showFinish();
 }
 function showFinish(){$('#finwrap').classList.add('open');
- fetch('/finish',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{});}
+ fetch('/finish',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{});
+ // best-effort: browsers only allow a script to close a tab it opened
+ // itself, so this silently no-ops in most desktop browsers — the
+ // fallback message in the modal above covers that case.
+ setTimeout(()=>{window.close();},300);}
 function hideFinish(){$('#finwrap').classList.remove('open');closeEditor();}
 document.addEventListener('keydown',e=>{
  if(e.target.tagName==='TEXTAREA')return;

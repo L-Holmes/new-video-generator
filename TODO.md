@@ -1,43 +1,18 @@
 
-0.5) need a config var to turn off colour grading entirely.
 
-i.e.:
+tasks:
 
-APPLY_COLOUR_GRADING  = False
 
-(I think we already have this as 'TOGGLE_STOCK_COLOUR_GRADING_ETC' ?
+----------
 
 
 
-1) - option for just 'blank' / 'random background' in the mediatype chooser 
-
-
-
-- blank is just white
-
-
-
-- 'random background' picks a random background from our backgrounds folder.
-
-
-
-
-
-
-
-2) If 'typography', then manual reviewer should auto populate the search term to just be the exact text of that full entry. 
-
-
-
-3) new media type option for 'timeline'... uses manim to generate a timeline affect where it shows a timeline and a moving thing that goes back to the given date. It then holds on that after doing the initial. 
-
- movement. 
-
+2) If 'typography' media type selected in manaual tagger, then manual tagger should auto populate the search term to just be the exact text of that full entry. 
 
 
 4) stop 'collage' from being selected as an option by the auto tagger...
 
-also, if 'collage' isn't an available option in hte manual tagger... then just remove it- don't do a warning saying that collage isn't an option... same for anything that isn't an option...
+also, if 'collage' isn't an available option in hte manual tagger...(i.e. if you pick a media type that doesn't have collage available) then just remove it- don't do a warning saying that collage isn't an option... same for anything that isn't an option...
 
 
 
@@ -45,8 +20,49 @@ also, if 'collage' isn't an available option in hte manual tagger... then just r
 
 
 
+
+
+
+
+
+-------
+
+
+0.5) need a config var to turn off colour grading entirely.
+i.e.:
+APPLY_COLOUR_GRADING  = False
+(I think we already have this as 'TOGGLE_STOCK_COLOUR_GRADING_ETC' ?
+
+13) config.py should be moved to the root of the project. 
+
+
+
+
+
+9) On the decorator, after I click 'key out the white background' there should be some loading affect to show that it is keying out the white background and hasn't frozen! 
+
+-------------
+
+
 6) For the manual tagger, if there is a setence like 'New York city', then by default it will assume the first word is just capitalised because it is a random word at the start of a sentence.. however, is there a way for us to check if 'New York' is a visualisable noun? and if it doesn't make sense... (i.e. if you put that phrase in the middle of a sentence, would the autocorrect try and capitalise the 'N' in 'new'? if not, then its just new, and not part of a place name, if it does, lets assume its part of a phrase that is a name of an important visualisable noun. 
 
+
+
+-------------
+
+
+1) - option for just 'blank' / 'random background' in the mediatype chooser 
+- blank is just white
+- 'random background' picks a random background from our backgrounds folder.
+
+(you'll have to update to allow for these two new options... + impelement the fnucitonlaity for that..)
+
+
+
+
+3) new media type option for 'timeline'... uses manim to generate a timeline affect where it shows a timeline and a moving thing that goes back to the given date. It then holds on that after doing the initial. 
+
+ movement. 
 
 
 
@@ -75,7 +91,6 @@ Also, if we manually add to the folder... and we've entered the number we are re
 
 
 
-9) On the decorator, after I click 'key out the white background' there should be some loading affect to show that it is keying out the white background and hasn't frozen! 
 
 
 
@@ -89,7 +104,7 @@ It will then update an ongoing log file we have, which will do before and after,
 
 
 
-11) We shouldn't allow brand new clips to be shorter than a threshold which we define in the config (e.g. like 0.5 seconds)... If they are shorter than that... we should make the user instead either manually edit the tag file... or use an 'edit prevoius' instead...
+11) We shouldn't allow brand new clips (i.e. wikipedia or stock) (but edit previous or things like that are fine) to be shorter than a threshold which we define in the config (e.g. like 0.5 seconds)... If they are shorter than that... we should make the user instead either manually edit the tag file... or use an 'edit prevoius' instead...
 
 
 
@@ -97,7 +112,6 @@ It will then update an ongoing log file we have, which will do before and after,
 
 
 
-13) config.py should be moved to the root of the project. 
 
 
 
