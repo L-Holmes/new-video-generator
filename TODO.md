@@ -11,7 +11,6 @@ Ideas:
 
 
 TODO:
-- Colour grading should only affect videos (mp4s) not images!??
 - Add the stamp thing back - for like 'traded for nutmeg!' etc?
 
 - perhaps integrate everything together..

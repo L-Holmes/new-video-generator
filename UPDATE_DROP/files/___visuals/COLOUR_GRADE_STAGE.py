@@ -14,25 +14,25 @@ from __future__ import annotations
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
+
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import hashlib
 from pathlib import Path
 
 from ___visuals import COLOUR_GRADE_ETC
-
 from ___visuals.CACHE_IO import _classify_footage_path, _resolve_to_local_path
 from ___visuals.CONFIG import (
     _CACHE_DIR,
     APPLY_COLOUR_GRADING_TO_ALL,
-    MediaType,
-    STOCK_COLOUR_GRADE_PRESET,
-    SearchTermData,
-    TOGGLE_STOCK_COLOUR_GRADING_ETC,
-    ProgressTracker,
+    APPLY_COLOUR_GRADING_TO_VIDEOS_ONLY,
     MEDIA_PROPERTIES,
+    STOCK_COLOUR_GRADE_PRESET,
+    TOGGLE_STOCK_COLOUR_GRADING_ETC,
+    MediaType,
+    ProgressTracker,
+    SearchTermData,
 )
-
 
 # === BEGIN verbatim move from main.py (colour grading) ===
 # ===========================================================================
@@ -95,7 +95,9 @@ def apply_colour_grading_to_final_data(
     print("[colour-grade] CINEMATIC GRADE over final_data")
     print(
         f"[colour-grade] enabled={TOGGLE_STOCK_COLOUR_GRADING_ETC} "
-        f"all={APPLY_COLOUR_GRADING_TO_ALL} preset={STOCK_COLOUR_GRADE_PRESET!r}"
+        f"all={APPLY_COLOUR_GRADING_TO_ALL} "
+        f"videos_only={APPLY_COLOUR_GRADING_TO_VIDEOS_ONLY} "
+        f"preset={STOCK_COLOUR_GRADE_PRESET!r}"
     )
     print("=" * 70)
 
@@ -115,6 +117,13 @@ def apply_colour_grading_to_final_data(
         st = script_to_search_term.get(script_text, {}).get("media_type")
         return st in COLOUR_GRADE_STOCK_TYPES
 
+    def _kind_eligible(kind: str) -> bool:
+        if kind not in ("image", "video"):
+            return False
+        if APPLY_COLOUR_GRADING_TO_VIDEOS_ONLY and kind != "video":
+            return False
+        return True
+
     # Pre-scan so the progress bar has an accurate total.
     to_grade = 0
     for entry in final_data:
@@ -122,7 +131,7 @@ def apply_colour_grading_to_final_data(
             continue
         for footage_item in entry.get("footage", []):
             for path in footage_item:
-                if _classify_footage_path(path) in ("image", "video"):
+                if _kind_eligible(_classify_footage_path(path)):
                     to_grade += 1
 
     if to_grade == 0:
@@ -145,7 +154,7 @@ def apply_colour_grading_to_final_data(
             new_item: dict = {}
             for path, trim in footage_item.items():
                 kind = _classify_footage_path(path)
-                if not eligible or kind not in ("image", "video"):
+                if not eligible or not _kind_eligible(kind):
                     new_item[path] = trim
                     continue
 

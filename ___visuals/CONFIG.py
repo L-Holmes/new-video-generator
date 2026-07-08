@@ -19,16 +19,17 @@ from __future__ import annotations
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
+
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import argparse
 import sys
 import threading
 import time
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import TypedDict
-from dataclasses import dataclass
 
 import requests
 
@@ -88,6 +89,9 @@ TOGGLE_STOCK_COLOUR_GRADING_ETC: bool = True
 # When True, grade EVERY scene (stickman / ai_edit / read-out / maps included),
 # not just real-world stock. Ignored unless TOGGLE_STOCK_COLOUR_GRADING_ETC.
 APPLY_COLOUR_GRADING_TO_ALL: bool = False
+# When True, only VIDEO footage (mp4 etc.) gets colour graded — still images are
+# left untouched entirely. Ignored unless TOGGLE_STOCK_COLOUR_GRADING_ETC.
+APPLY_COLOUR_GRADING_TO_VIDEOS_ONLY: bool = False
 # COLOUR_GRADE_ETC now has ONE unified cinematic look (no variations); this just
 # selects it. Run `uv run COLOUR_GRADE_ETC.py` to preview before/after stills.
 STOCK_COLOUR_GRADE_PRESET: str = COLOUR_GRADE_ETC.DEFAULT_PRESET
@@ -163,6 +167,7 @@ IMAGE_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
 # Create all required dirs on startup
 # ===========================================================================
 
+
 def ensure_runtime_dirs() -> None:
     """Create the run's cache/output folders. Called by main.py at start —
     NOT at import time, so importing CONFIG (from the tagging tool, or when
@@ -171,6 +176,7 @@ def ensure_runtime_dirs() -> None:
     Path(_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
     STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     Path(PROCESSED_AUDIO_DIR).mkdir(parents=True, exist_ok=True)
+
 
 # ===========================================================================
 # JOINT SCENE INTEGRATION
@@ -256,11 +262,12 @@ MAP_GEOCODE_CACHE_DIR: str = f"{_CACHE_DIR}/maps"
 # the ONE interactive editor (draw canvas + stamp/zoom/object tabs);
 # caption is the AUTOMATIC tilted caption. The old combined types are gone.
 
+
 class Tag(str, Enum):
-    NEW = "new"                      # puts brand-new material on screen
+    NEW = "new"  # puts brand-new material on screen
     EDIT_PREVIOUS = "edit_previous"  # acts on the image already on screen
-    AI = "ai"                        # ai-generated look (red buttons)
-    BOARD = "board"                  # sits on the stickman explain board
+    AI = "ai"  # ai-generated look (red buttons)
+    BOARD = "board"  # sits on the stickman explain board
 
 
 # ---------------------------------------------------------------------------
@@ -269,69 +276,79 @@ class Tag(str, Enum):
 # ---------------------------------------------------------------------------
 MEDIA_TYPE_CATALOG: dict[str, dict] = {
     "stock": {
-        "tags": [Tag.NEW], "color": "#2e6da4",
+        "tags": [Tag.NEW],
+        "color": "#2e6da4",
         "info": "footage or an image fetched from the stock library. the "
-                "workhorse — most lines are this. stack group for a grid "
-                "of them.",
+        "workhorse — most lines are this. stack group for a grid "
+        "of them.",
         "example": "examples/stock.png",
     },
     "ai_stock": {
-        "tags": [Tag.NEW, Tag.AI], "color": "#c0392b",
+        "tags": [Tag.NEW, Tag.AI],
+        "color": "#c0392b",
         "info": "an ai-generated picture in the channel's stickman style. "
-                "the search term is a scene prompt, not a search. stack "
-                "group for a grid of them.",
+        "the search term is a scene prompt, not a search. stack "
+        "group for a grid of them.",
         "example": "examples/ai_stock.png",
     },
     "wikipedia": {
-        "tags": [Tag.NEW], "color": "#148f77",
+        "tags": [Tag.NEW],
+        "color": "#148f77",
         "info": "the image from a wikipedia article. the search term must "
-                "be the exact article name ('Banda Islands').",
+        "be the exact article name ('Banda Islands').",
         "example": "examples/wikipedia.png",
     },
     "map": {
-        "tags": [Tag.NEW], "color": "#1e8449",
+        "tags": [Tag.NEW],
+        "color": "#1e8449",
         "info": "a rendered map with the place highlighted. the search "
-                "term is just the place name ('Indonesia').",
+        "term is just the place name ('Indonesia').",
         "example": "examples/map.png",
     },
     "typography": {
-        "tags": [Tag.NEW], "color": "#8d6e2f",
+        "tags": [Tag.NEW],
+        "color": "#8d6e2f",
         "info": "the line's own words animate on a blank background. good "
-                "cold-open when there is nothing to picture yet.",
+        "cold-open when there is nothing to picture yet.",
         "example": "examples/typography.png",
     },
     "stock_on_board": {
-        "tags": [Tag.NEW, Tag.AI, Tag.BOARD], "color": "#e74c3c",
+        "tags": [Tag.NEW, Tag.AI, Tag.BOARD],
+        "color": "#e74c3c",
         "info": "stock footage shown on the stickman's explain board.",
         "example": "examples/stock_on_board.png",
     },
     "wikipedia_on_board": {
-        "tags": [Tag.NEW, Tag.AI, Tag.BOARD], "color": "#e74c3c",
+        "tags": [Tag.NEW, Tag.AI, Tag.BOARD],
+        "color": "#e74c3c",
         "info": "a wikipedia image shown on the stickman's explain board.",
         "example": "examples/wikipedia_on_board.png",
     },
     "hold_previous": {
-        "tags": [Tag.EDIT_PREVIOUS], "color": "#5c6bc0",
+        "tags": [Tag.EDIT_PREVIOUS],
+        "color": "#5c6bc0",
         "info": "keep the previous image on screen, frozen. the default "
-                "for quick mid-sentence beats — stack decorate on it to "
-                "draw on it, stamp pictures into it, zoom, or cut objects "
-                "out (everything manual lives in the ONE decorate editor).",
+        "for quick mid-sentence beats — stack decorate on it to "
+        "draw on it, stamp pictures into it, zoom, or cut objects "
+        "out (everything manual lives in the ONE decorate editor).",
         "example": "examples/hold_previous.png",
     },
     "background": {
-        "tags": [Tag.NEW], "color": "#4a4a55",
+        "tags": [Tag.NEW],
+        "color": "#4a4a55",
         "info": "nothing on top — the BACKGROUND VIDEO just plays for this "
-                "line (VIDEO_BACKGROUND_MODE only; the search term is "
-                "unused). stack decorate to draw straight onto the "
-                "background footage, or caption for a tilted caption over "
-                "it. outside background mode this renders NOTHING — don't "
-                "use it there.",
+        "line (VIDEO_BACKGROUND_MODE only; the search term is "
+        "unused). stack decorate to draw straight onto the "
+        "background footage, or caption for a tilted caption over "
+        "it. outside background mode this renders NOTHING — don't "
+        "use it there.",
         "example": "examples/background.png",
     },
     "ai_edit_previous": {
-        "tags": [Tag.EDIT_PREVIOUS, Tag.AI], "color": "#a93226",
+        "tags": [Tag.EDIT_PREVIOUS, Tag.AI],
+        "color": "#a93226",
         "info": "ai edits the previous ai image in place. the search term "
-                "is the change ('add a second coin').",
+        "is the change ('add a second coin').",
         "example": "examples/ai_edit_previous.png",
     },
 }
@@ -344,34 +361,34 @@ MODIFIERS: dict[str, dict] = {
     "decorate": {
         "color": "#e6c15a",
         "info": "open the scene's image in the ONE decorate editor. it "
-                "opens on the draw canvas (text boxes, arrows, highlights, "
-                "circles, lines, rectangles) with tabs along the top for "
-                "the other tools: stamp (place extra pictures), zoom "
-                "(crop / push in), object (cut-out extraction editor).",
+        "opens on the draw canvas (text boxes, arrows, highlights, "
+        "circles, lines, rectangles) with tabs along the top for "
+        "the other tools: stamp (place extra pictures), zoom "
+        "(crop / push in), object (cut-out extraction editor).",
         "example": "examples/decorate.png",
     },
     "caption": {
         "color": "#e6c15a",
         "info": "AUTOMATIC: a big tilted caption is composited onto the "
-                "scene's image for you — no editor, no clicking. the text "
-                "is the search term (or a hand-added caption_text column). "
-                "for hand-placed text use decorate's draw canvas instead.",
+        "scene's image for you — no editor, no clicking. the text "
+        "is the search term (or a hand-added caption_text column). "
+        "for hand-placed text use decorate's draw canvas instead.",
         "example": "examples/caption.png",
     },
     "collage": {
         "color": "#e6c15a",
         "info": "pick SEVERAL images for this one line in the review stage, "
-                "then choose: auto collage (they're scattered with overlaps "
-                "onto a plain background for you) or stamp it yourself (the "
-                "picks load into the decorate editor as stamps). stock only.",
+        "then choose: auto collage (they're scattered with overlaps "
+        "onto a plain background for you) or stamp it yourself (the "
+        "picks load into the decorate editor as stamps). stock only.",
         "example": "examples/collage.png",
     },
     "group": {
         "color": "#e6c15a",
         "info": "this line is one cell of a group with its neighbours "
-                "(rule of n: mark 3 lines in a row and they render as 3 "
-                "cells side by side). a group OF stock, a group OF ai "
-                "stock — the base type stays whatever you picked.",
+        "(rule of n: mark 3 lines in a row and they render as 3 "
+        "cells side by side). a group OF stock, a group OF ai "
+        "stock — the base type stays whatever you picked.",
         "example": "examples/group.png",
     },
 }
@@ -399,30 +416,40 @@ MediaType.__doc__ = "One member per MEDIA_TYPE_CATALOG entry; value == name."
 class MediaProperties:
     # ── external raw material ───────────────────────────────────────────
     needs_external_candidates: bool = False  # fetch Pexels/Wikipedia before generation
-    uses_wikipedia: bool = False             # ...and that fetch is Wikipedia, not Pexels
-    image_only: bool = False                 # fetch a STILL only; one pick spans the scene
+    uses_wikipedia: bool = False  # ...and that fetch is Wikipedia, not Pexels
+    image_only: bool = False  # fetch a STILL only; one pick spans the scene
     # ── generators / stages ─────────────────────────────────────────────
-    is_ai_base: bool = False                 # valid base image for an ai-edit walk-back
-    is_ai_edit: bool = False                 # the ai-edit-previous stage handles it
-    is_on_board: bool = False                # chosen clip composited onto a board base
+    is_ai_base: bool = False  # valid base image for an ai-edit walk-back
+    is_ai_edit: bool = False  # the ai-edit-previous stage handles it
+    is_on_board: bool = False  # chosen clip composited onto a board base
     # ── derive-from-previous stages ─────────────────────────────────────
-    acts_on_previous: bool = False           # derives its image from the previous scene
-    is_hold_previous: bool = False           # freeze/reuse the previous image
+    acts_on_previous: bool = False  # derives its image from the previous scene
+    is_hold_previous: bool = False  # freeze/reuse the previous image
 
 
 MEDIA_PROPERTIES: dict[MediaType, MediaProperties] = {
     MediaType.STOCK: MediaProperties(needs_external_candidates=True),
     MediaType.AI_STOCK: MediaProperties(is_ai_base=True),
-    MediaType.WIKIPEDIA: MediaProperties(needs_external_candidates=True, uses_wikipedia=True),
+    MediaType.WIKIPEDIA: MediaProperties(
+        needs_external_candidates=True, uses_wikipedia=True
+    ),
     MediaType.MAP: MediaProperties(),
     MediaType.TYPOGRAPHY: MediaProperties(),
-    MediaType.STOCK_ON_BOARD: MediaProperties(needs_external_candidates=True, is_on_board=True),
-    MediaType.WIKIPEDIA_ON_BOARD: MediaProperties(needs_external_candidates=True, uses_wikipedia=True, is_on_board=True),
-    MediaType.HOLD_PREVIOUS: MediaProperties(acts_on_previous=True, is_hold_previous=True),
-    MediaType.BACKGROUND: MediaProperties(),   # nothing fetched/generated/reviewed —
+    MediaType.STOCK_ON_BOARD: MediaProperties(
+        needs_external_candidates=True, is_on_board=True
+    ),
+    MediaType.WIKIPEDIA_ON_BOARD: MediaProperties(
+        needs_external_candidates=True, uses_wikipedia=True, is_on_board=True
+    ),
+    MediaType.HOLD_PREVIOUS: MediaProperties(
+        acts_on_previous=True, is_hold_previous=True
+    ),
+    MediaType.BACKGROUND: MediaProperties(),  # nothing fetched/generated/reviewed —
     #   the scene stays footage-less until VIDEO_BACKGROUND_STAGE fills it with
     #   the bare background segment (stage 2.655, VIDEO_BACKGROUND_MODE only).
-    MediaType.AI_EDIT_PREVIOUS: MediaProperties(is_ai_base=True, is_ai_edit=True, acts_on_previous=True),
+    MediaType.AI_EDIT_PREVIOUS: MediaProperties(
+        is_ai_base=True, is_ai_edit=True, acts_on_previous=True
+    ),
 }
 
 
@@ -456,10 +483,10 @@ def media_props(mt: "MediaType | None") -> MediaProperties:
 # ===========================================================================
 class SearchTermData(TypedDict, total=False):
     search_term: str
-    media_type: MediaType    # enum after normalise_scene_row (name string on disk)
-    modifiers: list[str]     # stackable extras: decorate / group
-    group_id: int | None     # lines sharing an id render as ONE group (rule of n)
-    position: str            # cell number within the group ("1".."n")
+    media_type: MediaType  # enum after normalise_scene_row (name string on disk)
+    modifiers: list[str]  # stackable extras: decorate / group
+    group_id: int | None  # lines sharing an id render as ONE group (rule of n)
+    position: str  # cell number within the group ("1".."n")
 
 
 _DEAD_LEGACY_COLUMNS = ("search_type", "template", "shot", "tier", "why")
@@ -516,8 +543,10 @@ def normalise_scene_row(script_text: str, row: dict) -> None:
     row.setdefault("stamp_source", None)
     if row["stamp_source"] == "":
         row["stamp_source"] = None
-    if row["stamp_source"] is not None \
-            and row["stamp_source"] not in STAMP_SOURCE_TYPES:
+    if (
+        row["stamp_source"] is not None
+        and row["stamp_source"] not in STAMP_SOURCE_TYPES
+    ):
         raise ValueError(
             f"unknown stamp_source {row['stamp_source']!r} on scene "
             f"'{script_text[:60]}' "
@@ -666,15 +695,15 @@ VIDEO_BACKGROUND_FILE: str = ""
 VIDEO_BACKGROUND_START: float | str = 0.0
 VIDEO_BG_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/video_background_scenes")
 # --- card look (opaque/photographic overlays) ---
-VIDEO_BG_CARD_SCALE: float = 0.80      # card box, fraction of the frame
-VIDEO_BG_CARD_BORDER_PX: int = 10      # white polaroid border (0 = none)
-VIDEO_BG_CARD_SHADOW: bool = True      # soft drop shadow under the card
+VIDEO_BG_CARD_SCALE: float = 0.80  # card box, fraction of the frame
+VIDEO_BG_CARD_BORDER_PX: int = 10  # white polaroid border (0 = none)
+VIDEO_BG_CARD_SHADOW: bool = True  # soft drop shadow under the card
 # --- keying (transparent / white-backed overlays float directly) ---
-VIDEO_BG_KEY_AUTO: bool = True         # detect + key per CLIP (off = all cards)
-VIDEO_BG_KEY_WHITE_MIN: int = 235      # border pixel counts as white from here
-VIDEO_BG_KEY_BORDER_FRAC: float = 0.60 # ≥ this share of white border → keyed
+VIDEO_BG_KEY_AUTO: bool = True  # detect + key per CLIP (off = all cards)
+VIDEO_BG_KEY_WHITE_MIN: int = 235  # border pixel counts as white from here
+VIDEO_BG_KEY_BORDER_FRAC: float = 0.60  # ≥ this share of white border → keyed
 VIDEO_BG_KEY_SIMILARITY: float = 0.10  # ffmpeg colorkey similarity (video clips)
-VIDEO_BG_KEY_BLEND: float = 0.08       # ffmpeg colorkey edge blend
+VIDEO_BG_KEY_BLEND: float = 0.08  # ffmpeg colorkey edge blend
 
 # ===========================================================================
 # COLLAGE (the `collage` modifier — several review picks on ONE line)
@@ -684,7 +713,7 @@ VIDEO_BG_KEY_BLEND: float = 0.08       # ffmpeg colorkey edge blend
 # stamp-yourself mode loads the picks into the decorate editor as stamps.
 COLLAGE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/collage_scenes")
 COLLAGE_BACKGROUND: str | None = None
-COLLAGE_NUM_PICKS: int = 3     # review slots (and images fetched) per collage row
+COLLAGE_NUM_PICKS: int = 3  # review slots (and images fetched) per collage row
 COLLAGE_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 
@@ -730,7 +759,6 @@ STICKMAN_EXPLAIN_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_explain_scenes"
 STICKMAN_EXPLAIN_RENDER_SAFETY_PAD_SEC: float = 0.08
 
 
-
 # How many preceding stickman images to pass as ADDITIONAL context (on top of
 # the 3 style refs) for character/style continuity → up to 6 images total.
 # 0 = original behaviour. Context is drawn only from preceding STICKMAN scenes
@@ -771,10 +799,13 @@ JOINT_LAYOUT_POSITIONS: dict[MediaType, list[list[int]]] = {
     ],
 }
 
+
 def _validate_joint_layouts() -> None:
     missing = {n for n in GROUPABLE_TYPES if MediaType(n) not in JOINT_LAYOUT_POSITIONS}
     if missing:
-        raise RuntimeError(f"groupable types missing a JOINT_LAYOUT_POSITIONS entry: {missing}")
+        raise RuntimeError(
+            f"groupable types missing a JOINT_LAYOUT_POSITIONS entry: {missing}"
+        )
 
 
 _validate_joint_layouts()

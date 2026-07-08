@@ -84,6 +84,7 @@ from __future__ import annotations
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
+
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import hashlib
@@ -157,11 +158,12 @@ class GradeConfig:
 # stay deep, so the result is warm and filmic but CRISP — not blurry or faded.
 #
 # ONE dial to rule them all: GRADE_INTENSITY scales every effect at once.
-#   1.00 = full look,  0.65 = ~35% weaker (current),  0.0 = no grade.
+#   1.00 = full look,  0.28 = ~72% weaker (current, dialed down ~30% further
+#   from the previous 0.4 to tone down the orange/colour-shift),  0.0 = no grade.
 # Tweak just this number to make the whole grade stronger or subtler.
 # ---------------------------------------------------------------------------
 
-GRADE_INTENSITY = 0.4
+GRADE_INTENSITY = 0.28
 
 
 def _build_final_grade(k: float) -> GradeConfig:
