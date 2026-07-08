@@ -45,20 +45,20 @@ from __future__ import annotations
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
+
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import subprocess
+import tkinter as tk
 from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image, ImageTk
-import tkinter as tk
-
 
 # Pillow renamed the resampling enum in v9.1; keep working on both old + new.
 try:
     _RESAMPLE = Image.Resampling.LANCZOS
-except AttributeError:                       # very old Pillow
+except AttributeError:  # very old Pillow
     _RESAMPLE = Image.LANCZOS
 
 
@@ -66,56 +66,80 @@ except AttributeError:                       # very old Pillow
 # Data
 # ===========================================================================
 
+
 @dataclass
 class Placement:
     """One stamp of the overlay, relative to the BASE image."""
-    width_pct: int            # overlay width as % of base width, clamped 1..80
-    cx_frac: float            # center x as a fraction of base width, 0..1
-    cy_frac: float            # center y as a fraction of base height, 0..1
-    remove_bg: bool = True    # knock out the overlay's white background (per-overlay)
+
+    width_pct: int  # overlay width as % of base width, clamped 1..80
+    cx_frac: float  # center x as a fraction of base width, 0..1
+    cy_frac: float  # center y as a fraction of base height, 0..1
+    remove_bg: bool = True  # knock out the overlay's white background (per-overlay)
 
 
 @dataclass
 class CropBox:
-    """A crop/zoom rectangle, relative to the BASE image (base aspect ratio)."""
-    width_pct: int            # crop width as % of base width, clamped 10..100
-    cx_frac: float            # center x as a fraction of base width, 0..1
-    cy_frac: float            # center y as a fraction of base height, 0..1
+    """A crop/zoom rectangle, relative to the BASE image.
+
+    width_pct / height_pct are the crop dimensions as % of base width / height
+    (clamped 10..100). height_pct=None (the default) keeps the base aspect
+    ratio (height derived from width) — the original behaviour. Setting it
+    gives an independent height so the crop can be non-aspect-locked.
+    """
+
+    width_pct: int  # crop width as % of base width, clamped 10..100
+    cx_frac: float  # center x as a fraction of base width, 0..1
+    cy_frac: float  # center y as a fraction of base height, 0..1
+    height_pct: int | None = (
+        None  # crop height as % of base height (None = lock aspect)
+    )
 
 
 # ── placement sizing knobs ─────────────────────────────────────────────────
-MIN_PCT: int     = 1
-MAX_PCT: int     = 80
-STEP_PCT: int    = 5
+MIN_PCT: int = 1
+MAX_PCT: int = 80
+STEP_PCT: int = 5
 DEFAULT_PCT: int = 30
-GHOST_ALPHA: int = 110       # 0..255 opacity of the live "next stamp" ghost
+GHOST_ALPHA: int = 110  # 0..255 opacity of the live "next stamp" ghost
 
 # ── zoom/crop knobs ────────────────────────────────────────────────────────
-ZOOM_MIN_PCT: int     = 10
-ZOOM_MAX_PCT: int     = 100      # 100% = whole image (no zoom)
-ZOOM_STEP_PCT: int    = 5
+ZOOM_MIN_PCT: int = 10
+ZOOM_MAX_PCT: int = 100  # 100% = whole image (no zoom)
+ZOOM_STEP_PCT: int = 5
 ZOOM_DEFAULT_PCT: int = 90
-ZOOM_DIM: float       = 0.55     # how far the area outside the crop is darkened
+ZOOM_DIM: float = 0.55  # how far the area outside the crop is darkened
 
 # ── white-background removal knobs ─────────────────────────────────────────
-WHITE_BG_NEAR_WHITE: int = 220   # min per-channel brightness for a seed pixel
-WHITE_BG_THRESHOLD: int  = 90    # PIL flood tolerance (sum of per-channel diff)
+WHITE_BG_NEAR_WHITE: int = 220  # min per-channel brightness for a seed pixel
+WHITE_BG_THRESHOLD: int = 90  # PIL flood tolerance (sum of per-channel diff)
 
 
 # ===========================================================================
 # Non-GUI helpers
 # ===========================================================================
 
-def extract_frame(video_path: str, output_path: str,
-                  at_seconds: float = 0.0) -> str:
+
+def extract_frame(video_path: str, output_path: str, at_seconds: float = 0.0) -> str:
     """Extract a single frame from a video to a PNG via ffmpeg."""
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    cmd = ["ffmpeg", "-y", "-ss", f"{max(0.0, at_seconds):.3f}",
-           "-i", video_path, "-frames:v", "1", output_path]
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-ss",
+        f"{max(0.0, at_seconds):.3f}",
+        "-i",
+        video_path,
+        "-frames:v",
+        "1",
+        output_path,
+    ]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode != 0 or not Path(output_path).exists():
-        subprocess.run(["ffmpeg", "-y", "-i", video_path, "-frames:v", "1",
-                        output_path], capture_output=True, text=True)
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", video_path, "-frames:v", "1", output_path],
+            capture_output=True,
+            text=True,
+        )
     return output_path
 
 
@@ -123,9 +147,11 @@ def _load_rgba(path: str) -> Image.Image:
     return Image.open(path).convert("RGBA")
 
 
-def remove_white_background(image: Image.Image,
-                            thresh: int = WHITE_BG_THRESHOLD,
-                            near_white: int = WHITE_BG_NEAR_WHITE) -> Image.Image:
+def remove_white_background(
+    image: Image.Image,
+    thresh: int = WHITE_BG_THRESHOLD,
+    near_white: int = WHITE_BG_NEAR_WHITE,
+) -> Image.Image:
     """
     Knock out the border-connected ~white background (simple, no ML): only
     white that touches the image edges is made transparent, so white *inside*
@@ -146,10 +172,14 @@ def remove_white_background(image: Image.Image,
     def _near_white(p) -> bool:
         return p[0] >= near_white and p[1] >= near_white and p[2] >= near_white
 
-    border = ([(x, 0) for x in range(w)] + [(x, h - 1) for x in range(w)] +
-              [(0, y) for y in range(h)] + [(w - 1, y) for y in range(h)])
+    border = (
+        [(x, 0) for x in range(w)]
+        + [(x, h - 1) for x in range(w)]
+        + [(0, y) for y in range(h)]
+        + [(w - 1, y) for y in range(h)]
+    )
     seeds_used = 0
-    for (x, y) in border:
+    for x, y in border:
         p = px[x, y]
         if p == SENTINEL:
             continue
@@ -162,8 +192,10 @@ def remove_white_background(image: Image.Image,
 
     def _dilate(m):
         d = m.copy()
-        d[1:, :] |= m[:-1, :]; d[:-1, :] |= m[1:, :]
-        d[:, 1:] |= m[:, :-1]; d[:, :-1] |= m[:, 1:]
+        d[1:, :] |= m[:-1, :]
+        d[:-1, :] |= m[1:, :]
+        d[:, 1:] |= m[:, :-1]
+        d[:, :-1] |= m[:, 1:]
         return d
 
     near_white_mask = np.all(orig >= near_white, axis=-1)
@@ -175,17 +207,20 @@ def remove_white_background(image: Image.Image,
 
     removed = int(bg_mask.sum() + fringe.sum())
     total = w * h
-    print(f"[manual] white-bg removal: {seeds_used} border seed(s), "
-          f"{removed}/{total} px ({100.0 * removed / max(1, total):.1f}%) "
-          f"made transparent")
+    print(
+        f"[manual] white-bg removal: {seeds_used} border seed(s), "
+        f"{removed}/{total} px ({100.0 * removed / max(1, total):.1f}%) "
+        f"made transparent"
+    )
 
     out = rgba.copy()
     out.putalpha(Image.fromarray(alpha, mode="L"))
     return out
 
 
-def composite_overlays(base_image_path: str, overlay_image_path: str,
-                       placements, output_path: str) -> str:
+def composite_overlays(
+    base_image_path: str, overlay_image_path: str, placements, output_path: str
+) -> str:
     """Full-resolution composite: stamp the overlay once per placement (each at
     its own width_pct/position). The white-bg knockout (from the first
     placement's remove_bg) is applied to the overlay a single time."""
@@ -198,8 +233,10 @@ def composite_overlays(base_image_path: str, overlay_image_path: str,
         try:
             overlay = remove_white_background(overlay)
         except Exception as exc:
-            print(f"[manual] white-bg removal failed during composite "
-                  f"({exc}); using the original overlay")
+            print(
+                f"[manual] white-bg removal failed during composite "
+                f"({exc}); using the original overlay"
+            )
 
     bw, bh = base.size
     ow, oh = overlay.size
@@ -218,27 +255,34 @@ def composite_overlays(base_image_path: str, overlay_image_path: str,
     return output_path
 
 
-def composite_overlay(base_image_path: str, overlay_image_path: str,
-                      placement: Placement, output_path: str) -> str:
+def composite_overlay(
+    base_image_path: str,
+    overlay_image_path: str,
+    placement: Placement,
+    output_path: str,
+) -> str:
     """Single-stamp convenience wrapper around composite_overlays."""
-    return composite_overlays(base_image_path, overlay_image_path,
-                              [placement], output_path)
+    return composite_overlays(
+        base_image_path, overlay_image_path, [placement], output_path
+    )
 
 
-def crop_and_zoom(base_image_path: str, cropbox: CropBox,
-                  output_path: str) -> str:
+def crop_and_zoom(base_image_path: str, cropbox: CropBox, output_path: str) -> str:
     """Crop the base to `cropbox` (base aspect ratio, kept inside the image)
     and upscale back to the base resolution. Saves a PNG."""
     base = Image.open(base_image_path).convert("RGB")
     bw, bh = base.size
 
     box_w = max(1, min(bw, round(cropbox.width_pct / 100.0 * bw)))
-    box_h = max(1, min(bh, round(box_w * bh / bw)))     # base aspect → no distortion
+    if cropbox.height_pct is not None:
+        box_h = max(1, min(bh, round(cropbox.height_pct / 100.0 * bh)))
+    else:
+        box_h = max(1, min(bh, round(box_w * bh / bw)))  # base aspect → no distortion
 
     cx = cropbox.cx_frac * bw
     cy = cropbox.cy_frac * bh
     left = max(0, min(round(cx - box_w / 2), bw - box_w))
-    top  = max(0, min(round(cy - box_h / 2), bh - box_h))
+    top = max(0, min(round(cy - box_h / 2), bh - box_h))
 
     crop = base.crop((left, top, left + box_w, top + box_h))
     zoomed = crop.resize((bw, bh), _RESAMPLE)
@@ -252,6 +296,7 @@ def crop_and_zoom(base_image_path: str, cropbox: CropBox,
 # Shared GUI piece: the resize control
 # ===========================================================================
 
+
 class _SizeControl:
     """
     Reusable width control: [label] [−] [entry] [+] [% of base width], plus a
@@ -259,9 +304,21 @@ class _SizeControl:
     integer percent in [min_pct, max_pct] and calls on_change(pct) on changes.
     """
 
-    def __init__(self, parent, *, base_wh, box_aspect, min_pct, max_pct,
-                 step_pct, initial_pct, on_change, label="Width:",
-                 bg="#1e1e24", fg="#dddddd"):
+    def __init__(
+        self,
+        parent,
+        *,
+        base_wh,
+        box_aspect,
+        min_pct,
+        max_pct,
+        step_pct,
+        initial_pct,
+        on_change,
+        label="Width:",
+        bg="#1e1e24",
+        fg="#dddddd",
+    ):
         self._base_wh = base_wh
         self._aspect = box_aspect
         self._min, self._max, self._step = min_pct, max_pct, step_pct
@@ -270,23 +327,29 @@ class _SizeControl:
 
         row = tk.Frame(parent, bg=bg)
         row.pack(anchor="w", pady=(8, 4))
-        tk.Label(row, text=label, bg=bg, fg=fg,
-                 font=("Arial", 11)).pack(side="left", padx=(0, 6))
-        tk.Button(row, text="\u2212", command=self.dec,
-                  font=("Arial", 16, "bold"), width=3).pack(side="left")
+        tk.Label(row, text=label, bg=bg, fg=fg, font=("Arial", 11)).pack(
+            side="left", padx=(0, 6)
+        )
+        tk.Button(
+            row, text="\u2212", command=self.dec, font=("Arial", 16, "bold"), width=3
+        ).pack(side="left")
         self._var = tk.StringVar(value=str(self.pct))
-        entry = tk.Entry(row, textvariable=self._var, width=4,
-                         justify="center", font=("Arial", 15))
+        entry = tk.Entry(
+            row, textvariable=self._var, width=4, justify="center", font=("Arial", 15)
+        )
         entry.pack(side="left", padx=4)
-        entry.bind("<Return>",   self._commit)
+        entry.bind("<Return>", self._commit)
         entry.bind("<FocusOut>", self._commit)
-        tk.Button(row, text="+", command=self.inc,
-                  font=("Arial", 16, "bold"), width=3).pack(side="left")
-        tk.Label(row, text="% of base width", bg=bg, fg="#999999",
-                 font=("Arial", 10)).pack(side="left", padx=(6, 0))
+        tk.Button(
+            row, text="+", command=self.inc, font=("Arial", 16, "bold"), width=3
+        ).pack(side="left")
+        tk.Label(
+            row, text="% of base width", bg=bg, fg="#999999", font=("Arial", 10)
+        ).pack(side="left", padx=(6, 0))
 
-        self._canvas = tk.Canvas(parent, width=300, height=150, bg="#2a2a33",
-                                 highlightthickness=0)
+        self._canvas = tk.Canvas(
+            parent, width=300, height=150, bg="#2a2a33", highlightthickness=0
+        )
         self._canvas.pack(anchor="w", pady=(6, 10))
         self._draw_box()
 
@@ -333,11 +396,22 @@ class _SizeControl:
         c.create_rectangle(ox, oy, ox + bdw, oy + bdh, outline="#666", width=1)
         iw = self.pct / 100.0 * bdw
         ih = iw * self._aspect
-        c.create_rectangle(CW / 2 - iw / 2, CH / 2 - ih / 2,
-                           CW / 2 + iw / 2, CH / 2 + ih / 2,
-                           dash=(6, 4), outline="#5ad1ff", width=2)
-        c.create_text(CW / 2, CH - 9, text=f"{self.pct}% of width",
-                      fill="#aaaaaa", font=("Arial", 9))
+        c.create_rectangle(
+            CW / 2 - iw / 2,
+            CH / 2 - ih / 2,
+            CW / 2 + iw / 2,
+            CH / 2 + ih / 2,
+            dash=(6, 4),
+            outline="#5ad1ff",
+            width=2,
+        )
+        c.create_text(
+            CW / 2,
+            CH - 9,
+            text=f"{self.pct}% of width",
+            fill="#aaaaaa",
+            font=("Arial", 9),
+        )
 
 
 def _fit_display(base_w: int, base_h: int, screen_w: int, screen_h: int):
@@ -352,6 +426,7 @@ def _fit_display(base_w: int, base_h: int, screen_w: int, screen_h: int):
 # Placement GUI  (multi-stamp)
 # ===========================================================================
 
+
 class _PlacementApp:
     """Click to stamp the overlay, keep clicking to add more, Undo removes the
     last, Done finishes. All stamps are flattened together."""
@@ -362,7 +437,8 @@ class _PlacementApp:
         except tk.TclError as exc:
             raise RuntimeError(
                 "Could not open a display for the placement GUI — this step "
-                f"needs a desktop session (tkinter said: {exc})")
+                f"needs a desktop session (tkinter said: {exc})"
+            )
         self.root.title(title)
         self.root.configure(bg="#1e1e24")
 
@@ -374,18 +450,24 @@ class _PlacementApp:
         try:
             self.overlay_nobg = remove_white_background(self.overlay)
         except Exception as exc:
-            print(f"[manual] white-bg removal failed at GUI init ({exc}); "
-                  f"the checkbox will fall back to the original image")
+            print(
+                f"[manual] white-bg removal failed at GUI init ({exc}); "
+                f"the checkbox will fall back to the original image"
+            )
             self.overlay_nobg = None
 
         self.scale, self.disp_w, self.disp_h = _fit_display(
-            self.bw, self.bh, self.root.winfo_screenwidth(),
-            self.root.winfo_screenheight())
+            self.bw,
+            self.bh,
+            self.root.winfo_screenwidth(),
+            self.root.winfo_screenheight(),
+        )
         self.base_disp = self.base.resize((self.disp_w, self.disp_h), _RESAMPLE)
         self.base_photo = ImageTk.PhotoImage(self.base_disp)
 
-        self.pct = max(MIN_PCT, min(MAX_PCT,
-                                    int(initial.width_pct) if initial else DEFAULT_PCT))
+        self.pct = max(
+            MIN_PCT, min(MAX_PCT, int(initial.width_pct) if initial else DEFAULT_PCT)
+        )
         self.remove_bg = bool(initial.remove_bg) if initial else True
         self.placements: list[Placement] = []
         self.result = None
@@ -397,7 +479,7 @@ class _PlacementApp:
 
         self._build_ui()
         self._bind_keys()
-        self._refresh_overlay_visuals()     # thumb + ghost + composite
+        self._refresh_overlay_visuals()  # thumb + ghost + composite
         self._update_count("Click on the image to add the first one.")
 
         self.root.update_idletasks()
@@ -407,66 +489,128 @@ class _PlacementApp:
         self.root.focus_force()
 
     def _build_ui(self):
-        self.canvas = tk.Canvas(self.root, width=self.disp_w, height=self.disp_h,
-                                bg="#000000", highlightthickness=0, cursor="tcross")
+        self.canvas = tk.Canvas(
+            self.root,
+            width=self.disp_w,
+            height=self.disp_h,
+            bg="#000000",
+            highlightthickness=0,
+            cursor="tcross",
+        )
         self.canvas.pack(side="left", padx=10, pady=10)
-        self.canvas_item = self.canvas.create_image(0, 0, anchor="nw", image=self.base_photo)
-        self.ghost_item  = self.canvas.create_image(0, 0, anchor="nw", image=self._blank, state="hidden")
-        self.aim_rect    = self.canvas.create_rectangle(0, 0, 0, 0, dash=(7, 4), outline="#5ad1ff", width=2, state="hidden")
-        self.canvas.bind("<Motion>",  self._on_motion)
-        self.canvas.bind("<Leave>",   self._on_leave)
+        self.canvas_item = self.canvas.create_image(
+            0, 0, anchor="nw", image=self.base_photo
+        )
+        self.ghost_item = self.canvas.create_image(
+            0, 0, anchor="nw", image=self._blank, state="hidden"
+        )
+        self.aim_rect = self.canvas.create_rectangle(
+            0, 0, 0, 0, dash=(7, 4), outline="#5ad1ff", width=2, state="hidden"
+        )
+        self.canvas.bind("<Motion>", self._on_motion)
+        self.canvas.bind("<Leave>", self._on_leave)
         self.canvas.bind("<Button-1>", self._on_click)
 
         side = tk.Frame(self.root, bg="#1e1e24", width=340)
         side.pack(side="right", fill="y", padx=(0, 10), pady=10)
         side.pack_propagate(False)
 
-        tk.Label(side, text="ADDING THIS ONTO THE\nPREVIOUS IMAGE:", bg="#1e1e24",
-                 fg="#dddddd", justify="left",
-                 font=("Arial", 11, "bold")).pack(anchor="w", pady=(2, 6))
+        tk.Label(
+            side,
+            text="ADDING THIS ONTO THE\nPREVIOUS IMAGE:",
+            bg="#1e1e24",
+            fg="#dddddd",
+            justify="left",
+            font=("Arial", 11, "bold"),
+        ).pack(anchor="w", pady=(2, 6))
 
         tw = 290
         th = max(1, round(tw * self.oh / self.ow))
         if th > 170:
-            th = 170; tw = max(1, round(th * self.ow / self.oh))
+            th = 170
+            tw = max(1, round(th * self.ow / self.oh))
         self._thumb_wh = (tw, th)
-        self.thumb_label = tk.Label(side, image=self._blank, bg="#2a2a33", bd=1, relief="solid")
+        self.thumb_label = tk.Label(
+            side, image=self._blank, bg="#2a2a33", bd=1, relief="solid"
+        )
         self.thumb_label.pack(anchor="w")
 
         self.removebg_var = tk.BooleanVar(value=self.remove_bg)
-        tk.Checkbutton(side, text="Remove white background", variable=self.removebg_var,
-                       command=self._toggle_removebg, bg="#1e1e24", fg="#dddddd",
-                       selectcolor="#2a2a33", activebackground="#1e1e24",
-                       activeforeground="#ffffff", font=("Arial", 10)).pack(anchor="w", pady=(6, 4))
+        tk.Checkbutton(
+            side,
+            text="Remove white background",
+            variable=self.removebg_var,
+            command=self._toggle_removebg,
+            bg="#1e1e24",
+            fg="#dddddd",
+            selectcolor="#2a2a33",
+            activebackground="#1e1e24",
+            activeforeground="#ffffff",
+            font=("Arial", 10),
+        ).pack(anchor="w", pady=(6, 4))
 
         self.count_var = tk.StringVar(value="Added: 0")
-        tk.Label(side, textvariable=self.count_var, bg="#1e1e24", fg="#7CFC00",
-                 font=("Arial", 14, "bold")).pack(anchor="w", pady=(6, 0))
+        tk.Label(
+            side,
+            textvariable=self.count_var,
+            bg="#1e1e24",
+            fg="#7CFC00",
+            font=("Arial", 14, "bold"),
+        ).pack(anchor="w", pady=(6, 0))
 
         self.size_ctrl = _SizeControl(
-            side, base_wh=(self.bw, self.bh), box_aspect=self.oh / self.ow,
-            min_pct=MIN_PCT, max_pct=MAX_PCT, step_pct=STEP_PCT,
-            initial_pct=self.pct, on_change=self._on_size_change)
+            side,
+            base_wh=(self.bw, self.bh),
+            box_aspect=self.oh / self.ow,
+            min_pct=MIN_PCT,
+            max_pct=MAX_PCT,
+            step_pct=STEP_PCT,
+            initial_pct=self.pct,
+            on_change=self._on_size_change,
+        )
 
-        tk.Label(side, justify="left", bg="#1e1e24", fg="#bbbbbb", font=("Arial", 10),
-                 text=("Click to stamp the image (current size).\n"
-                       "Keep clicking to add more — sizes can differ.\n\n"
-                       "  + / \u2212  resize 5%  (type 1\u201380 for exact)\n"
-                       "  U / Bksp    undo the last one\n"
-                       "  Enter / D   done\n"
-                       "  Esc / Q     exit (resume later)")).pack(anchor="w", pady=(2, 8))
+        tk.Label(
+            side,
+            justify="left",
+            bg="#1e1e24",
+            fg="#bbbbbb",
+            font=("Arial", 10),
+            text=(
+                "Click to stamp the image (current size).\n"
+                "Keep clicking to add more — sizes can differ.\n\n"
+                "  + / \u2212  resize 5%  (type 1\u201380 for exact)\n"
+                "  U / Bksp    undo the last one\n"
+                "  Enter / D   done\n"
+                "  Esc / Q     exit (resume later)"
+            ),
+        ).pack(anchor="w", pady=(2, 8))
 
         self.status_var = tk.StringVar(value="")
-        tk.Label(side, textvariable=self.status_var, bg="#1e1e24", fg="#5ad1ff",
-                 font=("Arial", 10, "bold"), justify="left", wraplength=310).pack(anchor="w", pady=(0, 10))
+        tk.Label(
+            side,
+            textvariable=self.status_var,
+            bg="#1e1e24",
+            fg="#5ad1ff",
+            font=("Arial", 10, "bold"),
+            justify="left",
+            wraplength=310,
+        ).pack(anchor="w", pady=(0, 10))
 
         btns = tk.Frame(side, bg="#1e1e24")
         btns.pack(anchor="w", side="bottom", pady=(8, 2))
-        self.done_btn = tk.Button(btns, text="\u2713 Done", command=self._done,
-                                  font=("Arial", 12, "bold"), bg="#2e7d32", fg="white", width=11)
+        self.done_btn = tk.Button(
+            btns,
+            text="\u2713 Done",
+            command=self._done,
+            font=("Arial", 12, "bold"),
+            bg="#2e7d32",
+            fg="white",
+            width=11,
+        )
         self.done_btn.pack(side="left", padx=(0, 6))
-        self.undo_btn = tk.Button(btns, text="\u21b6 Undo", command=self._undo,
-                                  font=("Arial", 12), width=11)
+        self.undo_btn = tk.Button(
+            btns, text="\u21b6 Undo", command=self._undo, font=("Arial", 12), width=11
+        )
         self.undo_btn.pack(side="left")
 
     def _kbd(self, fn):
@@ -474,6 +618,7 @@ class _PlacementApp:
             if isinstance(self.root.focus_get(), tk.Entry):
                 return
             return fn()
+
         return handler
 
     def _bind_keys(self):
@@ -498,8 +643,10 @@ class _PlacementApp:
     def _toggle_removebg(self):
         self.remove_bg = bool(self.removebg_var.get())
         # Apply the new setting to every existing stamp too.
-        self.placements = [Placement(p.width_pct, p.cx_frac, p.cy_frac, self.remove_bg)
-                           for p in self.placements]
+        self.placements = [
+            Placement(p.width_pct, p.cx_frac, p.cy_frac, self.remove_bg)
+            for p in self.placements
+        ]
         self._refresh_overlay_visuals()
 
     def _refresh_overlay_visuals(self):
@@ -517,7 +664,7 @@ class _PlacementApp:
 
     def _on_size_change(self, pct):
         self.pct = pct
-        self._regen_ghost()                 # only the *next* stamp changes size
+        self._regen_ghost()  # only the *next* stamp changes size
 
     def _regen_ghost(self):
         eff = self._effective_overlay()
@@ -558,10 +705,10 @@ class _PlacementApp:
         cx = min(max(event.x, 0), self.disp_w)
         cy = min(max(event.y, 0), self.disp_h)
         self.placements.append(
-            Placement(self.pct, cx / self.disp_w, cy / self.disp_h, self.remove_bg))
+            Placement(self.pct, cx / self.disp_w, cy / self.disp_h, self.remove_bg)
+        )
         self._rebuild_composite()
-        self._update_count(f"Stamped #{len(self.placements)} "
-                           f"(at {self.pct}% width).")
+        self._update_count(f"Stamped #{len(self.placements)} (at {self.pct}% width).")
 
     def _undo(self):
         if not self.placements:
@@ -595,9 +742,12 @@ class _PlacementApp:
         self.root.mainloop()
 
 
-def place_overlays_interactive(base_image_path, overlay_image_path,
-                               window_title="Place stock on the previous image",
-                               initial=None):
+def place_overlays_interactive(
+    base_image_path,
+    overlay_image_path,
+    window_title="Place stock on the previous image",
+    initial=None,
+):
     """Returns a list[Placement] on Done, or None if the user EXITS."""
     app = _PlacementApp(base_image_path, overlay_image_path, window_title, initial)
     app.run()
@@ -607,6 +757,7 @@ def place_overlays_interactive(base_image_path, overlay_image_path,
 # ===========================================================================
 # Zoom / crop GUI
 # ===========================================================================
+
 
 class _ZoomApp:
     """Move a dashed crop box (base aspect) over the previous image; centre it
@@ -618,7 +769,8 @@ class _ZoomApp:
         except tk.TclError as exc:
             raise RuntimeError(
                 "Could not open a display for the zoom GUI — this step needs a "
-                f"desktop session (tkinter said: {exc})")
+                f"desktop session (tkinter said: {exc})"
+            )
         self.root.title(title)
         self.root.configure(bg="#1e1e24")
 
@@ -626,15 +778,21 @@ class _ZoomApp:
         self.bw, self.bh = self.base_rgb.size
 
         self.scale, self.disp_w, self.disp_h = _fit_display(
-            self.bw, self.bh, self.root.winfo_screenwidth(),
-            self.root.winfo_screenheight())
+            self.bw,
+            self.bh,
+            self.root.winfo_screenwidth(),
+            self.root.winfo_screenheight(),
+        )
         self.base_disp = self.base_rgb.resize((self.disp_w, self.disp_h), _RESAMPLE)
-        dark = Image.blend(self.base_disp,
-                           Image.new("RGB", self.base_disp.size, (0, 0, 0)), ZOOM_DIM)
+        dark = Image.blend(
+            self.base_disp, Image.new("RGB", self.base_disp.size, (0, 0, 0)), ZOOM_DIM
+        )
         self.dark_photo = ImageTk.PhotoImage(dark)
 
-        self.pct = max(ZOOM_MIN_PCT, min(ZOOM_MAX_PCT,
-                                         int(initial.width_pct) if initial else ZOOM_DEFAULT_PCT))
+        self.pct = max(
+            ZOOM_MIN_PCT,
+            min(ZOOM_MAX_PCT, int(initial.width_pct) if initial else ZOOM_DEFAULT_PCT),
+        )
         self.cx_frac = initial.cx_frac if initial else 0.5
         self.cy_frac = initial.cy_frac if initial else 0.5
         self.result = None
@@ -655,64 +813,121 @@ class _ZoomApp:
         self.root.focus_force()
 
     def _build_ui(self):
-        self.canvas = tk.Canvas(self.root, width=self.disp_w, height=self.disp_h,
-                                bg="#000000", highlightthickness=0, cursor="fleur")
+        self.canvas = tk.Canvas(
+            self.root,
+            width=self.disp_w,
+            height=self.disp_h,
+            bg="#000000",
+            highlightthickness=0,
+            cursor="fleur",
+        )
         self.canvas.pack(side="left", padx=10, pady=10)
-        self.dark_item  = self.canvas.create_image(0, 0, anchor="nw", image=self.dark_photo)
-        self.patch_item = self.canvas.create_image(0, 0, anchor="nw", image=self._blank, state="hidden")
-        self.box_rect   = self.canvas.create_rectangle(0, 0, 0, 0, dash=(7, 4), outline="#5ad1ff", width=2)
-        self.canvas.bind("<Button-1>",  self._on_drag)
+        self.dark_item = self.canvas.create_image(
+            0, 0, anchor="nw", image=self.dark_photo
+        )
+        self.patch_item = self.canvas.create_image(
+            0, 0, anchor="nw", image=self._blank, state="hidden"
+        )
+        self.box_rect = self.canvas.create_rectangle(
+            0, 0, 0, 0, dash=(7, 4), outline="#5ad1ff", width=2
+        )
+        self.canvas.bind("<Button-1>", self._on_drag)
         self.canvas.bind("<B1-Motion>", self._on_drag)
 
         side = tk.Frame(self.root, bg="#1e1e24", width=340)
         side.pack(side="right", fill="y", padx=(0, 10), pady=10)
         side.pack_propagate(False)
 
-        tk.Label(side, text="ZOOM INTO THE\nPREVIOUS IMAGE:", bg="#1e1e24",
-                 fg="#dddddd", justify="left",
-                 font=("Arial", 11, "bold")).pack(anchor="w", pady=(2, 6))
+        tk.Label(
+            side,
+            text="ZOOM INTO THE\nPREVIOUS IMAGE:",
+            bg="#1e1e24",
+            fg="#dddddd",
+            justify="left",
+            font=("Arial", 11, "bold"),
+        ).pack(anchor="w", pady=(2, 6))
 
         tw = 290
         th = max(1, round(tw * self.bh / self.bw))
         if th > 190:
-            th = 190; tw = max(1, round(th * self.bw / self.bh))
+            th = 190
+            tw = max(1, round(th * self.bw / self.bh))
         self._preview_wh = (tw, th)
-        tk.Label(side, text="result preview:", bg="#1e1e24", fg="#999999",
-                 font=("Arial", 9)).pack(anchor="w")
-        self.preview_label = tk.Label(side, image=self._blank, bg="#2a2a33", bd=1, relief="solid")
+        tk.Label(
+            side, text="result preview:", bg="#1e1e24", fg="#999999", font=("Arial", 9)
+        ).pack(anchor="w")
+        self.preview_label = tk.Label(
+            side, image=self._blank, bg="#2a2a33", bd=1, relief="solid"
+        )
         self.preview_label.pack(anchor="w", pady=(0, 4))
 
         self.size_ctrl = _SizeControl(
-            side, base_wh=(self.bw, self.bh), box_aspect=self.bh / self.bw,
-            min_pct=ZOOM_MIN_PCT, max_pct=ZOOM_MAX_PCT, step_pct=ZOOM_STEP_PCT,
-            initial_pct=self.pct, on_change=self._on_size_change, label="Crop:")
+            side,
+            base_wh=(self.bw, self.bh),
+            box_aspect=self.bh / self.bw,
+            min_pct=ZOOM_MIN_PCT,
+            max_pct=ZOOM_MAX_PCT,
+            step_pct=ZOOM_STEP_PCT,
+            initial_pct=self.pct,
+            on_change=self._on_size_change,
+            label="Crop:",
+        )
 
-        tk.Button(side, text="\u25a3  Centre cropped area", command=self._centre,
-                  font=("Arial", 11), width=24).pack(anchor="w", pady=(0, 8))
+        tk.Button(
+            side,
+            text="\u25a3  Centre cropped area",
+            command=self._centre,
+            font=("Arial", 11),
+            width=24,
+        ).pack(anchor="w", pady=(0, 8))
 
-        tk.Label(side, justify="left", bg="#1e1e24", fg="#bbbbbb", font=("Arial", 10),
-                 text=("Click or drag on the image to move the crop box.\n\n"
-                       "  + / \u2212  resize 5%  (type 10\u2013100 for exact)\n"
-                       "  C           centre the crop box\n"
-                       "  Enter / Y   accept\n"
-                       "  Esc / Q     exit (resume later)")).pack(anchor="w", pady=(2, 8))
+        tk.Label(
+            side,
+            justify="left",
+            bg="#1e1e24",
+            fg="#bbbbbb",
+            font=("Arial", 10),
+            text=(
+                "Click or drag on the image to move the crop box.\n\n"
+                "  + / \u2212  resize 5%  (type 10\u2013100 for exact)\n"
+                "  C           centre the crop box\n"
+                "  Enter / Y   accept\n"
+                "  Esc / Q     exit (resume later)"
+            ),
+        ).pack(anchor="w", pady=(2, 8))
 
         self.status_var = tk.StringVar(value="")
-        tk.Label(side, textvariable=self.status_var, bg="#1e1e24", fg="#5ad1ff",
-                 font=("Arial", 10, "bold"), justify="left", wraplength=310).pack(anchor="w", pady=(0, 10))
+        tk.Label(
+            side,
+            textvariable=self.status_var,
+            bg="#1e1e24",
+            fg="#5ad1ff",
+            font=("Arial", 10, "bold"),
+            justify="left",
+            wraplength=310,
+        ).pack(anchor="w", pady=(0, 10))
 
         btns = tk.Frame(side, bg="#1e1e24")
         btns.pack(anchor="w", side="bottom", pady=(8, 2))
-        tk.Button(btns, text="\u2713 Accept", command=self._accept,
-                  font=("Arial", 12, "bold"), bg="#2e7d32", fg="white", width=11).pack(side="left", padx=(0, 6))
-        tk.Button(btns, text="Centre", command=self._centre,
-                  font=("Arial", 12), width=10).pack(side="left")
+        tk.Button(
+            btns,
+            text="\u2713 Accept",
+            command=self._accept,
+            font=("Arial", 12, "bold"),
+            bg="#2e7d32",
+            fg="white",
+            width=11,
+        ).pack(side="left", padx=(0, 6))
+        tk.Button(
+            btns, text="Centre", command=self._centre, font=("Arial", 12), width=10
+        ).pack(side="left")
 
     def _kbd(self, fn):
         def handler(event):
             if isinstance(self.root.focus_get(), tk.Entry):
                 return
             return fn()
+
         return handler
 
     def _bind_keys(self):
@@ -775,7 +990,9 @@ class _ZoomApp:
         self._preview_photo = ImageTk.PhotoImage(patch.resize((tw, th), _RESAMPLE))
         self.preview_label.config(image=self._preview_photo)
 
-        self.status_var.set(f"Crop {self.pct}% of width  (~{100.0 / self.pct:.2f}x zoom)")
+        self.status_var.set(
+            f"Crop {self.pct}% of width  (~{100.0 / self.pct:.2f}x zoom)"
+        )
 
     def _accept(self):
         self.result = CropBox(self.pct, self.cx_frac, self.cy_frac)
@@ -790,9 +1007,9 @@ class _ZoomApp:
         self.root.mainloop()
 
 
-def zoom_prev_interactive(base_image_path,
-                          window_title="Zoom into the previous image",
-                          initial=None):
+def zoom_prev_interactive(
+    base_image_path, window_title="Zoom into the previous image", initial=None
+):
     """Returns a CropBox on ACCEPT, or None if the user EXITS."""
     app = _ZoomApp(base_image_path, window_title, initial)
     app.run()
@@ -803,6 +1020,7 @@ def zoom_prev_interactive(base_image_path,
 
 if __name__ == "__main__":
     import sys
+
     args = sys.argv[1:]
     if args and args[0] == "--zoom" and len(args) >= 2:
         _c = zoom_prev_interactive(args[1])
@@ -818,5 +1036,7 @@ if __name__ == "__main__":
             print("Wrote manual_placement_test.png")
     else:
         print("usage:")
-        print("  python MANUAL_STOCK_PLACEMENT.py BASE OVERLAY     # placement (stamp many)")
+        print(
+            "  python MANUAL_STOCK_PLACEMENT.py BASE OVERLAY     # placement (stamp many)"
+        )
         print("  python MANUAL_STOCK_PLACEMENT.py --zoom BASE      # zoom / crop")

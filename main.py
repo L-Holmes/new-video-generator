@@ -382,6 +382,13 @@ def main() -> None:
     # — those picks were stamp choices, not scene footage).
     restore_stamp_rows_after_review(scriptTextToPexelSearch, final_data)
 
+    # Persist the stage-1 picks NOW so the ai_edit review (next) can load them
+    # as final_cache_data for its previous-entry preview — e.g. when reviewing
+    # an ai_edit scene, the preview can show the preceding ai_stock scene's
+    # just-picked image. Without this save, final_script_to_clips.json is stale
+    # (pre-stage-1) and the preview finds no image.
+    save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
+
     # 2.55) ai_edit scenes — generated + reviewed ONE AT A TIME, in script
     #       order, so chains of consecutive ai_edits work to any depth (each
     #       edit waits for the previous scene's pick before it's generated).

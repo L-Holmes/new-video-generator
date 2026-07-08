@@ -45,11 +45,16 @@ def run_decorator(
     title: str = "decorate",
     tools: tuple[str, ...] = ("stamp", "zoom", "object"),
     previous_preview: PreviousEntryPreview | None = None,
+    stamp_mode: bool = False,
 ) -> str | None:
     """Open the decorate editor on base_image_path. Returns the saved result
     path once anything changed and FINISH was pressed (normally out_path;
     with the matching video suffix instead if the session result is an
-    animated MP4); None if the session ended with no edits."""
+    animated MP4); None if the session ended with no edits.
+
+    stamp_mode=True marks this as a STAMP pre-decoration session: the image
+    being edited is a picked stamp that will be stamped onto the previous
+    scene — the editor shows a banner saying so."""
     # Imported lazily so importing the decorator never pulls in Tk.
     from ___visuals.decorator.draw import run_editor_session
 
@@ -66,6 +71,7 @@ def run_decorator(
         "tabs": tabs,
         "stamps": [str(s) for s in stamps],
         "work_dir": work,
+        "stamp_mode": stamp_mode,
     }
     if previous_preview is not None:
         kwargs["previous_preview"] = previous_preview

@@ -197,6 +197,7 @@ def _decorate_stamp(
         out_path=str(out),
         title=f"decorate STAMP: {Path(path).name}",
         previous_preview=previous_preview,
+        stamp_mode=True,
     )
     if not result:
         return str(path)  # no edits — use it as picked

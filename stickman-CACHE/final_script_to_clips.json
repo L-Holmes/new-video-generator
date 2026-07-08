@@ -3,7 +3,7 @@
         "script_text": "If you open your kitchen cupboard right now,",
         "footage": [
             {
-                "https://videos.pexels.com/video-files/36017451/15273142_3840_2160_60fps.mp4": 2.82
+                "stickman-CACHE/colour_graded/cg-8d4601d9dd28-9650e827d6e1ce9f.jpeg": 2.82
             }
         ]
     },
@@ -27,7 +27,7 @@
         "script_text": "It was worth more than its weight in gold.",
         "footage": [
             {
-                "stickman-CACHE/stickman_explain_scenes/explain_000_It_was_worth_more_than_its_weight_in_gold.mp4": 2.2
+                "stickman-CACHE/colour_graded/cg-8d4601d9dd28-3db7c5249e3f5994.mp4": 2.2
             }
         ]
     },
@@ -35,7 +35,7 @@
         "script_text": "Nutmeg only grew in one place on Earth:",
         "footage": [
             {
-                "https://images.pexels.com/photos/9494906/pexels-photo-9494906.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.76
+                "stickman-CACHE/colour_graded/cg-8d4601d9dd28-1da277526b7222e8.jpeg": 1.76
             }
         ]
     },
@@ -43,7 +43,7 @@
         "script_text": "The Banda Islands. A tiny, incredibly remote volcanic archipelago",
         "footage": [
             {
-                "stickman-CACHE/stickman_explain_scenes/explain_001_The_Banda_Islands_A_tiny_incredibly_remote_volcani.mp4": 3.82
+                "stickman-CACHE/colour_graded/cg-8d4601d9dd28-7923ea70467d7726.mp4": 3.82
             }
         ]
     },
@@ -86,7 +86,7 @@
         "script_text": "single ship full of nutmeg,",
         "footage": [
             {
-                "stickman-CACHE/decorate_scenes/chain_002_00_single_ship_full_of_nutmeg.mp4": 1.32
+                "stickman-CACHE/colour_graded/cg-8d4601d9dd28-13a32f957ddb937e.mp4": 1.32
             }
         ]
     },
@@ -134,7 +134,7 @@
         "script_text": "you probably have a jar of nutmeg.",
         "footage": [
             {
-                "stickman-CACHE/decorate_scenes/chain_000_00_you_probably_have_a_jar_of_nutmeg.mp4": 1.9
+                "stickman-CACHE/decorate_scenes/decorate_000_you_probably_have_a_jar_of_nutmeg.mp4": 1.9
             }
         ]
     },
@@ -142,7 +142,7 @@
         "script_text": "single most contested resource on the planet.",
         "footage": [
             {
-                "stickman-CACHE/decorate_scenes/decorate_000_single_most_contested_resource_on_the_planet.mp4": 2.34
+                "stickman-CACHE/decorate_scenes/decorate_001_single_most_contested_resource_on_the_planet.mp4": 2.34
             }
         ]
     },
@@ -150,7 +150,7 @@
         "script_text": "If you were a European merchant, getting it meant",
         "footage": [
             {
-                "stickman-CACHE/decorate_scenes/chain_001_00_If_you_were_a_European_merchant_getting_it_meant.mp4": 1.82
+                "stickman-CACHE/decorate_scenes/chain_000_00_If_you_were_a_European_merchant_getting_it_meant.mp4": 1.82
             }
         ]
     },
@@ -158,7 +158,7 @@
         "script_text": "you were set for life.",
         "footage": [
             {
-                "stickman-CACHE/decorate_scenes/chain_002_01_you_were_set_for_life.mp4": 1.02
+                "stickman-CACHE/decorate_scenes/chain_001_01_you_were_set_for_life.mp4": 1.02
             }
         ]
     },
@@ -166,7 +166,7 @@
         "script_text": "traded for nutmeg.",
         "footage": [
             {
-                "stickman-CACHE/decorate_scenes/decorate_001_traded_for_nutmeg.mp4": 1.26
+                "stickman-CACHE/decorate_scenes/decorate_002_traded_for_nutmeg.mp4": 1.26
             }
         ]
     }

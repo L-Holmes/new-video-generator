@@ -42,6 +42,7 @@ from __future__ import annotations
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
+
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import subprocess
@@ -82,19 +83,20 @@ class SourceExhausted(RuntimeError):
 # Chain model + detection
 # ===========================================================================
 
+
 @dataclass
 class ChainMember:
-    text: str                 # the scene's script_text
-    offset: float             # seconds into the SOURCE where this scene starts
-    duration: float           # how long this scene plays (trim / timing)
-    is_anchor: bool           # the video scene itself (offset 0)
+    text: str  # the scene's script_text
+    offset: float  # seconds into the SOURCE where this scene starts
+    duration: float  # how long this scene plays (trim / timing)
+    is_anchor: bool  # the video scene itself (offset 0)
     wants_decorate: bool
     wants_caption: bool
 
 
 @dataclass
 class VideoChain:
-    source: str                          # local path of the anchor's video
+    source: str  # local path of the anchor's video
     members: list[ChainMember] = field(default_factory=list)
 
     @property
@@ -135,23 +137,28 @@ def detect_video_chains(
         text = ordered[i]
         row = script_to_search_term[text]
         if media_props(row.get("media_type")).is_hold_previous:
-            i += 1              # a hold with no video anchor before it —
-            continue            # the freeze path's problem, not ours
+            i += 1  # a hold with no video anchor before it —
+            continue  # the freeze path's problem, not ours
 
         # the maximal run of holds right after this scene, in script order
         j = i + 1
         holds: list[str] = []
-        while j < len(ordered) and media_props(
+        while (
+            j < len(ordered)
+            and media_props(
                 script_to_search_term[ordered[j]].get("media_type")
-        ).is_hold_previous:
+            ).is_hold_previous
+        ):
             holds.append(ordered[j])
             j += 1
 
         anchor_dec = scene_wants_decorate(row)
-        if not (anchor_dec or any(
-                scene_wants_decorate(script_to_search_term[h]) for h in holds)):
+        if not (
+            anchor_dec
+            or any(scene_wants_decorate(script_to_search_term[h]) for h in holds)
+        ):
             i = j
-            continue            # nobody decorates → old behaviour throughout
+            continue  # nobody decorates → old behaviour throughout
 
         entry = by_text.get(text)
         footage = (entry or {}).get("footage") or []
@@ -162,39 +169,56 @@ def detect_video_chains(
         local = _resolve_to_local_path(last_key)
         if not local or _classify_footage_path(local) != "video":
             i = j
-            continue            # image anchor → existing still behaviour
+            continue  # image anchor → existing still behaviour
 
         anchor_live = anchor_dec and len(footage) == 1
         if anchor_dec and not anchor_live:
-            print(f"[chains] WARNING: '{text[:50]}' wants decorate but has "
-                  f"{len(footage)} clips — its own decorate stays the freeze "
-                  f"path; its holds still continue the last clip")
+            print(
+                f"[chains] WARNING: '{text[:50]}' wants decorate but has "
+                f"{len(footage)} clips — its own decorate stays the freeze "
+                f"path; its holds still continue the last clip"
+            )
         if not (anchor_live or holds):
             i = j
             continue
 
         members: list[ChainMember] = []
         if anchor_live:
-            members.append(ChainMember(
-                text=text, offset=0.0, duration=float(last_trim),
-                is_anchor=True, wants_decorate=True,
-                wants_caption=scene_wants_caption(row)))
+            members.append(
+                ChainMember(
+                    text=text,
+                    offset=0.0,
+                    duration=float(last_trim),
+                    is_anchor=True,
+                    wants_decorate=True,
+                    wants_caption=scene_wants_caption(row),
+                )
+            )
         off = float(last_trim)
         for h in holds:
             h_row = script_to_search_term[h]
             h_dur = float(scene_timings.get(h, 0.0))
-            members.append(ChainMember(
-                text=h, offset=off, duration=h_dur, is_anchor=False,
-                wants_decorate=scene_wants_decorate(h_row),
-                wants_caption=scene_wants_caption(h_row)))
+            members.append(
+                ChainMember(
+                    text=h,
+                    offset=off,
+                    duration=h_dur,
+                    is_anchor=False,
+                    wants_decorate=scene_wants_decorate(h_row),
+                    wants_caption=scene_wants_caption(h_row),
+                )
+            )
             off += h_dur
 
         chains.append(VideoChain(source=local, members=members))
-        print(f"[chains] LIVE chain on {Path(local).name}: "
-              + "  →  ".join(
-                  f"'{m.text[:28]}' @ {m.offset:.2f}s"
-                  + (" ✎" if m.wants_decorate else "")
-                  for m in members))
+        print(
+            f"[chains] LIVE chain on {Path(local).name}: "
+            + "  →  ".join(
+                f"'{m.text[:28]}' @ {m.offset:.2f}s"
+                + (" ✎" if m.wants_decorate else "")
+                for m in members
+            )
+        )
         i = j
 
     return chains
@@ -204,19 +228,31 @@ def detect_video_chains(
 # ffmpeg: continuing segments + layer burns
 # ===========================================================================
 
+
 def _probe_duration(path: str) -> float:
     r = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-         "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
-        capture_output=True, text=True)
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            str(path),
+        ],
+        capture_output=True,
+        text=True,
+    )
     try:
         return float(r.stdout.strip())
     except (TypeError, ValueError):
         return 0.0
 
 
-def cut_continuing_segment(source: str, offset: float, duration: float,
-                           out_path: str) -> str:
+def cut_continuing_segment(
+    source: str, offset: float, duration: float, out_path: str
+) -> str:
     """Cut [offset, offset + duration + pad] out of `source`, normalised to
     the stitcher frame (1920x1080@30, contain + black pad). If the source
     ends inside the window the LAST FRAME is frozen (tpad clone) so the
@@ -228,20 +264,38 @@ def cut_continuing_segment(source: str, offset: float, duration: float,
     if src_dur and float(offset) >= src_dur - 0.05:
         raise SourceExhausted(
             f"offset {float(offset):.2f}s is at/after the end of "
-            f"{Path(source).name} ({src_dur:.2f}s)")
+            f"{Path(source).name} ({src_dur:.2f}s)"
+        )
     if src_dur and float(offset) + need > src_dur:
-        print(f"[chains]   note: {Path(source).name} ends at {src_dur:.2f}s "
-              f"— the tail past that freezes on the last frame")
+        print(
+            f"[chains]   note: {Path(source).name} ends at {src_dur:.2f}s "
+            f"— the tail past that freezes on the last frame"
+        )
 
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     cmd = [
-        "ffmpeg", "-y", "-nostdin", "-loglevel", "error",
-        "-ss", f"{max(0.0, float(offset)):.3f}", "-i", str(source),
-        "-t", f"{need:.3f}",
-        "-vf", f"{_NORMALISE_VF},"
-               f"tpad=stop_mode=clone:stop_duration={need + 1.0:.3f}",
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-preset", "veryfast", "-crf", "18", "-an",
+        "ffmpeg",
+        "-y",
+        "-nostdin",
+        "-loglevel",
+        "error",
+        "-ss",
+        f"{max(0.0, float(offset)):.3f}",
+        "-i",
+        str(source),
+        "-t",
+        f"{need:.3f}",
+        "-vf",
+        f"{_NORMALISE_VF},tpad=stop_mode=clone:stop_duration={need + 1.0:.3f}",
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-preset",
+        "veryfast",
+        "-crf",
+        "18",
+        "-an",
         str(out_path),
     ]
     r = subprocess.run(cmd, capture_output=True, text=True)
@@ -250,7 +304,8 @@ def cut_continuing_segment(source: str, offset: float, duration: float,
         out.unlink(missing_ok=True)
         raise RuntimeError(
             f"continuing-segment cut failed for {source} @ "
-            f"{float(offset):.2f}s: {r.stderr[-600:]}")
+            f"{float(offset):.2f}s: {r.stderr[-600:]}"
+        )
     return str(out_path)
 
 
@@ -260,10 +315,11 @@ class DecoLayer:
     highlights keeps the live HighlightDeco objects so the editor preview
     can reproduce them with the exact PIL code; highlight_mask is the same
     geometry exported for ffmpeg."""
-    highlights: list = field(default_factory=list)   # [HighlightDeco, ...]
-    highlight_mask: str | None = None                # feathered gray PNG
-    sprites_png: str | None = None                   # transparent RGBA layer
-    caption_png: str | None = None                   # transparent caption
+
+    highlights: list = field(default_factory=list)  # [HighlightDeco, ...]
+    highlight_mask: str | None = None  # feathered gray PNG
+    sprites_png: str | None = None  # transparent RGBA layer
+    caption_png: str | None = None  # transparent caption
 
     def overlay_pngs(self) -> list[str]:
         return [p for p in (self.sprites_png, self.caption_png) if p]
@@ -273,15 +329,23 @@ class DecoLayer:
         return not (self.highlight_mask or self.sprites_png or self.caption_png)
 
 
-def _zoom_rect_px(box: tuple, bw: int = FRAME_W,
-                  bh: int = FRAME_H) -> tuple[int, int, int, int]:
+def _zoom_rect_px(
+    box: tuple, bw: int = FRAME_W, bh: int = FRAME_H
+) -> tuple[int, int, int, int]:
     """(w, h, x, y) of a zoom op's crop on a bw×bh frame — arithmetic kept
     IDENTICAL to MANUAL_STOCK_PLACEMENT.crop_and_zoom (aspect locked to the
-    frame, centre clamped inside), so the editor's still preview and the
-    video crop land on the same pixels."""
-    wpct, cx_frac, cy_frac = box
+    frame unless an independent height % is given), centre clamped inside, so
+    the editor's still preview and the video crop land on the same pixels."""
+    if len(box) == 4:
+        wpct, cx_frac, cy_frac, hpct = box
+    else:
+        wpct, cx_frac, cy_frac = box
+        hpct = None
     w = max(1, min(bw, round(wpct / 100.0 * bw)))
-    h = max(1, min(bh, round(w * bh / bw)))
+    if hpct is not None:
+        h = max(1, min(bh, round(hpct / 100.0 * bh)))
+    else:
+        h = max(1, min(bh, round(w * bh / bw)))
     x = max(0, min(round(cx_frac * bw - w / 2), bw - w))
     y = max(0, min(round(cy_frac * bh - h / 2), bh - h))
     return w, h, x, y
@@ -306,8 +370,10 @@ def burn_ops_onto_segment(segment: str, ops: list, out_path: str) -> str:
     subsampling), so odd crop offsets are fine. Single-frame PNG inputs
     repeat automatically (framesync eof_action=repeat), so no -loop
     juggling."""
-    from ___visuals.decorator.draw import (   # lazy: draw.py imports Tk
-        HIGHLIGHT_BRIGHTEN, HIGHLIGHT_DARKEN)
+    from ___visuals.decorator.draw import (  # lazy: draw.py imports Tk
+        HIGHLIGHT_BRIGHTEN,
+        HIGHLIGHT_DARKEN,
+    )
 
     inputs: list[str] = ["-i", str(segment)]
     fc: list[str] = ["[0:v]format=gbrp[v0]"]  # colorchannelmixer needs RGB
@@ -317,8 +383,9 @@ def burn_ops_onto_segment(segment: str, ops: list, out_path: str) -> str:
         if kind == "zoom":
             w, h, x, y = _zoom_rect_px(payload)
             o = f"zm{n}"
-            fc.append(f"[{cur}]crop={w}:{h}:{x}:{y},"
-                      f"scale={FRAME_W}:{FRAME_H},setsar=1[{o}]")
+            fc.append(
+                f"[{cur}]crop={w}:{h}:{x}:{y},scale={FRAME_W}:{FRAME_H},setsar=1[{o}]"
+            )
             cur, n = o, n + 1
             continue
         layer = payload
@@ -326,14 +393,18 @@ def burn_ops_onto_segment(segment: str, ops: list, out_path: str) -> str:
             inputs += ["-i", layer.highlight_mask]
             b, d, m, o = f"br{n}", f"dk{n}", f"mk{n}", f"hl{n}"
             fc.append(f"[{cur}]split[{b}s][{d}s]")
-            fc.append(f"[{b}s]colorchannelmixer="
-                      f"rr={HIGHLIGHT_BRIGHTEN}:gg={HIGHLIGHT_BRIGHTEN}:"
-                      f"bb={HIGHLIGHT_BRIGHTEN}[{b}]")
-            fc.append(f"[{d}s]colorchannelmixer="
-                      f"rr={HIGHLIGHT_DARKEN}:gg={HIGHLIGHT_DARKEN}:"
-                      f"bb={HIGHLIGHT_DARKEN}[{d}]")
+            fc.append(
+                f"[{b}s]colorchannelmixer="
+                f"rr={HIGHLIGHT_BRIGHTEN}:gg={HIGHLIGHT_BRIGHTEN}:"
+                f"bb={HIGHLIGHT_BRIGHTEN}[{b}]"
+            )
+            fc.append(
+                f"[{d}s]colorchannelmixer="
+                f"rr={HIGHLIGHT_DARKEN}:gg={HIGHLIGHT_DARKEN}:"
+                f"bb={HIGHLIGHT_DARKEN}[{d}]"
+            )
             fc.append(f"[{in_idx}:v]format=gbrp,scale={FRAME_W}:{FRAME_H}[{m}]")
-            fc.append(f"[{d}][{b}][{m}]maskedmerge[{o}]")   # white = bright
+            fc.append(f"[{d}][{b}][{m}]maskedmerge[{o}]")  # white = bright
             cur, in_idx, n = o, in_idx + 1, n + 1
         for png in layer.overlay_pngs():
             inputs += ["-i", png]
@@ -342,17 +413,30 @@ def burn_ops_onto_segment(segment: str, ops: list, out_path: str) -> str:
             cur, in_idx, n = o, in_idx + 1, n + 1
 
     fc.append(f"[{cur}]format=yuv420p[vout]")
-    cmd = (["ffmpeg", "-y", "-nostdin", "-loglevel", "error"] + inputs
-           + ["-filter_complex", ";".join(fc), "-map", "[vout]",
-              "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
-              "-an", str(out_path)])
+    cmd = (
+        ["ffmpeg", "-y", "-nostdin", "-loglevel", "error"]
+        + inputs
+        + [
+            "-filter_complex",
+            ";".join(fc),
+            "-map",
+            "[vout]",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "18",
+            "-an",
+            str(out_path),
+        ]
+    )
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     r = subprocess.run(cmd, capture_output=True, text=True)
     out = Path(out_path)
     if r.returncode != 0 or not out.exists() or out.stat().st_size == 0:
         out.unlink(missing_ok=True)
-        raise RuntimeError(
-            f"ops burn failed for {segment}: {r.stderr[-600:]}")
+        raise RuntimeError(f"ops burn failed for {segment}: {r.stderr[-600:]}")
     return str(out_path)
 
 
@@ -360,31 +444,59 @@ def burn_ops_onto_segment(segment: str, ops: list, out_path: str) -> str:
 # Editor-preview helpers (what the user sees IS what gets burned)
 # ===========================================================================
 
-def extract_frame_normalised(source: str, at_seconds: float,
-                             out_png: str) -> str:
+
+def extract_frame_normalised(source: str, at_seconds: float, out_png: str) -> str:
     """One frame of `source` at `at_seconds`, contain-fitted + black-padded
     to the 1920x1080 stitcher frame — the exact picture on screen at that
     instant, and the canvas every overlay coordinate is relative to. Seeks
     that land past the end fall back to the last frame (matching the
     tpad-clone freeze the segment render does)."""
-    from ___visuals.MAKE_TEXT_OVERLAY import _fit_pad   # headless (PIL only)
+    from ___visuals.MAKE_TEXT_OVERLAY import _fit_pad  # headless (PIL only)
 
     Path(out_png).parent.mkdir(parents=True, exist_ok=True)
     grab = str(Path(out_png).with_suffix(".grab.png"))
-    cmd = ["ffmpeg", "-y", "-nostdin", "-loglevel", "error",
-           "-ss", f"{max(0.0, float(at_seconds)):.3f}", "-i", str(source),
-           "-frames:v", "1", "-q:v", "2", grab]
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-nostdin",
+        "-loglevel",
+        "error",
+        "-ss",
+        f"{max(0.0, float(at_seconds)):.3f}",
+        "-i",
+        str(source),
+        "-frames:v",
+        "1",
+        "-q:v",
+        "2",
+        grab,
+    ]
     r = subprocess.run(cmd, capture_output=True, text=True)
-    if r.returncode != 0 or not Path(grab).exists() \
-            or Path(grab).stat().st_size == 0:
-        r = subprocess.run(   # past EOF / odd clip → the very last frame
-            ["ffmpeg", "-y", "-nostdin", "-loglevel", "error",
-             "-sseof", "-0.1", "-i", str(source),
-             "-frames:v", "1", "-q:v", "2", grab],
-            capture_output=True, text=True)
+    if r.returncode != 0 or not Path(grab).exists() or Path(grab).stat().st_size == 0:
+        r = subprocess.run(  # past EOF / odd clip → the very last frame
+            [
+                "ffmpeg",
+                "-y",
+                "-nostdin",
+                "-loglevel",
+                "error",
+                "-sseof",
+                "-0.1",
+                "-i",
+                str(source),
+                "-frames:v",
+                "1",
+                "-q:v",
+                "2",
+                grab,
+            ],
+            capture_output=True,
+            text=True,
+        )
         if r.returncode != 0 or not Path(grab).exists():
             raise RuntimeError(
-                f"frame grab failed for {source} @ {float(at_seconds):.2f}s")
+                f"frame grab failed for {source} @ {float(at_seconds):.2f}s"
+            )
     try:
         img = Image.open(grab).convert("RGB")
         _fit_pad(img, FRAME_W, FRAME_H).save(out_png)
@@ -393,8 +505,7 @@ def extract_frame_normalised(source: str, at_seconds: float,
     return str(out_png)
 
 
-def composite_ops_for_preview(frame_png: str, ops: list,
-                              out_png: str) -> str:
+def composite_ops_for_preview(frame_png: str, ops: list, out_png: str) -> str:
     """Apply an ops recipe to a frame still, in order (highlights with the
     editor's own PIL code, PNG layers composited, zooms as crop + resize
     with crop_and_zoom's exact arithmetic) — so when the user opens the
@@ -413,6 +524,7 @@ def composite_ops_for_preview(frame_png: str, ops: list,
         layer = payload
         if layer.highlights:
             from ___visuals.decorator.draw import _apply_highlights  # lazy (Tk)
+
             img = _apply_highlights(img, layer.highlights)
         for png in layer.overlay_pngs():
             base = img.convert("RGBA")

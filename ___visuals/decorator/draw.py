@@ -1043,6 +1043,7 @@ class _DecorateApp:
         work_dir=None,
         overlay_mode=False,
         previous_preview: PreviousEntryPreview | None = None,
+        stamp_mode: bool = False,
     ):
         try:
             self.root = tk.Tk()
@@ -1062,6 +1063,7 @@ class _DecorateApp:
         # zooms as real crops of the footage). Callers offer draw + stamp +
         # zoom; object stays out (its result is an opaque re-render).
         self.overlay_mode = bool(overlay_mode)
+        self.stamp_mode = bool(stamp_mode)
         self.ops: list = []  # overlay mode's captured operations
         self.base_path = str(base_path)
         self.work_dir = (
@@ -1090,6 +1092,7 @@ class _DecorateApp:
         self._zoom_rect = None
         self._zoom_cx = self._zoom_cy = 0.5  # crop centre, fractions
         self._zoom_wpct = 55  # crop width, % of the image
+        self._zoom_hpct = None  # crop height %; None = aspect-locked to width
 
         # ── TAB STRIP (top): selectable title LEFT, tabs at the RIGHT ────
         # Tabs switch tool IN THIS WINDOW: stamp arms a droppable picture,
@@ -1321,6 +1324,25 @@ class _DecorateApp:
             justify="left",
             font=("Arial", 11, "bold"),
         ).pack(anchor="w", pady=(2, 8))
+        if self.stamp_mode:
+            # This session edits a picked STAMP picture that will be stamped
+            # onto the previous scene — make that unmistakable up top.
+            tk.Label(
+                side,
+                text=(
+                    "★ STAMP MODE ★\n"
+                    "This image will be STAMPED onto the\n"
+                    "previous scene. Edit it here (cut it out,\n"
+                    "clean it up), then Finish to use it as a stamp."
+                ),
+                bg="#3b2a05",
+                fg="#ffd166",
+                justify="left",
+                font=("Arial", 10, "bold"),
+                padx=8,
+                pady=6,
+                wraplength=330,
+            ).pack(anchor="w", fill="x", pady=(0, 8))
 
         # ── scrollable middle: hosts every per-tab panel + controls ──────
         # (small window → this scrolls; the Finish/Undo row and status are
@@ -1467,9 +1489,14 @@ class _DecorateApp:
             command=self._stamp_add_file,
             font=("Arial", 10),
         ).pack(anchor="w", pady=(0, 4))
-        tk.Checkbutton(
-            self.stamp_panel,
-            text="key out white background",
+        # "key out white background" toggle. Wrapped in a Frame so the WHOLE
+        # row is a click target — a bare Checkbutton's hit area is just the
+        # tiny indicator + text glyphs, which is fiddly to click.
+        _rbg = tk.Frame(self.stamp_panel, bg="#1e1e24")
+        _rbg.pack(anchor="w", pady=(0, 4), fill="x")
+        self._remove_bg_btn = tk.Checkbutton(
+            _rbg,
+            text="  key out white background",
             variable=self.stamp_remove_bg,
             command=self._stamp_rearm,
             bg="#1e1e24",
@@ -1478,7 +1505,17 @@ class _DecorateApp:
             activebackground="#1e1e24",
             activeforeground="#dddddd",
             font=("Arial", 10),
-        ).pack(anchor="w", pady=(0, 4))
+            padx=6,
+            pady=4,
+        )
+        self._remove_bg_btn.pack(anchor="w", fill="x")
+
+        # Clicking anywhere on the row toggles the checkbox too.
+        def _toggle_bg(_e=None):
+            self.stamp_remove_bg.set(not self.stamp_remove_bg.get())
+            self._stamp_rearm()
+
+        _rbg.bind("<Button-1>", _toggle_bg)
         tk.Label(
             self.stamp_panel,
             bg="#1e1e24",
@@ -1496,7 +1533,7 @@ class _DecorateApp:
         # ── OBJECT panel: the extraction editor's controls mount here ────
         self.object_panel = tk.Frame(self.tool_area, bg="#1e1e24")
 
-        # ── ZOOM panel: live box on the canvas + complete button ─────────
+        # ── ZOOM panel: live box on the canvas + size controls ───────────
         self.zoom_panel = tk.Frame(self.tool_area, bg="#1e1e24")
         tk.Label(
             self.zoom_panel,
@@ -1507,35 +1544,135 @@ class _DecorateApp:
             wraplength=330,
             text=(
                 "The gold box is the crop. Move it over the image; "
-                "− / + below changes its size. Click on the image "
+                "the controls below size it. Click on the image "
                 "to apply the zoom instantly."
             ),
         ).pack(anchor="w", pady=(0, 6))
-        zrow = tk.Frame(self.zoom_panel, bg="#1e1e24")
-        zrow.pack(anchor="w", pady=(0, 6))
-        tk.Button(
-            zrow,
-            text="−",
-            width=3,
-            font=("Arial", 13, "bold"),
-            command=lambda: self._zoom_resize(-10),
-        ).pack(side="left")
-        self.zoom_pct_var = tk.StringVar(value="")
+
+        def _pct_entry(parent, var):
+            """A digit-only Entry (no leading zeros) bound to a StringVar."""
+            e = tk.Entry(
+                parent,
+                textvariable=var,
+                width=4,
+                font=("Arial", 11, "bold"),
+                justify="center",
+                bg="#2a2a33",
+                fg="#dddddd",
+                insertbackground="#dddddd",
+                relief="flat",
+                validate="key",
+            )
+
+            # Only allow digits; strip leading zeros. Empty is allowed mid-edit.
+            def _validate(new_text):
+                if new_text == "":
+                    return True
+                if not new_text.isdigit():
+                    return False
+                # no leading zeros (except a bare "0")
+                if len(new_text) > 1 and new_text[0] == "0":
+                    return False
+                return True
+
+            e.config(validatecommand=(_validate, "%P"))
+            return e
+
+        def _pct_row(parent, label, dec_cmd, inc_cmd, var):
+            row = tk.Frame(parent, bg="#1e1e24")
+            row.pack(anchor="w", pady=(0, 4))
+            tk.Label(
+                row,
+                text=label,
+                bg="#1e1e24",
+                fg="#8a8a95",
+                font=("Arial", 10),
+                width=10,
+                anchor="w",
+            ).pack(side="left")
+            tk.Button(
+                row,
+                text="−",
+                width=3,
+                font=("Arial", 12, "bold"),
+                bg="#2a2a33",
+                fg="#dddddd",
+                relief="flat",
+                command=dec_cmd,
+            ).pack(side="left", padx=(4, 0))
+            ent = _pct_entry(row, var)
+            ent.pack(side="left", padx=6)
+            tk.Label(
+                row,
+                text="%",
+                bg="#1e1e24",
+                fg="#8a8a95",
+                font=("Arial", 10),
+            ).pack(side="left", padx=(0, 4))
+            tk.Button(
+                row,
+                text="+",
+                width=3,
+                font=("Arial", 12, "bold"),
+                bg="#2a2a33",
+                fg="#dddddd",
+                relief="flat",
+                command=inc_cmd,
+            ).pack(side="left")
+            return ent
+
+        # Main dual control — sizes BOTH width and height together.
         tk.Label(
-            zrow,
-            textvariable=self.zoom_pct_var,
+            self.zoom_panel,
+            text="both (lock ratio):",
             bg="#1e1e24",
-            fg="#dddddd",
-            font=("Arial", 11, "bold"),
-            width=14,
-        ).pack(side="left", padx=6)
-        tk.Button(
-            zrow,
-            text="+",
-            width=3,
-            font=("Arial", 13, "bold"),
-            command=lambda: self._zoom_resize(+10),
-        ).pack(side="left")
+            fg="#bbbbbb",
+            font=("Arial", 10, "bold"),
+        ).pack(anchor="w", pady=(2, 2))
+        self.zoom_pct_var = tk.StringVar(value="")
+        self.zoom_dual_entry = _pct_row(
+            self.zoom_panel,
+            "",
+            lambda: self._zoom_resize(-10),
+            lambda: self._zoom_resize(+10),
+            self.zoom_pct_var,
+        )
+        self.zoom_dual_entry.bind("<Return>", self._zoom_commit_dual)
+        self.zoom_dual_entry.bind("<FocusOut>", self._zoom_commit_dual)
+
+        # Separate width / height controls — a sub-box, independent sizing.
+        sub = tk.LabelFrame(
+            self.zoom_panel,
+            text="separate",
+            bg="#1e1e24",
+            fg="#bbbbbb",
+            font=("Arial", 9),
+            padx=8,
+            pady=6,
+            relief="flat",
+        )
+        sub.pack(anchor="w", fill="x", pady=(6, 4))
+        self.zoom_w_var = tk.StringVar(value="")
+        self.zoom_h_var = tk.StringVar(value="")
+        self.zoom_w_entry = _pct_row(
+            sub,
+            "width",
+            lambda: self._zoom_resize(-10, "w"),
+            lambda: self._zoom_resize(+10, "w"),
+            self.zoom_w_var,
+        )
+        self.zoom_w_entry.bind("<Return>", self._zoom_commit_w)
+        self.zoom_w_entry.bind("<FocusOut>", self._zoom_commit_w)
+        self.zoom_h_entry = _pct_row(
+            sub,
+            "height",
+            lambda: self._zoom_resize(-10, "h"),
+            lambda: self._zoom_resize(+10, "h"),
+            self.zoom_h_var,
+        )
+        self.zoom_h_entry.bind("<Return>", self._zoom_commit_h)
+        self.zoom_h_entry.bind("<FocusOut>", self._zoom_commit_h)
+
         # Big warning, shown only while zoom mode is live (box visible but the
         # crop not yet applied). Hidden once the zoom is applied/cancelled.
         self.zoom_warn = tk.Label(
@@ -2819,11 +2956,26 @@ class _DecorateApp:
 
     def _zoom_box_px(self):
         w = self.disp_w * self._zoom_wpct / 100.0
-        h = w * self.disp_h / self.disp_w  # aspect locked to the image
+        if self._zoom_hpct is not None:
+            h = self.disp_h * self._zoom_hpct / 100.0
+        else:
+            h = w * self.disp_h / self.disp_w  # aspect locked to the image
         cx = min(max(self._zoom_cx * self.disp_w, w / 2), self.disp_w - w / 2)
         cy = min(max(self._zoom_cy * self.disp_h, h / 2), self.disp_h - h / 2)
         self._zoom_cx, self._zoom_cy = cx / self.disp_w, cy / self.disp_h
         return cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2
+
+    def _zoom_sync_entry_vars(self):
+        """Push the current wpct/hpct into the sidebar entry StringVars.
+        The dual box shows the value when width and height match (or are
+        aspect-locked, which means equal %); blank when they differ."""
+        eff_h = self._zoom_hpct if self._zoom_hpct is not None else self._zoom_wpct
+        self.zoom_w_var.set(str(self._zoom_wpct))
+        self.zoom_h_var.set(str(eff_h))
+        if self._zoom_hpct is None or self._zoom_hpct == self._zoom_wpct:
+            self.zoom_pct_var.set(str(self._zoom_wpct))
+        else:
+            self.zoom_pct_var.set("")
 
     def _zoom_redraw(self):
         x0, y0, x1, y1 = self._zoom_box_px()
@@ -2835,16 +2987,60 @@ class _DecorateApp:
             self.canvas.coords(self._zoom_rect, x0, y0, x1, y1)
             self.canvas.itemconfig(self._zoom_rect, state="normal")
         self.canvas.tag_raise(self._zoom_rect)
-        self.zoom_pct_var.set(f"box: {self._zoom_wpct}% wide")
+        self._zoom_sync_entry_vars()
 
     def _zoom_move(self, x, y):
         self._zoom_cx = min(max(x / self.disp_w, 0.0), 1.0)
         self._zoom_cy = min(max(y / self.disp_h, 0.0), 1.0)
         self._zoom_redraw()
 
-    def _zoom_resize(self, delta_pct):
-        self._zoom_wpct = min(100, max(10, self._zoom_wpct + delta_pct))
+    def _zoom_resize(self, delta_pct, axis=None):
+        """Resize the crop. axis=None (the dual control) moves BOTH width and
+        height by the fixed amount; axis='w'/'h' moves just that one. Touching
+        height independently unlocks it from the aspect ratio."""
+        if axis == "w":
+            self._zoom_wpct = min(100, max(10, self._zoom_wpct + delta_pct))
+            # if aspect-locked, height follows automatically (box derives h
+            # from w); if unlocked, leave hpct alone.
+        elif axis == "h":
+            # editing height independently unlocks it.
+            cur = self._zoom_hpct if self._zoom_hpct is not None else self._zoom_wpct
+            self._zoom_hpct = min(100, max(10, cur + delta_pct))
+        else:
+            # dual — increment BOTH axes by the fixed amount.
+            self._zoom_wpct = min(100, max(10, self._zoom_wpct + delta_pct))
+            cur = (
+                self._zoom_hpct
+                if self._zoom_hpct is not None
+                else self._zoom_wpct - delta_pct
+            )
+            self._zoom_hpct = min(100, max(10, cur + delta_pct))
         self._zoom_redraw()
+
+    def _zoom_commit_int(self, text, axis):
+        """Apply a typed value (digits only) to one axis; empty/invalid reverts."""
+        text = (text or "").strip()
+        if not text or not text.isdigit():
+            self._zoom_sync_entry_vars()  # revert the field
+            return
+        v = min(100, max(10, int(text)))
+        if axis == "w":
+            self._zoom_wpct = v
+        elif axis == "h":
+            self._zoom_hpct = v  # typing height unlocks it
+        else:  # dual — set width, and re-lock height to width (aspect).
+            self._zoom_wpct = v
+            self._zoom_hpct = None
+        self._zoom_redraw()
+
+    def _zoom_commit_dual(self, _e=None):
+        self._zoom_commit_int(self.zoom_pct_var.get(), "dual")
+
+    def _zoom_commit_w(self, _e=None):
+        self._zoom_commit_int(self.zoom_w_var.get(), "w")
+
+    def _zoom_commit_h(self, _e=None):
+        self._zoom_commit_int(self.zoom_h_var.get(), "h")
 
     def _zoom_hide(self):
         self._zoom_mode = False
@@ -2873,7 +3069,12 @@ class _DecorateApp:
             # with coordinates in the new space.
             if self.items:
                 self.ops.append(("layer", list(self.items)))
-            self.ops.append(("zoom", (self._zoom_wpct, self._zoom_cx, self._zoom_cy)))
+            self.ops.append(
+                (
+                    "zoom",
+                    (self._zoom_wpct, self._zoom_cx, self._zoom_cy, self._zoom_hpct),
+                )
+            )
             self._bake_n += 1
             shown = self.base_path
             if self.items:
@@ -2884,10 +3085,13 @@ class _DecorateApp:
                 self._pending = None
             out = str(self.work_dir / f"zoom_{self._bake_n:02d}.png")
             crop_and_zoom(
-                shown, CropBox(self._zoom_wpct, self._zoom_cx, self._zoom_cy), out
+                shown,
+                CropBox(self._zoom_wpct, self._zoom_cx, self._zoom_cy, self._zoom_hpct),
+                out,
             )
             self._reload_base(out)
             self._zoom_cx = self._zoom_cy = 0.5
+            self._zoom_hpct = None
             self._goto_tab("draw")
             self._set_status(
                 "Zoomed — the VIDEO plays cropped to this view "
@@ -2898,11 +3102,14 @@ class _DecorateApp:
         self._bake_n += 1
         out = str(self.work_dir / f"zoom_{self._bake_n:02d}.png")
         crop_and_zoom(
-            self.base_path, CropBox(self._zoom_wpct, self._zoom_cx, self._zoom_cy), out
+            self.base_path,
+            CropBox(self._zoom_wpct, self._zoom_cx, self._zoom_cy, self._zoom_hpct),
+            out,
         )
         self._session_edited = True
         self._reload_base(out)
         self._zoom_cx = self._zoom_cy = 0.5
+        self._zoom_hpct = None
         self._goto_tab("draw")
         self._set_status("Zoomed. Keep editing, or FINISH.")
 
@@ -3124,6 +3331,7 @@ def run_editor_session(
     work_dir=None,
     overlay_mode=False,
     previous_preview: PreviousEntryPreview | None = None,
+    stamp_mode: bool = False,
 ):
     """Open the ONE decorator window for a whole session: the draw canvas
     with STAMP / ZOOM / OBJECT all working IN-window (the object extraction
@@ -3154,6 +3362,7 @@ def run_editor_session(
         work_dir=work_dir,
         overlay_mode=overlay_mode,
         previous_preview=previous_preview,
+        stamp_mode=stamp_mode,
     )
     app.run()
     if overlay_mode:
