@@ -49,6 +49,12 @@ from pathlib import Path
 
 from MEDIA_TYPES import MEDIA_TYPES, MODIFIERS
 
+# MEDIA_TYPES put the repo root on sys.path, so the shared config resolves.
+from CONFIG import (  # noqa: E402
+    MIN_DURATION_GATED_TYPES,
+    line_too_short_for_new_footage,
+)
+
 # Sentence enders for RECONSTRUCTION: the big punctuation (. ! ? … ; :) —
 # found ANYWHERE, including mid-fragment ('shipwrecks. But if you made'),
 # not just at fragment ends. ':' is an ender per splitter rule 1, which is
@@ -860,12 +866,40 @@ def assign(data: dict, results: dict, founds: dict = None) -> "list[str]":
                     break
                 if rule.needs_previous and i == 0:
                     break            # nothing before it to hold — manual
+                fill = founds.get(frag, {}).get(f"{rule.check}::fill")
+
+                # SHORT-SCENE INTELLIGENCE (see MIN_NEW_FOOTAGE_SECONDS):
+                # brand-new footage on a line too short to stand on its own
+                # would just flash. Prefer editing the previous image instead
+                # — hold_previous + decorate, stamping the thing onto it when
+                # we have a term ("add decorated stock", the common case).
+                # Joining neighbours is left to the human in MANUAL_TAGGING
+                # (too destructive to do blind — "very rarely"). The very
+                # first line has no previous to hold, so it keeps the new type
+                # and the manual tagger's guard catches it.
+                if (rule.media_type in MIN_DURATION_GATED_TYPES and i > 0
+                        and line_too_short_for_new_footage(frag)):
+                    row["media_type"] = "hold_previous"
+                    if "decorate" not in (row.get("modifiers") or []):
+                        row["modifiers"] = (row.get("modifiers") or []) + ["decorate"]
+                    filled = ""
+                    if rule.fill_search and fill \
+                            and not (row.get("search_term") or "").strip():
+                        row["search_term"] = fill
+                        row["stamp_source"] = "stock"   # stamp it onto the hold
+                        filled = (f'   search_term="{fill[:40]}"'
+                                  f'   stamp_source="stock"')
+                    changed.append(frag)
+                    print(f'  → "{frag[:50]}"  =  hold_previous[\'decorate\']'
+                          f'{filled}   (too short for new {rule.media_type} — '
+                          f'edit + add to the previous scene instead)')
+                    break
+
                 row["media_type"] = rule.media_type
                 mods = [m for m in rule.modifiers
                         if m not in (row.get("modifiers") or [])]
                 row["modifiers"] = (row.get("modifiers") or []) + mods
                 filled = ""
-                fill = founds.get(frag, {}).get(f"{rule.check}::fill")
                 if rule.fill_search and fill \
                         and not (row.get("search_term") or "").strip():
                     row["search_term"] = fill

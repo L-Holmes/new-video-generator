@@ -18,6 +18,8 @@ that's what makes `from CONFIG import ...` resolve from inside the package.
 from __future__ import annotations
 
 import argparse
+import math
+import re
 import sys
 import threading
 import time
@@ -72,6 +74,53 @@ MAX_CLIP_LENGTH_SEC = 8.0
 MIN_CLIP_LENGTH_SEC = 1.8
 
 APPLY_KEN_BURNS_AFFECT = False
+
+# ===========================================================================
+# MINIMUM DURATION FOR BRAND-NEW FOOTAGE
+# ===========================================================================
+# A scene that pops brand-new material on screen (stock / wikipedia / an AI
+# image / a map — see MIN_DURATION_GATED_TYPES) for less than this just
+# FLASHES and reads as a mistake. We don't have audio timings yet at tagging
+# time, so we estimate a line's on-screen time from its WORD COUNT at
+# NARRATION_WPM_ESTIMATE — deliberately a touch faster than average speech so
+# we err toward flagging a line as too short rather than letting a flash
+# through. Below the threshold the manual tagger refuses the new type and
+# offers to fold the line into a neighbour or make it an edit-of-previous
+# instead; the auto-tagger quietly prefers hold_previous + decorate for the
+# same lines. Edit-previous / hold / background / typography are EXEMPT (they
+# reuse what's already there, or — typography — ARE the words themselves).
+MIN_NEW_FOOTAGE_SECONDS: float = 1.0
+# Narrator pace used ONLY for the estimate above (not the render). ~150 wpm
+# is average speech; 170 is a touch quicker, so a borderline line is flagged.
+NARRATION_WPM_ESTIMATE: int = 170
+
+
+def _word_count(text: str) -> int:
+    return len(re.findall(r"[\w']+", text or ""))
+
+
+def estimate_narration_seconds(text: str) -> float:
+    """Rough on-screen time for a line from its word count at
+    NARRATION_WPM_ESTIMATE. Used only by the tagging-time "too short for new
+    footage" guard, never by the renderer (which uses real audio timings)."""
+    n = _word_count(text)
+    return (n / NARRATION_WPM_ESTIMATE * 60.0) if n else 0.0
+
+
+def min_words_for_new_footage() -> int:
+    """Fewest words a brand-new-footage scene needs so it clears
+    MIN_NEW_FOOTAGE_SECONDS at NARRATION_WPM_ESTIMATE (always ≥ 1)."""
+    return max(1, math.ceil(MIN_NEW_FOOTAGE_SECONDS * NARRATION_WPM_ESTIMATE / 60.0))
+
+
+def words_needed_for_new_footage(text: str) -> int:
+    """How many MORE words this line needs before brand-new footage on it
+    would stand on its own (0 once it already clears the threshold)."""
+    return max(0, min_words_for_new_footage() - _word_count(text))
+
+
+def line_too_short_for_new_footage(text: str) -> bool:
+    return words_needed_for_new_footage(text) > 0
 
 # --- Cinematic colour grading (unified "shot on film at golden hour" look) ---
 # Master switch: give STOCK footage one cohesive film grade so the whole video
@@ -394,6 +443,17 @@ GROUPABLE_TYPES: set[str] = {"stock", "ai_stock"}
 # Which base types accept the collage modifier (multi-pick in review).
 COLLAGEABLE_TYPES: set[str] = {"stock"}
 
+# Base types that put BRAND-NEW material on screen, so a too-short line of
+# one just FLASHES — these are gated by MIN_NEW_FOOTAGE_SECONDS (see the
+# helpers above, the manual-tagger "too short" guard, and the auto-tagger's
+# short-scene handling). Everything else is exempt: edit-of-previous / hold
+# reuse the image already there, background shows the bare background, and
+# typography IS the words (so a short one can never "flash new footage").
+MIN_DURATION_GATED_TYPES: set[str] = {
+    "stock", "ai_stock", "wikipedia", "map",
+    "stock_on_board", "wikipedia_on_board",
+}
+
 
 MediaType = Enum(  # type: ignore[misc]
     "MediaType", {name.upper(): name for name in MEDIA_TYPE_CATALOG}
@@ -460,6 +520,9 @@ def _validate_media_map() -> None:
     bad_groupable = GROUPABLE_TYPES - {t.value for t in MediaType}
     if bad_groupable:
         raise RuntimeError(f"GROUPABLE_TYPES has unknown names: {bad_groupable}")
+    bad_gated = MIN_DURATION_GATED_TYPES - {t.value for t in MediaType}
+    if bad_gated:
+        raise RuntimeError(f"MIN_DURATION_GATED_TYPES has unknown names: {bad_gated}")
 
 
 _validate_media_map()  # runs on import

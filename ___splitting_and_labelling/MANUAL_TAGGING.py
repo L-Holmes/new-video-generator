@@ -66,6 +66,26 @@ except ImportError:
     STAMP_SOURCE_TYPES = ("stock", "wikipedia", "ai_stock")
     TERM_OPTIONAL_TYPES = ("hold_previous", "background")
 
+# Brand-new-footage minimum-duration guard (task 11). MEDIA_TYPES already put
+# the repo root on sys.path, so the shared config resolves; fall back to safe
+# defaults if it somehow can't (keeps the tagger usable standalone).
+try:
+    from CONFIG import (MIN_DURATION_GATED_TYPES, min_words_for_new_footage,
+                        words_needed_for_new_footage)
+    _MIN_NEW_WORDS = min_words_for_new_footage()
+except Exception:
+    MIN_DURATION_GATED_TYPES = {
+        "stock", "ai_stock", "wikipedia", "map",
+        "stock_on_board", "wikipedia_on_board"}
+    _MIN_NEW_WORDS = 3
+
+    def words_needed_for_new_footage(text: str) -> int:
+        return max(0, _MIN_NEW_WORDS - len(re.findall(r"[\w']+", text or "")))
+
+
+def _word_count(text: str) -> int:
+    return len(re.findall(r"[\w']+", text or ""))
+
 HERE = Path(__file__).resolve().parent
 _PLACE_LABELS = {"GPE", "LOC"}
 _NAME_LABELS = {"PERSON", "ORG", "FAC", "EVENT", "WORK_OF_ART", "NORP"}
@@ -82,6 +102,7 @@ def build_catalog() -> dict:
               "collageable": n in COLLAGEABLE_TYPES,
               "term_optional": n in TERM_OPTIONAL_TYPES,
               "stampable": n in STAMP_SOURCE_TYPES,
+              "new_footage": n in MIN_DURATION_GATED_TYPES,
               "info": d["info"], "example": d["example"]}
              for n, d in MEDIA_TYPES.items()]
     mods = [{"name": n, "label": n, "color": d["color"],
@@ -272,6 +293,111 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
 
 
 # =============================================================================
+# too-short-for-new-footage resolution (task 11)
+# =============================================================================
+# When a line too short to stand on its own is given a BRAND-NEW footage type
+# (stock / wikipedia / map / ...), the tagger offers ways to fix it instead of
+# letting the clip just flash. Each option is ONE atomic mutation (so it's one
+# undo away). The heavy lifting reuses split_line / join_to_above / apply_patch.
+
+def _borrow_words_from_previous(data: Dict[str, dict], line: str
+                                ) -> "tuple[Optional[str], Optional[str]]":
+    """Move just enough trailing words from the PREVIOUS line onto the front
+    of `line` so it clears the new-footage threshold. `line` keeps its own
+    row (type/term); the previous line keeps its row but shrinks. Returns
+    (error, new_line_text) — new_line_text is the line's key after the move."""
+    lines = list(data)
+    if line not in data:
+        return "unknown line", None
+    i = lines.index(line)
+    if i == 0:
+        return "the first line has nothing before it", None
+    above = lines[i - 1]
+    above_words = above.split()
+    need = words_needed_for_new_footage(line)
+    if need <= 0:
+        return None, line                      # already long enough
+    if len(above_words) - need < 1:
+        return ("the previous scene is too short to spare "
+                f"{need} word(s)"), None
+    moved = above_words[-need:]
+    new_above = " ".join(above_words[:-need]).strip()
+    new_line = (" ".join(moved) + " " + line).strip()
+    if not new_above:
+        return "that would empty the previous scene", None
+    if new_above in data or new_line in data:
+        return "that move would duplicate an existing line", None
+    above_row = copy.deepcopy(data[above])
+    above_row.pop("_split_before", None)       # the split point moved
+    line_row = copy.deepcopy(data[line])
+    line_row.pop("_split_before", None)
+    line_row["rule_ids"] = list(dict.fromkeys(
+        list(data[above].get("rule_ids", [])) + list(line_row.get("rule_ids", []))))
+    out = {}
+    for key, row in data.items():
+        if key == above:
+            out[new_above] = above_row
+        elif key == line:
+            out[new_line] = line_row
+        else:
+            out[key] = row
+    data.clear()
+    data.update(out)
+    return None, new_line
+
+
+def resolve_short_scene(data: Dict[str, dict], line: str, choice: str,
+                        media_type: str, modifiers: list) -> Optional[str]:
+    """Apply the chosen fix for a too-short brand-new-footage line. `choice`
+    is one of edit_prev / join_prev / borrow_prev / next_edit / join_next /
+    override; media_type + modifiers are the type the user was TRYING to pick
+    (re-applied for the choices that keep this line as its own scene)."""
+    if line not in data:
+        return "unknown line"
+    lines = list(data)
+    i = lines.index(line)
+    nxt = lines[i + 1] if i + 1 < len(lines) else None
+    pend = {"media_type": media_type, "modifiers": list(modifiers or [])}
+
+    if choice == "edit_prev":                  # (1) hold + decorate the prev image
+        if i == 0:
+            return "there is no previous scene to edit"
+        mods = list(dict.fromkeys(list(modifiers or []) + ["decorate"]))
+        return apply_patch(data, line,
+                           {"media_type": "hold_previous", "modifiers": mods})
+
+    if choice == "join_prev":                  # (2) merge this INTO the previous
+        return join_to_above(data, line)
+
+    if choice == "borrow_prev":                # (3) take words from the previous
+        err, new_line = _borrow_words_from_previous(data, line)
+        if err:
+            return err
+        return apply_patch(data, new_line, pend)
+
+    if choice == "next_edit":                  # (4) make the NEXT scene hold this
+        if nxt is None:
+            return "there is no scene after this one"
+        err = apply_patch(data, line, pend)    # this line keeps the new footage
+        if err:
+            return err
+        return apply_patch(data, nxt, {"media_type": "hold_previous"})
+
+    if choice == "join_next":                  # (5) merge the NEXT scene into this
+        if nxt is None:
+            return "there is no scene after this one"
+        err = apply_patch(data, line, pend)    # set this line's type FIRST so the
+        if err:                                # merged row keeps it (this = above)
+            return err
+        return join_to_above(data, nxt)
+
+    if choice == "override":                   # (X) use the quick new footage anyway
+        return apply_patch(data, line, pend)
+
+    return "unknown short-scene choice"
+
+
+# =============================================================================
 # state + server
 # =============================================================================
 
@@ -300,6 +426,9 @@ class _State:
                         for line in self.data}
         self.catalog = build_catalog()
         self.backed_up = False
+        # per-action undo: each successful mutation pushes the PRE-state, so
+        # the user can click an option and immediately revert it (task 11).
+        self.undo_stack: List[Dict[str, dict]] = []
         # set by the browser's finish button (POST /finish) — lets
         # run_manual_tagging() block only until the user is actually done,
         # instead of forever (the standalone CLI still just uses Ctrl-C).
@@ -313,7 +442,13 @@ class _State:
                 self.suggest[line] = _suggest_from_meta({}, line)
         return {"json_path": self.json_path.name,
                 "catalog": self.catalog,
+                "can_undo": bool(self.undo_stack),
+                # brand-new footage shorter than this many words just flashes;
+                # the UI offers the fix-it options when a new type is picked
+                # on a line below it (task 11).
+                "min_new_words": _MIN_NEW_WORDS,
                 "lines": [{"line": line, "row": row,
+                           "words": _word_count(line),
                            "suggest": self.suggest[line]}
                           for line, row in self.data.items()]}
 
@@ -331,6 +466,14 @@ class _State:
 
     def mutate(self, op: str, req: dict) -> Optional[str]:
         self._checkpoint()
+        if op == "undo":
+            if not self.undo_stack:
+                return "nothing to undo"
+            self.data = self.undo_stack.pop()
+            self._commit()
+            return None
+        # snapshot BEFORE the change so a failed op leaves no undo entry
+        snapshot = copy.deepcopy(self.data)
         if op == "save":
             err = apply_patch(self.data, req.get("line", ""),
                               req.get("patch", {}))
@@ -339,10 +482,18 @@ class _State:
                              int(req.get("index", 0)))
         elif op == "join":
             err = join_to_above(self.data, req.get("line", ""))
+        elif op == "shortfix":
+            err = resolve_short_scene(
+                self.data, req.get("line", ""), req.get("choice", ""),
+                req.get("media_type", ""), req.get("modifiers", []))
         else:
             err = "unknown operation"
         if err:
+            self.data = snapshot            # roll back any partial mutation
             return err
+        self.undo_stack.append(snapshot)
+        if len(self.undo_stack) > 100:
+            self.undo_stack.pop(0)
         self._commit()
         return None
 
@@ -421,6 +572,19 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
  #finish{padding:7px 18px;border-radius:8px;border:1px solid #3a7a4a;background:#234a30;color:#bfe8c8;cursor:pointer;font-size:14px}
  #finish.ready{background:#2e7d32;color:#fff;border-color:#66bb6a;font-size:16px;padding:9px 26px;animation:pulse 1.6s infinite}
  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #2e7d3266}50%{box-shadow:0 0 0 9px #2e7d3200}}
+ #undo{padding:7px 14px;border-radius:8px;border:1px solid #4a5060;background:#232733;color:#cdd;cursor:pointer;font-size:14px}
+ #undo:disabled{opacity:.4;cursor:default}
+ #shortcard{background:#2a2012;border:2px solid #c9a13b}
+ #shortcard h3{color:#f0c95a}
+ #shortmsg{color:#e8dcc0;font-size:14px;line-height:1.5;margin:0 0 12px}
+ #shortmsg b{color:#fff}
+ #shortopts button{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;border-radius:8px;border:1px solid #4a5262;background:#20242e;color:#dfe4ee;cursor:pointer;font-size:13.5px}
+ #shortopts button:hover{background:#2b3444;border-color:#c9a13b}
+ #shortopts button.rec{border-color:#66bb6a;background:#1e3324}
+ #shortopts button.rec:hover{background:#254a30}
+ #shortopts button.ovr{border-style:dashed;color:#c9a}
+ #shortopts button:disabled{opacity:.4;cursor:not-allowed;background:#20242e;border-color:#3a4150}
+ #shortcancel{margin-top:10px;padding:7px 14px;border-radius:8px;border:1px solid #4a5060;background:#191c24;color:#aab;cursor:pointer;font-size:13px}
  #wrap{display:flex;height:calc(100vh - 44px)}
  #list{width:48%;overflow-y:auto;padding:8px;box-sizing:border-box}
  .navbtn{display:block;width:100%;padding:7px;margin:6px 0;border:1px solid #3a4356;border-radius:7px;background:#20242e;color:#aeb6c6;cursor:pointer;font-size:13px}
@@ -558,6 +722,7 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
   row's end for the join-to-above arrow — the preview shows exactly what you'll get.</p>
   <div id="keycards"></div>
  </details>
+ <button id="undo" onclick="undo()" disabled title="revert the last change">↶ undo</button>
  <button id="finish" onclick="finish()">finish</button>
 </div>
 <div id="wrap">
@@ -565,6 +730,14 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
  <div id="editor">
   <button id="mback" onclick="closeEditor()">‹</button>
   <div id="curline"><small>YOU ARE TAGGING THIS LINE</small><span id="curlinetxt"></span></div>
+  <div class="card" id="shortcard" style="display:none">
+    <div class="head"><h3>⚠ too short for new footage</h3></div>
+    <div class="body">
+      <p id="shortmsg"></p>
+      <div id="shortopts"></div>
+      <button id="shortcancel" onclick="closeShort()">cancel — pick a different media type</button>
+    </div>
+  </div>
   <div class="card" id="mediacard">
     <div class="head" onclick="expand('media')">
       <h3>step 1 · media type</h3><span class="req">required — pick one</span>
@@ -669,7 +842,9 @@ function updateFinish(){
  const all=D.lines.every(lineDone);
  $('#finish').classList.toggle('ready',all);
  $('#finish').textContent=all?'✓ finish':'finish';
+ $('#undo').disabled=!D.can_undo;
 }
+async function undo(){await post('/undo',{},D.lines[sel]&&D.lines[sel].line);}
 function renderList(){
  const el=$('#list'); el.innerHTML='';
  const nav=(dir,label,key)=>{
@@ -776,7 +951,7 @@ async function doSplit(line,b){
 function joinGhost(i,on){
  const rows=document.querySelectorAll('#list .row');
  const cur=rows[i], prev=rows[i-1];
- if(!prev)return;
+ if(!cur||!prev)return;
  cur.classList.toggle('joinghost',on);
  const t=prev.querySelector('.ltxt');
  const g=prev.querySelector('.ghostadd');
@@ -847,6 +1022,7 @@ async function mobileSplitGo(){
 function focusLine(i){
  sel=Math.max(0,Math.min(i,D.lines.length-1));
  step='media'; kbType=-1;
+ closeShort();                       // moving to another line dismisses the panel
  renderList(); renderEditor();
  const r=document.querySelectorAll('#list .row')[sel];
  if(r)r.scrollIntoView({block:'nearest'});
@@ -994,10 +1170,65 @@ function debSave(){clearTimeout(tmr);tmr=setTimeout(()=>{
       D.lines[sel].line,true);
  if(!D.lines[sel].row.media_type)flash('#mediacard');},400);}
 async function pick(name){const L=D.lines[sel];
+ const b=baseOf(name);
+ // BRAND-NEW footage on a line too short to stand on its own would just
+ // flash — offer the fix-it options instead of applying it (task 11).
+ if(b&&b.new_footage&&L.words<D.min_new_words){openShort(name);return;}
+ closeShort();                       // a fine choice — drop any open guard panel
  await post('/save',{line:L.line,patch:{media_type:name}},L.line);
  const t2=$('#tostep2');
  t2.style.display='inline-block'; t2.classList.add('glow');
  flash('#termcard');}
+// ---- too-short-for-new-footage panel (task 11) ------------------------------
+let shortPend=null;   // {name, mods} of the new type the user tried to pick
+function openShort(name){
+ const L=D.lines[sel];
+ shortPend={name, mods:(L.row.modifiers||[]).slice()};
+ const need=Math.max(1,D.min_new_words-L.words);
+ const first=sel===0, last=sel>=D.lines.length-1;
+ // can we borrow enough words from the previous line? (leave it ≥1 word)
+ const prevWords=first?0:(D.lines[sel-1].words||0);
+ const canBorrow=!first&&(prevWords-need>=1);
+ $('#shortmsg').innerHTML=
+   `That sentence is too short to have new footage.<br>`+
+   `It will just flash on the screen for the viewer.<br>`+
+   `You need <b>${need}</b> more word${need===1?'':'s'} to make the scene `+
+   `long enough to stand by itself.<br><br>Your options:`;
+ const opt=(cls,label,choice,dis,hoverI)=>
+   `<button class="${cls}"${dis?' disabled':''} `+
+   `onclick="applyShort('${choice}')"`+
+   (hoverI!==undefined&&!dis?` onmouseenter="shortHover(${hoverI},true)" `+
+     `onmouseleave="shortHover(${hoverI},false)"`:'')+
+   `>${label}${dis?' <i style="opacity:.7">(not available here)</i>':''}</button>`;
+ $('#shortopts').innerHTML=
+   opt('rec','(1) Edit and add to the previous scene  [recommended]',
+       'edit_prev',first)+
+   opt('','(2) Join this scene to the previous scene, thus making the '+
+       'previous scene be on the screen for longer','join_prev',first,sel)+
+   opt('','(3) Split the previous scene, join it to the start of this scene',
+       'borrow_prev',!canBorrow)+
+   opt('','(4) Make the scene after this scene be an edit of this scene',
+       'next_edit',last)+
+   opt('','(5) Join [at least part of] the scene after this scene to this '+
+       'scene','join_next',last,last?undefined:sel+1)+
+   opt('ovr','(X) Manual override and use quick stock anyway','override',false);
+ $('#shortcard').style.display='block';
+ $('#shortcard').scrollIntoView({block:'nearest'});
+}
+function closeShort(){shortPend=null;$('#shortcard').style.display='none';
+ // clear any leftover hover preview in the list
+ document.querySelectorAll('#list .joinghost').forEach(r=>r.classList.remove('joinghost'));
+ document.querySelectorAll('#list .ghostadd').forEach(g=>g.remove());}
+function shortHover(i,on){joinGhost(i,on);}   // reuse the join-to-above preview
+async function applyShort(choice){
+ if(!shortPend)return;
+ const L=D.lines[sel];
+ const ok=await post('/shortfix',
+   {line:L.line,choice,media_type:shortPend.name,modifiers:shortPend.mods},
+   L.line);
+ if(ok){shortPend=null;$('#shortcard').style.display='none';
+   toast('applied ✓ — use ↶ undo to revert');}
+}
 async function toggleMod(name){const L=D.lines[sel];
  const mods=(L.row.modifiers||[]).slice();
  const k=mods.indexOf(name); if(k>=0)mods.splice(k,1); else mods.push(name);
