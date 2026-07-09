@@ -51,6 +51,7 @@ import re
 import shutil
 import sys
 import threading
+import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -81,6 +82,54 @@ except Exception:
 
     def words_needed_for_new_footage(text: str) -> int:
         return max(0, _MIN_NEW_WORDS - len(re.findall(r"[\w']+", text or "")))
+
+
+# Keyword recommendation engine (memory + "jar of nutmeg" pairing + the
+# pronoun panel). Optional in the same spirit as the CONFIG import above:
+# if VISUAL_RECOMMENDER.py is missing the tagger still runs, the chips
+# simply fall back to the plain per-line suggestions.
+try:
+    from VISUAL_RECOMMENDER import suggestions_for_all_lines
+    _HAS_RECOMMENDER = True
+except Exception:
+    _HAS_RECOMMENDER = False
+
+    def suggestions_for_all_lines(lines, confirmed_terms=None):
+        return [{"current": [], "singles": [], "pairs": [], "pronouns": []}
+                for _ in (lines or [])]
+
+
+# ---- recommendation timing estimates ---------------------------------------
+# Past full-recompute timings, persisted so the loading screen can show an
+# honest countdown: recommender_timings.json = [{"words": N, "seconds": S}].
+_TIMINGS_PATH = Path(__file__).resolve().parent / "recommender_timings.json"
+_DEFAULT_BASE_S = 8.0          # cold start (WordNet corpus load etc.)
+_DEFAULT_PER_WORD_S = 0.015
+
+
+def _load_timings() -> list:
+    try:
+        return json.loads(_TIMINGS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+
+def _record_timing(words: int, seconds: float) -> None:
+    try:
+        rows = _load_timings()
+        rows.append({"words": int(words), "seconds": round(seconds, 2)})
+        _TIMINGS_PATH.write_text(json.dumps(rows[-20:]), encoding="utf-8")
+    except Exception:                              # pragma: no cover
+        pass
+
+
+def _estimate_seconds(words: int) -> float:
+    rows = [r for r in _load_timings() if r.get("words")]
+    if not rows:
+        return _DEFAULT_BASE_S + _DEFAULT_PER_WORD_S * words
+    rates = sorted(r["seconds"] / max(1, r["words"]) for r in rows)
+    rate = rates[len(rates) // 2]                  # median s/word
+    return max(1.0, min(300.0, rate * words + 0.5))
 
 
 def _word_count(text: str) -> int:
@@ -302,10 +351,12 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
 
 def _borrow_words_from_previous(data: Dict[str, dict], line: str
                                 ) -> "tuple[Optional[str], Optional[str]]":
-    """Move just enough trailing words from the PREVIOUS line onto the front
-    of `line` so it clears the new-footage threshold. `line` keeps its own
-    row (type/term); the previous line keeps its row but shrinks. Returns
-    (error, new_line_text) — new_line_text is the line's key after the move."""
+    """DEPRECATED — no longer called. Option (3) used to auto-guess a split
+    point and move words; that removed the user's control over WHERE the
+    previous scene is cut. It is now a manual handoff (the frontend arms
+    split mode on the previous line), so this helper is retained only for
+    reference / any external callers and is not wired into resolve_short_scene.
+    """
     lines = list(data)
     if line not in data:
         return "unknown line", None
@@ -369,11 +420,13 @@ def resolve_short_scene(data: Dict[str, dict], line: str, choice: str,
     if choice == "join_prev":                  # (2) merge this INTO the previous
         return join_to_above(data, line)
 
-    if choice == "borrow_prev":                # (3) take words from the previous
-        err, new_line = _borrow_words_from_previous(data, line)
-        if err:
-            return err
-        return apply_patch(data, new_line, pend)
+    if choice == "borrow_prev":                # (3) MANUAL: user splits the
+        if i == 0:                             #     previous scene themselves
+            return "there is no previous scene to split"
+        # no mutation here — the frontend navigates to the previous line
+        # and arms split mode so the USER chooses the cut point, then joins
+        # the tail onto this scene. (See the "manual" branch in do_POST.)
+        return None
 
     if choice == "next_edit":                  # (4) make the NEXT scene hold this
         if nxt is None:
@@ -383,13 +436,12 @@ def resolve_short_scene(data: Dict[str, dict], line: str, choice: str,
             return err
         return apply_patch(data, nxt, {"media_type": "hold_previous"})
 
-    if choice == "join_next":                  # (5) merge the NEXT scene into this
-        if nxt is None:
+    if choice == "join_next":                  # (5) MANUAL: user splits the
+        if nxt is None:                        #     next scene, joins part here
             return "there is no scene after this one"
-        err = apply_patch(data, line, pend)    # set this line's type FIRST so the
-        if err:                                # merged row keeps it (this = above)
-            return err
-        return join_to_above(data, nxt)
+        # no mutation — frontend navigates to the next line and arms split
+        # so the user picks how much to bring back. (manual branch, do_POST.)
+        return None
 
     if choice == "override":                   # (X) use the quick new footage anyway
         return apply_patch(data, line, pend)
@@ -434,12 +486,83 @@ class _State:
         # instead of forever (the standalone CLI still just uses Ctrl-C).
         self.finished_event = threading.Event()
         recompute(self.data)
+        # ---- background recommendation worker ---------------------------
+        # Computing suggestions (WordNet lookups, 37k-word ratings ...)
+        # can take seconds on a cold start.  It must NEVER run inside a
+        # request: /data serves whatever is ready instantly (keyed by line
+        # TEXT, so unchanged lines keep their chips through splits/joins),
+        # and a daemon thread recomputes whenever the data changes.  This
+        # is also what fixes the "unknown line" popups: a slow /data left
+        # the browser acting on a stale line list.
+        self._rec_lock = threading.Lock()
+        self._recs_by_text: Dict[str, dict] = {}
+        self._rec_state = "loading" if _HAS_RECOMMENDER else "ready"
+        self._rec_gen = 0
+        self._rec_started = time.time()
+        self._rec_words = sum(_word_count(ln) for ln in self.data)
+        self._kick_recompute()
+
+    _EMPTY_REC = {"current": [], "singles": [], "pairs": [], "pronouns": []}
+
+    def _kick_recompute(self) -> None:
+        if not _HAS_RECOMMENDER:
+            return
+        with self._rec_lock:
+            self._rec_gen += 1
+            self._rec_state = "loading"
+            self._rec_started = time.time()
+            self._rec_words = sum(_word_count(ln) for ln in self.data)
+            if getattr(self, "_rec_thread", None) is not None \
+                    and self._rec_thread.is_alive():
+                return       # ONE worker: it loops until it has published
+                             # the newest generation — never a thundering
+                             # herd of concurrent cold recomputes
+            self._rec_thread = threading.Thread(target=self._rec_worker,
+                                                daemon=True)
+            self._rec_thread.start()
+
+    def _rec_worker(self) -> None:
+        t_first = time.time()      # what the loading screen experiences:
+        while True:                # total wall time until first publish
+            with self._rec_lock:
+                gen = self._rec_gen
+                lines = list(self.data)
+                terms = {i: (row.get("search_term") or "").strip()
+                         for i, row in enumerate(self.data.values())}
+            try:
+                recs = suggestions_for_all_lines(
+                    lines, confirmed_terms={i: t for i, t in terms.items()
+                                            if t})
+            except Exception:                      # pragma: no cover
+                recs = [dict(self._EMPTY_REC) for _ in lines]
+            with self._rec_lock:
+                if gen != self._rec_gen:
+                    continue          # edits landed meanwhile — go again
+                self._recs_by_text = dict(zip(lines, recs))
+                self._rec_state = "ready"
+                break
+        elapsed = time.time() - t_first
+        if elapsed > 1.0:
+            # only COLD runs inform the loading-screen estimate — a warm
+            # 0.0s recompute would corrupt future countdowns
+            _record_timing(sum(_word_count(ln) for ln in lines), elapsed)
+
+    def _rec_status(self) -> dict:
+        if self._rec_state == "ready":
+            return {"state": "ready", "eta_seconds": 0}
+        est = _estimate_seconds(self._rec_words)
+        remaining = max(1, int(round(est - (time.time()
+                                            - self._rec_started))))
+        return {"state": "loading", "eta_seconds": remaining}
 
     def payload(self) -> dict:
         # suggestions for lines created by splits/joins fall back to words
         for line in self.data:
             if line not in self.suggest:
                 self.suggest[line] = _suggest_from_meta({}, line)
+        with self._rec_lock:
+            recs = self._recs_by_text
+            status = self._rec_status()
         return {"json_path": self.json_path.name,
                 "catalog": self.catalog,
                 "can_undo": bool(self.undo_stack),
@@ -447,9 +570,11 @@ class _State:
                 # the UI offers the fix-it options when a new type is picked
                 # on a line below it (task 11).
                 "min_new_words": _MIN_NEW_WORDS,
+                "recommend_status": status,
                 "lines": [{"line": line, "row": row,
                            "words": _word_count(line),
-                           "suggest": self.suggest[line]}
+                           "suggest": self.suggest[line],
+                           "recommend": recs.get(line, self._EMPTY_REC)}
                           for line, row in self.data.items()]}
 
     def _checkpoint(self) -> None:
@@ -471,6 +596,7 @@ class _State:
                 return "nothing to undo"
             self.data = self.undo_stack.pop()
             self._commit()
+            self._kick_recompute()
             return None
         # snapshot BEFORE the change so a failed op leaves no undo entry
         snapshot = copy.deepcopy(self.data)
@@ -495,6 +621,7 @@ class _State:
         if len(self.undo_stack) > 100:
             self.undo_stack.pop(0)
         self._commit()
+        self._kick_recompute()
         return None
 
     # (reason-logging was removed — split/join are direct)
@@ -578,6 +705,7 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
  #shortcard h3{color:#f0c95a}
  #shortmsg{color:#e8dcc0;font-size:14px;line-height:1.5;margin:0 0 12px}
  #shortmsg b{color:#fff}
+ #shortopts{max-height:340px;overflow-y:auto}
  #shortopts button{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;border-radius:8px;border:1px solid #4a5262;background:#20242e;color:#dfe4ee;cursor:pointer;font-size:13.5px}
  #shortopts button:hover{background:#2b3444;border-color:#c9a13b}
  #shortopts button.rec{border-color:#66bb6a;background:#1e3324}
@@ -585,6 +713,10 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
  #shortopts button.ovr{border-style:dashed;color:#c9a}
  #shortopts button:disabled{opacity:.4;cursor:not-allowed;background:#20242e;border-color:#3a4150}
  #shortcancel{margin-top:10px;padding:7px 14px;border-radius:8px;border:1px solid #4a5060;background:#191c24;color:#aab;cursor:pointer;font-size:13px}
+ #manualhint{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;display:none;align-items:center;gap:14px;max-width:560px;padding:12px 16px;border-radius:10px;background:#2a2012;border:1px solid #c9a13b;box-shadow:0 6px 22px #0009;color:#e8dcc0;font-size:13.5px;line-height:1.5}
+ #manualhint .mh-txt b{color:#f0c95a}
+ #manualhint button{flex:none;padding:6px 14px;border-radius:7px;border:1px solid #66bb6a;background:#1e3324;color:#bfe8c8;cursor:pointer;font-size:13px}
+ #manualhint button:hover{background:#254a30}
  #wrap{display:flex;height:calc(100vh - 44px)}
  #list{width:48%;overflow-y:auto;padding:8px;box-sizing:border-box}
  .navbtn{display:block;width:100%;padding:7px;margin:6px 0;border:1px solid #3a4356;border-radius:7px;background:#20242e;color:#aeb6c6;cursor:pointer;font-size:13px}
@@ -615,7 +747,7 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
  .info{display:inline-block;width:15px;height:15px;line-height:15px;text-align:center;border-radius:50%;background:#2c3342;color:#9ab;font-size:11px;cursor:help;margin-left:5px;font-style:normal}
  #curline{display:none;background:#26210f;border:2px solid var(--gold);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:17px}
  #curline small{display:block;color:#a99a6a;font-size:11px;margin-bottom:4px;letter-spacing:.06em}
- .card{border-radius:10px;margin:0 0 12px;overflow:hidden}
+ .card{overflow-y:scroll;border-radius:10px;margin:0 0 12px;}
  .card .head{padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
  .card .head h3{margin:0}
  .card .body{padding:0 14px 12px}
@@ -655,6 +787,18 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
  .chips .big.place{border-color:#5f9ec0;background:#202a33;color:#cfe0ee}
  .chips .small{padding:2px 9px;font-size:12px;border:1px solid #3a4356;background:#20242e;color:#aab}
  .chiplbl{color:#667;font-size:11px;margin:6px 6px 0 0;display:inline-block}
+ .chips .pair{padding:5px 12px;font-size:14px;border:1px solid var(--gold);background:#2a2412;color:#f0dfa0;font-weight:600}
+ .chips .pair:hover{background:#3a3218}
+ .chips .rec{padding:3px 10px;font-size:12.5px;border:1px solid #7a6a9a;background:#241f2e;color:#cabfe0}
+ .chips .rec small{color:#8a7aaa;font-size:10px;margin-left:4px}
+ #pronounbox{display:none;margin-top:8px;border:1px solid #3a4356;border-radius:8px;background:#191c24;max-height:96px;overflow-y:auto;padding:4px 8px}
+ #pronounbox .plbl{color:#667;font-size:11px;display:block;margin:2px 0}
+ .prow{display:flex;gap:8px;align-items:baseline;padding:2px 4px;border-radius:5px;cursor:pointer;font-size:12.5px}
+ .prow:hover{background:#242938}
+ .prow .pn{color:#8fb4d8;min-width:4.5em}
+ .prow .arrow{color:#556}
+ .prow .cand{color:#d8cfa8;flex:1}
+ .prow .pp{color:#7a8}
  #nextbtn{display:block;visibility:hidden;margin:0 0 12px;padding:10px 20px;border-radius:8px;border:0;background:var(--gold);color:#222;font-weight:700;cursor:pointer;font-size:15px}
  #nextbtn.amber{background:#c9a13b}
  #nextbtn.fin{background:#2e7d32;color:#fff}
@@ -708,7 +852,20 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
   #joinconfirm .yes{background:var(--gold);color:#222;font-weight:700}
   #joinconfirm .no{background:#333;color:#ddd}
  }
+ #loadscreen{position:fixed;inset:0;background:#16181dee;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+ #loadscreen .spin{width:46px;height:46px;border:4px solid #2a2e38;border-top-color:var(--gold);border-radius:50%;animation:lspin 0.9s linear infinite}
+ @keyframes lspin{to{transform:rotate(360deg)}}
+ #loadscreen .lmsg{color:#cfd4e0;font-size:16px}
+ #loadscreen .lsub{color:#778;font-size:13px}
+ #loadscreen .leta{color:var(--gold);font-size:26px;font-variant-numeric:tabular-nums}
+ .recupdating{color:#8a7aaa;font-size:11px;font-style:italic;margin-left:6px}
 </style></head><body>
+<div id="loadscreen">
+ <div class="spin"></div>
+ <div class="lmsg">preparing keyword suggestions&hellip;</div>
+ <div class="leta" id="leta"></div>
+ <div class="lsub">first run builds the word-knowledge caches &mdash; later runs are faster</div>
+</div>
 <div id="bar">
  <details><summary>key — groups, colours, stacking (hover any ⓘ for its card)</summary>
   <p class="hint">pick ONE base media type per line. NEW puts brand-new material on screen
@@ -764,6 +921,7 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
         <div id="ghost"></div>
       </div>
       <div class="chips" id="chips"></div>
+      <div id="pronounbox"></div>
     </div>
   </div>
   <div class="card" id="stampcard" style="display:none">
@@ -809,7 +967,7 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
 </div>
 <script>
 let D=null, sel=0, scissors=false, pendJoin=-1, msLine=null, msB=1;
-let step='media', kbType=-1;
+let step='media', kbType=-1, ghostDismissed=false;
 const $=q=>document.querySelector(q);
 const isMobile=()=>window.innerWidth<=700;
 const PLACEHOLDER='data:image/svg+xml;utf8,'+encodeURIComponent(
@@ -1021,7 +1179,8 @@ async function mobileSplitGo(){
 // ---- editor ------------------------------------------------------------------
 function focusLine(i){
  sel=Math.max(0,Math.min(i,D.lines.length-1));
- step='media'; kbType=-1;
+ step='media'; kbType=-1; ghostDismissed=false;   // fresh line: ghost is
+                                                  // offered again by default
  closeShort();                       // moving to another line dismisses the panel
  renderList(); renderEditor();
  const r=document.querySelectorAll('#list .row')[sel];
@@ -1102,11 +1261,37 @@ function renderTerm(){
  const s=L.suggest; let chips='';
  const add=(lbl,arr,cls)=>{if(arr&&arr.length){chips+=`<span class="chiplbl">${lbl}:</span>`+
    arr.map(w=>`<button tabindex="-1" class="${cls}" onclick="chip('${esc(w).replace(/'/g,"\\'")}')">${esc(w)}</button>`).join('');}};
+ // memory-based recommendations (VISUAL_RECOMMENDER): combos first — a
+ // current word paired with something remembered ("Jar of Nutmeg") — then
+ // high-scoring words from previous entries, each with its score.
+ const R=L.recommend||{};
+ if(R.pairs&&R.pairs.length){chips+='<span class="chiplbl">combos:</span>'+
+   R.pairs.map(p=>`<button tabindex="-1" class="pair" title="${esc(p.why||'')}"
+     onclick="chip('${esc(p.term).replace(/'/g,"\\'")}')">✦ ${esc(p.term)}</button>`).join('');}
+ if(R.singles&&R.singles.length){chips+='<span class="chiplbl">from memory:</span>'+
+   R.singles.map(x=>`<button tabindex="-1" class="rec" title="${esc(x.why||'')}"
+     onclick="chip('${esc(x.term).replace(/'/g,"\\'")}')">${esc(x.term)}<small>${x.score.toFixed(1)}</small></button>`).join('');}
  add('places',s.places,'big place'); add('names',s.names,'big place');
  add('nouns',s.nouns,'big'); add('keywords',s.keywords,'small'); add('words',s.words,'small');
+ if(D.recommend_status&&D.recommend_status.state==='loading')
+   chips+='<span class="recupdating">updating suggestions\u2026</span>';
  $('#chips').innerHTML=chips||'<span class="chiplbl">(no extracted suggestions for this line)</span>';
+ renderPronouns(R.pronouns||[]);
  renderStamp(L);
  renderNext(L);
+}
+function renderPronouns(rows){
+ // the small scrollable panel:  'it' (2) → saucepan (0.20)
+ const box=$('#pronounbox');
+ if(!rows.length){box.style.display='none';box.innerHTML='';return;}
+ box.innerHTML='<span class="plbl">this line\u2019s abstract words probably point at\u2026 (click to use)</span>'+
+   rows.map(r=>{
+     const n=r.occurrence>1?` (${r.occurrence})`:'';
+     return `<div class="prow" onclick="chip('${esc(r.candidate).replace(/'/g,"\\'")}')">
+       <span class="pn">'${esc(r.pronoun)}'${n}</span><span class="arrow">\u2192</span>
+       <span class="cand">${esc(r.candidate)}</span><span class="pp">(${r.prob.toFixed(2)})</span></div>`;
+   }).join('');
+ box.style.display='block';
 }
 function renderStamp(L){
  const card=$('#stampcard'); const need=stampNeeded(L);
@@ -1122,7 +1307,15 @@ function renderStamp(L){
  hookInfos($('#stamppanel'));
 }
 async function pickStamp(name){const L=D.lines[sel];
- await post('/save',{line:L.line,patch:{stamp_source:name}},L.line);}
+ await post('/save',{line:L.line,patch:{stamp_source:name}},L.line);
+ // once the stamp source is chosen the line is usually DONE — behave like
+ // step 2: send focus back to the term field so the next Tab jumps to the
+ // next line instead of cycling through the remaining stamp buttons.
+ const done=lineDone(D.lines[sel]);
+ const t=$('#term');
+ if(done){ if(t){t.focus();} }
+ else if(t){t.focus();}
+}
 async function toggleStampDeco(){const L=D.lines[sel];
  await post('/save',{line:L.line,patch:{stamp_decorate:!L.row.stamp_decorate}},L.line);}
 function renderNext(L){
@@ -1142,20 +1335,33 @@ function updateGhost(){
  const L=D.lines[sel]; const g=$('#ghost');
  const focused=document.activeElement===$('#term');
  if(!$('#term').value && L.suggest.ghost && focused){
-   g.innerHTML=esc(L.suggest.ghost)+'<span id="tabpill">tab ⇥ to accept</span>';
+   g.innerHTML=esc(L.suggest.ghost)+'<span id="tabpill">tab ⇥ accept · → skip</span>';
    g.style.display='block';
  } else g.style.display='none';
 }
 $('#term').addEventListener('focus',updateGhost);
 $('#term').addEventListener('blur',()=>setTimeout(updateGhost,120));
 $('#term').addEventListener('input',()=>{updateGhost();debSave();});
+// dismiss the ghost suggestion WITHOUT accepting it: press → (right arrow)
+// while the field is empty. Handy when you're e.g. just decorating the
+// previous scene and don't want the auto-suggested term at all.
 $('#term').addEventListener('keydown',e=>{
+ if(e.key==='ArrowRight' && !$('#term').value && D.lines[sel].suggest.ghost){
+   ghostDismissed=true; $('#ghost').style.display='none'; e.preventDefault();
+   return;
+ }
  if(e.key==='Tab'&&e.shiftKey){e.preventDefault();expand('media');return;}
  if(e.key!=='Tab')return;
- if(!$('#term').value&&D.lines[sel].suggest.ghost){
+ // accept the ghost on Tab ONLY if it hasn't been dismissed this visit
+ if(!$('#term').value&&D.lines[sel].suggest.ghost&&!ghostDismissed){
    e.preventDefault();$('#term').value=D.lines[sel].suggest.ghost;
    updateGhost();debSave();return;}
  const L=D.lines[sel];
+ // line already satisfied (has type + either a term or an optional-term
+ // type, and any needed stamp source is chosen) -> Tab goes to next line,
+ // exactly like finishing step 2
+ if(lineDone(L)){
+   e.preventDefault();$('#nextbtn').click();return;}
  if(L.row.media_type&&$('#term').value.trim()){
    e.preventDefault();
    if(stampNeeded(L,$('#term').value)&&!L.row.stamp_source){
@@ -1186,14 +1392,11 @@ function openShort(name){
  shortPend={name, mods:(L.row.modifiers||[]).slice()};
  const need=Math.max(1,D.min_new_words-L.words);
  const first=sel===0, last=sel>=D.lines.length-1;
- // can we borrow enough words from the previous line? (leave it ≥1 word)
- const prevWords=first?0:(D.lines[sel-1].words||0);
- const canBorrow=!first&&(prevWords-need>=1);
  $('#shortmsg').innerHTML=
-   `That sentence is too short to have new footage.<br>`+
-   `It will just flash on the screen for the viewer.<br>`+
+   `That sentence is too short to have new footage.`+
+   `It will just flash on the screen for the viewer.`+
    `You need <b>${need}</b> more word${need===1?'':'s'} to make the scene `+
-   `long enough to stand by itself.<br><br>Your options:`;
+   `long enough to stand by itself.`;
  const opt=(cls,label,choice,dis,hoverI)=>
    `<button class="${cls}"${dis?' disabled':''} `+
    `onclick="applyShort('${choice}')"`+
@@ -1206,7 +1409,7 @@ function openShort(name){
    opt('','(2) Join this scene to the previous scene, thus making the '+
        'previous scene be on the screen for longer','join_prev',first,sel)+
    opt('','(3) Split the previous scene, join it to the start of this scene',
-       'borrow_prev',!canBorrow)+
+       'borrow_prev',first)+
    opt('','(4) Make the scene after this scene be an edit of this scene',
        'next_edit',last)+
    opt('','(5) Join [at least part of] the scene after this scene to this '+
@@ -1223,21 +1426,61 @@ function shortHover(i,on){joinGhost(i,on);}   // reuse the join-to-above preview
 async function applyShort(choice){
  if(!shortPend)return;
  const L=D.lines[sel];
+ // Options 3 and 5 are MANUAL: nothing is auto-applied. We just take the
+ // user to the right line with split mode ready and tell them what to do —
+ // THEY choose the cut point (and the join), which is the whole point.
+ if(choice==='borrow_prev'||choice==='join_next'){
+   const target=choice==='borrow_prev'?sel-1:sel+1;
+   if(target<0||target>=D.lines.length){
+     alert(choice==='borrow_prev'?'there is no previous scene to split'
+                                  :'there is no scene after this one');
+     return;
+   }
+   shortPend=null;$('#shortcard').style.display='none';
+   const verb=choice==='borrow_prev'
+     ? 'Split the <b>previous</b> scene where you like, then use its ↑ join '+
+       'button to attach the tail to <b>this</b> scene.'
+     : 'Split the <b>next</b> scene where you like, then join the part you '+
+       'want back onto <b>this</b> scene with its ↑ join button.';
+   focusLine(target);
+   showManualHint(verb);
+   return;
+ }
+ // (1)(2)(4)(X) are still one atomic, undoable mutation
  const ok=await post('/shortfix',
    {line:L.line,choice,media_type:shortPend.name,modifiers:shortPend.mods},
    L.line);
  if(ok){shortPend=null;$('#shortcard').style.display='none';
    toast('applied ✓ — use ↶ undo to revert');}
 }
+function showManualHint(html){
+ let h=$('#manualhint');
+ if(!h){h=document.createElement('div');h.id='manualhint';
+   document.body.appendChild(h);}
+ h.innerHTML=`<span class="mh-txt">${html}</span>`+
+   `<button onclick="document.getElementById('manualhint').remove()">got it</button>`;
+ h.style.display='flex';
+}
 async function toggleMod(name){const L=D.lines[sel];
  const mods=(L.row.modifiers||[]).slice();
  const k=mods.indexOf(name); if(k>=0)mods.splice(k,1); else mods.push(name);
  await post('/save',{line:L.line,patch:{modifiers:mods}},L.line);}
 async function post(url,body,keepLine,quietReload){
+ if(url!=='/save')clearTimeout(tmr);   // a pending debounced save would
+                                       // post the OLD line text after a
+                                       // split/join => "unknown line"
  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify(body)});
  const j=await r.json().catch(()=>({}));
- if(!r.ok){alert(j.error||'error');return false;}
+ if(!r.ok){
+   if((j.error||'')==='unknown line'){
+     // the browser's list was out of date (an edit landed while this
+     // click was in flight) — resync silently and let the user retry
+     await load(keepLine);
+     alert('the line list was out of date and has been refreshed \u2014 please try that again');
+     return false;
+   }
+   alert(j.error||'error');return false;}
  toast();
  if(quietReload){
    const cur=$('#term'), pos=cur.selectionStart, val=cur.value;
@@ -1296,7 +1539,37 @@ document.addEventListener('keydown',e=>{
          &&D.lines[sel].row.media_type){expand('term');e.preventDefault();}
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.info,#pop'))$('#pop').style.display='none';});
-load();
+// ---- boot with a loading screen ------------------------------------------
+// /data itself is instant; recommend_status says whether the background
+// suggestion worker has finished its first pass.  Until then: overlay +
+// countdown (server estimates from recommender_timings.json history).
+let etaLeft=0, etaTick=null;
+function showEta(){
+ const el=$('#leta');
+ el.textContent = etaLeft>0 ? `about ${etaLeft}s left` : 'almost done\u2026';
+}
+async function boot(){
+ D=await (await fetch('/data')).json();
+ const st=D.recommend_status||{state:'ready'};
+ if(st.state==='ready'){ $('#loadscreen').style.display='none';
+   sel=0; renderKey(); renderList(); renderEditor(); updateFinish(); return; }
+ etaLeft=st.eta_seconds||3; showEta();
+ etaTick=setInterval(()=>{etaLeft=Math.max(0,etaLeft-1);showEta();},1000);
+ const poll=async()=>{
+   try{ D=await (await fetch('/data')).json(); }catch(e){}
+   const s=(D.recommend_status||{}).state;
+   if(s==='ready'){
+     clearInterval(etaTick); $('#loadscreen').style.display='none';
+     sel=0; renderKey(); renderList(); renderEditor(); updateFinish();
+   } else {
+     if(D.recommend_status&&D.recommend_status.eta_seconds<etaLeft)
+       etaLeft=D.recommend_status.eta_seconds;
+     setTimeout(poll,1000);
+   }
+ };
+ setTimeout(poll,1000);
+}
+boot();
 </script></body></html>'''
 
 

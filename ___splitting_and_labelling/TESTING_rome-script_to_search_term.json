@@ -14,9 +14,9 @@
       1
     ]
   },
-  "But it burned in six.": {
-    "search_term": "",
-    "media_type": "",
+  "But it burned in": {
+    "search_term": "Rome",
+    "media_type": "stock",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -27,11 +27,53 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ]
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null
   },
-  "In 64 AD,": {
+  "six.": {
+    "search_term": "Rome",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1,
+      7
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null,
+    "_split_before": {
+      "text": "In",
+      "glue": " "
+    }
+  },
+  "In": {
+    "search_term": "Rome",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1,
+      7
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null
+  },
+  "64 AD,": {
     "search_term": "",
-    "media_type": "",
+    "media_type": "stock",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -42,7 +84,9 @@
     "music_fade_out": 0,
     "rule_ids": [
       7
-    ]
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null
   },
   "a fire started in": {
     "search_term": "fire",
@@ -76,8 +120,8 @@
       18
     ]
   },
-  "the Circus Maximus.": {
-    "search_term": "Circus Maximus",
+  "the Circus Maximus. Driven by": {
+    "search_term": "",
     "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
@@ -88,26 +132,14 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1
-    ]
-  },
-  "Driven by": {
-    "search_term": "",
-    "media_type": "",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
+      1,
       29
-    ]
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null
   },
   "wind,": {
-    "search_term": "wind",
+    "search_term": "",
     "media_type": "stock",
     "modifiers": [],
     "group_id": null,
@@ -120,7 +152,8 @@
     "rule_ids": [
       7
     ],
-    "stamp_source": null
+    "stamp_source": null,
+    "stamp_decorate": false
   },
   "this hungry blaze devoured": {
     "search_term": "fire",
@@ -138,7 +171,8 @@
     "rule_ids": [
       61
     ],
-    "stamp_source": "stock"
+    "stamp_source": "stock",
+    "stamp_decorate": false
   },
   "temples,": {
     "search_term": "temple",
@@ -240,7 +274,7 @@
     ]
   },
   "He blamed": {
-    "search_term": "",
+    "search_term": "Nero Nero",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -252,7 +286,9 @@
     "music_fade_out": 0,
     "rule_ids": [
       12
-    ]
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null
   },
   "a small religious sect, and": {
     "search_term": "",
