@@ -81,9 +81,7 @@
   "this little wrinkled seed was": {
     "search_term": "",
     "media_type": "stock",
-    "modifiers": [
-      "collage"
-    ],
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -160,8 +158,8 @@
     ]
   },
   "Nutmeg only grew": {
-    "search_term": "",
-    "media_type": "",
+    "search_term": "Nutmeg",
+    "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -224,9 +222,7 @@
   "modern-day Indonesia. If you were a": {
     "search_term": "",
     "media_type": "stock",
-    "modifiers": [
-      "collage"
-    ],
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -242,8 +238,8 @@
     ]
   },
   "European merchant, getting": {
-    "search_term": "",
-    "media_type": "",
+    "search_term": "European",
+    "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -273,9 +269,9 @@
   },
   "months,": {
     "search_term": "",
-    "media_type": "stock",
+    "media_type": "hold_previous",
     "modifiers": [
-      "collage"
+      "decorate"
     ],
     "group_id": null,
     "position": "1",
@@ -416,9 +412,7 @@
   "The Dutch and": {
     "search_term": "",
     "media_type": "stock",
-    "modifiers": [
-      "collage"
-    ],
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -524,8 +518,10 @@
   },
   "the British.": {
     "search_term": "British",
-    "media_type": "wikipedia",
-    "modifiers": [],
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -535,7 +531,8 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ]
+    ],
+    "stamp_source": "stock"
   },
   "That island was Manhattan.": {
     "search_term": "Manhattan",
