@@ -4,13 +4,18 @@ tasks:
 
 -------------
 
-1) - option for just 'blank' / 'random background' in the mediatype chooser 
+1) - option for just 'blank' and another additional 'random blank background' in the mediatype chooser 
 - blank is just white
-- 'random background' picks a random background from our backgrounds folder.
+- 'random background' picks a random background from our backgrounds folder (_BACKGROUNDS/).
 
 (you'll have to update to allow for these two new options... + impelement the fnucitonlaity for that..)
+in main.. config... the ___visuals... etc.
 
 .. (and in the ___splitting_and_labelling as well...)
+--> add it under 'NEW — brand-new material' in the media tagger etc... 
+etc.
+
+
 
 
 
