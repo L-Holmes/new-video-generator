@@ -1,62 +1,22 @@
 {
-  "If you open": {
-    "search_term": "open",
-    "media_type": "stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      12
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "your kitchen cupboard right now, you probably have": {
-    "search_term": "kitchen cupboard",
-    "media_type": "stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      12
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "a jar of": {
-    "search_term": "empty jar",
-    "media_type": "stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ],
-    "_split_before": {
-      "text": "nutmeg.",
-      "glue": " "
-    },
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "nutmeg.": {
+  "If you open your kitchen cupboard right now, you probably have": {
     "search_term": "",
-    "media_type": "hold_previous",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12
+    ]
+  },
+  "a jar of nutmeg.": {
+    "search_term": "jar nutmeg",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -71,10 +31,54 @@
     "stamp_decorate": false,
     "stamp_source": null
   },
-  "It costs about two dollars.": {
-    "search_term": "dollar",
+  "It": {
+    "search_term": "",
     "media_type": "wikipedia",
     "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1009,
+      18,
+      1
+    ]
+  },
+  "costs about": {
+    "search_term": "",
+    "media_type": "stock",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1009,
+      18,
+      1
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null,
+    "_split_before": {
+      "text": "t",
+      "glue": " "
+    }
+  },
+  "t": {
+    "search_term": "",
+    "media_type": "stock",
+    "modifiers": [
+      "decorate"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -90,8 +94,25 @@
     "stamp_decorate": false,
     "stamp_source": null
   },
+  "wo dollars.": {
+    "search_term": "",
+    "media_type": "wikipedia",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1009,
+      18,
+      1
+    ]
+  },
   "But in the 1600s,": {
-    "search_term": "16th century ",
+    "search_term": "",
     "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
@@ -105,12 +126,10 @@
       1001,
       18,
       7
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "this little wrinkled seed was": {
-    "search_term": "nutmeg ",
+    "search_term": "",
     "media_type": "stock",
     "modifiers": [],
     "group_id": null,
@@ -122,34 +141,9 @@
     "music_fade_out": 0,
     "rule_ids": [
       15
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
-  "the single most contested reso": {
-    "search_term": "contested",
-    "media_type": "hold_previous",
-    "modifiers": [
-      "decorate"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      39
-    ],
-    "stamp_decorate": false,
-    "stamp_source": "wikipedia",
-    "_split_before": {
-      "text": "urce on",
-      "glue": ""
-    }
-  },
-  "urce on": {
+  "the single most contested resource on": {
     "search_term": "",
     "media_type": "hold_previous",
     "modifiers": [
@@ -164,9 +158,7 @@
     "music_fade_out": 0,
     "rule_ids": [
       39
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "the planet.": {
     "search_term": "",

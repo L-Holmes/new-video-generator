@@ -1,20 +1,5 @@
 {
-  "If you open": {
-    "search_term": "",
-    "media_type": "",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      12
-    ]
-  },
-  "your kitchen cupboard right now, you probably have": {
+  "If you open your kitchen cupboard right now, you probably have": {
     "search_term": "",
     "media_type": "",
     "modifiers": [],
@@ -30,7 +15,7 @@
     ]
   },
   "a jar of nutmeg.": {
-    "search_term": "",
+    "search_term": "jar nutmeg",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -42,9 +27,32 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ]
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null
   },
-  "It costs about two dollars.": {
+  "It costs about t": {
+    "search_term": "",
+    "media_type": "wikipedia",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1009,
+      18,
+      1
+    ],
+    "_split_before": {
+      "text": "wo dollars.",
+      "glue": ""
+    }
+  },
+  "wo dollars.": {
     "search_term": "",
     "media_type": "wikipedia",
     "modifiers": [],
