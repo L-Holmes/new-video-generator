@@ -481,10 +481,12 @@ MODIFIERS: dict[str, dict] = {
     },
     "group": {
         "color": "#e6c15a",
-        "info": "this line is one cell of a group with its neighbours "
-        "(rule of n: mark 3 lines in a row and they render as 3 "
-        "cells side by side). a group OF stock, a group OF ai "
-        "stock — the base type stays whatever you picked.",
+        "info": "this line is one cell of a group with its neighbours: mark "
+        "3 lines in a row with the SAME base and they render as 3 "
+        "cells side by side, one appearing per line. every cell "
+        "brings its OWN picture, so every line needs its own search "
+        "term — a group OF stock, a group OF ai stock. 3 cells max "
+        "(the layout's size); the base stays whatever you picked.",
         "example": "examples/group.png",
     },
 }
@@ -925,6 +927,18 @@ def _validate_joint_layouts() -> None:
 
 
 _validate_joint_layouts()
+
+
+# How many CELLS a group of each base type has — i.e. how many consecutive
+# lines may share one group_id. This is the layout's own length, so "rule of
+# n" is really "rule of however many tiles the layout draws" (3 today, for
+# both bases). generate_joint_scenes hard-exits when a group has more members
+# than its layout has positions, so the tagger reads this and refuses to build
+# an over-long group in the first place — the failure moves from the middle of
+# a render to the moment you click.
+JOINT_GROUP_CELLS: dict[str, int] = {
+    mt.value: len(positions) for mt, positions in JOINT_LAYOUT_POSITIONS.items()
+}
 
 
 # ===========================================================================

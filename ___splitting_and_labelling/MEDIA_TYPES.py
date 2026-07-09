@@ -32,6 +32,7 @@ try:
     from CONFIG import (  # noqa: F401  (re-exports)
         COLLAGEABLE_TYPES,
         GROUPABLE_TYPES,
+        JOINT_GROUP_CELLS,
         MEDIA_TYPE_CATALOG as MEDIA_TYPES,
         MODIFIERS,
         STAMP_SOURCE_TYPES,

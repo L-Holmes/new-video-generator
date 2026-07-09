@@ -63,11 +63,13 @@ from MEDIA_TYPES import (COLLAGEABLE_TYPES, GROUPABLE_TYPES, MEDIA_TYPES,
 
 try:    # new names — re-export them from MEDIA_TYPES.py (one line) to keep
         # this in sync with CONFIG; the fallback mirrors CONFIG's defaults.
-    from MEDIA_TYPES import STAMP_SOURCE_TYPES, TERM_OPTIONAL_TYPES
+    from MEDIA_TYPES import (JOINT_GROUP_CELLS, STAMP_SOURCE_TYPES,
+                             TERM_OPTIONAL_TYPES)
 except ImportError:
     STAMP_SOURCE_TYPES = ("stock", "wikipedia", "ai_stock")
     TERM_OPTIONAL_TYPES = ("hold_previous", "background",
                            "blank", "random_background")
+    JOINT_GROUP_CELLS = {"stock": 3, "ai_stock": 3}
 
 # Brand-new-footage minimum-duration guard (task 11). MEDIA_TYPES already put
 # the repo root on sys.path, so the shared config resolves; fall back to safe
@@ -150,6 +152,7 @@ def build_catalog() -> dict:
     bases = [{"name": n, "label": n.replace("_", " "),
               "color": d["color"], "tags": [t.value for t in d["tags"]],
               "groupable": n in GROUPABLE_TYPES,
+              "group_cells": JOINT_GROUP_CELLS.get(n, 0),
               "collageable": n in COLLAGEABLE_TYPES,
               "term_optional": n in TERM_OPTIONAL_TYPES,
               "stampable": n in STAMP_SOURCE_TYPES,
@@ -207,6 +210,29 @@ def recompute(data: Dict[str, dict]) -> None:
             pos = 0
         row["position"] = str(pos if pos else 1)
         prev_gid = gid
+
+
+def group_run_size(data: Dict[str, dict], line: str, base: str) -> int:
+    """How many cells the group containing `line` would have, counting `line`
+    itself plus the unbroken run of neighbours that carry 'group' on the SAME
+    base. That contiguous same-base run is exactly what the compositor treats
+    as one group (CONFIG.group_scene_rows), and because assign_group_id always
+    merges into a touching group, adjacent grouped lines always share a
+    group_id — so the run and the group are the same thing."""
+    lines = list(data)
+    i = lines.index(line)
+    size = 1
+    for direction in (-1, 1):
+        j = i + direction
+        while 0 <= j < len(lines):
+            row = data[lines[j]]
+            if "group" not in (row.get("modifiers") or []):
+                break
+            if row.get("media_type") != base:
+                break
+            size += 1
+            j += direction
+    return size
 
 
 def assign_group_id(data: Dict[str, dict], line: str) -> None:
@@ -319,6 +345,21 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
         mods = [m for m in mods if m != drop]
     if mods != orig_mods:
         patch = dict(patch, modifiers=mods)
+    # A group can only hold as many lines as its layout has cells; a fourth
+    # would make generate_joint_scenes hard-exit mid-render. Refuse it here,
+    # while there is still a person to tell. Only checked when 'group' is
+    # newly gained (or the base changed under it) — never on a plain term save.
+    gained_group = "group" in mods and (
+        "group" not in (row.get("modifiers") or [])
+        or base != row.get("media_type")
+    )
+    if gained_group:
+        cells = JOINT_GROUP_CELLS.get(base, 0)
+        would_be = group_run_size(data, line, base)
+        if would_be > cells:
+            return (f"a group of {base.replace('_', ' ')} holds {cells} "
+                    f"lines — this would make {would_be}. Start a new group "
+                    f"further down, or ungroup one of the neighbours.")
     if "stamp_source" in patch and patch["stamp_source"] is not None \
             and patch["stamp_source"] not in STAMP_SOURCE_TYPES:
         return ("stamp source must be one of "
@@ -403,8 +444,9 @@ def resolve_short_scene(data: Dict[str, dict], line: str, choice: str,
                         media_type: str, modifiers: list) -> Optional[str]:
     """Apply the chosen fix for a too-short brand-new-footage line. `choice`
     is one of edit_prev / join_prev / borrow_prev / next_edit / join_next /
-    override; media_type + modifiers are the type the user was TRYING to pick
-    (re-applied for the choices that keep this line as its own scene)."""
+    group_start / override; media_type + modifiers are the type the user was
+    TRYING to pick (re-applied for the choices that keep this line as its own
+    scene)."""
     if line not in data:
         return "unknown line"
     lines = list(data)
@@ -444,6 +486,20 @@ def resolve_short_scene(data: Dict[str, dict], line: str, choice: str,
         # no mutation — frontend navigates to the next line and arms split
         # so the user picks how much to bring back. (manual branch, do_POST.)
         return None
+
+    if choice == "group_start":                # (6) this line opens a group
+        # A short line is only a problem ALONE: as one cell of a group the
+        # composite it belongs to stays on screen for the whole run, so
+        # nothing flashes. The line keeps the base it was given and gains
+        # `group`; the neighbours that fill the other cells are added as the
+        # user walks down the script (the tagger offers them automatically).
+        if media_type not in GROUPABLE_TYPES:
+            return (f"'{media_type.replace('_', ' ')}' cannot be grouped "
+                    f"(groupable: "
+                    f"{', '.join(sorted(GROUPABLE_TYPES)).replace('_', ' ')})")
+        mods = list(dict.fromkeys(list(modifiers or []) + ["group"]))
+        return apply_patch(data, line, {"media_type": media_type,
+                                        "modifiers": mods})
 
     if choice == "override":                   # (X) use the quick new footage anyway
         return apply_patch(data, line, pend)
@@ -1197,6 +1253,7 @@ async function mobileSplitGo(){
 }
 // ---- editor ------------------------------------------------------------------
 function focusLine(i){
+ const from=sel;
  sel=Math.max(0,Math.min(i,D.lines.length-1));
  step='media'; kbType=-1; ghostDismissed=false;   // fresh line: ghost is
                                                   // offered again by default
@@ -1205,6 +1262,48 @@ function focusLine(i){
  const r=document.querySelectorAll('#list .row')[sel];
  if(r)r.scrollIntoView({block:'nearest'});
  if(isMobile()) $('#editor').classList.add('open');
+ autoJoinGroup(from,sel);            // async, fire-and-forget
+}
+// How many cells the group at line index `i` already holds: `i` plus the
+// unbroken run of neighbours carrying `group` on the same base. Mirrors the
+// server's group_run_size (and the compositor's grouping rule).
+function groupRunSize(i){
+ const base=D.lines[i].row.media_type;
+ let size=1;
+ for(const dir of [-1,1]){
+  for(let j=i+dir; j>=0 && j<D.lines.length; j+=dir){
+   const r=D.lines[j].row;
+   if(!(r.modifiers||[]).includes('group'))break;
+   if(r.media_type!==base)break;
+   size++;
+  }
+ }
+ return size;
+}
+// You marked a line as a group cell and stepped onto the next one. A group
+// needs every cell tagged with the SAME base (each cell brings its own
+// picture), so if that next line is still blank, tag it for you and drop the
+// cursor in its search box. Stops once the group has all the cells its layout
+// draws, and never touches a line you already tagged.
+async function autoJoinGroup(from,to){
+ if(to!==from+1)return;                       // only the line directly below
+ const P=D.lines[from], L=D.lines[to];
+ if(!P||!L)return;
+ if(!(P.row.modifiers||[]).includes('group'))return;
+ const b=baseOf(P.row.media_type);
+ if(!b||!b.groupable)return;
+ if(L.row.media_type||(L.row.modifiers||[]).length)return;   // not a blank line
+ const filled=groupRunSize(from);
+ if(filled>=b.group_cells){
+   toast(`that group is full (${b.group_cells} cells) \u2014 this line starts `+
+         `something new`,'#e6c15a');
+   return;
+ }
+ const ok=await post('/save',{line:L.line,
+   patch:{media_type:P.row.media_type,modifiers:['group']}},L.line);
+ if(!ok)return;
+ expand('term');
+ toast(`cell ${filled+1} of ${b.group_cells} \u2014 give it its own search term`);
 }
 function closeEditor(){$('#editor').classList.remove('open');}
 function expand(which){
@@ -1427,7 +1526,10 @@ async function pick(name){const L=D.lines[sel];
  const b=baseOf(name);
  // BRAND-NEW footage on a line too short to stand on its own would just
  // flash — offer the fix-it options instead of applying it (task 11).
- if(b&&b.new_footage&&L.words<D.min_new_words){openShort(name);return;}
+ // A cell of a group never flashes: the composite it belongs to stays up for
+ // the group's whole run, so the short-line guard does not apply to it.
+ const grouped=(L.row.modifiers||[]).includes('group')&&b&&b.groupable;
+ if(b&&b.new_footage&&L.words<D.min_new_words&&!grouped){openShort(name);return;}
  closeShort();                       // a fine choice — drop any open guard panel
  await post('/save',{line:L.line,patch:{media_type:name}},L.line);
  const t2=$('#tostep2');
@@ -1451,6 +1553,8 @@ function openShort(name){
    (hoverI!==undefined&&!dis?` onmouseenter="shortHover(${hoverI},true)" `+
      `onmouseleave="shortHover(${hoverI},false)"`:'')+
    `>${label}${dis?' <i style="opacity:.7">(not available here)</i>':''}</button>`;
+ // (6) is only offered for a base that HAS a group layout (stock / ai stock).
+ const pb=baseOf(name), canGroup=!!(pb&&pb.groupable);
  $('#shortopts').innerHTML=
    opt('rec','(1) Edit and add to the previous scene  [recommended]',
        'edit_prev',first)+
@@ -1462,6 +1566,9 @@ function openShort(name){
        'next_edit',last)+
    opt('','(5) Join [at least part of] the scene after this scene to this '+
        'scene','join_next',last,last?undefined:sel+1)+
+   opt('',`(6) Make this the first cell of a group \u2014 the next lines fill `+
+       `the other cells and the ${canGroup?pb.group_cells:3} pictures sit on `+
+       `screen together`,'group_start',!canGroup)+
    opt('ovr','(X) Manual override and use quick stock anyway','override',false);
  $('#shortcard').style.display='block';
  $('#shortcard').scrollIntoView({block:'nearest'});
@@ -1494,12 +1601,16 @@ async function applyShort(choice){
    showManualHint(verb);
    return;
  }
- // (1)(2)(4)(X) are still one atomic, undoable mutation
+ // (1)(2)(4)(6)(X) are still one atomic, undoable mutation
  const ok=await post('/shortfix',
    {line:L.line,choice,media_type:shortPend.name,modifiers:shortPend.mods},
    L.line);
  if(ok){shortPend=null;$('#shortcard').style.display='none';
-   toast('applied ✓ — use ↶ undo to revert');}
+   if(choice==='group_start'){
+     expand('term');
+     toast('group started \u2713 \u2014 give this cell its own search term, '+
+           'then move down: the next lines join the group automatically');
+   } else toast('applied \u2713 \u2014 use \u21b6 undo to revert');}
 }
 function showManualHint(html){
  let h=$('#manualhint');
@@ -1542,7 +1653,7 @@ function cardHTML(name){
  const all=[...D.catalog.bases,...D.catalog.modifiers];
  const e=all.find(x=>x.name===name);
  if(name==='_types')return '<div class="nm">media type</div><div class="hint">every line needs exactly one base media type. NEW fetches brand-new material; EDIT PREVIOUS reuses or changes the image already on screen. colours show the family — ai in reds.</div>';
- if(name==='_mods')return '<div class="nm">stack on top</div><div class="hint">optional extras layered onto the base you picked: decorate (draw on it), caption (text on it), group (this line is one cell of a multi-cell group with its neighbours — rule of n).</div>';
+ if(name==='_mods')return '<div class="nm">stack on top</div><div class="hint">optional extras layered onto the base you picked: decorate (draw on it), caption (text on it), group (this line is one cell of a multi-cell group with its neighbours: tag 3 lines in a row with the same base and their 3 pictures share the screen — each cell needs its own search term).</div>';
  if(name==='_stamp')return '<div class="nm">stamp pictures from</div><div class="hint">hold previous/background + decorate + a search term: the term describes what to STAMP ("jar of nutmeg"). the scene joins the NORMAL candidates review as this type — you click the picture you want there, and it waits ready (and active) in the decorate editor\'s STAMP tab.</div>';
  if(name==='_stampdeco')return '<div class="nm">decorate the pick first</div><div class="hint">after you click your pick in the review, it opens in the decorator ON ITS OWN first — cut it out, remove its background, clean it up — BEFORE it\'s offered as a stamp.</div>';
  if(!e)return '';
