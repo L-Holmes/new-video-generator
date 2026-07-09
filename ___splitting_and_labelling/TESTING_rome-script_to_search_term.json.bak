@@ -31,7 +31,29 @@
     "stamp_decorate": false,
     "stamp_source": null
   },
-  "six. In": {
+  "six.": {
+    "search_term": "Rome",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1,
+      7
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null,
+    "_split_before": {
+      "text": "In",
+      "glue": " "
+    }
+  },
+  "In": {
     "search_term": "Rome",
     "media_type": "stock",
     "modifiers": [],

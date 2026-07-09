@@ -279,6 +279,40 @@ MAP_GEOCODE_CACHE_DIR: str = f"{_CACHE_DIR}/maps"
 
 
 # ===========================================================================
+# BLANK / RANDOM-BACKGROUND SCENES
+# ===========================================================================
+# Two "empty canvas" media types, both rendered locally by
+# generate_blank_scenes (no candidates, no review — like map / typography):
+#   blank              — a flat colour fills the frame (white by default)
+#   random_background  — one of the clips/stills in BACKGROUNDS_DIR fills it
+# On their own they are a clean breath in the edit; stack `decorate` to draw
+# or stamp onto them, or `caption` for a tilted caption on a bare backdrop.
+
+# The colour a `blank` scene is filled with. Any ffmpeg colour (a name like
+# "white", or "#rrggbb").
+BLANK_SCENE_COLOUR: str = "white"
+
+# Frame size the blank / background MP4s are rendered at. Matches the
+# stitcher's target (STITCH_TOGETHER.TARGET_WIDTH x TARGET_HEIGHT), so the
+# scene is never letterboxed or rescaled downstream.
+BLANK_SCENE_RESOLUTION: tuple[int, int] = (1920, 1080)
+
+# Where the rendered blank / random-background MP4s are written (cache-scoped).
+BLANK_SCENE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/blank_scenes")
+
+# The folder `random_background` picks from. Stills and videos both work;
+# a video is looped and centre-cropped to fill the frame, a still is baked
+# into a static MP4. This is the same folder the joint compositor pulls its
+# card backgrounds from (JOINT_IMAGE_CREATOR.BACKGROUNDS_DIR).
+RANDOM_BACKGROUND_DIR: str = "_BACKGROUNDS"
+
+# The pick is random per scene but DETERMINISTIC: it is seeded from the
+# scene's script text, so re-running the pipeline never reshuffles which
+# background a given line got. Bump this to reshuffle every scene at once.
+RANDOM_BACKGROUND_SEED: int = 0
+
+
+# ===========================================================================
 # SEARCH TERM TYPES   (FLAT SCHEMA — every "(type, variant)" is its own enum)
 # ===========================================================================
 #
@@ -355,6 +389,24 @@ MEDIA_TYPE_CATALOG: dict[str, dict] = {
         "info": "the line's own words animate on a blank background. good "
         "cold-open when there is nothing to picture yet.",
         "example": "examples/typography.png",
+    },
+    "blank": {
+        "tags": [Tag.NEW],
+        "color": "#9aa0a6",
+        "info": "a plain white frame — nothing else. the search term is "
+        "unused. a clean breath between busy scenes; stack decorate "
+        "to draw / stamp onto the empty canvas, or caption for a "
+        "tilted caption on white.",
+        "example": "examples/blank.png",
+    },
+    "random_background": {
+        "tags": [Tag.NEW],
+        "color": "#6c7a89",
+        "info": "a background picked at random from the _BACKGROUNDS/ folder "
+        "(the same textured cards the joint compositor uses). the "
+        "search term is unused. like blank, but with texture — stack "
+        "decorate or caption on top. the pick is stable across re-runs.",
+        "example": "examples/random_background.png",
     },
     "stock_on_board": {
         "tags": [Tag.NEW, Tag.AI, Tag.BOARD],
@@ -447,7 +499,8 @@ COLLAGEABLE_TYPES: set[str] = {"stock"}
 # one just FLASHES — these are gated by MIN_NEW_FOOTAGE_SECONDS (see the
 # helpers above, the manual-tagger "too short" guard, and the auto-tagger's
 # short-scene handling). Everything else is exempt: edit-of-previous / hold
-# reuse the image already there, background shows the bare background, and
+# reuse the image already there, background shows the bare background,
+# blank / random_background are an empty canvas rather than material, and
 # typography IS the words (so a short one can never "flash new footage").
 MIN_DURATION_GATED_TYPES: set[str] = {
     "stock", "ai_stock", "wikipedia", "map",
@@ -490,6 +543,8 @@ MEDIA_PROPERTIES: dict[MediaType, MediaProperties] = {
     ),
     MediaType.MAP: MediaProperties(),
     MediaType.TYPOGRAPHY: MediaProperties(),
+    MediaType.BLANK: MediaProperties(),  # generate_blank_scenes fills the frame
+    MediaType.RANDOM_BACKGROUND: MediaProperties(),  # ...with a colour / a backdrop
     MediaType.STOCK_ON_BOARD: MediaProperties(
         needs_external_candidates=True, is_on_board=True
     ),
@@ -694,11 +749,14 @@ DECORATE_RENDER_SAFETY_PAD_SEC: float = 0.08
 # waiting (pre-loaded + active) in the decorate editor's stamp tab.
 # row["stamp_decorate"] additionally opens the pick in the decorator FIRST
 # (cut it out / clean it up) before it's offered as a stamp.
-# The tagging tool's step 3 sets both (only shown on hold_previous /
-# background + decorate + a non-empty term), and search terms are OPTIONAL
-# for the TERM_OPTIONAL_TYPES (a bare hold/background line needs none).
+# The tagging tool's step 3 sets both (only shown on a TERM_OPTIONAL_TYPES
+# line + decorate + a non-empty term), and search terms are OPTIONAL for the
+# TERM_OPTIONAL_TYPES — a bare hold / background / blank line needs none,
+# because none of them fetch anything with it.
 STAMP_SOURCE_TYPES: tuple[str, ...] = ("stock", "wikipedia", "ai_stock")
-TERM_OPTIONAL_TYPES: tuple[str, ...] = ("hold_previous", "background")
+TERM_OPTIONAL_TYPES: tuple[str, ...] = (
+    "hold_previous", "background", "blank", "random_background",
+)
 
 # --- LIVE VIDEO DECORATE (decorations layered over PLAYING footage) --------
 # When a stock VIDEO scene is followed by hold_previous scenes and ANY member

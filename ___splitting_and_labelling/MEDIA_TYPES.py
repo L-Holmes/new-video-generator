@@ -34,6 +34,8 @@ try:
         GROUPABLE_TYPES,
         MEDIA_TYPE_CATALOG as MEDIA_TYPES,
         MODIFIERS,
+        STAMP_SOURCE_TYPES,
+        TERM_OPTIONAL_TYPES,
         Tag,
     )
 except ImportError as exc:  # pragma: no cover - setup guidance

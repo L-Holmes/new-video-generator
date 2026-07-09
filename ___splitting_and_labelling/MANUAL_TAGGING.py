@@ -10,8 +10,9 @@ What's on the page
 ------------------
   - the whole script scrollable on the left (that IS the context). one dot
     per row: gold when the required steps are done (media type + term —
-    the term is OPTIONAL for hold_previous/background; hold_previous +
-    decorate + a term additionally needs step 3's stamp source).
+    the term is OPTIONAL for hold_previous/background/blank/
+    random_background; hold_previous + decorate + a term additionally
+    needs step 3's stamp source).
     grouped lines share a coloured stripe. no badge until a type is picked.
   - SPLIT, inline on the left: hover a line's text — it expands to full
     length, a golden cursor snaps to the nearest gap between letters with a
@@ -65,7 +66,8 @@ try:    # new names — re-export them from MEDIA_TYPES.py (one line) to keep
     from MEDIA_TYPES import STAMP_SOURCE_TYPES, TERM_OPTIONAL_TYPES
 except ImportError:
     STAMP_SOURCE_TYPES = ("stock", "wikipedia", "ai_stock")
-    TERM_OPTIONAL_TYPES = ("hold_previous", "background")
+    TERM_OPTIONAL_TYPES = ("hold_previous", "background",
+                           "blank", "random_background")
 
 # Brand-new-footage minimum-duration guard (task 11). MEDIA_TYPES already put
 # the repo root on sys.path, so the shared config resolves; fall back to safe
@@ -325,7 +327,7 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
                 "stamp_source", "stamp_decorate"} & set(patch):
         row[key] = patch[key]
     row["stamp_decorate"] = bool(row.get("stamp_decorate", False))
-    # stamp settings only mean something on hold_previous/background +
+    # stamp settings only mean something on a TERM_OPTIONAL_TYPES line +
     # decorate + a non-empty term — clear them the moment the combo breaks
     # so a stale choice can never linger in the json.
     if (row.get("media_type") not in TERM_OPTIONAL_TYPES

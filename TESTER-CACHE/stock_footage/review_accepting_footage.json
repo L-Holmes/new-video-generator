@@ -1,0 +1,26 @@
+{
+  "If you open": {
+    "footage": [
+      {
+        "https://videos.pexels.com/video-files/4101574/4101574-hd_1920_1080_25fps.mp4": 1.04
+      }
+    ],
+    "manual_intervention": false
+  },
+  "a jar of nutmeg.": {
+    "footage": [
+      {
+        "https://images.pexels.com/photos/30370491/pexels-photo-30370491.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.42
+      }
+    ],
+    "manual_intervention": false
+  },
+  "It costs about two dollars.": {
+    "footage": [
+      {
+        "TESTER-CACHE/stock_footage/edited-c8062e88d8-deco.png": 1.46
+      }
+    ],
+    "manual_intervention": false
+  }
+}

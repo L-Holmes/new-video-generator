@@ -1,8 +1,10 @@
 {
   "Rome was not built in a day.": {
-    "search_term": "",
-    "media_type": "",
-    "modifiers": [],
+    "search_term": "Rome",
+    "media_type": "blank",
+    "modifiers": [
+      "caption"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -12,11 +14,13 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ]
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null
   },
   "But it burned in": {
-    "search_term": "Rome",
-    "media_type": "stock",
+    "search_term": "Rome Rome burned",
+    "media_type": "blank",
     "modifiers": [],
     "group_id": null,
     "position": "1",

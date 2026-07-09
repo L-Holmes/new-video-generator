@@ -203,6 +203,119 @@ def _render_image_to_static_mp4(
     return output_path
 
 
+def _run_fill_frame_ffmpeg(
+    input_args: list[str],
+    duration: float,
+    output_path: str,
+    resolution: tuple[int, int],
+    label: str,
+) -> str:
+    """Encode `input_args` (already-built ffmpeg input flags) into a silent
+    H.264 MP4 of `duration`s that FILLS `resolution` — scaled up to cover,
+    then centre-cropped, so a background never letterboxes. Shared by the
+    blank-colour and random-background renders."""
+    import shlex
+
+    width, height = resolution
+    render_duration = duration + MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC
+
+    cmd = [
+        "ffmpeg", "-y", "-nostdin", "-loglevel", "warning",
+        *input_args,
+        "-t", f"{render_duration:.3f}",
+        "-vf",
+        f"scale={width}:{height}:force_original_aspect_ratio=increase,"
+        f"crop={width}:{height},setsar=1",
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-preset", "veryfast",
+        "-r", str(KEN_BURNS_FPS),
+        "-an",
+        output_path,
+    ]
+    print(
+        f"[{label}:ffmpeg]   duration={duration:.3f}s "
+        f"pad={MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC:.3f}s "
+        f"render={render_duration:.3f}s frame={width}x{height} fps={KEN_BURNS_FPS}"
+    )
+    print(f"[{label}:ffmpeg]   cmd: {shlex.join(cmd)}")
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.stderr.strip():
+        print(f"[{label}:ffmpeg]   stderr:\n{result.stderr.rstrip()}")
+
+    out_path = Path(output_path)
+    out_size = out_path.stat().st_size if out_path.exists() else 0
+    print(
+        f"[{label}:ffmpeg]   output = {output_path} "
+        f"exists={out_path.exists()} size={out_size}B "
+        f"returncode={result.returncode}"
+    )
+    if result.returncode != 0 or out_size == 0:
+        raise RuntimeError(
+            f"{label} MP4 render failed (returncode={result.returncode}, "
+            f"output_size={out_size}B). See ffmpeg stderr above."
+        )
+    return output_path
+
+
+def render_solid_colour_mp4(
+    colour: str,
+    duration: float,
+    output_path: str,
+    resolution: tuple[int, int],
+) -> str:
+    """Bake a flat `colour` fill into a silent, static MP4 of `duration`s
+    (+ the safety pad the stitcher trims). `colour` is any ffmpeg colour —
+    a name ("white") or "#rrggbb"."""
+    print(f"[blank scenes:ffmpeg] colour = {colour}")
+    return _run_fill_frame_ffmpeg(
+        input_args=[
+            "-f", "lavfi",
+            "-i", f"color=c={colour}:s={resolution[0]}x{resolution[1]}"
+                  f":r={KEN_BURNS_FPS}",
+        ],
+        duration=duration,
+        output_path=output_path,
+        resolution=resolution,
+        label="blank scenes",
+    )
+
+
+def render_background_to_mp4(
+    background_path: str,
+    duration: float,
+    output_path: str,
+    resolution: tuple[int, int],
+) -> str:
+    """Fill the frame with `background_path` for `duration`s. A still is held
+    static; a video is looped for as long as the scene needs. Either way the
+    output is an MP4, so the Ken Burns pass leaves it alone."""
+    src = Path(background_path)
+    if not src.exists():
+        raise RuntimeError(f"background does not exist: {background_path}")
+
+    # Anything that isn't a still gets looped — that covers .gif, which the
+    # backgrounds folder accepts but _classify_footage_path calls "other".
+    is_video = _classify_footage_path(background_path) != "image"
+    print(
+        f"[blank scenes:ffmpeg] background = {background_path} "
+        f"({'video — looped' if is_video else 'still — held'})"
+    )
+    input_args = (
+        ["-stream_loop", "-1", "-i", background_path]
+        if is_video
+        else ["-loop", "1", "-framerate", str(KEN_BURNS_FPS), "-i", background_path]
+    )
+    return _run_fill_frame_ffmpeg(
+        input_args=input_args,
+        duration=duration,
+        output_path=output_path,
+        resolution=resolution,
+        label="blank scenes",
+    )
+
+
 def run_manual_image_stage(
     script_to_search_term: dict[str, "SearchTermData"],
     final_data: list[dict],

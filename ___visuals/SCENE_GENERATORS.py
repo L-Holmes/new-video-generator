@@ -4,6 +4,8 @@ Locally-rendered scene generators (no external candidates, no review):
                                  multi-image collage MP4s (joint compositor)
   - generate_read_out_scenes   — kinetic typography (media_type "typography")
   - generate_map_scenes        — highlighted place maps
+  - generate_blank_scenes      — an empty canvas: a flat colour ("blank") or a
+                                 backdrop from _BACKGROUNDS/ ("random_background")
   - generate_stickman_explain_scenes — chosen stock/wiki clip on a board base
 
 plus the LOCAL_FOOTAGE_GENERATORS registry and run_all_local_generators that
@@ -23,6 +25,7 @@ if __package__ in (None, ""):
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import json
+import random
 import re
 import sys
 from pathlib import Path
@@ -31,12 +34,17 @@ from typing import Callable
 from ___visuals.CACHE_IO import _resolve_to_local_path, load_json
 from CONFIG import (
     _CACHE_DIR,
+    BLANK_SCENE_COLOUR,
+    BLANK_SCENE_OUTPUT_DIR,
+    BLANK_SCENE_RESOLUTION,
     CANDIDATES_CACHE_FILE,
     JOINT_BASE_DURATION_FALLBACK_SEC,
     JOINT_LAYOUT_POSITIONS,
     MAP_ENABLE,
     MAP_GEOCODE_CACHE_DIR,
     MAP_OUTPUT_DIR,
+    RANDOM_BACKGROUND_DIR,
+    RANDOM_BACKGROUND_SEED,
     TYPOGRAPHY_ENABLE,
     TYPOGRAPHY_RENDER_SAFETY_PAD_SEC,
     STICKMAN_EXPLAIN_OUTPUT_DIR,
@@ -54,7 +62,12 @@ from ___visuals.DOWNLOADS import _download_image
 from ___visuals.GET_MAP import get_map_image
 from ___visuals.JOINT_IMAGE_CREATOR import TRANSITION_RANDOM
 from ___visuals.JOINT_IMAGE_CREATOR import composite as create_joint_scene
-from ___visuals.STATIC_RENDER import _render_image_to_static_mp4
+from ___visuals.JOINT_IMAGE_CREATOR import is_animated, is_image
+from ___visuals.STATIC_RENDER import (
+    _render_image_to_static_mp4,
+    render_background_to_mp4,
+    render_solid_colour_mp4,
+)
 from ___visuals.TIMING_MERGE import (
     _build_footage_entries_for_stage,
     _compute_joint_stage_timing,
@@ -583,6 +596,137 @@ def generate_map_scenes(
     return footage_map
 
 
+# ===========================================================================
+# GENERATOR: BLANK / RANDOM-BACKGROUND SCENES
+# ===========================================================================
+
+
+def _pick_random_background(script_text: str) -> str:
+    """A background from RANDOM_BACKGROUND_DIR, chosen at random but SEEDED on
+    the scene's own text — so the same line keeps the same backdrop across
+    re-runs (bump RANDOM_BACKGROUND_SEED to reshuffle them all)."""
+    root = Path(RANDOM_BACKGROUND_DIR)
+    if not root.is_dir():
+        raise RuntimeError(
+            f"backgrounds folder not found: {RANDOM_BACKGROUND_DIR} "
+            f"(cwd={Path.cwd()})"
+        )
+    choices = sorted(
+        str(p)
+        for p in root.iterdir()
+        if p.is_file()
+        and not p.name.startswith(".")
+        and (is_image(p.name) or is_animated(p.name))
+    )
+    if not choices:
+        raise RuntimeError(
+            f"no usable backgrounds in {RANDOM_BACKGROUND_DIR} — expected "
+            f"images or videos, found: {sorted(p.name for p in root.iterdir())}"
+        )
+    seed = f"{RANDOM_BACKGROUND_SEED}:{script_text}"
+    return random.Random(seed).choice(choices)
+
+
+def generate_blank_scenes(
+    script_to_search_term: dict[str, SearchTermData],
+    candidates_data: list[dict],  # unused — registry signature uniformity
+    final_data: list[dict] | None = None,  # unused — registry signature uniformity
+) -> dict[str, list[dict]]:
+    """
+    Fill the frame for every BLANK and RANDOM_BACKGROUND scene, returning a
+    stitcher-ready map of:
+
+        { script_text: [ {local_mp4_path: trim_seconds} ], ... }
+
+    blank             → a flat BLANK_SCENE_COLOUR fill (white by default).
+    random_background → one file from RANDOM_BACKGROUND_DIR, scaled to cover
+                        the frame; a video loops, a still is held.
+
+    Both bake to an MP4 so the Ken Burns pass leaves them alone — a blank
+    canvas that slowly zoomed would defeat the point. Neither needs external
+    candidates nor review, so this is a registry generator like map /
+    read-out: main()'s generic merge folds its output into final_data, and a
+    stacked `decorate` / `caption` then runs on top of the canvas it made.
+    """
+    print("\n" + "=" * 70)
+    print("[blank scenes] STARTING generate_blank_scenes")
+    print("=" * 70)
+
+    scenes = [
+        (txt, data)
+        for txt, data in script_to_search_term.items()
+        if data["media_type"] in (MediaType.BLANK, MediaType.RANDOM_BACKGROUND)
+    ]
+    if not scenes:
+        print("[blank scenes] no blank / random-background scenes — returning empty map")
+        return {}
+
+    print(f"[blank scenes] found {len(scenes)} scene(s)")
+
+    scene_timings = _load_scene_timings()
+
+    output_dir = BLANK_SCENE_OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[blank scenes] output dir: {output_dir}")
+
+    footage_map: dict[str, list[dict]] = {}
+
+    for idx, (script_text, scene_data) in enumerate(scenes):
+        media_type = scene_data["media_type"]
+
+        if script_text not in scene_timings:
+            print(f"[blank scenes] FATAL: no timing for '{script_text[:80]}'")
+            sys.exit(1)
+
+        duration = float(scene_timings[script_text])
+        if duration <= 0:
+            print(
+                f"[blank scenes] WARNING: zero/negative duration "
+                f"({duration}s) — skipping '{script_text[:60]}'"
+            )
+            continue
+
+        safe_stem = (
+            re.sub(r"[^a-zA-Z0-9]+", "_", script_text).strip("_")[:50] or "scene"
+        )
+        mp4_path = str(output_dir / f"{media_type.value}_{idx:03d}_{safe_stem}.mp4")
+
+        print(
+            f"\n[blank scenes] [{idx + 1}/{len(scenes)}] "
+            f"'{script_text[:60]}{'...' if len(script_text) > 60 else ''}'"
+        )
+        print(f"[blank scenes]   type           = {media_type.value}")
+        print(f"[blank scenes]   scene duration = {duration:.3f}s")
+        print(f"[blank scenes]   -> {mp4_path}")
+
+        try:
+            if media_type == MediaType.BLANK:
+                render_solid_colour_mp4(
+                    BLANK_SCENE_COLOUR, duration, mp4_path, BLANK_SCENE_RESOLUTION
+                )
+            else:
+                render_background_to_mp4(
+                    _pick_random_background(script_text),
+                    duration,
+                    mp4_path,
+                    BLANK_SCENE_RESOLUTION,
+                )
+        except Exception as exc:
+            print(
+                f"[blank scenes] FATAL: {media_type.value} render failed for "
+                f"'{script_text[:50]}': {exc}"
+            )
+            sys.exit(1)
+
+        footage_map[script_text] = [{mp4_path: round(duration, 3)}]
+        print(f"[blank scenes]   ✓ done — stitcher trim = {round(duration, 3)}s")
+
+    print("\n" + "=" * 70)
+    print(f"[blank scenes] DONE — produced {len(footage_map)} scene(s)")
+    print("=" * 70)
+    return footage_map
+
+
 def generate_stickman_explain_scenes(
     script_to_search_term: dict[str, SearchTermData],
     final_data: list[dict],
@@ -717,6 +861,7 @@ LOCAL_FOOTAGE_GENERATORS: dict[
     "group": generate_joint_scenes,  # every grouped run (stock / ai_stock)
     "typography": generate_read_out_scenes,  # MediaType.TYPOGRAPHY
     "map": generate_map_scenes,  # MediaType.MAP
+    "blank": generate_blank_scenes,  # MediaType.BLANK + RANDOM_BACKGROUND
 }
 
 

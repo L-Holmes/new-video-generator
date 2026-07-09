@@ -152,7 +152,7 @@ def _untagged_lines(json_path: Path) -> list[str]:
 def ensure_script_to_search_term_ready() -> None:
     if str(_SPLIT_LABEL_DIR) not in sys.path:
         sys.path.insert(0, str(_SPLIT_LABEL_DIR))
-    import SPLIT_AND_LABEL
+    from ___splitting_and_labelling import SPLIT_AND_LABEL
 
     # main.py drives the REAL run, not the module's bundled self-test —
     # keep cache/filenames clean of the TESTING_ prefix that flag adds.
@@ -170,7 +170,7 @@ def ensure_script_to_search_term_ready() -> None:
 
     print(f"  {len(unresolved)} line(s) still need a media type "
           f"— opening manual tagging...")
-    import MANUAL_TAGGING
+    from ___splitting_and_labelling import MANUAL_TAGGING
 
     MANUAL_TAGGING.run_manual_tagging(out_path)
 
