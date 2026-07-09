@@ -2,14 +2,7 @@
 
 tasks:
 
-
-
-
-
-
-
 -------------
-
 
 1) - option for just 'blank' / 'random background' in the mediatype chooser 
 - blank is just white
@@ -17,12 +10,18 @@ tasks:
 
 (you'll have to update to allow for these two new options... + impelement the fnucitonlaity for that..)
 
+.. (and in the ___splitting_and_labelling as well...)
+
 
 
 
 3) new media type option for 'timeline'... uses manim to generate a timeline affect where it shows a timeline and a moving thing that goes back to the given date. It then holds on that after doing the initial. 
 
  movement. 
+
+ in ___splitting_and_labelling ... (specifically the manual tagger..), have this under a new heading; new - maths 
+(e.g. as opposed to under 'NEW — brand-new material' ...)
+put it under the NEW — brand-new material, in a scrollable box...)
 
 
 
