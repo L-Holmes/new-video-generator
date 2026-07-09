@@ -1,6 +1,15 @@
 
 
-tasks:
+next task:
+
+1) 
+how do we do group of three now? (3 in a row, now i think its group of 'n'?)
+I assumed that it would be hold previous? and then group?  (but that option isn't available currently)
+So basically I assume for the first one, we pick stock -> group, And then for the ones after it which we want putting on the same group picture, do 'hold previous' -> group.
+
+Also, at the same time update the manual tagger such that when we initially do stock -> group, and then tab / click onto the next entry, if that next entry is empty, then we automatically assign the hold previous + group to that.
+
+Also, add a seventh option to the '⚠ too short for new footage' warning, which is to make the current entry the first entry of a group which will be combined together. (this will be option (6))
 
 -------------
 

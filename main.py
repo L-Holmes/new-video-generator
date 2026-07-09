@@ -397,6 +397,48 @@ def main() -> None:
         c for c in candidates_data if not _skip_stage1(c["script_text"])
     ]
 
+    # A bundle with NOTHING in it (a wikipedia term that isn't an article, a
+    # stock term with no Pexels hits) used to sail straight into the review
+    # GUI, which then drew five "no image found" boxes with nothing to press:
+    # every key is bound to a slot, and the only way out (F = manual) exits
+    # the run. Catch it here and say exactly which line, and what to do.
+    _empty_bundles = [
+        c
+        for c in non_edit_candidates
+        if not (c.get("candidates", {}) or {}).get("videos")
+        and not (c.get("candidates", {}) or {}).get("images")
+    ]
+    if _empty_bundles:
+        print("\n" + "=" * 70)
+        print(
+            f"[main] FATAL: {len(_empty_bundles)} scene(s) came back with NO "
+            f"candidates at all. The review GUI cannot offer you anything to "
+            f"pick for them, so it would soft-lock."
+        )
+        print("=" * 70)
+        for c in _empty_bundles:
+            text = c["script_text"]
+            row = scriptTextToPexelSearch.get(text, {})
+            mt = row.get("media_type")
+            print(f"\n  line : '{text}'")
+            print(f"  type : {mt.value if hasattr(mt, 'value') else mt}")
+            print(f"  term : '{row.get('search_term', '')}'")
+        print(
+            f"\n  FIX — retag the line(s) in the tagger:\n"
+            f"      uv run ___splitting_and_labelling/MANUAL_TAGGING.py "
+            f"{LINE_INDEX_TO_SEARCH_TERM_FILE}\n"
+            f"    A wikipedia term must be the EXACT article name "
+            f"('Banda Islands', not '1600th cen').\n"
+            f"    A stock term wants something photographable.\n"
+            f"    Or pick a type that fetches nothing at all: blank / "
+            f"random_background / hold_previous.\n"
+            f"\n  THEN delete the candidate cache so the retagged line is "
+            f"re-fetched (the\n  cache is reused wholesale, so a stale empty "
+            f"bundle would survive a re-run):\n"
+            f"      rm {CANDIDATES_CACHE_FILE}\n"
+        )
+        sys.exit(1)
+
     def _is_ai_stock(d: dict, grouped: bool) -> bool:
         return (
             d.get("media_type") == MediaType.AI_STOCK and scene_is_grouped(d) == grouped

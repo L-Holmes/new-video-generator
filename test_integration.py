@@ -49,8 +49,15 @@ dead = {"joint_3_row", "stickman_joint_3_row", "decorate_previous",
         "stickman_text_overlay", "zoom_prev_img", "static_of_previous",
         "read_out", "stickman", "ai_edit", "object_generate",
         "object", "add_stock_to_previous", "manual_stock_add_to_previous"}
-check(not (dead & {t.value for t in MediaType}) and len(list(MediaType)) == 9,
-      "9 types; object + add_stock_to_previous are decorate-editor tabs now")
+# The point of this check is that the DEAD names are gone — object and
+# add_stock_to_previous are decorate-editor tabs now, not media types. The
+# live count is not asserted: it is just len(MEDIA_TYPE_CATALOG), which the
+# check above already pins to the enum, and hardcoding it here only means a
+# stale number every time a type is added.
+check(not (dead & {t.value for t in MediaType}),
+      "object + add_stock_to_previous are decorate-editor tabs now")
+check("blank" in MEDIA_TYPE_CATALOG and "random_background" in MEDIA_TYPE_CATALOG,
+      "blank + random_background are bookable media types")
 check(set(MEDIA_PROPERTIES) == set(MediaType),
       "property table covers the enum exactly")
 check(set(MODIFIERS) == {"decorate", "caption", "group", "collage"},

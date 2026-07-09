@@ -500,6 +500,7 @@ class _State:
         self._recs_by_text: Dict[str, dict] = {}
         self._rec_state = "loading" if _HAS_RECOMMENDER else "ready"
         self._rec_gen = 0
+        self._rec_busy = False
         self._rec_started = time.time()
         self._rec_words = sum(_word_count(ln) for ln in self.data)
         self._kick_recompute()
@@ -514,35 +515,51 @@ class _State:
             self._rec_state = "loading"
             self._rec_started = time.time()
             self._rec_words = sum(_word_count(ln) for ln in self.data)
-            if getattr(self, "_rec_thread", None) is not None \
-                    and self._rec_thread.is_alive():
-                return       # ONE worker: it loops until it has published
-                             # the newest generation — never a thundering
-                             # herd of concurrent cold recomputes
-            self._rec_thread = threading.Thread(target=self._rec_worker,
-                                                daemon=True)
-            self._rec_thread.start()
+            # ONE worker: while `_rec_busy` it loops until it has published
+            # the newest generation — never a thundering herd of concurrent
+            # cold recomputes. `_rec_busy` (not thread.is_alive()) is what
+            # marks the handoff, because the worker clears it in the SAME
+            # locked block that publishes. Testing is_alive() instead used to
+            # lose the race: a worker that had published and broken out of its
+            # loop was still "alive" for the moment it spent recording timings,
+            # so a kick landing there would bump the generation, flip the state
+            # to "loading", and then decline to start a worker — leaving the
+            # page stuck on "updating suggestions…" with nobody to publish.
+            if self._rec_busy:
+                return
+            self._rec_busy = True
+        threading.Thread(target=self._rec_worker, daemon=True).start()
 
     def _rec_worker(self) -> None:
         t_first = time.time()      # what the loading screen experiences:
-        while True:                # total wall time until first publish
+        lines: List[str] = []      # total wall time until first publish
+        try:
+            while True:
+                with self._rec_lock:
+                    gen = self._rec_gen
+                    lines = list(self.data)
+                    terms = {i: (row.get("search_term") or "").strip()
+                             for i, row in enumerate(self.data.values())}
+                try:
+                    recs = suggestions_for_all_lines(
+                        lines, confirmed_terms={i: t for i, t in terms.items()
+                                                if t})
+                except Exception:                      # pragma: no cover
+                    recs = [dict(self._EMPTY_REC) for _ in lines]
+                with self._rec_lock:
+                    if gen != self._rec_gen:
+                        continue      # edits landed meanwhile — go again
+                    self._recs_by_text = dict(zip(lines, recs))
+                    self._rec_state = "ready"
+                    self._rec_busy = False   # published + freed, atomically
+                    break
+        finally:
+            # a crash must not strand the page on the loading screen: free the
+            # slot, and let the chips fall back to the plain per-line words.
             with self._rec_lock:
-                gen = self._rec_gen
-                lines = list(self.data)
-                terms = {i: (row.get("search_term") or "").strip()
-                         for i, row in enumerate(self.data.values())}
-            try:
-                recs = suggestions_for_all_lines(
-                    lines, confirmed_terms={i: t for i, t in terms.items()
-                                            if t})
-            except Exception:                      # pragma: no cover
-                recs = [dict(self._EMPTY_REC) for _ in lines]
-            with self._rec_lock:
-                if gen != self._rec_gen:
-                    continue          # edits landed meanwhile — go again
-                self._recs_by_text = dict(zip(lines, recs))
-                self._rec_state = "ready"
-                break
+                if self._rec_busy:
+                    self._rec_busy = False
+                    self._rec_state = "ready"
         elapsed = time.time() - t_first
         if elapsed > 1.0:
             # only COLD runs inform the loading-screen estimate — a warm
@@ -1260,6 +1277,15 @@ function renderTerm(){
    :(b&&b.term_optional)?'optional for this type'
    :'required';
  updateGhost();
+ renderChips();
+ renderStamp(L);
+ renderNext(L);
+}
+// Only the suggestion chips + pronoun panel. Split out of renderTerm so the
+// background-recommender poll can refresh them WITHOUT touching #term —
+// re-rendering the whole step would wipe out whatever you were typing.
+function renderChips(){
+ const L=D.lines[sel];
  const s=L.suggest; let chips='';
  const add=(lbl,arr,cls)=>{if(arr&&arr.length){chips+=`<span class="chiplbl">${lbl}:</span>`+
    arr.map(w=>`<button tabindex="-1" class="${cls}" onclick="chip('${esc(w).replace(/'/g,"\\'")}')">${esc(w)}</button>`).join('');}};
@@ -1279,8 +1305,28 @@ function renderTerm(){
    chips+='<span class="recupdating">updating suggestions\u2026</span>';
  $('#chips').innerHTML=chips||'<span class="chiplbl">(no extracted suggestions for this line)</span>';
  renderPronouns(R.pronouns||[]);
- renderStamp(L);
- renderNext(L);
+ scheduleRecPoll();
+}
+// Every edit kicks a background recompute, so the /data that load() just
+// fetched almost always says "loading". Nothing ever asked again, so the chip
+// sat there until the NEXT edit happened to catch a ready worker — which reads
+// as "updating suggestions..." forever the moment you stop editing and look at
+// the chips. Poll until ready, then swap the chips in place.
+let recPoll=null;
+function scheduleRecPoll(){
+ if(recPoll)return;
+ if(!(D.recommend_status&&D.recommend_status.state==='loading'))return;
+ recPoll=setTimeout(async()=>{
+  recPoll=null;
+  let N;
+  try{N=await (await fetch('/data')).json();}catch(e){scheduleRecPoll();return;}
+  // merge ONLY the suggestion payload. The rows are deliberately left alone:
+  // a save may be in flight, and #term may hold half-typed text.
+  const by={}; N.lines.forEach(L=>{by[L.line]=L;});
+  D.lines.forEach(L=>{const n=by[L.line]; if(n){L.recommend=n.recommend; L.suggest=n.suggest;}});
+  D.recommend_status=N.recommend_status;
+  if(step==='term'&&D.lines[sel])renderChips(); else scheduleRecPoll();
+ },1000);
 }
 function renderPronouns(rows){
  // the small scrollable panel:  'it' (2) → saucepan (0.20)
