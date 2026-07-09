@@ -312,6 +312,60 @@ def main() -> None:
             if _sm:
                 candidates_data.extend(_sm)
             save_to_cache(candidates_data, CANDIDATES_CACHE_FILE)
+
+        # Re-fetch any bundle whose scene has been RETAGGED since it was
+        # cached. The cache is keyed by script_text alone, so without this a
+        # line you fixed in the tagger (wikipedia → stock, or just a better
+        # search term) keeps serving its old — often empty — bundle for ever,
+        # and no amount of re-running helps. load_stock_footage() stamps each
+        # bundle with the media_type + search_term it was fetched for; a
+        # bundle with neither predates the stamp, so it is refreshed once.
+        _have = {c["script_text"] for c in candidates_data}  # the stamp top-up grew it
+        _external = {
+            t: r
+            for t, r in scriptTextToPexelSearch.items()
+            if media_props(r.get("media_type")).needs_external_candidates
+        }
+        _stale, _unstamped = {}, 0
+        for _c in candidates_data:
+            _row = _external.get(_c["script_text"])
+            if _row is None:
+                continue  # not an external scene — nothing to compare against
+            _want_type = _row["media_type"].value
+            _want_term = _row.get("search_term", "")
+            if "media_type" not in _c:
+                # Written before bundles carried their provenance. We cannot
+                # tell what it was fetched for, so refresh it once; the files
+                # themselves are hash-cached, so this is cheap.
+                _stale[_c["script_text"]] = _row
+                _unstamped += 1
+            elif (
+                _c["media_type"] != _want_type
+                or _c.get("search_term") != _want_term
+            ):
+                _stale[_c["script_text"]] = _row
+                print(
+                    f"♻️  retagged: '{_c['script_text'][:45]}' was "
+                    f"{_c['media_type']}/'{_c.get('search_term', '')}', "
+                    f"now {_want_type}/'{_want_term}'"
+                )
+        # ...and any external scene that has no bundle at all (newly retagged
+        # INTO an external type, so the fetch never saw it).
+        for _t, _row in _external.items():
+            if _t not in _have:
+                _stale[_t] = _row
+                print(f"♻️  no bundle yet for '{_t[:45]}' — fetching")
+        if _unstamped:
+            print(
+                f"♻️  {_unstamped} bundle(s) predate retag-detection — "
+                f"refreshing once (downloads are cached, so this is quick)"
+            )
+        if _stale:
+            print(f"🔍 Re-fetching {len(_stale)} scene(s)...")
+            _fresh = {c["script_text"]: c for c in load_stock_footage(_stale)}
+            candidates_data = [_fresh.pop(c["script_text"], c) for c in candidates_data]
+            candidates_data.extend(_fresh.values())
+            save_to_cache(candidates_data, CANDIDATES_CACHE_FILE)
     else:
         print("🔍 Cache miss. Fetching candidates...")
 
@@ -424,18 +478,20 @@ def main() -> None:
             print(f"  type : {mt.value if hasattr(mt, 'value') else mt}")
             print(f"  term : '{row.get('search_term', '')}'")
         print(
+            f"\n  Both sources came back empty for these terms — wikipedia "
+            f"scenes already\n  fall back to stock stills, so this means "
+            f"neither had anything at all.\n"
             f"\n  FIX — retag the line(s) in the tagger:\n"
             f"      uv run ___splitting_and_labelling/MANUAL_TAGGING.py "
             f"{LINE_INDEX_TO_SEARCH_TERM_FILE}\n"
-            f"    A wikipedia term must be the EXACT article name "
-            f"('Banda Islands', not '1600th cen').\n"
-            f"    A stock term wants something photographable.\n"
+            f"    A stock term wants something photographable "
+            f"('sailing ship', not '1600s').\n"
+            f"    A wikipedia term is the EXACT article name "
+            f"('Banda Islands').\n"
             f"    Or pick a type that fetches nothing at all: blank / "
             f"random_background / hold_previous.\n"
-            f"\n  THEN delete the candidate cache so the retagged line is "
-            f"re-fetched (the\n  cache is reused wholesale, so a stale empty "
-            f"bundle would survive a re-run):\n"
-            f"      rm {CANDIDATES_CACHE_FILE}\n"
+            f"\n  Retagging is enough — the candidate cache notices the "
+            f"changed type/term and\n  re-fetches that line by itself.\n"
         )
         sys.exit(1)
 

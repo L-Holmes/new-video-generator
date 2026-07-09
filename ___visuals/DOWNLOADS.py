@@ -385,6 +385,110 @@ def _download_wikipedia_image_parallel(url: str) -> str | None:
 # ===========================================================================
 
 
+def refetch_candidates(
+    search_term: str,
+    *,
+    max_runtime: float,
+    n_videos: int = 0,
+    n_stock_images: int = 0,
+    n_wiki_images: int = 0,
+    exclude_urls=(),
+) -> tuple[dict, dict]:
+    """
+    Fetch ONE scene's worth of fresh candidates for `search_term`, on demand.
+    Used by the review GUI's "search again" options — the user rejected every
+    option, so they type a new term and choose how wide to cast the net.
+
+    `exclude_urls` are never returned: an already-offered (and rejected) URL
+    coming back would just waste one of the five slots. Pages are walked until
+    enough NEW urls are found, or the source runs dry.
+
+    Returns (candidates, url_to_local) where candidates is the same shape the
+    review GUI already renders — {"videos": [{url: trim}], "images": [...]} —
+    and url_to_local feeds the GUI's history map so the picks resolve to disk.
+    """
+    skip = set(exclude_urls or ())
+    trim = round(float(max_runtime), 2)
+
+    video_meta: list[tuple[str, float]] = []
+    if n_videos > 0:
+        for page in range(1, 5):
+            if len(video_meta) >= n_videos:
+                break
+            for url, dur in _get_video_metadata(search_term, max_results=10, page=page):
+                if url in skip or dur <= 0:
+                    continue
+                skip.add(url)
+                video_meta.append((url, dur))
+                if len(video_meta) >= n_videos:
+                    break
+
+    stock_images: list[str] = []
+    if n_stock_images > 0:
+        for page in range(1, 5):
+            if len(stock_images) >= n_stock_images:
+                break
+            for url in _get_image_metadata(
+                search_term, max_results=max(5, n_stock_images), page=page
+            ):
+                if url in skip:
+                    continue
+                skip.add(url)
+                stock_images.append(url)
+                if len(stock_images) >= n_stock_images:
+                    break
+
+    wiki_images: list[str] = []
+    if n_wiki_images > 0:
+        # Wikipedia has no paging here — ask for extra and drop the seen ones.
+        for url in get_from_wikipedia(search_term, max_images=n_wiki_images + len(skip)):
+            if url in skip:
+                continue
+            skip.add(url)
+            wiki_images.append(url)
+            if len(wiki_images) >= n_wiki_images:
+                break
+
+    print(
+        f"[refetch] '{search_term}' → {len(video_meta)} video(s), "
+        f"{len(stock_images)} stock still(s), {len(wiki_images)} wikipedia still(s) "
+        f"({len(exclude_urls or ())} already-seen url(s) skipped)"
+    )
+
+    tasks = (
+        [("videos", u, min(d, max_runtime)) for u, d in video_meta]
+        + [("images", u, max_runtime) for u in stock_images]
+        + [("wiki_images", u, max_runtime) for u in wiki_images]
+    )
+    if not tasks:
+        return {"videos": [], "images": []}, {}
+
+    def download_one(task):
+        kind, url, t = task
+        if kind == "videos":
+            local = _download_clip_parallel(url)
+        elif kind == "wiki_images":
+            local = _download_wikipedia_image_parallel(url)
+        else:
+            local = _download_image_parallel(url)
+        return kind, url, t, local
+
+    candidates: dict = {"videos": [], "images": []}
+    url_to_local: dict = {}
+    # Preserve the requested order (stock stills before wikipedia stills) —
+    # ThreadPoolExecutor.map returns results in submission order.
+    with ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as ex:
+        for kind, url, t, local in ex.map(download_one, tasks):
+            if local is None:
+                print(f"[refetch]   download failed, dropping: {url[:70]}")
+                continue
+            bucket = "videos" if kind == "videos" else "images"
+            candidates[bucket].append({url: round(float(t), 2)})
+            url_to_local[url] = local
+
+    return candidates, url_to_local
+
+
 def load_stock_footage(all_scenes: dict) -> list[dict]:
     """
     Two phases:
@@ -446,7 +550,27 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
             print(f"[fetch:meta]   → using WIKIPEDIA source")
             wiki_urls = get_from_wikipedia(search_term, max_images=5)
             print(f"[fetch:meta]   wikipedia returned {len(wiki_urls)} URL(s)")
-            return (idx, script_text, num_clips, max_runtime, [], [], wiki_urls)
+            if wiki_urls:
+                return (idx, script_text, num_clips, max_runtime, [], [], wiki_urls)
+            # A term that isn't an article name ('1600th cen') yields nothing,
+            # and a scene with nothing in it soft-locks the review GUI. Rather
+            # than hand the user an empty screen, fall back to Pexels stills
+            # for the same term — they can still swap the term in the review.
+            print(
+                f"[fetch:meta]   wikipedia had NOTHING for '{search_term}' — "
+                f"falling back to PEXELS stills so the scene is reviewable"
+            )
+            fallback = []
+            seen_fb: set[str] = set()
+            for url in _get_image_metadata(search_term, max_results=5, page=1):
+                if url in seen_fb:
+                    continue
+                seen_fb.add(url)
+                fallback.append(url)
+                if len(fallback) >= 5:
+                    break
+            print(f"[fetch:meta]   pexels fallback returned {len(fallback)} still(s)")
+            return (idx, script_text, num_clips, max_runtime, [], fallback, [])
 
         # ── PEXELS path ──────────────────────────────────────────────
         print(f"[fetch:meta]   → using PEXELS source")
@@ -507,8 +631,18 @@ def load_stock_footage(all_scenes: dict) -> list[dict]:
                 wiki_img_urls,
             ) = result
 
+            # Stamp the bundle with WHAT it was fetched for. The candidate
+            # cache is keyed by script_text alone and reused wholesale, so
+            # without this a line retagged in the tagger (wikipedia → stock,
+            # or just a new search term) would silently keep serving the old
+            # bundle forever. main() compares these against the live row and
+            # re-fetches the ones that no longer match.
+            _row = scene_items[idx][1]
+            _mt = _row.get("media_type")
             out[idx] = {
                 "script_text": script_text,
+                "media_type": getattr(_mt, "value", str(_mt)),
+                "search_term": _row.get("search_term", ""),
                 "candidates": {"videos": [], "images": []},
                 "num_clips_needed": num_clips,
                 "max_runtime_per_clip_seconds": max_runtime,

@@ -91,7 +91,7 @@ import threading
 import time
 import tkinter as tk
 from pathlib import Path
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 from uuid import uuid4
 
 from PIL import Image, ImageDraw, ImageTk
@@ -444,6 +444,15 @@ class _MediaReviewer:
         self.chosen: list[dict] = []
         self.chosen_urls: set[str] = set()
 
+        # Every URL this scene has EVER been offered, so a "search again"
+        # never spends one of the five slots re-showing something the user
+        # already looked at and rejected. Keyed by script_text; seeded from
+        # the scene's original bundle the first time it is searched.
+        self._seen_urls: dict[str, set[str]] = {}
+        # The term each scene was last searched with (starts as the tagged
+        # one) — offered as the default when the user searches again.
+        self._current_terms: dict[str, str] = {}
+
         # Active slots for the current view: slot_num (1-5) -> (url, trim)
         self._slot_to_choice: dict[int, tuple[str, float]] = {}
 
@@ -603,6 +612,8 @@ class _MediaReviewer:
             "E = edit    "
             "B = remove bg    "
             "R = try again (AI)    "
+            "T = new search term    "
+            "W = new term, wider search    "
             "F / BACKSPACE = manual",
             bg=BG,
             fg=TEXT_COL,
@@ -666,6 +677,10 @@ class _MediaReviewer:
             self.root.bind(k, lambda e: self._toggle_remove_bg_mode())
         for k in ("r", "R"):
             self.root.bind(k, lambda e: self._on_try_again())
+        for k in ("t", "T"):
+            self.root.bind(k, lambda e: self._on_search_again(widen=False))
+        for k in ("w", "W"):
+            self.root.bind(k, lambda e: self._on_search_again(widen=True))
         for k in ("f", "F"):
             self.root.bind(k, lambda e: self._on_manual())
         self.root.bind("<BackSpace>", lambda e: self._on_manual())
@@ -1055,8 +1070,12 @@ class _MediaReviewer:
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def _build_regen_overlay(self, n_images: int, estimate_seconds):
-        """Full-window 'Regenerating…' cover with an animated spinner + ETA."""
+    def _build_regen_overlay(
+        self, n_images: int, estimate_seconds, title=None, subtitle=None
+    ):
+        """Full-window busy cover with an animated spinner + ETA. Defaults to
+        the AI 'Regenerating…' wording; the search-again options pass their
+        own title/subtitle and reuse everything else."""
         self._regen_frame = tk.Frame(self.root, bg=BG)
         self._regen_frame.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -1081,13 +1100,18 @@ class _MediaReviewer:
             width=6,
         )
 
-        tk.Label(
-            box, text="Regenerating…", bg=BG, fg=ACCENT, font=("Segoe UI", 20, "bold")
-        ).pack()
         plural = "s" if n_images != 1 else ""
         tk.Label(
             box,
-            text=f"Re-running the AI request for this scene "
+            text=title or "Regenerating…",
+            bg=BG,
+            fg=ACCENT,
+            font=("Segoe UI", 20, "bold"),
+        ).pack()
+        tk.Label(
+            box,
+            text=subtitle
+            or f"Re-running the AI request for this scene "
             f"({n_images} image{plural}).",
             bg=BG,
             fg=TEXT_COL,
@@ -1204,6 +1228,185 @@ class _MediaReviewer:
         self._load_current()
         self.status_var.set(
             "Fresh options ready — pick one, edit it (E), or try again (R)."
+        )
+
+    # ── Search again with a new term (T = same source, W = wider) ────────────
+
+    def _scene_uses_wikipedia(self, script_text: str) -> bool:
+        # Lazy: this module is otherwise CONFIG-free (it is handed everything
+        # it needs), and that keeps it importable on its own.
+        from CONFIG import media_props
+
+        row = self.script_to_search_term.get(script_text, {}) or {}
+        return media_props(row.get("media_type")).uses_wikipedia
+
+    def _seen_for(self, item: dict) -> set:
+        """Every URL this scene has been offered so far (seeded from its
+        original bundle on first use)."""
+        text = item["script_text"]
+        if text not in self._seen_urls:
+            cands = item.get("candidates", {}) or {}
+            self._seen_urls[text] = {
+                url
+                for bucket in ("videos", "images")
+                for entry in (cands.get(bucket) or [])
+                for url in entry
+            }
+        return self._seen_urls[text]
+
+    def _search_plan(self, script_text: str, widen: bool) -> dict:
+        """How many of each source a search should return.
+
+        Same source (T): a stock scene gets its usual 2 videos + 3 stills; a
+        wikipedia scene gets 5 wikipedia stills.
+
+        Wider (W): a stock scene gets 3 stock stills + 2 wikipedia stills; a
+        wikipedia scene — whose article clearly isn't working — gets 5 stock
+        stills and no wikipedia at all.
+        """
+        wiki_scene = self._scene_uses_wikipedia(script_text)
+        if widen:
+            if wiki_scene:
+                return {"n_videos": 0, "n_stock_images": 5, "n_wiki_images": 0}
+            return {"n_videos": 0, "n_stock_images": 3, "n_wiki_images": 2}
+        if wiki_scene:
+            return {"n_videos": 0, "n_stock_images": 0, "n_wiki_images": 5}
+        return {"n_videos": 2, "n_stock_images": 3, "n_wiki_images": 0}
+
+    def _on_search_again(self, widen: bool):
+        """T / W — none of the options are any good: ask for a new search term
+        and fetch a fresh set. `widen` also changes WHICH sources are asked."""
+        if (
+            self._advancing
+            or self._editor_frame is not None
+            or self._regen_frame is not None
+        ):
+            return
+        if self.item_idx >= len(self.items):
+            return
+
+        item = self.items[self.item_idx]
+        script_text = item["script_text"]
+
+        row = self.script_to_search_term.get(script_text, {}) or {}
+        current = self._current_terms.get(script_text) or row.get("search_term", "")
+        plan = self._search_plan(script_text, widen)
+
+        wants = ", ".join(
+            part
+            for part in (
+                f"{plan['n_videos']} stock video(s)" if plan["n_videos"] else "",
+                f"{plan['n_stock_images']} stock still(s)"
+                if plan["n_stock_images"]
+                else "",
+                f"{plan['n_wiki_images']} wikipedia still(s)"
+                if plan["n_wiki_images"]
+                else "",
+            )
+            if part
+        )
+
+        self._stop_all_videos()
+        term = simpledialog.askstring(
+            "Search again",
+            f'Scene:\n"{script_text}"\n\n'
+            f"This search will fetch: {wants}.\n"
+            f"Anything you have already been shown is skipped.\n\n"
+            f"New search term:",
+            initialvalue=current,
+            parent=self.root,
+        )
+        if term is None:
+            self.status_var.set("Search cancelled — the current options stand.")
+            self._load_current()
+            return
+        term = term.strip()
+        if not term:
+            self.status_var.set("A search needs a term — nothing changed.")
+            self._load_current()
+            return
+
+        seen = set(self._seen_for(item))
+        print(
+            f"[review] searching again for '{script_text[:50]}' with "
+            f"term='{term}' ({'wider' if widen else 'same source'}); "
+            f"{len(seen)} url(s) already seen"
+        )
+
+        self._advancing = True
+        # No ETA for a search (network, not the AI queue) — the spinner shows
+        # elapsed only. _regen_estimate=None is what makes it do that.
+        self._regen_start = time.time()
+        self._regen_estimate = None
+        self._build_regen_overlay(
+            1,
+            None,
+            title="Searching…",
+            subtitle=f'Fetching {wants} for "{term}".',
+        )
+        self.root.update_idletasks()
+
+        def worker():
+            result, err = None, None
+            try:
+                from ___visuals.DOWNLOADS import refetch_candidates
+
+                result = refetch_candidates(
+                    term,
+                    max_runtime=float(
+                        item.get("max_runtime_per_clip_seconds", 0.0) or 0.0
+                    ),
+                    exclude_urls=seen,
+                    **plan,
+                )
+            except Exception as exc:  # a dead API must not kill the GUI
+                err = exc
+            try:
+                self.root.after(
+                    0, lambda: self._finish_search_again(term, result, err)
+                )
+            except (RuntimeError, tk.TclError):
+                pass
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _finish_search_again(self, term, result, err):
+        if self.root is None:
+            return
+        self._teardown_regen_overlay()
+        self._regen_start = None  # never let a search feed the AI ETA averages
+
+        if err is not None:
+            self.status_var.set(f"Search failed: {err}")
+            self._advancing = False
+            self._load_current()
+            return
+
+        candidates, url_to_local = result
+        found = len(candidates["videos"]) + len(candidates["images"])
+        if not found:
+            self.status_var.set(
+                f"Nothing new for '{term}' — the current options are unchanged."
+            )
+            self._advancing = False
+            self._load_current()
+            return
+
+        item = self.items[self.item_idx]
+        # Remember what we showed, so the NEXT search skips it too.
+        seen = self._seen_for(item)
+        for bucket in ("videos", "images"):
+            for entry in candidates[bucket]:
+                seen.update(entry)
+        self._current_terms[item["script_text"]] = term
+        self.history.update(url_to_local)
+
+        # Replace the options wholesale — the user rejected the old ones.
+        item["candidates"] = candidates
+
+        self._load_current()
+        self.status_var.set(
+            f"{found} new option(s) for '{term}' — pick one, or search again."
         )
 
     # ── Decisions ────────────────────────────────────────────────────────────

@@ -39,26 +39,6 @@ put it under the NEW — brand-new material, in a scrollable box...)
 (bear in mind- we'll add lots more like this in the future)
 
 
-7) If no options are good, from the stock that I searched (this is in the media review stage)...
-
-I should have an option... 
-
-to;
-
-perhaps try again, with a different search term, which this time searches both stock and wikipedia? and then gives you 5 more options to choose from - 3 from stock, and 2 from wikipedia? 
-- so to clarify, this would be a new option that I can select during the media review stage.
-- ensure it doesn't fetch images that it has already fetched...
-
-
-
-7.5) Same for if we choose wikipedia as the option, but non of the options are good... but in that scenario, just get 5 stock, and no wikipedia...
-
-
-
-7.7) In fact, lets have a second additional option, which is just try again, but with a different search term. (which the user enters)
-
-
-
 8) When I'm doing manual intervention, where I place my own image in the stock footage folder... is there any way we could open a window which the user can just paste into, which will then paste the image which we are using for that? (as an alternative option available... so they can manually place in the folder, or they can just paste in a picture that they've copied...
 
 Also, if we manually add to the folder... and we've entered the number we are resolving.. can it not auto detect the most recent file that was added to the folder, and ask you to confirm it? (and ideally open a window which displays the image, so the user can confirm that they want to use that image/clip for the given entry...?)
