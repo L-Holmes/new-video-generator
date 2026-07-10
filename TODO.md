@@ -6,6 +6,7 @@ next task:
 how do we do group of three now? (3 in a row, now i think its group of 'n'?)
 I assumed that it would be hold previous? and then group?  (but that option isn't available currently)
 So basically I assume for the first one, we pick stock -> group, And then for the ones after it which we want putting on the same group picture, do 'hold previous' -> group.
+(please update the manual tagger to do this... and the code that follows, presumably in main and in the ___visuals files related to group of 'n' / 3 row...
 
 Also, at the same time update the manual tagger such that when we initially do stock -> group, and then tab / click onto the next entry, if that next entry is empty, then we automatically assign the hold previous + group to that.
 
@@ -202,6 +203,47 @@ For prod:
         - at the right, there is a prompt that the user is expected to copy and paste into an AI agent chat.
         - it also has a clear button.
         - user then pastes the new json into the text box. code confirms whether its different (and perhaps other verification, like checking the keys are all the same...)
+
+
+----------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
+
+
+OVERAHALL THE AUTO WORD-FINDING SYSTEM... MANUALLY!!!!! NO AI!!!
+
+Theme, context, time, place. 
+
+(These should be carried through all entries...) 
+
+Problem is, the theme may change... And same with the time and place... 
+
+
+=====
+## translation engine [open source]
+
+OPTIONS:
+- Harper
+- [Open source small AI option]
+
+
+
+## Abstract resumption engine (give full preceding text, ask it to identify what a particular "it"/"he"/"they" etc. refer to 
+
+
+## theme / context resolution 
+(Theme / time / context of overall thing, and then at a particular point, and perhaps "theme up to this point" (current line and proceeding text)) 
+
+## details about a thing 
+Take a reference to a "car" at a point in text, then based on previous words I get an outfit of all the details describing that thing. 
+E.g. "red Toyota Aygo car"
+
+And / or keep track of that thing as we go through the text. 
+E.g. so theoretically could wire into code that will colour code repeated things, and then I can hover over the word, then at the side it shows the full description (of the Aygo...)
+
+
+## auto complete engine? 
+
 
 ----------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------
