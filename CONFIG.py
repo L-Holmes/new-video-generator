@@ -313,6 +313,39 @@ RANDOM_BACKGROUND_SEED: int = 0
 
 
 # ===========================================================================
+# MATHS SCENES  —  manim-rendered animations of row["data"]
+# ===========================================================================
+# Every maths type renders TWO artefacts and the generator picks between them
+# on the scene's runtime: a TRANSITION mp4 (the animation) and a FINAL still
+# (its last frame). See AI_READ_THIS.txt — this is the house pattern for any
+# animation whose length is fixed but whose scene length is not.
+MATHS_SCENE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/maths_scenes")
+
+# Timeline: a marker sets off from the current year and travels back to
+# row["data"]["year"], then the year pops up where it landed.
+TIMELINE_TRAVEL_SEC: float = 2.2  # the marker's journey
+TIMELINE_LABEL_SEC: float = 0.7  # the year appearing once it lands
+TIMELINE_SETTLE_SEC: float = 0.35  # a beat on the finished line
+# => the transition is the sum of those three. A scene shorter than it never
+#    plays the animation at all (it would be cut mid-journey); it gets the
+#    finished timeline as a still instead.
+TIMELINE_FPS: int = 30
+TIMELINE_RESOLUTION: tuple[int, int] = (1920, 1080)
+TIMELINE_BACKGROUND: str = "#FFFFFF"
+TIMELINE_INK: str = "#1B1B1B"  # axis, ticks, tick labels
+TIMELINE_ACCENT: str = "#7D5BA6"  # the marker and the year that pops up
+# How many tick marks the line carries between the two years (endpoints
+# included). Odd numbers centre a tick, which reads better.
+TIMELINE_TICKS: int = 7
+
+
+def timeline_transition_seconds() -> float:
+    """How long a timeline's animation runs. The generator compares the scene's
+    runtime against this to decide whether the animation fits at all."""
+    return TIMELINE_TRAVEL_SEC + TIMELINE_LABEL_SEC + TIMELINE_SETTLE_SEC
+
+
+# ===========================================================================
 # SEARCH TERM TYPES   (FLAT SCHEMA — every "(type, variant)" is its own enum)
 # ===========================================================================
 #
@@ -346,6 +379,7 @@ class Tag(str, Enum):
     EDIT_PREVIOUS = "edit_previous"  # acts on the image already on screen
     AI = "ai"  # ai-generated look (red buttons)
     BOARD = "board"  # sits on the stickman explain board
+    MATHS = "maths"  # a rendered animation of DATA (timeline, chart, …)
 
 
 # ---------------------------------------------------------------------------
@@ -449,6 +483,15 @@ MEDIA_TYPE_CATALOG: dict[str, dict] = {
         "is the change ('add a second coin').",
         "example": "examples/ai_edit_previous.png",
     },
+    "timeline": {
+        "tags": [Tag.MATHS],
+        "color": "#7d5ba6",
+        "info": "a manim-animated timeline. a marker starts at the current "
+        "year and travels back to the year you give it; when it "
+        "lands, that year pops up on the line. the search term is "
+        "unused — the year comes from the data field.",
+        "example": "examples/timeline.png",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -495,6 +538,49 @@ MODIFIERS: dict[str, dict] = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# TAGGER TABS — how the media-type buttons are laid out in MANUAL_TAGGING.
+# One tab per entry, one column per (tag, heading). A type appears in every
+# column whose tag it carries; a type whose tags reach no column is
+# unreachable, which _validate_media_type_tabs() refuses to let happen.
+# Adding a maths type is a catalog entry with Tag.MATHS — no UI change.
+# ---------------------------------------------------------------------------
+MEDIA_TYPE_TABS: list[dict] = [
+    {
+        "name": "material",
+        "label": "material",
+        "columns": [
+            (Tag.NEW, "NEW — brand-new material"),
+            (Tag.EDIT_PREVIOUS, "EDIT PREVIOUS — act on what is on screen"),
+        ],
+    },
+    {
+        "name": "maths",
+        "label": "maths",
+        "columns": [(Tag.MATHS, "NEW — MATHS")],
+    },
+]
+
+
+def _validate_media_type_tabs() -> None:
+    reachable = {
+        name
+        for name, entry in MEDIA_TYPE_CATALOG.items()
+        for tab in MEDIA_TYPE_TABS
+        for tag, _ in tab["columns"]
+        if tag in entry["tags"]
+    }
+    missing = set(MEDIA_TYPE_CATALOG) - reachable
+    if missing:
+        raise RuntimeError(
+            f"these media types sit on no tagger tab (give them a tag that a "
+            f"MEDIA_TYPE_TABS column selects): {sorted(missing)}"
+        )
+
+
+_validate_media_type_tabs()
+
+
 # Which base types can OPEN a group (they have grid layouts). The group takes
 # its base — where every cell's picture comes from — from the line that opens
 # it.
@@ -526,6 +612,143 @@ MIN_DURATION_GATED_TYPES: set[str] = {
     "stock", "ai_stock", "wikipedia", "map",
     "stock_on_board", "wikipedia_on_board",
 }
+
+
+# ===========================================================================
+# THE `data` COLUMN  —  structured input for types the search term can't feed
+# ===========================================================================
+# Most types are driven by their search_term (a query, a place, a prompt). The
+# MATHS family isn't: a timeline needs a YEAR, a pie chart will need labelled
+# slices. Rather than bolt a column onto the json per type, every row carries
+# ONE optional `data` object, and the type declares what belongs in it here.
+#
+# The tagger reads this table to BUILD its data form (one input per field, no
+# per-type UI code), normalise_scene_row reads it to VALIDATE + coerce what
+# comes back, and the generator reads the coerced values. Adding a pie chart
+# is a catalog entry, a row here, and a generator — no schema change anywhere.
+#
+# `kind` drives both the coercion below and the input the tagger renders:
+#   year   -> a whole year, sanity-bounded          (int)
+#   int    -> any whole number                      (int)
+#   number -> any number                            (float)
+#   text   -> a non-empty string                    (str)
+@dataclass(frozen=True)
+class DataField:
+    name: str  # the key inside row["data"]
+    label: str  # what the tagger's input is labelled
+    kind: str  # see the table above
+    help: str = ""  # shown under the input
+    placeholder: str = ""
+    required: bool = True
+
+
+MEDIA_TYPE_DATA_FIELDS: dict[str, tuple[DataField, ...]] = {
+    "timeline": (
+        DataField(
+            name="year",
+            label="target year",
+            kind="year",
+            placeholder="1600",
+            help="the year the marker travels back to. it sets off from the "
+            "CURRENT year, which the renderer reads from the clock — so "
+            "you only give it the destination.",
+        ),
+    ),
+}
+
+# A year outside this range is a typo (a mistyped century, a stray digit),
+# not a date anyone narrates.
+DATA_YEAR_MIN, DATA_YEAR_MAX = -4000, 4000
+
+
+def data_fields_for(media_type_name: str) -> tuple[DataField, ...]:
+    """What belongs in row["data"] for this media type — () for most types."""
+    return MEDIA_TYPE_DATA_FIELDS.get(media_type_name, ())
+
+
+def _coerce_data_value(field: DataField, raw: object) -> object:
+    """One `data` value, checked and converted to the type its kind promises."""
+    if field.kind == "text":
+        text = str(raw).strip()
+        if not text:
+            raise ValueError(f"'{field.label}' cannot be empty")
+        return text
+    if field.kind == "number":
+        try:
+            return float(raw)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            raise ValueError(f"'{field.label}' must be a number, got {raw!r}")
+    try:
+        value = int(raw)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        raise ValueError(f"'{field.label}' must be a whole number, got {raw!r}")
+    if field.kind == "year" and not (DATA_YEAR_MIN <= value <= DATA_YEAR_MAX):
+        raise ValueError(
+            f"'{field.label}' = {value} is outside {DATA_YEAR_MIN}.."
+            f"{DATA_YEAR_MAX} — that looks like a typo, not a year"
+        )
+    return value
+
+
+def coerce_scene_data(
+    media_type_name: str,
+    raw: object,
+    script_text: str,
+    *,
+    require_all: bool = True,
+) -> dict:
+    """Validate row["data"] against its type's DataFields and return the coerced
+    object. Types with no fields must carry no data. Unknown keys and
+    unconvertible values always raise — the tagger wrote this file, so anything
+    else here is a bug worth stopping for.
+
+    `require_all=False` allows a required field to be MISSING (but still checks
+    every value that IS there). The tagger saves with it off, because a form is
+    incomplete while you are typing into it; the loader keeps it on, because by
+    render time a missing year has nowhere left to come from."""
+    fields = data_fields_for(media_type_name)
+    if raw in (None, ""):
+        raw = {}
+    if not isinstance(raw, dict):
+        raise ValueError(
+            f"'data' must be an object on scene '{script_text[:60]}', "
+            f"got {type(raw).__name__}"
+        )
+    if not fields:
+        if raw:
+            raise ValueError(
+                f"'{media_type_name}' takes no data, but scene "
+                f"'{script_text[:60]}' carries {sorted(raw)}"
+            )
+        return {}
+    known = {f.name for f in fields}
+    unknown = sorted(set(raw) - known)
+    if unknown:
+        raise ValueError(
+            f"unknown data key(s) {unknown} for '{media_type_name}' on scene "
+            f"'{script_text[:60]}' (valid: {', '.join(sorted(known))})"
+        )
+    out: dict = {}
+    for field in fields:
+        if field.name not in raw or raw[field.name] in (None, ""):
+            if field.required and require_all:
+                raise ValueError(
+                    f"'{media_type_name}' needs data.{field.name} "
+                    f"({field.label}) on scene '{script_text[:60]}' — retag "
+                    f"the line and fill it in"
+                )
+            continue
+        try:
+            out[field.name] = _coerce_data_value(field, raw[field.name])
+        except ValueError as exc:
+            raise ValueError(f"{exc} (scene '{script_text[:60]}')") from None
+    return out
+
+
+def scene_data(row: dict) -> dict:
+    """row["data"] — the structured input for types the search term can't feed
+    (a timeline's year, a chart's slices). {} for every other type."""
+    return row.get("data") or {}
 
 
 MediaType = Enum(  # type: ignore[misc]
@@ -580,6 +803,7 @@ MEDIA_PROPERTIES: dict[MediaType, MediaProperties] = {
     MediaType.AI_EDIT_PREVIOUS: MediaProperties(
         is_ai_base=True, is_ai_edit=True, acts_on_previous=True
     ),
+    MediaType.TIMELINE: MediaProperties(),  # generate_timeline_scenes renders it
 }
 
 
@@ -692,6 +916,8 @@ def normalise_scene_row(script_text: str, row: dict) -> None:
             f"(valid: {', '.join(STAMP_SOURCE_TYPES)}, or null)"
         )
     row["stamp_decorate"] = bool(row.get("stamp_decorate", False))
+    # structured input for the types a search term can't feed (see DataField)
+    row["data"] = coerce_scene_data(name, row.get("data"), script_text)
     row["media_type"] = MediaType(name)
 
 
@@ -855,6 +1081,7 @@ DECORATE_RENDER_SAFETY_PAD_SEC: float = 0.08
 STAMP_SOURCE_TYPES: tuple[str, ...] = ("stock", "wikipedia", "ai_stock")
 TERM_OPTIONAL_TYPES: tuple[str, ...] = (
     "hold_previous", "background", "blank", "random_background",
+    "timeline",  # driven by row["data"], not by a search term
 )
 
 # --- LIVE VIDEO DECORATE (decorations layered over PLAYING footage) --------

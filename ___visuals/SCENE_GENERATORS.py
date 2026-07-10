@@ -6,6 +6,7 @@ Locally-rendered scene generators (no external candidates, no review):
   - generate_map_scenes        — highlighted place maps
   - generate_blank_scenes      — an empty canvas: a flat colour ("blank") or a
                                  backdrop from _BACKGROUNDS/ ("random_background")
+  - generate_maths_scenes      — manim animations of row["data"] ("timeline")
   - generate_stickman_explain_scenes — chosen stock/wiki clip on a board base
 
 plus the LOCAL_FOOTAGE_GENERATORS registry and run_all_local_generators that
@@ -43,6 +44,7 @@ from CONFIG import (
     MAP_ENABLE,
     MAP_GEOCODE_CACHE_DIR,
     MAP_OUTPUT_DIR,
+    MATHS_SCENE_OUTPUT_DIR,
     RANDOM_BACKGROUND_DIR,
     RANDOM_BACKGROUND_SEED,
     TYPOGRAPHY_ENABLE,
@@ -56,6 +58,7 @@ from CONFIG import (
     SearchTermData,
     group_scene_rows,
     media_props,
+    scene_data,
     scene_is_grouped,
 )
 from ___visuals.DOWNLOADS import _download_image
@@ -727,6 +730,153 @@ def generate_blank_scenes(
     return footage_map
 
 
+# ===========================================================================
+# GENERATOR: MATHS SCENES  (manim animations of row["data"])
+# ===========================================================================
+# A maths animation has a FIXED length; the scene it must fill does not. So
+# every maths renderer produces a pair — the transition mp4, and its final
+# frame as a still — and this generator chooses between them per scene:
+#
+#   scene SHORTER than the transition -> the finished still, full scene length.
+#       (playing the animation would cut it off mid-journey, which reads as a
+#        glitch rather than as a timeline.)
+#   scene LONGER  than the transition -> the transition, then the still held
+#       for whatever runtime is left. Two footage entries, played back to back,
+#       exactly as a joint scene plays its intro then its loop.
+#
+# This is the house pattern for fixed-length animations — see AI_READ_THIS.txt.
+
+
+def _maths_render_timeline(data: dict, stem: str) -> tuple[str, str, float]:
+    """Render a timeline. Returns (transition_mp4, final_png, transition_secs)."""
+    from ___visuals.maths import render_timeline
+    from ___visuals.maths._runner import probe_duration
+    from ___visuals.maths.timeline import current_year
+
+    out_dir = Path(MATHS_SCENE_OUTPUT_DIR)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    year = int(data["year"])
+    # Keyed on the render's INPUTS, not the scene: two lines travelling back to
+    # the same year share one manim render (which takes tens of seconds). The
+    # start year is in the key because it comes from the clock — a run in
+    # January of the next year must not reuse December's line.
+    key = f"timeline_{current_year()}_to_{year}"
+    mp4, png = out_dir / f"{key}.mp4", out_dir / f"{key}.png"
+    render_timeline(year, str(mp4), str(png))
+    return str(mp4), str(png), probe_duration(str(mp4))
+
+
+# media_type -> renderer. A new maths type lands here and nowhere else in this
+# file; the duration logic below is shared by all of them.
+_MATHS_RENDERERS: dict[MediaType, "Callable[[dict, str], tuple[str, str, float]]"] = {
+    MediaType.TIMELINE: _maths_render_timeline,
+}
+
+
+def generate_maths_scenes(
+    script_to_search_term: dict[str, SearchTermData],
+    candidates_data: list[dict],  # unused — registry signature uniformity
+    final_data: list[dict] | None = None,  # unused — registry signature uniformity
+) -> dict[str, list[dict]]:
+    """
+    Render every MATHS scene (timeline today; charts later) and return a
+    stitcher-ready map of:
+
+        { script_text: [ {local_mp4_path: trim_seconds}, ... ], ... }
+
+    One entry when the scene is too short for the animation, two when it plays
+    the animation and then holds the finished frame. Needs no candidates and no
+    review, so this is a registry generator like map / blank.
+    """
+    print("\n" + "=" * 70)
+    print("[maths scenes] STARTING generate_maths_scenes")
+    print("=" * 70)
+
+    scenes = [
+        (txt, data)
+        for txt, data in script_to_search_term.items()
+        if data["media_type"] in _MATHS_RENDERERS
+    ]
+    if not scenes:
+        print("[maths scenes] no maths scenes — returning empty map")
+        return {}
+
+    print(f"[maths scenes] found {len(scenes)} maths scene(s)")
+
+    scene_timings = _load_scene_timings()
+    out_dir = Path(MATHS_SCENE_OUTPUT_DIR)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    footage_map: dict[str, list[dict]] = {}
+
+    for idx, (script_text, row) in enumerate(scenes):
+        media_type = row["media_type"]
+
+        if script_text not in scene_timings:
+            print(f"[maths scenes] FATAL: no timing for '{script_text[:80]}'")
+            sys.exit(1)
+        duration = float(scene_timings[script_text])
+        if duration <= 0:
+            print(
+                f"[maths scenes] WARNING: zero/negative duration "
+                f"({duration}s) — skipping '{script_text[:60]}'"
+            )
+            continue
+
+        safe_stem = (
+            re.sub(r"[^a-zA-Z0-9]+", "_", script_text).strip("_")[:50] or "scene"
+        )
+        print(
+            f"\n[maths scenes] [{idx + 1}/{len(scenes)}] "
+            f"'{script_text[:60]}{'...' if len(script_text) > 60 else ''}'"
+        )
+        print(f"[maths scenes]   type           = {media_type.value}")
+        print(f"[maths scenes]   data           = {scene_data(row)}")
+        print(f"[maths scenes]   scene duration = {duration:.3f}s")
+
+        try:
+            transition_mp4, final_png, transition = _MATHS_RENDERERS[media_type](
+                scene_data(row), safe_stem
+            )
+        except Exception as exc:
+            print(
+                f"[maths scenes] FATAL: {media_type.value} render failed for "
+                f"'{script_text[:50]}': {exc}"
+            )
+            sys.exit(1)
+
+        print(f"[maths scenes]   transition     = {transition:.3f}s")
+
+        if duration <= transition:
+            # No room for the journey — show where it ends up, for the whole
+            # scene. Never a clipped animation.
+            still_mp4 = str(out_dir / f"{media_type.value}_{idx:03d}_{safe_stem}.mp4")
+            _render_image_to_static_mp4(final_png, duration, still_mp4)
+            footage_map[script_text] = [{still_mp4: round(duration, 3)}]
+            print(
+                f"[maths scenes]   ✓ scene is shorter than the animation — "
+                f"finished still only, {duration:.3f}s"
+            )
+            continue
+
+        hold = duration - transition
+        hold_mp4 = str(out_dir / f"{media_type.value}_{idx:03d}_{safe_stem}_hold.mp4")
+        _render_image_to_static_mp4(final_png, hold, hold_mp4)
+        footage_map[script_text] = [
+            {transition_mp4: round(transition, 3)},
+            {hold_mp4: round(hold, 3)},
+        ]
+        print(
+            f"[maths scenes]   ✓ animation {transition:.3f}s "
+            f"then hold {hold:.3f}s"
+        )
+
+    print("\n" + "=" * 70)
+    print(f"[maths scenes] DONE — produced {len(footage_map)} maths scene(s)")
+    print("=" * 70)
+    return footage_map
+
+
 def generate_stickman_explain_scenes(
     script_to_search_term: dict[str, SearchTermData],
     final_data: list[dict],
@@ -862,6 +1012,7 @@ LOCAL_FOOTAGE_GENERATORS: dict[
     "typography": generate_read_out_scenes,  # MediaType.TYPOGRAPHY
     "map": generate_map_scenes,  # MediaType.MAP
     "blank": generate_blank_scenes,  # MediaType.BLANK + RANDOM_BACKGROUND
+    "maths": generate_maths_scenes,  # MediaType.TIMELINE (+ future charts)
 }
 
 

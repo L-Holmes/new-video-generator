@@ -35,10 +35,13 @@ try:
         GROUPABLE_TYPES,
         JOINT_GROUP_CELLS,
         MEDIA_TYPE_CATALOG as MEDIA_TYPES,
+        MEDIA_TYPE_TABS,
         MODIFIERS,
         STAMP_SOURCE_TYPES,
         TERM_OPTIONAL_TYPES,
         Tag,
+        coerce_scene_data,
+        data_fields_for,
     )
 except ImportError as exc:  # pragma: no cover - setup guidance
     raise ImportError(

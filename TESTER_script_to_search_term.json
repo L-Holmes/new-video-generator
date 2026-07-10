@@ -1,10 +1,8 @@
 {
-  "If you open your kitchen cupboard right now, you probably have a jar of nutmeg.": {
-    "search_term": "jar of nutmeg",
+  "If you open your kitchen cupboard right now, you probably have a": {
+    "search_term": "kitchen cup",
     "media_type": "stock",
-    "modifiers": [
-      "collage"
-    ],
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -17,7 +15,31 @@
       1
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {},
+    "_split_before": {
+      "text": "jar of nutmeg.",
+      "glue": " "
+    }
+  },
+  "jar of nutmeg.": {
+    "search_term": "Jar of Nutmeg",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12,
+      1
+    ],
+    "stamp_decorate": false,
+    "stamp_source": null,
+    "data": {}
   },
   "It costs about two dollars.": {
     "search_term": "dollar",
@@ -36,11 +58,12 @@
       1
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
-  "But in the 1600s,": {
+  "But in the 1600s, this little wrinkled seed was": {
     "search_term": "1600s",
-    "media_type": "wikipedia",
+    "media_type": "timeline",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -52,27 +75,14 @@
     "rule_ids": [
       1001,
       18,
-      7
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "this little wrinkled seed was": {
-    "search_term": "nutmeg seed",
-    "media_type": "stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
+      7,
       15
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {
+      "year": 1600
+    }
   },
   "the single most contested resource on the planet.": {
     "search_term": "",
@@ -90,7 +100,8 @@
     "rule_ids": [
       39,
       1
-    ]
+    ],
+    "data": {}
   },
   "It was worth more than its weight in gold.": {
     "search_term": "gold ",
@@ -110,7 +121,8 @@
       1
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "Nutmeg only grew in one place on Earth:": {
     "search_term": "Nutmeg plant",
@@ -128,7 +140,8 @@
       1
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "The Banda Islands.": {
     "search_term": "The Banda Islands",
@@ -145,7 +158,8 @@
       1
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "A tiny, incredibly remote volcanic archipelago in modern-day Indonesia. If you were a European merchant, getting": {
     "search_term": "Banda Islands archipelago",
@@ -169,7 +183,8 @@
       12
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "it meant sailing for months,": {
     "search_term": "sailing",
@@ -187,7 +202,8 @@
       25
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "surviving scurvy,": {
     "search_term": "scurvy",
@@ -208,7 +224,8 @@
       8
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "pirates, and": {
     "search_term": "pirates",
@@ -227,7 +244,8 @@
       15
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "shipwrecks.": {
     "search_term": "shipwrecks",
@@ -246,7 +264,8 @@
       1
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "But if you made it back with a single ship full of nutmeg,": {
     "search_term": "18th century vessel ",
@@ -267,7 +286,8 @@
       26
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "you were set for life.": {
     "search_term": "lottery set for life",
@@ -285,7 +305,8 @@
       1
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "The Dutch and": {
     "search_term": "dutch 1700s",
@@ -302,7 +323,8 @@
       15
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "the British fought bloody,": {
     "search_term": "British 1700s",
@@ -319,7 +341,8 @@
       7
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "brutal wars over these tiny islands. In fact, to secure a monopoly on nutmeg,": {
     "search_term": "17th century ",
@@ -338,7 +361,8 @@
       8
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "the Dutch formally traded a different island they owned to the British.": {
     "search_term": "Dutch",
@@ -359,7 +383,8 @@
       1
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "That island was Manhattan.": {
     "search_term": "Manhattan",
@@ -374,7 +399,8 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ]
+    ],
+    "data": {}
   },
   "Yep...": {
     "search_term": "",
@@ -391,7 +417,8 @@
       3
     ],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   },
   "New York City was": {
     "search_term": "New York City",
@@ -410,7 +437,8 @@
     "_split_before": {
       "text": "traded for nutmeg.",
       "glue": " "
-    }
+    },
+    "data": {}
   },
   "traded for nutmeg.": {
     "search_term": "Traded for nutmeg",
@@ -427,6 +455,7 @@
     "music_fade_out": 0,
     "rule_ids": [],
     "stamp_decorate": false,
-    "stamp_source": null
+    "stamp_source": null,
+    "data": {}
   }
 }

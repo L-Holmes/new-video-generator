@@ -1,0 +1,86 @@
+AI_READ_THIS.txt
+================
+Standing conventions for this repo. Read before adding a feature that touches
+the render pipeline. These are decisions already made — follow them rather than
+re-deriving them.
+
+
+1. FIXED-LENGTH ANIMATIONS IN VARIABLE-LENGTH SCENES
+----------------------------------------------------
+A scene's runtime comes from the narration audio, so it is not known when an
+animation is authored and it is never the animation's natural length. Do NOT
+speed the animation up, slow it down, or loop it to fit.
+
+ALWAYS use the transition + hold pattern:
+
+  Render TWO artefacts:
+    - the TRANSITION: the animation itself, at its natural length, as an mp4.
+    - the FINAL STILL: the animation's LAST FRAME, as a png. (Extract it from
+      the mp4 with `ffmpeg -sseof`, so the still is by construction exactly
+      what the animation settles on — never a re-render that might drift.)
+
+  Then, once the scene's runtime is known (SCENE_GENERATORS, which has the
+  audio timings), pick per scene:
+    - runtime <= transition  ->  ONE footage entry: the FINAL STILL, baked to
+      a static mp4 of the full runtime. The animation is NOT played. A clipped
+      animation reads as a glitch; the finished picture reads as a choice.
+    - runtime >  transition  ->  TWO footage entries, played back to back: the
+      transition at its own length, then the final still held for the rest.
+
+  The entries are `{path: trim_seconds}` dicts and the trims must sum to the
+  scene's runtime exactly. Every trim must be <= its file's real duration.
+
+  Live examples:
+    ___visuals/SCENE_GENERATORS.py  generate_maths_scenes   (timeline)
+    ___visuals/SCENE_GENERATORS.py  generate_joint_scenes   (intro then loop)
+
+
+2. STRUCTURED INPUT: THE `data` COLUMN
+--------------------------------------
+Most media types are driven by `search_term`. Types that need something a
+search term cannot express (a timeline's year; a chart's slices) read
+`row["data"]`, one object per scene.
+
+Do NOT add a new top-level column per type. Instead:
+  - declare the inputs in CONFIG.MEDIA_TYPE_DATA_FIELDS as DataField rows.
+  - CONFIG.normalise_scene_row validates + coerces `data` against them on load,
+    so a generator can trust the values' types.
+  - MANUAL_TAGGING builds its data form FROM that table. No per-type UI code.
+
+
+3. NO LATEX
+-----------
+manim is installed and used for maths animations, but LaTeX is not, and should
+not be. Manim's DecimalNumber/MathTex shell out to `latex` by default. Pass
+`mob_class=Text` (or `label_constructor=Text` on a NumberLine) so every number
+renders through Pango instead. See ___visuals/maths/timeline.py.
+
+manim needs system cairo + pango:
+    sudo apt install -y libcairo2-dev libpango1.0-dev pkg-config python3-dev
+
+
+4. ADDING A MATHS MEDIA TYPE
+-----------------------------
+  1. CONFIG.MEDIA_TYPE_CATALOG: an entry tagged Tag.MATHS.
+  2. CONFIG.MEDIA_PROPERTIES:   a property row (usually all-default).
+  3. CONFIG.MEDIA_TYPE_DATA_FIELDS: what goes in its `data`.
+  4. CONFIG.TERM_OPTIONAL_TYPES: add it (its input is `data`, not a term).
+  5. ___visuals/maths/<type>.py: a render function returning
+     (transition_mp4, final_png, transition_seconds) — see point 1.
+  6. SCENE_GENERATORS._MATHS_RENDERERS: one line.
+The manual tagger picks it up on its own: its maths tab is built from the
+catalog, and its data form from MEDIA_TYPE_DATA_FIELDS.
+
+
+5. GROUPS (rule of n)
+---------------------
+A group is written the way it reads on screen: the first line carries a real
+base (`stock` / `ai_stock`) + the `group` modifier, and every line that joins
+it carries `hold_previous` + `group`. `hold_previous` is only the SPELLING —
+CONFIG.resolve_group_continuations() rewrites those rows to the group's real
+base immediately after load, because every stage downstream dispatches on
+media_type and each cell fetches its OWN picture from the group's base.
+
+If you read the search-term json RAW (rather than taking main.py's in-memory
+rows), you MUST call resolve_group_continuations() on it first, or you will
+silently skip every cell but the first.

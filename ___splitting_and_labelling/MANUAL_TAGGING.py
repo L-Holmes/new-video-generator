@@ -70,13 +70,27 @@ from MEDIA_TYPES import (COLLAGEABLE_TYPES, GROUPABLE_TYPES, MEDIA_TYPES,
 try:    # new names — re-export them from MEDIA_TYPES.py (one line) to keep
         # this in sync with CONFIG; the fallback mirrors CONFIG's defaults.
     from MEDIA_TYPES import (GROUP_CONTINUATION_TYPE, JOINT_GROUP_CELLS,
-                             STAMP_SOURCE_TYPES, TERM_OPTIONAL_TYPES)
+                             MEDIA_TYPE_TABS, STAMP_SOURCE_TYPES,
+                             TERM_OPTIONAL_TYPES, coerce_scene_data,
+                             data_fields_for)
 except ImportError:
     STAMP_SOURCE_TYPES = ("stock", "wikipedia", "ai_stock")
     TERM_OPTIONAL_TYPES = ("hold_previous", "background",
-                           "blank", "random_background")
+                           "blank", "random_background", "timeline")
     JOINT_GROUP_CELLS = {"stock": 3, "ai_stock": 3}
     GROUP_CONTINUATION_TYPE = "hold_previous"
+    MEDIA_TYPE_TABS = [{"name": "material", "label": "material", "columns": [
+                            (Tag.NEW, "NEW — brand-new material"),
+                            (Tag.EDIT_PREVIOUS,
+                             "EDIT PREVIOUS — act on what is on screen")]},
+                       {"name": "maths", "label": "maths",
+                        "columns": [(Tag.MATHS, "NEW — MATHS")]}]
+
+    def data_fields_for(name):
+        return ()
+
+    def coerce_scene_data(name, raw, script_text, *, require_all=True):
+        return dict(raw or {})
 
 # Brand-new-footage minimum-duration guard (task 11). MEDIA_TYPES already put
 # the repo root on sys.path, so the shared config resolves; fall back to safe
@@ -167,12 +181,24 @@ def build_catalog() -> dict:
               "term_optional": n in TERM_OPTIONAL_TYPES,
               "stampable": n in STAMP_SOURCE_TYPES,
               "new_footage": n in MIN_DURATION_GATED_TYPES,
+              # structured input this type needs instead of (or as well as) a
+              # search term — the tagger builds its form straight from this
+              "data_fields": [{"name": f.name, "label": f.label,
+                               "kind": f.kind, "help": f.help,
+                               "placeholder": f.placeholder,
+                               "required": f.required}
+                              for f in data_fields_for(n)],
               "info": d["info"], "example": d["example"]}
              for n, d in MEDIA_TYPES.items()]
     mods = [{"name": n, "label": n, "color": d["color"],
              "info": d["info"], "example": d["example"]}
             for n, d in MODIFIERS.items()]
-    return {"bases": bases, "modifiers": mods,
+    # the media-type picker's tabs (material / maths / …), straight from CONFIG
+    tabs = [{"name": t["name"], "label": t["label"],
+             "columns": [{"tag": tag.value, "title": title}
+                         for tag, title in t["columns"]]}
+            for t in MEDIA_TYPE_TABS]
+    return {"bases": bases, "modifiers": mods, "tabs": tabs,
             "group_continuation_type": GROUP_CONTINUATION_TYPE}
 
 
@@ -225,6 +251,11 @@ def recompute(data: Dict[str, dict]) -> None:
             row["search_term"] = key
         mods = row.get("modifiers") or []
         base = row.get("media_type") or ""
+        # `data` belongs to the BASE. Switching away from timeline must not
+        # leave its year behind for the loader to trip over.
+        keep = {f.name for f in data_fields_for(base)}
+        row["data"] = {k: v for k, v in (row.get("data") or {}).items()
+                       if k in keep}
         if "group" not in mods:
             gid, pos = None, 0
         elif base != GROUP_CONTINUATION_TYPE:
@@ -429,7 +460,18 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
             and patch["stamp_source"] not in STAMP_SOURCE_TYPES:
         return ("stamp source must be one of "
                 + ", ".join(STAMP_SOURCE_TYPES).replace("_", " "))
-    for key in {"media_type", "modifiers", "search_term",
+    # `data` is checked against the BASE's DataFields — the same table the
+    # loader validates against, so a value the tagger accepts always loads.
+    # require_all is off: the form is half-filled while it is being typed into,
+    # and `lineDone` (not this) is what refuses to let you finish on a gap.
+    if "data" in patch:
+        try:
+            patch = dict(patch,
+                         data=coerce_scene_data(base, patch["data"], line,
+                                                require_all=False))
+        except ValueError as exc:
+            return str(exc)
+    for key in {"media_type", "modifiers", "search_term", "data",
                 "stamp_source", "stamp_decorate"} & set(patch):
         row[key] = patch[key]
     row["stamp_decorate"] = bool(row.get("stamp_decorate", False))
@@ -909,6 +951,24 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
  .kbhint{color:#5a6478;font-size:11px;width:100%}
  #mediacard{background:#1a2130;border:1px solid #35507a}
  #mediacard h3{color:#8fb4e8}
+ #tabbar{display:flex;align-items:center;gap:9px;margin:2px 0 12px}
+ #tabbar .arw{width:26px;height:26px;line-height:1;border-radius:50%;border:1px solid #3a4a66;background:#141a26;color:#8fb4e8;cursor:pointer;font-size:15px;padding:0}
+ #tabbar .arw:hover{background:#22304a}
+ #tabdots{display:flex;gap:7px;align-items:center}
+ .tdot{width:9px;height:9px;border-radius:50%;background:#3a4356;cursor:pointer}
+ .tdot:hover{background:#55607a}
+ .tdot.on{background:#8fb4e8;box-shadow:0 0 0 3px #8fb4e82e}
+ #tabname{color:#8fb4e8;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+ #tabhint{color:#5a6478;font-size:11px;margin-left:auto}
+ #datacard{background:#16241d;border:1px solid #3f6b52}
+ #datacard h3{color:#7fc9a0}
+ #datacard.attn{animation:flashgreen 1.2s ease-out}
+ @keyframes flashgreen{0%{box-shadow:0 0 0 0 #7fc9a099}70%{box-shadow:0 0 0 10px #7fc9a000}}
+ .dfield{display:block;margin:0 0 12px}
+ .dfield .dlbl{display:block;color:#cfe4d8;font-size:13px;margin-bottom:4px}
+ .dfield .dlbl i{color:#6d8a7c;font-style:normal}
+ .dfield input{width:100%;box-sizing:border-box;background:#0f1116;color:#fff;border:1px solid #3f6b52;border-radius:6px;padding:8px;font:inherit}
+ .dfield .dhelp{display:block;color:#6d8a7c;font-size:11.5px;margin-top:4px;line-height:1.4}
  #bottomstick{padding-top:4px}
  #termcard{background:#241f12;border:1px solid #6e5c2a;box-shadow:0 -8px 18px #0008;margin-bottom:8px}
  #termcard h3{color:var(--gold)}
@@ -1051,13 +1111,26 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
       <span class="kbhint">← → arrow keys move between types · enter picks · tab → step 2</span>
     </div>
     <div class="body">
+      <div id="tabbar">
+        <button class="arw" onclick="event.stopPropagation();moveTab(-1)">‹</button>
+        <div id="tabdots"></div>
+        <button class="arw" onclick="event.stopPropagation();moveTab(1)">›</button>
+        <span id="tabname"></span>
+        <span id="tabhint">[ and ] switch tab</span>
+      </div>
       <div class="cols" id="typepanel"></div>
       <div class="modrow"><span class="lbl">stack on top — optional, any
         <i class="info" data-info="_mods">i</i></span>
         <span id="modbar"></span><span id="modhint" class="hint"></span></div>
       <button class="stepbtn" id="tostep2" style="display:none"
-        onclick="event.stopPropagation();expand('term')">continue to step 2 ↓</button>
+        onclick="event.stopPropagation();expand(nextStep())">continue to step 2 ↓</button>
     </div>
+  </div>
+  <div class="card" id="datacard" style="display:none">
+    <div class="head" onclick="expand('data')">
+      <h3>step 2 · data</h3><span class="req">required — this type is drawn from it</span>
+    </div>
+    <div class="body"><div id="datapanel"></div></div>
   </div>
   <div id="bottomstick">
   <div class="card" id="termcard">
@@ -1116,7 +1189,7 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
 </div>
 <script>
 let D=null, sel=0, scissors=false, pendJoin=-1, msLine=null, msB=1;
-let step='media', kbType=-1, ghostDismissed=false;
+let step='media', kbType=-1, ghostDismissed=false, tab=0;
 const $=q=>document.querySelector(q);
 const isMobile=()=>window.innerWidth<=700;
 const PLACEHOLDER='data:image/svg+xml;utf8,'+encodeURIComponent(
@@ -1136,6 +1209,17 @@ async function load(keepLine){
 }
 function baseOf(n){return D.catalog.bases.find(b=>b.name===n);}
 function isCell(L){return (L.row.modifiers||[]).includes('group');}
+// the structured input this line's type needs (a timeline's year, …) — the
+// server sends the field list, so a new maths type needs no code here
+function dataFields(L){const b=baseOf(L.row.media_type);return (b&&b.data_fields)||[];}
+function dataOk(L){
+ const d=L.row.data||{};
+ return dataFields(L).every(f=>!f.required||String(d[f.name]??'').trim()!=='');}
+// a type drawn from `data` whose term means nothing (timeline) hides step 2's
+// search box entirely — there is nothing to type in it
+function usesTerm(L){
+ const b=baseOf(L.row.media_type);
+ return !(b&&b.term_optional&&dataFields(L).length);}
 function stampNeeded(L,term){
  term=term===undefined?(L.row.search_term||''):term;
  const b=baseOf(L.row.media_type);
@@ -1148,7 +1232,7 @@ function lineDone(L){
  // own term — even hold previous, whose term is optional on its own.
  const termOk=!!(L.row.search_term||'').trim()
    ||(!!(b&&b.term_optional)&&!isCell(L));
- return termOk&&(!stampNeeded(L)||!!L.row.stamp_source);}
+ return termOk&&dataOk(L)&&(!stampNeeded(L)||!!L.row.stamp_source);}
 function updateFinish(){
  const all=D.lines.every(lineDone);
  $('#finish').classList.toggle('ready',all);
@@ -1339,6 +1423,10 @@ function focusLine(i){
  sel=Math.max(0,Math.min(i,D.lines.length-1));
  step='media'; kbType=-1; ghostDismissed=false;   // fresh line: ghost is
                                                   // offered again by default
+ // show the tab this line's type lives on, so its button is visibly selected.
+ // Only on a LINE change: a plain re-render must not yank the tab back while
+ // you are browsing the others.
+ const t=tabOf(D.lines[sel].row.media_type); if(t>=0)tab=t;
  closeShort();                       // moving to another line dismisses the panel
  renderList(); renderEditor();
  const r=document.querySelectorAll('#list .row')[sel];
@@ -1391,36 +1479,106 @@ function closeEditor(){$('#editor').classList.remove('open');}
 function expand(which){
  step=which;
  applyCollapse();
- const card=$(which==='media'?'#mediacard':'#termcard');
+ const card=$({media:'#mediacard',data:'#datacard',term:'#termcard'}[which]);
  card.classList.remove('attn'); void card.offsetWidth;   // restart animation
  if(which==='term'){
    // refresh + focus in one frame so the ghost/tab-pill always appears,
    // whichever path got us here (button, tab key, header click)
    requestAnimationFrame(()=>{renderTerm();$('#term').focus();updateGhost();});
  }
+ if(which==='data'){
+   requestAnimationFrame(()=>{
+     const first=dataFields(D.lines[sel])[0];
+     const el=first&&$('#d_'+first.name);
+     if(el)el.focus();
+   });
+ }
 }
 function applyCollapse(){
  $('#mediacard').classList.toggle('collapsed',step!=='media');
+ $('#datacard').classList.toggle('collapsed',step!=='data');
  $('#termcard').classList.toggle('collapsed',step!=='term');
 }
 function flash(id){const c=$(id);c.classList.remove('attn');void c.offsetWidth;c.classList.add('attn');}
 function renderEditor(){
  const L=D.lines[sel];
  $('#curlinetxt').textContent=L.line;
- renderTypes(); renderMods(); renderTerm();
+ renderTabs(); renderTypes(); renderMods(); renderData(); renderTerm();
  const ts=$('#tostep2');
  ts.style.display=L.row.media_type?'inline-block':'none';
  ts.classList.toggle('glow',!!L.row.media_type);
  applyCollapse();
 }
+// step 2 is the data form for the types that have one, the search term for the
+// rest — `nextStep` is what "continue to step 2" actually means for this line
+function nextStep(){
+ const L=D.lines[sel];
+ return dataFields(L).length?'data':'term';
+}
+function renderData(){
+ const L=D.lines[sel]; const fields=dataFields(L);
+ $('#datacard').style.display=fields.length?'block':'none';
+ if(!fields.length)return;
+ const d=L.row.data||{};
+ $('#datapanel').innerHTML=fields.map(f=>
+   `<label class="dfield"><span class="dlbl">${esc(f.label)}`+
+   `${f.required?'':' <i>(optional)</i>'}</span>`+
+   `<input id="d_${f.name}" type="${f.kind==='text'?'text':'number'}"`+
+   ` step="${f.kind==='number'?'any':'1'}"`+
+   ` value="${esc(String(d[f.name]??''))}" placeholder="${esc(f.placeholder)}">`+
+   `<span class="dhelp">${esc(f.help)}</span></label>`).join('');
+ fields.forEach(f=>{
+  const el=$('#d_'+f.name);
+  el.addEventListener('input',debSaveData);
+  el.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();el.blur();saveData();}
+  });
+ });
+}
+function collectData(){
+ const out={};
+ dataFields(D.lines[sel]).forEach(f=>{
+  const el=$('#d_'+f.name);
+  const v=el?el.value.trim():'';
+  if(v!=='')out[f.name]=v;      // the server coerces to the field's kind
+ });
+ return out;
+}
+async function saveData(){
+ await post('/save',{line:D.lines[sel].line,patch:{data:collectData()}},
+            D.lines[sel].line,true);
+}
+let dtmr=null;
+function debSaveData(){clearTimeout(dtmr);dtmr=setTimeout(saveData,450);}
+// ---- media-type tabs (material / maths / …) ---------------------------------
+// The tabs, their headings and which types sit under them all come from the
+// catalog (CONFIG.MEDIA_TYPE_TABS), so a new maths type appears here on its own.
+function tabOf(name){
+ const b=baseOf(name); if(!b)return -1;
+ return D.catalog.tabs.findIndex(t=>t.columns.some(c=>b.tags.includes(c.tag)));
+}
+function setTab(i){
+ const n=D.catalog.tabs.length;
+ tab=((i%n)+n)%n; kbType=-1;
+ renderTabs(); renderTypes();
+}
+function moveTab(d){setTab(tab+d);}
+function renderTabs(){
+ const T=D.catalog.tabs;
+ $('#tabbar').style.display=T.length>1?'flex':'none';
+ $('#tabdots').innerHTML=T.map((t,i)=>
+   `<span class="tdot${i===tab?' on':''}" title="${esc(t.label)}"
+     onclick="event.stopPropagation();setTab(${i})"></span>`).join('');
+ $('#tabname').textContent=T[tab].label;
+}
 let kbAvail=[];
 function renderTypes(){
  const L=D.lines[sel];
  let html=''; kbAvail=[];
- for(const [tag,title] of [['new','NEW — brand-new material'],['edit_previous','EDIT PREVIOUS — act on what is on screen']]){
-  html+=`<div class="col"><h4>${title}</h4>`;
-  D.catalog.bases.filter(b=>b.tags.includes(tag)).forEach(b=>{
-   const disabled=(tag==='edit_previous'&&sel===0);
+ for(const col of D.catalog.tabs[tab].columns){
+  html+=`<div class="col"><h4>${esc(col.title)}</h4>`;
+  D.catalog.bases.filter(b=>b.tags.includes(col.tag)).forEach(b=>{
+   const disabled=(col.tag==='edit_previous'&&sel===0);
    if(!disabled)kbAvail.push(b.name);
    const on=L.row.media_type===b.name?' on':'';
    const kb=(kbType>=0&&kbAvail[kbType]===b.name&&!disabled)?' kb':'';
@@ -1453,6 +1611,8 @@ function renderMods(){
 function renderTerm(){
  const L=D.lines[sel];
  const isTypo=L.row.media_type==='typography';
+ // timeline & friends: the term is never read, so the card is not offered
+ $('#termcard').style.display=usesTerm(L)?'block':'none';
  $('#term').value=L.row.search_term||'';
  $('#term').readOnly=isTypo;
  const b=baseOf(L.row.media_type);
@@ -1619,7 +1779,10 @@ async function pick(name){const L=D.lines[sel];
  await post('/save',{line:L.line,patch:{media_type:name}},L.line);
  const t2=$('#tostep2');
  t2.style.display='inline-block'; t2.classList.add('glow');
- flash('#termcard');}
+ // a type drawn from data (timeline) sends you to its form, not to a search
+ // box it will never read
+ if((b&&b.data_fields||[]).length){expand('data');flash('#datacard');}
+ else flash('#termcard');}
 // ---- too-short-for-new-footage panel (task 11) ------------------------------
 let shortPend=null;   // {name, mods} of the new type the user tried to pick
 function openShort(name){
@@ -1728,8 +1891,15 @@ async function post(url,body,keepLine,quietReload){
    alert(j.error||'error');return false;}
  toast();
  if(quietReload){
-   const cur=$('#term'), pos=cur.selectionStart, val=cur.value;
-   await load(keepLine); cur.value=val; try{cur.setSelectionRange(pos,pos);}catch(e){}
+   // Keep whatever the user is typing in: the reload rebuilds these elements,
+   // so remember the focused field BY ID and put its value + caret back. (The
+   // search box and every data input go through here.)
+   const cur=document.activeElement;
+   const id=cur&&cur.id, val=cur&&cur.value, pos=cur&&cur.selectionStart;
+   await load(keepLine);
+   const back=id&&document.getElementById(id);
+   if(back){back.value=val; back.focus();
+            try{back.setSelectionRange(pos,pos);}catch(e){}}
    updateGhost();          // re-evaluate ghost/tab-pill for the restored value
  } else await load(keepLine);
  return true;
@@ -1772,16 +1942,18 @@ function showFinish(){$('#finwrap').classList.add('open');
  setTimeout(()=>{window.close();},300);}
 function hideFinish(){$('#finwrap').classList.remove('open');closeEditor();}
 document.addEventListener('keydown',e=>{
- if(e.target.tagName==='TEXTAREA')return;
+ if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
  if(e.key==='ArrowDown'){focusLine(sel+1);e.preventDefault();}
  else if(e.key==='ArrowUp'){focusLine(sel-1);e.preventDefault();}
+ else if(step==='media'&&(e.key==='['||e.key===']')){
+   moveTab(e.key===']'?1:-1);e.preventDefault();}
  else if(step==='media'&&(e.key==='ArrowLeft'||e.key==='ArrowRight')&&kbAvail.length){
    kbType=kbType<0?0:(kbType+(e.key==='ArrowRight'?1:-1)+kbAvail.length)%kbAvail.length;
    renderTypes();e.preventDefault();}
  else if(step==='media'&&e.key==='Enter'&&kbType>=0&&kbAvail[kbType]){
    pick(kbAvail[kbType]);e.preventDefault();}
  else if(e.key==='Tab'&&!e.shiftKey&&step==='media'
-         &&D.lines[sel].row.media_type){expand('term');e.preventDefault();}
+         &&D.lines[sel].row.media_type){expand(nextStep());e.preventDefault();}
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.info,#pop'))$('#pop').style.display='none';});
 // ---- boot with a loading screen ------------------------------------------

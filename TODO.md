@@ -100,6 +100,9 @@ TODO:
 
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
 
+
+find TESTER-CACHE -type f -name "*.json" -delete && rm -rf TESTER-OUTPUT/output.mp4
+
 ----
 
 tell me where to add stuff in an idiot proof way. before and after....

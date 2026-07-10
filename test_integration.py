@@ -38,9 +38,12 @@ def check(cond, label):
 from CONFIG import (
     GROUPABLE_TYPES, JOINT_LAYOUT_POSITIONS, JOINT_TYPE_SFX_MAP,
     MEDIA_PROPERTIES, MEDIA_TYPE_CATALOG, MODIFIERS, MediaType,
+    MEDIA_TYPE_TABS, Tag,
+    coerce_scene_data, data_fields_for,
     group_scene_rows, media_props, normalise_scene_row,
-    resolve_group_continuations, scene_is_group_continuation,
+    resolve_group_continuations, scene_data, scene_is_group_continuation,
     scene_is_grouped, scene_type, scene_wants_decorate,
+    timeline_transition_seconds,
 )
 
 print("===== the enum IS the catalog =====")
@@ -143,6 +146,59 @@ try: resolve_group_continuations({"a": raw("stock", ["group"]),
                                      for k in "bcd"}})
 except ValueError as e: err = str(e)
 check("draws 3" in err, "a group longer than its layout is refused")
+
+print("\n===== maths types: tabs + the `data` column =====")
+check("timeline" in MEDIA_TYPE_CATALOG
+      and Tag.MATHS in MEDIA_TYPE_CATALOG["timeline"]["tags"],
+      "timeline is a catalog type on the maths tag")
+check([t["name"] for t in MEDIA_TYPE_TABS] == ["material", "maths"]
+      and [tag for tag, _ in MEDIA_TYPE_TABS[1]["columns"]] == [Tag.MATHS],
+      "the tagger's tabs come from CONFIG: material, then maths")
+_reachable = {n for n, e in MEDIA_TYPE_CATALOG.items()
+              for tab in MEDIA_TYPE_TABS for tag, _ in tab["columns"]
+              if tag in e["tags"]}
+check(_reachable == set(MEDIA_TYPE_CATALOG),
+      "every media type sits on some tab (none is unreachable in the tagger)")
+check([f.name for f in data_fields_for("timeline")] == ["year"]
+      and data_fields_for("stock") == (),
+      "timeline declares one data field; ordinary types declare none")
+tl = {"media_type": "timeline", "data": {"year": "1600"}}
+normalise_scene_row("t", tl)
+check(scene_data(tl) == {"year": 1600} and isinstance(scene_data(tl)["year"], int),
+      "a year typed into the tagger's <input> loads as an int")
+check(scene_data({"media_type": MediaType.STOCK}) == {},
+      "scene_data is {} for a row with no data column")
+for bad, want in (({"year": 99999}, "typo"), ({}, "needs data.year"),
+                  ({"yr": 1600}, "unknown data key")):
+    err = ""
+    try: normalise_scene_row("t", {"media_type": "timeline", "data": bad})
+    except ValueError as e: err = str(e)
+    check(want in err, f"timeline data refused: {want}")
+err = ""
+try: normalise_scene_row("t", {"media_type": "stock", "data": {"year": 1600}})
+except ValueError as e: err = str(e)
+check("takes no data" in err, "data on a type that declares none is refused")
+check(coerce_scene_data("timeline", {}, "t", require_all=False) == {},
+      "require_all=False lets the tagger save a half-typed form")
+check(timeline_transition_seconds() > 0,
+      "the timeline's transition has a declared length")
+
+print("\n===== timeline: the axis never spoils its own reveal =====")
+from ___visuals.maths.timeline import _axis_bounds, _tick_years
+def ticks(start, target):
+    lo, hi = _axis_bounds(start, target)
+    return _tick_years(lo, hi, target, start)
+check(ticks(2026, 1600) == [1700, 1800, 1900],
+      "a four-century journey is marked per century, clear of both ends")
+check(1600 not in ticks(2026, 1600) and 2026 not in ticks(2026, 1600),
+      "neither the target (it is the REVEAL) nor the start is a tick label")
+check(2000 not in ticks(2026, 1600),
+      "a round year too close to an endpoint is dropped (2000 would hit 2026)")
+check(all(1969 != y for y in ticks(2026, 1969))
+      and max(ticks(2026, 1969)) - min(ticks(2026, 1969)) <= 2026 - 1969,
+      "a fifty-year journey is marked per decade, inside the axis")
+check(ticks(2026, 2026) and 2026 not in ticks(2026, 2026),
+      "a timeline to THIS year still draws an axis (zero span is padded)")
 
 print("\n===== per-type properties drive the stages =====")
 check(media_props(MediaType.AI_STOCK).is_ai_base
