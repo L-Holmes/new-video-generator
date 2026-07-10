@@ -1,0 +1,26 @@
+{
+  "surviving scurvy,": [
+    {
+      "type": "sfx",
+      "path": "_SOUND_EFFECTS/se-pop.mp3",
+      "timing": "loop_start",
+      "_debug": "auto-injected for grouped stock"
+    }
+  ],
+  "pirates, and": [
+    {
+      "type": "sfx",
+      "path": "_SOUND_EFFECTS/se-pop.mp3",
+      "timing": "loop_start",
+      "_debug": "auto-injected for grouped stock"
+    }
+  ],
+  "shipwrecks.": [
+    {
+      "type": "sfx",
+      "path": "_SOUND_EFFECTS/se-pop.mp3",
+      "timing": "loop_start",
+      "_debug": "auto-injected for grouped stock"
+    }
+  ]
+}

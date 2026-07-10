@@ -39,6 +39,7 @@ from CONFIG import (
     GROUPABLE_TYPES, JOINT_LAYOUT_POSITIONS, JOINT_TYPE_SFX_MAP,
     MEDIA_PROPERTIES, MEDIA_TYPE_CATALOG, MODIFIERS, MediaType,
     group_scene_rows, media_props, normalise_scene_row,
+    resolve_group_continuations, scene_is_group_continuation,
     scene_is_grouped, scene_type, scene_wants_decorate,
 )
 
@@ -93,6 +94,11 @@ try: normalise_scene_row("e", {"media_type": "wikipedia", "modifiers": ["group"]
 except ValueError as e: err = str(e)
 check("group" in err and "wikipedia" in err,
       "group on a non-groupable base is refused")
+row3 = {"search_term": "x", "media_type": "hold_previous",
+        "modifiers": ["group"]}
+normalise_scene_row("e2", row3)
+check(row3["media_type"] is MediaType.HOLD_PREVIOUS and scene_is_grouped(row3),
+      "hold_previous + group (a group's continuation cell) normalises")
 err = ""
 try: normalise_scene_row("f", {"media_type": "hologram"})
 except ValueError as e: err = str(e)
@@ -107,6 +113,36 @@ scenes = [("a", g("stock", 1)), ("b", g("stock", 1)),
 groups = group_scene_rows(scenes)
 check([[t for t, _ in grp] for grp in groups] == [["a", "b"], ["c"], ["d"]],
       "same gid groups; gid change or base change splits")
+
+# how the TAGGER writes a group now: an opener + `hold_previous` cells that
+# continue it. resolve_group_continuations hands each cell the group's base,
+# so every stage downstream keeps dispatching on media_type alone.
+def raw(mt, mods, gid=None):
+    return {"media_type": mt, "modifiers": mods, "group_id": gid,
+            "search_term": "t", "position": "1"}
+tagged = {"a": raw("stock", ["group"], 1), "b": raw("hold_previous", ["group"], 1),
+          "c": raw("hold_previous", ["group"], 1), "d": raw("hold_previous", []),
+          "e": raw("ai_stock", ["group"], 2), "f": raw("hold_previous", ["group"], 2)}
+resolve_group_continuations(tagged)
+check([tagged[k]["media_type"] for k in "abcdef"]
+      == ["stock", "stock", "stock", "hold_previous", "ai_stock", "ai_stock"]
+      and [scene_is_group_continuation(tagged[k]) for k in "abcdef"]
+      == [False, True, True, False, False, True],
+      "continuation cells take their group's base; a plain hold is untouched")
+groups = group_scene_rows([(k, tagged[k]) for k in "abcef"])
+check([[t for t, _ in grp] for grp in groups] == [["a", "b", "c"], ["e", "f"]],
+      "resolved cells group with the opener that they continue")
+err = ""
+try: resolve_group_continuations({"a": raw("hold_previous", ["group"])})
+except ValueError as e: err = str(e)
+check("no group is open above" in err,
+      "a continuation with no opener above it is refused")
+err = ""
+try: resolve_group_continuations({"a": raw("stock", ["group"]),
+                                  **{k: raw("hold_previous", ["group"])
+                                     for k in "bcd"}})
+except ValueError as e: err = str(e)
+check("draws 3" in err, "a group longer than its layout is refused")
 
 print("\n===== per-type properties drive the stages =====")
 check(media_props(MediaType.AI_STOCK).is_ai_base

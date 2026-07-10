@@ -1,10 +1,8 @@
 {
   "If you open": {
-    "search_term": "opening ",
-    "media_type": "blank",
-    "modifiers": [
-      "decorate"
-    ],
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -14,16 +12,12 @@
     "music_fade_out": 0,
     "rule_ids": [
       12
-    ],
-    "stamp_decorate": false,
-    "stamp_source": "stock"
+    ]
   },
   "your kitchen cupboard right now, you probably have": {
-    "search_term": "Your kitchen cupboard",
-    "media_type": "random_background",
-    "modifiers": [
-      "caption"
-    ],
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -33,13 +27,11 @@
     "music_fade_out": 0,
     "rule_ids": [
       12
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "a jar of nutmeg.": {
-    "search_term": "jar nutmeg",
-    "media_type": "stock",
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -50,12 +42,10 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "It costs about two dollars.": {
-    "search_term": "dollar",
+    "search_term": "",
     "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
@@ -69,12 +59,10 @@
       1009,
       18,
       1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "But in the 1600s,": {
-    "search_term": "1600th cen",
+    "search_term": "",
     "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
@@ -88,12 +76,10 @@
       1001,
       18,
       7
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "this little wrinkled seed was": {
-    "search_term": "nutmeg  seed",
+    "search_term": "",
     "media_type": "stock",
     "modifiers": [],
     "group_id": null,
@@ -105,12 +91,119 @@
     "music_fade_out": 0,
     "rule_ids": [
       15
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "the single most contested resource on": {
-    "search_term": "most contested res",
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      39
+    ]
+  },
+  "the planet.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "It was worth more than": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      39
+    ]
+  },
+  "its weight in gold.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "Nutmeg only grew": {
+    "search_term": "Nutmeg",
+    "media_type": "wikipedia",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12
+    ]
+  },
+  "in one place on Earth:": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "The Banda Islands.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "A tiny, incredibly remote volcanic archipelago in": {
+    "search_term": "",
     "media_type": "hold_previous",
     "modifiers": [
       "caption"
@@ -123,105 +216,12 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      39
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "the planet.": {
-    "search_term": "planet earth",
-    "media_type": "hold_previous",
-    "modifiers": [
-      "decorate"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": "stock"
-  },
-  "It was worth more than its weight in gold.": {
-    "search_term": "gold bar",
-    "media_type": "wikipedia",
-    "modifiers": [
-      "decorate"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      39,
-      1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "Nutmeg only grew in one place on Earth:": {
-    "search_term": "Nutmeg Plant",
-    "media_type": "stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      12,
-      1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "The Banda Islands.": {
-    "search_term": "The Banda Islands",
-    "media_type": "stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "A tiny, incredibly remote volcanic archipelago in": {
-    "search_term": "",
-    "media_type": "hold_previous",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
       24
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "modern-day Indonesia. If you were a": {
-    "search_term": "Indonesia",
-    "media_type": "map",
+    "search_term": "",
+    "media_type": "stock",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -235,13 +235,11 @@
       1,
       1007,
       15
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "European merchant, getting": {
-    "search_term": "European merchant",
-    "media_type": "stock",
+    "search_term": "European",
+    "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -252,13 +250,11 @@
     "music_fade_out": 0,
     "rule_ids": [
       12
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "it meant sailing for": {
-    "search_term": "sailing",
-    "media_type": "stock",
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -269,15 +265,13 @@
     "music_fade_out": 0,
     "rule_ids": [
       29
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "months,": {
-    "search_term": "months",
+    "search_term": "",
     "media_type": "hold_previous",
     "modifiers": [
-      "caption"
+      "decorate"
     ],
     "group_id": null,
     "position": "1",
@@ -288,17 +282,13 @@
     "music_fade_out": 0,
     "rule_ids": [
       25
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "surviving scurvy,": {
-    "search_term": "scurvy",
-    "media_type": "stock",
-    "modifiers": [
-      "group"
-    ],
-    "group_id": 1,
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
     "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
@@ -309,18 +299,14 @@
       1005,
       61,
       8
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "pirates, and": {
-    "search_term": "pirates",
-    "media_type": "stock",
-    "modifiers": [
-      "group"
-    ],
-    "group_id": 1,
-    "position": "2",
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
@@ -328,18 +314,14 @@
     "music_fade_out": 0,
     "rule_ids": [
       15
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "shipwrecks.": {
-    "search_term": "shipwrecks",
-    "media_type": "stock",
-    "modifiers": [
-      "group"
-    ],
-    "group_id": 1,
-    "position": "3",
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
     "sfx": "none",
     "sfx_timing": "loop_start",
     "music": "none",
@@ -347,13 +329,11 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
-  "But if you made it back with a single ship full of nutmeg,": {
-    "search_term": "ship sailing",
-    "media_type": "stock",
+  "But if you made it back with a": {
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -366,15 +346,12 @@
       1008,
       12,
       1007,
-      15,
-      26
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+      15
+    ]
   },
-  "you were set for life.": {
-    "search_term": "set for life",
-    "media_type": "stock",
+  "single ship full of": {
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -384,14 +361,56 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      29,
+      15
+    ]
+  },
+  "nutmeg,": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      26
+    ]
+  },
+  "you were set for": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      29
+    ]
+  },
+  "life.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
       1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "The Dutch and": {
-    "search_term": "dutch",
+    "search_term": "",
     "media_type": "stock",
     "modifiers": [],
     "group_id": null,
@@ -403,9 +422,7 @@
     "music_fade_out": 0,
     "rule_ids": [
       15
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
   "the British fought bloody,": {
     "search_term": "British",
@@ -423,8 +440,8 @@
     ]
   },
   "brutal wars over these tiny islands.": {
-    "search_term": "1600s wars",
-    "media_type": "stock",
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -435,33 +452,11 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
-  "In fact, to secure a monopoly on nutmeg,": {
-    "search_term": "In fact",
-    "media_type": "blank",
-    "modifiers": [
-      "caption"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      7,
-      8
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "the Dutch formally traded a different island they owned to": {
-    "search_term": "Dutch 1",
-    "media_type": "hold_previous",
+  "In fact,": {
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -471,14 +466,58 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      12,
-      39
+      7
+    ]
+  },
+  "to secure a monopoly on nutmeg,": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      8
+    ]
+  },
+  "the Dutch formally traded": {
+    "search_term": "Dutch",
+    "media_type": "wikipedia",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12
+    ]
+  },
+  "a different island they owned to": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
     ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      39
+    ]
   },
   "the British.": {
-    "search_term": "British 1600s",
+    "search_term": "British",
     "media_type": "hold_previous",
     "modifiers": [
       "decorate"
@@ -493,31 +532,9 @@
     "rule_ids": [
       1
     ],
-    "stamp_source": "stock",
-    "stamp_decorate": false
+    "stamp_source": "stock"
   },
-  "That island was": {
-    "search_term": "That island was",
-    "media_type": "typography",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ],
-    "_split_before": {
-      "text": "Manhattan.",
-      "glue": " "
-    },
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "Manhattan.": {
+  "That island was Manhattan.": {
     "search_term": "Manhattan",
     "media_type": "wikipedia",
     "modifiers": [],
@@ -534,7 +551,7 @@
   },
   "Yep...": {
     "search_term": "",
-    "media_type": "blank",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -545,13 +562,11 @@
     "music_fade_out": 0,
     "rule_ids": [
       3
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null
+    ]
   },
-  "New York City was": {
+  "New York City was traded for nutmeg.": {
     "search_term": "New York City",
-    "media_type": "stock",
+    "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -560,29 +575,6 @@
     "music": "none",
     "music_trim_seconds": 0,
     "music_fade_out": 0,
-    "rule_ids": [],
-    "_split_before": {
-      "text": "traded for nutmeg.",
-      "glue": " "
-    },
-    "stamp_decorate": false,
-    "stamp_source": null
-  },
-  "traded for nutmeg.": {
-    "search_term": "Traded for nutmeg!",
-    "media_type": "hold_previous",
-    "modifiers": [
-      "caption"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [],
-    "stamp_decorate": false,
-    "stamp_source": null
+    "rule_ids": []
   }
 }

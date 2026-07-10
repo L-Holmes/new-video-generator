@@ -31,6 +31,7 @@ if str(_REPO_ROOT) not in sys.path:
 try:
     from CONFIG import (  # noqa: F401  (re-exports)
         COLLAGEABLE_TYPES,
+        GROUP_CONTINUATION_TYPE,
         GROUPABLE_TYPES,
         JOINT_GROUP_CELLS,
         MEDIA_TYPE_CATALOG as MEDIA_TYPES,

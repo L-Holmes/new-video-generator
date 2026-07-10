@@ -38,6 +38,7 @@ load_dotenv()  # <- reads .env before fal_client uses FAL_KEY
 
 import fal_client
 from PIL import Image, ImageDraw, ImageFont
+from CONFIG import resolve_group_continuations
 from ___visuals.ai__postprocess import deai_postprocess, save_clean
 
 # -- Reference images for style grounding --------------------------------
@@ -350,6 +351,10 @@ async def _generate_all(prompts_file, out_dir, num_variants, grouped,
     out_dir.mkdir(parents=True, exist_ok=True)
 
     data = json.loads(pathlib.Path(prompts_file).read_text())
+    # We read the search-term file RAW, so a group's continuation cells still
+    # say `hold_previous` + group. Give them their group's base (ai_stock for
+    # the tiles we generate) before filtering, exactly as main.py does.
+    resolve_group_continuations(data)
     targets = [(k, v) for k, v in data.items() if _row_matches(v, grouped)]
     label = "grouped ai_stock" if grouped else "ai_stock"
     print(f"Processing {len(targets)} {label} scene(s) "

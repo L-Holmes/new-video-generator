@@ -153,13 +153,55 @@ check(len(payload["lines"]) == 6
 
 call("/save", {"line": "ribs,", "patch": {"media_type": "stock"}})
 call("/save", {"line": "ribs,", "patch": {"modifiers": ["group"]}})
-call("/save", {"line": "vertebrae,", "patch": {"media_type": "stock"}})
+call("/save", {"line": "vertebrae,", "patch": {"media_type": "hold_previous"}})
 call("/save", {"line": "vertebrae,", "patch": {"modifiers": ["group"]}})
 d = fresh()
 check(d["ribs,"]["group_id"] == d["vertebrae,"]["group_id"] == 1
       and [d["ribs,"]["position"], d["vertebrae,"]["position"]] == ["1", "2"]
       and "search_type" not in d["ribs,"],
-      "stock + group: shared group_id, positions 1..n, no derived column")
+      "stock + group opens, hold_previous + group continues: shared group_id, "
+      "positions 1..n, no derived column")
+# the same two rows are what the renderer reads back
+import CONFIG as cfg
+_resolved = fresh()
+cfg.resolve_group_continuations(_resolved)
+check(_resolved["vertebrae,"]["media_type"] == "stock"
+      and _resolved["vertebrae,"]["group_continuation"] is True,
+      "resolve_group_continuations gives the cell its group's base")
+# a continuation with nothing above it to continue is refused, not written
+r, code = call("/save", {"line": "If you open",
+                         "patch": {"media_type": "hold_previous",
+                                   "modifiers": ["group"]}})
+check(code == 400 and "no group is open above" in (r.get("error") or ""),
+      "hold_previous + group with no group above it is refused")
+# ...and a real base always OPENS a new group rather than joining the one above
+call("/save", {"line": "entire skulls", "patch": {"media_type": "stock",
+                                                  "modifiers": ["group"]}})
+d = fresh()
+check(d["entire skulls"]["group_id"] == 2
+      and d["entire skulls"]["position"] == "1",
+      "a groupable base always opens a NEW group, never joins the one above")
+call("/save", {"line": "entire skulls", "patch": {"media_type": "",
+                                                  "modifiers": []}})
+# a group written the OLD way (the same base repeated) is re-spelled on open,
+# so opening an existing file does not shatter a group the user already built
+legacy = {"one": {"media_type": "stock", "modifiers": ["group"], "group_id": 1},
+          "two": {"media_type": "stock", "modifiers": ["group"], "group_id": 1},
+          "three": {"media_type": "stock", "modifiers": ["group"], "group_id": 1},
+          "four": {"media_type": "stock", "modifiers": [], "group_id": None}}
+moved = mt.migrate_legacy_groups(legacy)
+mt.recompute(legacy)
+check(moved == 2
+      and [legacy[k]["media_type"] for k in ("one", "two", "three")]
+          == ["stock", "hold_previous", "hold_previous"]
+      and {legacy[k]["group_id"] for k in ("one", "two", "three")} == {1}
+      and [legacy[k]["position"] for k in ("one", "two", "three")]
+          == ["1", "2", "3"],
+      "a legacy same-base group is re-spelled to opener + continuation cells")
+cfg.resolve_group_continuations(legacy)
+check([legacy[k]["media_type"] for k in ("one", "two", "three")]
+      == ["stock", "stock", "stock"],
+      "...and the renderer reads the migrated group back identically")
 
 call("/save", {"line": "boom", "patch": {"media_type": "hold_previous",
                                          "modifiers": ["decorate"]}})

@@ -1,58 +1,38 @@
 [
     {
-        "script_text": "If you open",
+        "script_text": "If you open your kitchen cupboard right now, you probably have a jar of nutmeg.",
+        "media_type": "stock",
+        "search_term": "jar of nutmeg",
         "candidates": {
-            "videos": [
-                {
-                    "https://videos.pexels.com/video-files/4101574/4101574-hd_1920_1080_25fps.mp4": 1.04
-                },
-                {
-                    "https://videos.pexels.com/video-files/37310319/15804047_1920_1080_30fps.mp4": 1.04
-                }
-            ],
+            "videos": [],
             "images": [
                 {
-                    "https://images.pexels.com/photos/14685268/pexels-photo-14685268.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.04
+                    "https://images.pexels.com/photos/8176604/pexels-photo-8176604.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.72
                 },
                 {
-                    "https://images.pexels.com/photos/9169910/pexels-photo-9169910.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.04
+                    "https://images.pexels.com/photos/30370491/pexels-photo-30370491.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.72
                 },
                 {
-                    "https://images.pexels.com/photos/19818223/pexels-photo-19818223.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.04
+                    "https://images.pexels.com/photos/35339664/pexels-photo-35339664.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.72
+                },
+                {
+                    "https://images.pexels.com/photos/5740374/pexels-photo-5740374.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.72
+                },
+                {
+                    "https://images.pexels.com/photos/5741482/pexels-photo-5741482.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.72
+                },
+                {
+                    "https://images.pexels.com/photos/5769700/pexels-photo-5769700.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.72
                 }
             ]
         },
-        "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 1.04
-    },
-    {
-        "script_text": "a jar of nutmeg.",
-        "candidates": {
-            "videos": [
-                {
-                    "https://videos.pexels.com/video-files/28283516/12351476_3840_2160_30fps.mp4": 1.42
-                },
-                {
-                    "https://videos.pexels.com/video-files/5559609/5559609-hd_1920_1080_25fps.mp4": 1.42
-                }
-            ],
-            "images": [
-                {
-                    "https://images.pexels.com/photos/8176604/pexels-photo-8176604.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.42
-                },
-                {
-                    "https://images.pexels.com/photos/30370491/pexels-photo-30370491.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.42
-                },
-                {
-                    "https://images.pexels.com/photos/35339664/pexels-photo-35339664.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.42
-                }
-            ]
-        },
-        "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 1.42
+        "num_clips_needed": 3,
+        "max_runtime_per_clip_seconds": 4.72
     },
     {
         "script_text": "It costs about two dollars.",
+        "media_type": "wikipedia",
+        "search_term": "dollar",
         "candidates": {
             "videos": [],
             "images": [
@@ -78,15 +58,35 @@
     },
     {
         "script_text": "But in the 1600s,",
+        "media_type": "wikipedia",
+        "search_term": "1600s",
         "candidates": {
             "videos": [],
-            "images": []
+            "images": [
+                {
+                    "https://upload.wikimedia.org/wikipedia/commons/6/63/JamesIEngland.jpg": 1.74
+                },
+                {
+                    "https://upload.wikimedia.org/wikipedia/commons/a/a3/Agnes_of_Langeac.jpg": 1.74
+                },
+                {
+                    "https://upload.wikimedia.org/wikipedia/commons/1/1a/Ahmad_al-Mansur.png": 1.74
+                },
+                {
+                    "https://upload.wikimedia.org/wikipedia/commons/f/fa/Alaux_-_Josias_Rantzau_%281609-1650%29_-_MV_1002.jpg": 1.74
+                },
+                {
+                    "https://upload.wikimedia.org/wikipedia/commons/6/6f/Amelia_Elisabeth_Landgr%C3%A4fin_von_Hessen-Kassel.jpg": 1.74
+                }
+            ]
         },
         "num_clips_needed": 1,
         "max_runtime_per_clip_seconds": 1.74
     },
     {
         "script_text": "this little wrinkled seed was",
+        "media_type": "stock",
+        "search_term": "nutmeg seed",
         "candidates": {
             "videos": [
                 {
@@ -112,50 +112,26 @@
         "max_runtime_per_clip_seconds": 1.4
     },
     {
-        "script_text": "the planet.",
-        "candidates": {
-            "videos": [
-                {
-                    "https://videos.pexels.com/video-files/27034714/12052410_3840_2160_30fps.mp4": 0.54
-                },
-                {
-                    "https://videos.pexels.com/video-files/36030226/15279385_1920_1080_30fps.mp4": 0.54
-                }
-            ],
-            "images": [
-                {
-                    "https://images.pexels.com/photos/30596291/pexels-photo-30596291.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.54
-                },
-                {
-                    "https://images.pexels.com/photos/30596254/pexels-photo-30596254.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.54
-                },
-                {
-                    "https://images.pexels.com/photos/30596249/pexels-photo-30596249.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.54
-                }
-            ]
-        },
-        "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 0.54
-    },
-    {
         "script_text": "It was worth more than its weight in gold.",
+        "media_type": "wikipedia",
+        "search_term": "gold ",
         "candidates": {
             "videos": [],
             "images": [
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/1/11/Gold_Ingot_100g_Perth_Mint.JPG": 2.2
+                    "https://upload.wikimedia.org/wikipedia/commons/1/17/79_%28Au_I%29_NIST_ASD_emission_spectrum.png": 2.2
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/c/c6/Gold_bullion_2.jpg": 2.2
+                    "https://upload.wikimedia.org/wikipedia/commons/d/d5/Beowulf_-_gold.jpg": 2.2
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/a/ad/Kinebar3.jpg": 2.2
+                    "https://upload.wikimedia.org/wikipedia/commons/2/27/CairoEgMuseumTaaMaskMostlyPhotographed.jpg": 2.2
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/0/02/Zwei_Goldbarren.JPG": 2.2
+                    "https://upload.wikimedia.org/wikipedia/commons/8/89/Dessert_%2810938449815%29.jpg": 2.2
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/d/d3/Gold_Bar%2C_WA_-_Gateway_Community_Park_gazebo_%28June_2025%29.jpg": 2.2
+                    "https://upload.wikimedia.org/wikipedia/commons/d/d9/Gold%28III%29_chloride_solution.jpg": 2.2
                 }
             ]
         },
@@ -164,6 +140,8 @@
     },
     {
         "script_text": "Nutmeg only grew in one place on Earth:",
+        "media_type": "stock",
+        "search_term": "Nutmeg plant",
         "candidates": {
             "videos": [
                 {
@@ -190,6 +168,8 @@
     },
     {
         "script_text": "The Banda Islands.",
+        "media_type": "stock",
+        "search_term": "The Banda Islands",
         "candidates": {
             "videos": [
                 {
@@ -215,59 +195,65 @@
         "max_runtime_per_clip_seconds": 1.12
     },
     {
-        "script_text": "European merchant, getting",
+        "script_text": "A tiny, incredibly remote volcanic archipelago in modern-day Indonesia. If you were a European merchant, getting",
+        "media_type": "stock",
+        "search_term": "Banda Islands archipelago",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/36559528/15500997_1920_1080_25fps.mp4": 1.4
+                    "https://videos.pexels.com/video-files/31974302/13624646_1920_1080_30fps.mp4": 5.74
                 },
                 {
-                    "https://videos.pexels.com/video-files/29834710/12813031_2560_1440_30fps.mp4": 1.4
+                    "https://videos.pexels.com/video-files/9083900/9083900-hd_1920_1080_30fps.mp4": 5.74
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/13946725/pexels-photo-13946725.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.4
+                    "https://images.pexels.com/photos/18619490/pexels-photo-18619490.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.74
                 },
                 {
-                    "https://images.pexels.com/photos/10020207/pexels-photo-10020207.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.4
+                    "https://images.pexels.com/photos/35868489/pexels-photo-35868489.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.74
                 },
                 {
-                    "https://images.pexels.com/photos/8475194/pexels-photo-8475194.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.4
+                    "https://images.pexels.com/photos/37815248/pexels-photo-37815248.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 5.74
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 1.4
+        "max_runtime_per_clip_seconds": 5.74
     },
     {
-        "script_text": "it meant sailing for",
+        "script_text": "it meant sailing for months,",
+        "media_type": "stock",
+        "search_term": "sailing",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/12084856/12084856-uhd_2560_1440_60fps.mp4": 1.06
+                    "https://videos.pexels.com/video-files/12084856/12084856-uhd_2560_1440_60fps.mp4": 1.6
                 },
                 {
-                    "https://videos.pexels.com/video-files/12084676/12084676-uhd_2560_1440_60fps.mp4": 1.06
+                    "https://videos.pexels.com/video-files/12084676/12084676-uhd_2560_1440_60fps.mp4": 1.6
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/29915572/pexels-photo-29915572.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.06
+                    "https://images.pexels.com/photos/29915572/pexels-photo-29915572.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.6
                 },
                 {
-                    "https://images.pexels.com/photos/3686785/pexels-photo-3686785.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.06
+                    "https://images.pexels.com/photos/3686785/pexels-photo-3686785.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.6
                 },
                 {
-                    "https://images.pexels.com/photos/14365698/pexels-photo-14365698.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.06
+                    "https://images.pexels.com/photos/14365698/pexels-photo-14365698.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.6
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 1.06
+        "max_runtime_per_clip_seconds": 1.6
     },
     {
         "script_text": "surviving scurvy,",
+        "media_type": "stock",
+        "search_term": "scurvy",
         "candidates": {
             "videos": [
                 {
@@ -294,6 +280,8 @@
     },
     {
         "script_text": "pirates, and",
+        "media_type": "stock",
+        "search_term": "pirates",
         "candidates": {
             "videos": [
                 {
@@ -320,6 +308,8 @@
     },
     {
         "script_text": "shipwrecks.",
+        "media_type": "stock",
+        "search_term": "shipwrecks",
         "candidates": {
             "videos": [
                 {
@@ -346,24 +336,26 @@
     },
     {
         "script_text": "But if you made it back with a single ship full of nutmeg,",
+        "media_type": "stock",
+        "search_term": "18th century vessel ",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/33567566/14271212_1920_1080_60fps.mp4": 2.78
+                    "https://videos.pexels.com/video-files/9465982/9465982-hd_1920_1080_25fps.mp4": 2.78
                 },
                 {
-                    "https://videos.pexels.com/video-files/4571674/4571674-hd_1920_1080_25fps.mp4": 2.78
+                    "https://videos.pexels.com/video-files/9465985/9465985-hd_1920_1080_25fps.mp4": 2.78
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/8166101/pexels-photo-8166101.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.78
+                    "https://images.pexels.com/photos/15686201/pexels-photo-15686201.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.78
                 },
                 {
-                    "https://images.pexels.com/photos/31769441/pexels-photo-31769441.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.78
+                    "https://images.pexels.com/photos/37428518/pexels-photo-37428518.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.78
                 },
                 {
-                    "https://images.pexels.com/photos/33170272/pexels-photo-33170272.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.78
+                    "https://images.pexels.com/photos/30937631/pexels-photo-30937631.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.78
                 }
             ]
         },
@@ -372,24 +364,26 @@
     },
     {
         "script_text": "you were set for life.",
+        "media_type": "stock",
+        "search_term": "lottery set for life",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/37727985/16001279_3840_2160_30fps.mp4": 1.02
+                    "https://videos.pexels.com/video-files/6975445/6975445-uhd_4096_2160_25fps.mp4": 1.02
                 },
                 {
-                    "https://videos.pexels.com/video-files/10400771/10400771-uhd_4096_2160_25fps.mp4": 1.02
+                    "https://videos.pexels.com/video-files/38275425/16252116_3840_2160_50fps.mp4": 1.02
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/25957006/pexels-photo-25957006.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.02
+                    "https://images.pexels.com/photos/34669146/pexels-photo-34669146.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.02
                 },
                 {
-                    "https://images.pexels.com/photos/20089368/pexels-photo-20089368.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.02
+                    "https://images.pexels.com/photos/5550130/pexels-photo-5550130.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.02
                 },
                 {
-                    "https://images.pexels.com/photos/32637255/pexels-photo-32637255.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.02
+                    "https://images.pexels.com/photos/36402490/pexels-photo-36402490.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 1.02
                 }
             ]
         },
@@ -398,6 +392,8 @@
     },
     {
         "script_text": "The Dutch and",
+        "media_type": "stock",
+        "search_term": "dutch 1700s",
         "candidates": {
             "videos": [
                 {
@@ -409,13 +405,13 @@
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/25338519/pexels-photo-25338519.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.28
+                    "https://images.pexels.com/photos/29095609/pexels-photo-29095609.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.28
                 },
                 {
-                    "https://images.pexels.com/photos/16148465/pexels-photo-16148465.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.28
+                    "https://images.pexels.com/photos/33488092/pexels-photo-33488092.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.28
                 },
                 {
-                    "https://images.pexels.com/photos/16461476/pexels-photo-16461476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.28
+                    "https://images.pexels.com/photos/37341658/pexels-photo-37341658.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.28
                 }
             ]
         },
@@ -424,23 +420,25 @@
     },
     {
         "script_text": "the British fought bloody,",
+        "media_type": "wikipedia",
+        "search_term": "British 1700s",
         "candidates": {
             "videos": [],
             "images": [
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/a/a5/An_LNER_Azuma_train_on_the_East_Coast_Railway_Line%2C_geograph_6275180_by_Walter_Baxter.jpg": 1.14
+                    "https://upload.wikimedia.org/wikipedia/commons/f/f9/6DalaiLama.jpg": 1.14
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/1/10/Angel_of_the_North_-_6150534524.jpg": 1.14
+                    "https://upload.wikimedia.org/wikipedia/commons/3/38/Abhai_Singh.jpg": 1.14
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/4/4b/Ardrossan%27s_fan_club._-_panoramio.jpg": 1.14
+                    "https://upload.wikimedia.org/wikipedia/commons/8/88/Admiral_Sir_Peter_Warren.jpg": 1.14
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/a/ad/Articles_of_Union_between_England_and_Scotland_28_Jan_1707.png": 1.14
+                    "https://upload.wikimedia.org/wikipedia/commons/e/e4/Albert_Lorentzen_Angell_%281660_-_1705%29_%283611228138%29.jpg": 1.14
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/7/71/Bank-of-England.jpg": 1.14
+                    "https://upload.wikimedia.org/wikipedia/commons/0/00/Andrew_Oliver_by_John_Singleton_Copley%2C_c._1758%2C_oil_on_copper%2C_from_the_National_Portrait_Gallery_-_NPG-NPG_78_218Oliver_d1.jpg": 1.14
                 }
             ]
         },
@@ -448,84 +446,92 @@
         "max_runtime_per_clip_seconds": 1.14
     },
     {
-        "script_text": "brutal wars over these tiny islands.",
+        "script_text": "brutal wars over these tiny islands. In fact, to secure a monopoly on nutmeg,",
+        "media_type": "stock",
+        "search_term": "17th century ",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/12170117/12170117-hd_1920_1080_60fps.mp4": 2.3
+                    "https://videos.pexels.com/video-files/29786641/12798928_3840_2160_60fps.mp4": 4.52
                 },
                 {
-                    "https://videos.pexels.com/video-files/9467094/9467094-hd_1920_1080_25fps.mp4": 2.3
+                    "https://videos.pexels.com/video-files/9790384/9790384-uhd_4096_2160_25fps.mp4": 4.52
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/9268711/pexels-photo-9268711.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.3
+                    "https://images.pexels.com/photos/31763849/pexels-photo-31763849.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.52
                 },
                 {
-                    "https://images.pexels.com/photos/9269027/pexels-photo-9269027.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.3
+                    "https://images.pexels.com/photos/34230000/pexels-photo-34230000.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.52
                 },
                 {
-                    "https://images.pexels.com/photos/16563539/pexels-photo-16563539.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.3
+                    "https://images.pexels.com/photos/34857212/pexels-photo-34857212.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 4.52
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 2.3
+        "max_runtime_per_clip_seconds": 4.52
     },
     {
-        "script_text": "the British.",
+        "script_text": "the Dutch formally traded a different island they owned to the British.",
+        "media_type": "stock",
+        "search_term": "Dutch",
         "candidates": {
             "videos": [
                 {
-                    "https://videos.pexels.com/video-files/9465983/9465983-hd_1920_1080_25fps.mp4": 0.52
+                    "https://videos.pexels.com/video-files/27401730/12135283_3840_2160_60fps.mp4": 2.9
                 },
                 {
-                    "https://videos.pexels.com/video-files/36455345/15458768_3840_2160_30fps.mp4": 0.52
+                    "https://videos.pexels.com/video-files/27401735/12135247_3840_2160_60fps.mp4": 2.9
                 }
             ],
             "images": [
                 {
-                    "https://images.pexels.com/photos/2514316/pexels-photo-2514316.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.52
+                    "https://images.pexels.com/photos/25338519/pexels-photo-25338519.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.9
                 },
                 {
-                    "https://images.pexels.com/photos/14173823/pexels-photo-14173823.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.52
+                    "https://images.pexels.com/photos/16148465/pexels-photo-16148465.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.9
                 },
                 {
-                    "https://images.pexels.com/photos/4603830/pexels-photo-4603830.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 0.52
+                    "https://images.pexels.com/photos/16461476/pexels-photo-16461476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940": 2.9
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 0.52
+        "max_runtime_per_clip_seconds": 2.9
     },
     {
-        "script_text": "Manhattan.",
+        "script_text": "That island was Manhattan.",
+        "media_type": "wikipedia",
+        "search_term": "Manhattan",
         "candidates": {
             "videos": [],
             "images": [
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/0/0a/%2806-06-19%29_NY_State_Senator_Brad_Hoylman_during_Senate_Session_at_the_NY_State_Capitol%2C_Albany_NY_%28cropped%29.jpg": 0.78
+                    "https://upload.wikimedia.org/wikipedia/commons/0/0a/%2806-06-19%29_NY_State_Senator_Brad_Hoylman_during_Senate_Session_at_the_NY_State_Capitol%2C_Albany_NY_%28cropped%29.jpg": 1.25
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/3/3d/10_mile_panorama_of_NYC%2C_Feb.%2C_2018.jpg": 0.78
+                    "https://upload.wikimedia.org/wikipedia/commons/3/3d/10_mile_panorama_of_NYC%2C_Feb.%2C_2018.jpg": 1.25
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/8/83/2016_One_World_Observatory_view_southsoutheast_towards_Brooklyn_and_Manhattan_Bridges.jpg": 0.78
+                    "https://upload.wikimedia.org/wikipedia/commons/8/83/2016_One_World_Observatory_view_southsoutheast_towards_Brooklyn_and_Manhattan_Bridges.jpg": 1.25
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/3/37/2024-05-30_13_23_32_View_south_along_Interstate_95_and_U.S._Route_1_and_west_along_the_Trans-Manhattan_Expressway_from_the_overpass_for_Amsterdam_Avenue_in_Manhattan%2C_New_York_City%2C_New_York.jpg": 0.78
+                    "https://upload.wikimedia.org/wikipedia/commons/3/37/2024-05-30_13_23_32_View_south_along_Interstate_95_and_U.S._Route_1_and_west_along_the_Trans-Manhattan_Expressway_from_the_overpass_for_Amsterdam_Avenue_in_Manhattan%2C_New_York_City%2C_New_York.jpg": 1.25
                 },
                 {
-                    "https://upload.wikimedia.org/wikipedia/commons/c/cc/Apollo_11_ticker_tape_parade_2.jpg": 0.78
+                    "https://upload.wikimedia.org/wikipedia/commons/c/cc/Apollo_11_ticker_tape_parade_2.jpg": 1.25
                 }
             ]
         },
         "num_clips_needed": 1,
-        "max_runtime_per_clip_seconds": 0.78
+        "max_runtime_per_clip_seconds": 1.25
     },
     {
         "script_text": "New York City was",
+        "media_type": "stock",
+        "search_term": "New York City",
         "candidates": {
             "videos": [
                 {

@@ -28,6 +28,12 @@ What's on the page
     caption / group on top — disabled until a base exists. (i) icons show
     an info card (hover on desktop, tap on phones) docked out of the way
     top-right; the key scrolls through the same cards.
+  - GROUPS (rule of n): open one with stock / ai stock + group, then continue
+    it on each following line with hold previous + group — the group picture
+    stays up and one more cell lands on it. step onto a blank line below a
+    cell and it is tagged that way for you. every cell needs its OWN search
+    term (it is its own picture). group_id + position are derived from that
+    pattern on every save, never assigned by hand.
   - STEP 2 (gold card, always pinned on screen at the bottom of the panel):
     the search term. grey ghost suggestion appears when the box is focused
     — tab to accept — plus big tap-to-append noun/place chips. once both
@@ -63,13 +69,14 @@ from MEDIA_TYPES import (COLLAGEABLE_TYPES, GROUPABLE_TYPES, MEDIA_TYPES,
 
 try:    # new names — re-export them from MEDIA_TYPES.py (one line) to keep
         # this in sync with CONFIG; the fallback mirrors CONFIG's defaults.
-    from MEDIA_TYPES import (JOINT_GROUP_CELLS, STAMP_SOURCE_TYPES,
-                             TERM_OPTIONAL_TYPES)
+    from MEDIA_TYPES import (GROUP_CONTINUATION_TYPE, JOINT_GROUP_CELLS,
+                             STAMP_SOURCE_TYPES, TERM_OPTIONAL_TYPES)
 except ImportError:
     STAMP_SOURCE_TYPES = ("stock", "wikipedia", "ai_stock")
     TERM_OPTIONAL_TYPES = ("hold_previous", "background",
                            "blank", "random_background")
     JOINT_GROUP_CELLS = {"stock": 3, "ai_stock": 3}
+    GROUP_CONTINUATION_TYPE = "hold_previous"
 
 # Brand-new-footage minimum-duration guard (task 11). MEDIA_TYPES already put
 # the repo root on sys.path, so the shared config resolves; fall back to safe
@@ -151,7 +158,10 @@ _NAME_LABELS = {"PERSON", "ORG", "FAC", "EVENT", "WORK_OF_ART", "NORP"}
 def build_catalog() -> dict:
     bases = [{"name": n, "label": n.replace("_", " "),
               "color": d["color"], "tags": [t.value for t in d["tags"]],
+              # groupable = can OPEN a group. group_continues = can be one of
+              # the cells that JOIN the group above (hold previous + group).
               "groupable": n in GROUPABLE_TYPES,
+              "group_continues": n == GROUP_CONTINUATION_TYPE,
               "group_cells": JOINT_GROUP_CELLS.get(n, 0),
               "collageable": n in COLLAGEABLE_TYPES,
               "term_optional": n in TERM_OPTIONAL_TYPES,
@@ -162,7 +172,8 @@ def build_catalog() -> dict:
     mods = [{"name": n, "label": n, "color": d["color"],
              "info": d["info"], "example": d["example"]}
             for n, d in MODIFIERS.items()]
-    return {"bases": bases, "modifiers": mods}
+    return {"bases": bases, "modifiers": mods,
+            "group_continuation_type": GROUP_CONTINUATION_TYPE}
 
 
 def _suggest_from_meta(meta: dict, line: str) -> dict:
@@ -180,9 +191,20 @@ def _suggest_from_meta(meta: dict, line: str) -> dict:
 
 
 def recompute(data: Dict[str, dict]) -> None:
-    """Derive search_type from media_type+modifiers, and positions from
-    consecutive group runs. Called after every mutation so the file is
-    always consistent."""
+    """Derive every group's id + cell positions from the rows themselves, and
+    purge derived/legacy columns. Called after every mutation so the file is
+    always consistent.
+
+    A group is an OPENER (a groupable base + group) followed by its
+    CONTINUATION cells (hold previous + group) — the same shape
+    CONFIG.resolve_group_continuations reads back at render time. group_id is
+    derived here rather than assigned when the modifier is toggled, so a split
+    or a join can never leave the ids describing a layout that no longer
+    exists.
+
+    A continuation with no opener above it (a join tore the two apart) is not a
+    cell of anything: it silently loses the modifier rather than being written
+    to a json the renderer would refuse."""
     # drop split-provenance that no longer describes the very next line
     # (the halves were separated or the right half changed), so a stale
     # no-space rejoin can never fire.
@@ -193,7 +215,7 @@ def recompute(data: Dict[str, dict]) -> None:
         if prov and prov.get("text") != nxt:
             data[key].pop("_split_before", None)
 
-    prev_gid, pos = None, 0
+    next_gid, gid, pos = 0, None, 0
     for key, row in data.items():
         row.pop("search_type", None)   # legacy column — purged on every save
         # typography renders the line's OWN words — the term is never
@@ -201,55 +223,88 @@ def recompute(data: Dict[str, dict]) -> None:
         # through splits/joins/base switches, not just set once on pick).
         if row.get("media_type") == "typography":
             row["search_term"] = key
-        gid = row.get("group_id")
-        if gid is not None and gid == prev_gid:
-            pos += 1
+        mods = row.get("modifiers") or []
+        base = row.get("media_type") or ""
+        if "group" not in mods:
+            gid, pos = None, 0
+        elif base != GROUP_CONTINUATION_TYPE:
+            next_gid += 1
+            gid, pos = next_gid, 1     # a real base always OPENS a new group
         elif gid is not None:
-            pos = 1
+            pos += 1                   # hold previous + group joins it
         else:
-            pos = 0
+            row["modifiers"] = [m for m in mods if m != "group"]
+            gid, pos = None, 0         # orphan cell — nothing to continue
+        row["group_id"] = gid
         row["position"] = str(pos if pos else 1)
-        prev_gid = gid
 
 
-def group_run_size(data: Dict[str, dict], line: str, base: str) -> int:
-    """How many cells the group containing `line` would have, counting `line`
-    itself plus the unbroken run of neighbours that carry 'group' on the SAME
-    base. That contiguous same-base run is exactly what the compositor treats
-    as one group (CONFIG.group_scene_rows), and because assign_group_id always
-    merges into a touching group, adjacent grouped lines always share a
-    group_id — so the run and the group are the same thing."""
+def migrate_legacy_groups(data: Dict[str, dict]) -> int:
+    """Rewrite groups written the OLD way into the opener/continuation spelling,
+    returning how many cells were converted.
+
+    A group used to be N consecutive lines carrying the SAME base + group and a
+    shared group_id. It is now an opener plus `hold previous` + group cells. The
+    two are indistinguishable to recompute() — which would read the old shape as
+    N separate one-cell groups and quietly shatter a group the user had already
+    built — so an old run is converted the moment its file is opened. The
+    renderer reads both shapes (CONFIG.group_scene_rows), so a file that is
+    never re-saved keeps rendering exactly as before."""
+    converted = 0
+    opener: "dict | None" = None
+    opener_base = ""
+    for row in data.values():
+        if "group" not in (row.get("modifiers") or []):
+            opener, opener_base = None, ""
+            continue
+        base = row.get("media_type") or ""
+        if base == GROUP_CONTINUATION_TYPE:
+            continue                   # already a cell of the run above
+        # Compare against the run's OPENER, not the previous row — by now that
+        # row may itself have been re-spelled to the continuation type.
+        if (opener is not None and base == opener_base
+                and row.get("group_id") is not None
+                and row.get("group_id") == opener.get("group_id")):
+            row["media_type"] = GROUP_CONTINUATION_TYPE
+            converted += 1
+            continue
+        opener, opener_base = row, base    # this row really opens a group
+    return converted
+
+
+def group_run(data: Dict[str, dict], line: str, base: str) -> "tuple[int, str]":
+    """The group `line` would sit in if it carried `base` + group, as
+    (cell_count, opening_base).
+
+    A group is an OPENER (a groupable base + group) followed by its
+    CONTINUATION cells (hold previous + group), which is exactly the run the
+    compositor renders as one composite (CONFIG.group_scene_rows). Walk up to
+    the opener, then down over its continuations. `opening_base` is "" when
+    `line` is not in a group at all, or when it is a continuation with no
+    opener above it."""
     lines = list(data)
     i = lines.index(line)
-    size = 1
-    for direction in (-1, 1):
-        j = i + direction
-        while 0 <= j < len(lines):
-            row = data[lines[j]]
-            if "group" not in (row.get("modifiers") or []):
-                break
-            if row.get("media_type") != base:
-                break
-            size += 1
-            j += direction
-    return size
 
+    def cell(j: "int") -> "tuple[bool, str]":
+        """(carries group, base) for row j — with `line` seen as `base`."""
+        if j == i:
+            return True, base
+        row = data[lines[j]]
+        return ("group" in (row.get("modifiers") or []),
+                row.get("media_type") or "")
 
-def assign_group_id(data: Dict[str, dict], line: str) -> None:
-    """A line just gained the 'group' modifier: join the neighbouring
-    group if one touches it, else start a new group."""
-    lines = list(data)
-    i = lines.index(line)
-    for j in (i - 1, i + 1):
-        if 0 <= j < len(lines):
-            other = data[lines[j]]
-            if "group" in other.get("modifiers", []) \
-                    and other.get("group_id") is not None:
-                data[line]["group_id"] = other["group_id"]
-                return
-    used = [r["group_id"] for r in data.values()
-            if r.get("group_id") is not None]
-    data[line]["group_id"] = (max(used) + 1) if used else 1
+    start = i                              # walk up to the run's opener
+    while cell(start)[1] == GROUP_CONTINUATION_TYPE:
+        if start == 0 or not cell(start - 1)[0]:
+            return 1, ""                   # nothing above it to continue
+        start -= 1
+    opening_base = cell(start)[1]
+    size, j = 1, start + 1                 # then down over its continuations
+    while j < len(lines) and cell(j)[0] \
+            and cell(j)[1] == GROUP_CONTINUATION_TYPE:
+        size += 1
+        j += 1
+    return size, opening_base
 
 
 def split_line(data: Dict[str, dict], line: str, index: int) -> Optional[str]:
@@ -331,7 +386,8 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
     # option for this type any more, same as the modifier bar just not
     # rendering a button for it.
     orig_mods = mods
-    if "group" in mods and base not in GROUPABLE_TYPES:
+    if "group" in mods and base not in GROUPABLE_TYPES \
+            and base != GROUP_CONTINUATION_TYPE:
         mods = [m for m in mods if m != "group"]
     if "collage" in mods and base not in COLLAGEABLE_TYPES:
         mods = [m for m in mods if m != "collage"]
@@ -345,21 +401,30 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
         mods = [m for m in mods if m != drop]
     if mods != orig_mods:
         patch = dict(patch, modifiers=mods)
-    # A group can only hold as many lines as its layout has cells; a fourth
-    # would make generate_joint_scenes hard-exit mid-render. Refuse it here,
-    # while there is still a person to tell. Only checked when 'group' is
-    # newly gained (or the base changed under it) — never on a plain term save.
+    # Only checked when 'group' is newly gained (or the base changed under
+    # it) — never on a plain term save.
     gained_group = "group" in mods and (
         "group" not in (row.get("modifiers") or [])
         or base != row.get("media_type")
     )
     if gained_group:
-        cells = JOINT_GROUP_CELLS.get(base, 0)
-        would_be = group_run_size(data, line, base)
+        would_be, opening_base = group_run(data, line, base)
+        # `hold previous` + group means "add my cell to the group above". With
+        # no group above, there is nothing to add it to.
+        if not opening_base:
+            return ("'hold previous' + group continues the group above — but "
+                    "no group is open above this line. Open one first: give "
+                    "the line that starts it a base of "
+                    + " or ".join(sorted(GROUPABLE_TYPES)).replace("_", " ")
+                    + " and stack group on that.")
+        # A group can only hold as many lines as its layout has cells; a
+        # fourth would make generate_joint_scenes hard-exit mid-render. Refuse
+        # it here, while there is still a person to tell.
+        cells = JOINT_GROUP_CELLS.get(opening_base, 0)
         if would_be > cells:
-            return (f"a group of {base.replace('_', ' ')} holds {cells} "
-                    f"lines — this would make {would_be}. Start a new group "
-                    f"further down, or ungroup one of the neighbours.")
+            return (f"a group of {opening_base.replace('_', ' ')} holds "
+                    f"{cells} lines — this would make {would_be}. Start a new "
+                    f"group further down, or ungroup one of the neighbours.")
     if "stamp_source" in patch and patch["stamp_source"] is not None \
             and patch["stamp_source"] not in STAMP_SOURCE_TYPES:
         return ("stamp source must be one of "
@@ -370,17 +435,16 @@ def apply_patch(data: Dict[str, dict], line: str, patch: dict) -> Optional[str]:
     row["stamp_decorate"] = bool(row.get("stamp_decorate", False))
     # stamp settings only mean something on a TERM_OPTIONAL_TYPES line +
     # decorate + a non-empty term — clear them the moment the combo breaks
-    # so a stale choice can never linger in the json.
+    # so a stale choice can never linger in the json. A group cell is never
+    # one of those: its term is its OWN tile, not something to stamp.
     if (row.get("media_type") not in TERM_OPTIONAL_TYPES
+            or "group" in (row.get("modifiers") or [])
             or "decorate" not in (row.get("modifiers") or [])
             or not (row.get("search_term") or "").strip()):
         row["stamp_source"] = None
         row["stamp_decorate"] = False
-    if "modifiers" in patch:
-        if "group" in row["modifiers"] and row.get("group_id") is None:
-            assign_group_id(data, line)
-        if "group" not in row["modifiers"]:
-            row["group_id"] = None
+    # group_id + position are DERIVED from the opener/continuation pattern —
+    # recompute() (which _commit always runs) is the one place that sets them.
     return None
 
 
@@ -491,8 +555,9 @@ def resolve_short_scene(data: Dict[str, dict], line: str, choice: str,
         # A short line is only a problem ALONE: as one cell of a group the
         # composite it belongs to stays on screen for the whole run, so
         # nothing flashes. The line keeps the base it was given and gains
-        # `group`; the neighbours that fill the other cells are added as the
-        # user walks down the script (the tagger offers them automatically).
+        # `group`, which OPENS the group. The lines that fill the other cells
+        # join it as `hold_previous` + group as the user walks down the script
+        # (the frontend's autoJoinGroup tags each blank line for them).
         if media_type not in GROUPABLE_TYPES:
             return (f"'{media_type.replace('_', ' ')}' cannot be grouped "
                     f"(groupable: "
@@ -543,6 +608,11 @@ class _State:
         # run_manual_tagging() block only until the user is actually done,
         # instead of forever (the standalone CLI still just uses Ctrl-C).
         self.finished_event = threading.Event()
+        moved = migrate_legacy_groups(self.data)
+        if moved:
+            print(f"  · {moved} group cell(s) written the old way "
+                  f"(same base repeated) re-spelled as "
+                  f"{GROUP_CONTINUATION_TYPE.replace('_', ' ')} + group")
         recompute(self.data)
         # ---- background recommendation worker ---------------------------
         # Computing suggestions (WordNet lookups, 37k-word ratings ...)
@@ -804,6 +874,7 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
  .dot{flex:none;font-size:14px;color:#3a4150;width:1em;text-align:center}
  .dot.done{color:#7bd88f}
  .badge{font-size:11px;padding:1px 7px;border-radius:9px;color:#fff;flex:none}
+ .cellno{font-size:10.5px;padding:1px 6px;border-radius:9px;flex:none;border:1px solid currentColor;opacity:.85}
  .ltxt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15.5px;position:relative}
  .ltxt.expand{white-space:normal;overflow:visible}
  .ltxt span.ch{position:relative}
@@ -947,6 +1018,9 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
   (stock and ai stock are both brand-new — ai family is red). EDIT PREVIOUS acts on the
   image already on screen, so it is greyed on the first line. then STACK extras on top:
   decorate, caption, or group — grouped neighbours share a coloured stripe (rule of n).
+  a group OPENS with stock / ai stock + group and CONTINUES on the next lines with
+  hold previous + group; step onto a blank line below a cell and it joins the group for
+  you. every cell needs its own search term.
   a line is done when it gets its green tick: media type AND search term both set.
   splitting: hover a line's text — a golden cursor snaps between letters, click to
   break; the space after the LAST character just selects the line; both halves
@@ -1061,15 +1135,19 @@ async function load(keepLine){
  renderKey(); renderList(); renderEditor(); updateFinish();
 }
 function baseOf(n){return D.catalog.bases.find(b=>b.name===n);}
+function isCell(L){return (L.row.modifiers||[]).includes('group');}
 function stampNeeded(L,term){
  term=term===undefined?(L.row.search_term||''):term;
  const b=baseOf(L.row.media_type);
- return !!(b&&b.term_optional)
+ return !!(b&&b.term_optional)&&!isCell(L)
   &&(L.row.modifiers||[]).includes('decorate')&&!!term.trim();}
 function lineDone(L){
  if(!L.row.media_type)return false;
  const b=baseOf(L.row.media_type);
- const termOk=!!(L.row.search_term||'').trim()||!!(b&&b.term_optional);
+ // every cell of a group brings its OWN picture, so a cell always needs its
+ // own term — even hold previous, whose term is optional on its own.
+ const termOk=!!(L.row.search_term||'').trim()
+   ||(!!(b&&b.term_optional)&&!isCell(L));
  return termOk&&(!stampNeeded(L)||!!L.row.stamp_source);}
 function updateFinish(){
  const all=D.lines.every(lineDone);
@@ -1095,9 +1173,13 @@ function renderList(){
   const badge=L.row.media_type
     ? `<span class="badge" style="background:${b?b.color:'#3a4150'}">${esc(L.row.media_type)}${(L.row.modifiers||[]).length?' + …':''}</span>`
     : '';
+  // which cell of its group this line is — the composite draws them in order
+  const g=gid?groupAt(i):null;
+  const cell=g?`<span class="cellno" style="color:${gcol(gid)}">cell `+
+    `${L.row.position}/${g.cells}</span>`:'';
   r.innerHTML=`<span class="idx">${i}</span>`+
    `<span class="dot ${lineDone(L)?'done':''}" title="${lineDone(L)?'media type + search term set':'still needs media type and/or search term'}">${lineDone(L)?'✓':'○'}</span>`+
-   badge+
+   badge+cell+
    `<span class="ltxt" data-i="${i}">${esc(L.line)}</span>`+
    `<span class="lterm">${esc(L.row.search_term||'')}</span>`+
    (i>0?`<button class="joinbtn">⤴ join to above</button>`:'')+
@@ -1264,46 +1346,46 @@ function focusLine(i){
  if(isMobile()) $('#editor').classList.add('open');
  autoJoinGroup(from,sel);            // async, fire-and-forget
 }
-// How many cells the group at line index `i` already holds: `i` plus the
-// unbroken run of neighbours carrying `group` on the same base. Mirrors the
-// server's group_run_size (and the compositor's grouping rule).
-function groupRunSize(i){
- const base=D.lines[i].row.media_type;
- let size=1;
- for(const dir of [-1,1]){
-  for(let j=i+dir; j>=0 && j<D.lines.length; j+=dir){
-   const r=D.lines[j].row;
-   if(!(r.modifiers||[]).includes('group'))break;
-   if(r.media_type!==base)break;
-   size++;
-  }
- }
- return size;
+// The group that line index `i` belongs to, as {size, cells, base} \u2014 or null
+// when that line is not a cell. Its members are the lines sharing its
+// group_id, which the server derives from the opener/continuation pattern
+// (recompute), and the group's BASE \u2014 where every cell's picture comes from \u2014
+// is the base of the line that opened it.
+function groupAt(i){
+ const gid=D.lines[i].row.group_id;
+ if(!gid)return null;
+ const members=D.lines.filter(L=>L.row.group_id===gid);
+ if(!members.length)return null;
+ const base=members[0].row.media_type;
+ const b=baseOf(base);
+ return {size:members.length, cells:(b&&b.group_cells)||0, base};
 }
-// You marked a line as a group cell and stepped onto the next one. A group
-// needs every cell tagged with the SAME base (each cell brings its own
-// picture), so if that next line is still blank, tag it for you and drop the
-// cursor in its search box. Stops once the group has all the cells its layout
-// draws, and never touches a line you already tagged.
+// You marked a line as a group cell and stepped onto the next one. The lines
+// that JOIN a group are tagged `hold previous` + group \u2014 the group picture
+// stays on screen and this line lands one more cell on it \u2014 so if that next
+// line is still blank, tag it for you and drop the cursor in its search box
+// (every cell brings its own picture, so it still needs its own term). Stops
+// once the group has all the cells its layout draws, and never touches a line
+// you already tagged.
 async function autoJoinGroup(from,to){
  if(to!==from+1)return;                       // only the line directly below
  const P=D.lines[from], L=D.lines[to];
  if(!P||!L)return;
- if(!(P.row.modifiers||[]).includes('group'))return;
- const b=baseOf(P.row.media_type);
- if(!b||!b.groupable)return;
+ const g=groupAt(from);
+ if(!g)return;                                // the line above is not a cell
  if(L.row.media_type||(L.row.modifiers||[]).length)return;   // not a blank line
- const filled=groupRunSize(from);
- if(filled>=b.group_cells){
-   toast(`that group is full (${b.group_cells} cells) \u2014 this line starts `+
+ if(g.size>=g.cells){
+   toast(`that group is full (${g.cells} cells) \u2014 this line starts `+
          `something new`,'#e6c15a');
    return;
  }
+ const cont=D.catalog.group_continuation_type;
  const ok=await post('/save',{line:L.line,
-   patch:{media_type:P.row.media_type,modifiers:['group']}},L.line);
+   patch:{media_type:cont,modifiers:['group']}},L.line);
  if(!ok)return;
  expand('term');
- toast(`cell ${filled+1} of ${b.group_cells} \u2014 give it its own search term`);
+ toast(`cell ${g.size+1} of ${g.cells} \u2014 ${cont.replace(/_/g,' ')} + `+
+       `group. give it its own search term`);
 }
 function closeEditor(){$('#editor').classList.remove('open');}
 function expand(which){
@@ -1351,7 +1433,9 @@ function renderTypes(){
 }
 function modAllowed(m,b){
  // not available for this base -> not offered at all (no disabled+warning)
- if(m.name==='group')return !!(b&&b.groupable);
+ // group is offered both on the bases that can OPEN one and on hold previous,
+ // which is how a line JOINS the group above it.
+ if(m.name==='group')return !!(b&&(b.groupable||b.group_continues));
  if(m.name==='collage')return !!(b&&b.collageable);
  return true;
 }
@@ -1373,6 +1457,7 @@ function renderTerm(){
  $('#term').readOnly=isTypo;
  const b=baseOf(L.row.media_type);
  $('#termreq').textContent=isTypo?"auto-set to this line's own text"
+   :isCell(L)?"required — this cell's own picture"
    :(b&&b.term_optional)?'optional for this type'
    :'required';
  updateGhost();
@@ -1566,9 +1651,9 @@ function openShort(name){
        'next_edit',last)+
    opt('','(5) Join [at least part of] the scene after this scene to this '+
        'scene','join_next',last,last?undefined:sel+1)+
-   opt('',`(6) Make this the first cell of a group \u2014 the next lines fill `+
-       `the other cells and the ${canGroup?pb.group_cells:3} pictures sit on `+
-       `screen together`,'group_start',!canGroup)+
+   opt('',`(6) Make this the first cell of a group \u2014 the next lines join `+
+       `it (hold previous + group) and the ${canGroup?pb.group_cells:3} `+
+       `pictures sit on screen together`,'group_start',!canGroup)+
    opt('ovr','(X) Manual override and use quick stock anyway','override',false);
  $('#shortcard').style.display='block';
  $('#shortcard').scrollIntoView({block:'nearest'});
@@ -1608,8 +1693,9 @@ async function applyShort(choice){
  if(ok){shortPend=null;$('#shortcard').style.display='none';
    if(choice==='group_start'){
      expand('term');
-     toast('group started \u2713 \u2014 give this cell its own search term, '+
-           'then move down: the next lines join the group automatically');
+     toast('group opened \u2713 \u2014 give this cell its own search term, then move '+
+           'down: each blank line below joins the group as hold previous + '+
+           'group');
    } else toast('applied \u2713 \u2014 use \u21b6 undo to revert');}
 }
 function showManualHint(html){
@@ -1653,7 +1739,7 @@ function cardHTML(name){
  const all=[...D.catalog.bases,...D.catalog.modifiers];
  const e=all.find(x=>x.name===name);
  if(name==='_types')return '<div class="nm">media type</div><div class="hint">every line needs exactly one base media type. NEW fetches brand-new material; EDIT PREVIOUS reuses or changes the image already on screen. colours show the family — ai in reds.</div>';
- if(name==='_mods')return '<div class="nm">stack on top</div><div class="hint">optional extras layered onto the base you picked: decorate (draw on it), caption (text on it), group (this line is one cell of a multi-cell group with its neighbours: tag 3 lines in a row with the same base and their 3 pictures share the screen — each cell needs its own search term).</div>';
+ if(name==='_mods')return '<div class="nm">stack on top</div><div class="hint">optional extras layered onto the base you picked: decorate (draw on it), caption (text on it), group (this line is one cell of a multi-cell group). to build a group: OPEN it on the first line with stock (or ai stock) + group, then CONTINUE it on each following line with hold previous + group — their pictures share the screen, one cell appearing per line. every cell needs its own search term, because every cell is its own picture.</div>';
  if(name==='_stamp')return '<div class="nm">stamp pictures from</div><div class="hint">hold previous/background + decorate + a search term: the term describes what to STAMP ("jar of nutmeg"). the scene joins the NORMAL candidates review as this type — you click the picture you want there, and it waits ready (and active) in the decorate editor\'s STAMP tab.</div>';
  if(name==='_stampdeco')return '<div class="nm">decorate the pick first</div><div class="hint">after you click your pick in the review, it opens in the decorator ON ITS OWN first — cut it out, remove its background, clean it up — BEFORE it\'s offered as a stamp.</div>';
  if(!e)return '';

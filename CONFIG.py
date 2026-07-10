@@ -426,7 +426,9 @@ MEDIA_TYPE_CATALOG: dict[str, dict] = {
         "info": "keep the previous image on screen, frozen. the default "
         "for quick mid-sentence beats — stack decorate on it to "
         "draw on it, stamp pictures into it, zoom, or cut objects "
-        "out (everything manual lives in the ONE decorate editor).",
+        "out (everything manual lives in the ONE decorate editor). "
+        "stack group instead to add this line's own picture as the "
+        "next cell of the group opened above.",
         "example": "examples/hold_previous.png",
     },
     "background": {
@@ -481,18 +483,34 @@ MODIFIERS: dict[str, dict] = {
     },
     "group": {
         "color": "#e6c15a",
-        "info": "this line is one cell of a group with its neighbours: mark "
-        "3 lines in a row with the SAME base and they render as 3 "
-        "cells side by side, one appearing per line. every cell "
-        "brings its OWN picture, so every line needs its own search "
-        "term — a group OF stock, a group OF ai stock. 3 cells max "
-        "(the layout's size); the base stays whatever you picked.",
+        "info": "this line is one cell of a group: the cells sit side by "
+        "side, one appearing per line. OPEN a group with a real base "
+        "(stock / ai stock) + group; CONTINUE it on the following "
+        "lines with hold previous + group — you are holding the "
+        "group picture on screen and landing one more cell on it. "
+        "every cell brings its OWN picture, so every line in the "
+        "group needs its own search term. 3 cells max (the layout's "
+        "size); the whole group takes the base the first cell picked.",
         "example": "examples/group.png",
     },
 }
 
-# Which base types accept the group modifier (they have grid layouts).
+# Which base types can OPEN a group (they have grid layouts). The group takes
+# its base — where every cell's picture comes from — from the line that opens
+# it.
 GROUPABLE_TYPES: set[str] = {"stock", "ai_stock"}
+
+# The base every CONTINUATION cell of a group carries. A group reads exactly
+# as you tag it: the first line is `stock + group` (or `ai_stock + group`),
+# and each line that joins it is `hold_previous + group` — the group picture
+# stays on screen and this line's own tile lands on it. Continuation rows
+# still carry their OWN search term, because every cell is its own picture.
+#
+# `hold_previous` is only the SPELLING. resolve_group_continuations() rewrites
+# these rows to the group's real base right after load, because every stage
+# downstream (candidate fetch, joint compositor, ai tile generator) dispatches
+# on media_type and a cell must fetch its picture from the group's base.
+GROUP_CONTINUATION_TYPE: str = "hold_previous"
 
 # Which base types accept the collage modifier (multi-pick in review).
 COLLAGEABLE_TYPES: set[str] = {"stock"}
@@ -633,16 +651,22 @@ def normalise_scene_row(script_text: str, row: dict) -> None:
     row.setdefault("modifiers", [])
     row.setdefault("group_id", None)
     row.setdefault("position", "1")
+    # set for real by resolve_group_continuations() — it needs the neighbours,
+    # which one row on its own cannot see.
+    row.setdefault("group_continuation", False)
     unknown = [m for m in row["modifiers"] if m not in MODIFIERS]
     if unknown:
         raise ValueError(
             f"unknown modifier(s) {unknown} on scene '{script_text[:60]}' "
             f"(valid: {', '.join(MODIFIERS)})"
         )
-    if "group" in row["modifiers"] and name not in GROUPABLE_TYPES:
+    if "group" in row["modifiers"] and name not in GROUPABLE_TYPES \
+            and name != GROUP_CONTINUATION_TYPE:
         raise ValueError(
             f"'{name}' cannot take the group modifier on scene "
-            f"'{script_text[:60]}' (groupable: {', '.join(sorted(GROUPABLE_TYPES))})"
+            f"'{script_text[:60]}' (a group OPENS with "
+            f"{' / '.join(sorted(GROUPABLE_TYPES))} + group and CONTINUES "
+            f"with {GROUP_CONTINUATION_TYPE} + group)"
         )
     if "collage" in row["modifiers"] and name not in COLLAGEABLE_TYPES:
         raise ValueError(
@@ -681,6 +705,76 @@ def scene_is_grouped(row: dict) -> bool:
     return "group" in (row.get("modifiers") or [])
 
 
+def scene_is_group_continuation(row: dict) -> bool:
+    """This grouped row CONTINUES the group above it (it was tagged
+    `hold_previous` + group) rather than opening one. Only meaningful after
+    resolve_group_continuations(), which rewrites the row's media_type to the
+    group's base and leaves this flag behind to remember what was written."""
+    return bool(row.get("group_continuation"))
+
+
+def _media_type_name(row: dict) -> str:
+    """The row's media_type as a plain string, whether it is still the raw
+    json string or has already been normalised to a MediaType."""
+    name = row.get("media_type")
+    if isinstance(name, MediaType):
+        return name.value
+    return (name or "").strip()
+
+
+def resolve_group_continuations(scenes: dict[str, dict]) -> None:
+    """Give every CONTINUATION cell of a group its group's real base, IN PLACE.
+
+    The tagger writes a group the way it reads on screen: the first line picks
+    the base and the modifier (`stock` + group), and each line that joins it is
+    `hold_previous` + group. But nothing downstream knows about that spelling —
+    the candidate fetch, the joint compositor and the ai tile generator all
+    dispatch on media_type, and every cell fetches its OWN picture from the
+    group's base. So the spelling is resolved once, here, right after load:
+    each continuation row takes the opener's media_type and group_id, and
+    remembers what it was with `group_continuation`.
+
+    Works on raw rows (media_type is a string) and normalised ones (a
+    MediaType) alike — the rewritten value copies the opener's form. Raises
+    ValueError on a continuation with no group open above it, on a group opened
+    by a base with no grid layout, and on a group longer than its layout."""
+    opener: dict | None = None
+    opener_text = ""
+    run = 0
+    for script_text, row in scenes.items():
+        if not scene_is_grouped(row):
+            opener, run = None, 0
+            continue
+        name = _media_type_name(row)
+        if name != GROUP_CONTINUATION_TYPE:
+            if name not in GROUPABLE_TYPES:
+                raise ValueError(
+                    f"'{name}' cannot open a group (scene "
+                    f"'{script_text[:60]}'). Groupable bases: "
+                    f"{', '.join(sorted(GROUPABLE_TYPES))}."
+                )
+            opener, opener_text, run = row, script_text, 1
+            row["group_continuation"] = False
+            continue
+        if opener is None:
+            raise ValueError(
+                f"scene '{script_text[:60]}' is '{GROUP_CONTINUATION_TYPE}' + "
+                f"group, but no group is open above it. A group OPENS with "
+                f"{' / '.join(sorted(GROUPABLE_TYPES))} + group."
+            )
+        run += 1
+        cells = JOINT_GROUP_CELLS[_media_type_name(opener)]
+        if run > cells:
+            raise ValueError(
+                f"the group starting at '{opener_text[:60]}' has {run} cells, "
+                f"but a group of {_media_type_name(opener)} draws {cells}. "
+                f"Ungroup '{script_text[:60]}' or start a new group there."
+            )
+        row["media_type"] = opener["media_type"]
+        row["group_id"] = opener.get("group_id")
+        row["group_continuation"] = True
+
+
 def scene_wants_decorate(row: dict) -> bool:
     return "decorate" in (row.get("modifiers") or [])
 
@@ -707,17 +801,20 @@ def group_scene_rows(
     scenes: list[tuple[str, "SearchTermData"]],
 ) -> list[list[tuple[str, "SearchTermData"]]]:
     """Split an ORDERED (script-order) list of grouped scenes into render
-    groups: consecutive scenes sharing the SAME media_type AND the SAME
-    non-null group_id are one group."""
+    groups: a scene joins the one above it when it CONTINUES it (it was tagged
+    `hold_previous` + group — see resolve_group_continuations), or when the two
+    share the SAME media_type AND the SAME non-null group_id."""
     groups: list[list[tuple[str, "SearchTermData"]]] = []
     current: list[tuple[str, "SearchTermData"]] = []
     prev: "SearchTermData | None" = None
     for text, row in scenes:
-        same = (
-            prev is not None
-            and row.get("media_type") == prev.get("media_type")
-            and row.get("group_id") is not None
-            and row.get("group_id") == prev.get("group_id")
+        same = prev is not None and (
+            scene_is_group_continuation(row)
+            or (
+                row.get("media_type") == prev.get("media_type")
+                and row.get("group_id") is not None
+                and row.get("group_id") == prev.get("group_id")
+            )
         )
         if prev is not None and not same:
             groups.append(current)

@@ -77,6 +77,7 @@ from CONFIG import (
     ensure_runtime_dirs,
     media_props,
     normalise_scene_row,
+    resolve_group_continuations,
     scene_is_grouped,
 )
 from ___visuals.DECORATE_STAGE import (
@@ -244,6 +245,14 @@ def main() -> None:
         except ValueError as exc:
             print(f"ERROR: {exc}")
             sys.exit(1)
+    # A group's continuation cells are tagged `hold_previous` + group. Give
+    # them the group's real base before ANY stage looks at media_type — they
+    # each fetch their own picture from it.
+    try:
+        resolve_group_continuations(scriptTextToPexelSearch)
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        sys.exit(1)
     print("!!!!!!script text to pexel search:")
     print(scriptTextToPexelSearch)
 
