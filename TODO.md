@@ -1,43 +1,33 @@
 
-
-next task:
-
-1) 
-how do we do group of three now? (3 in a row, now i think its group of 'n'?)
-I assumed that it would be hold previous? and then group?  (but that option isn't available currently)
-So basically I assume for the first one, we pick stock -> group, And then for the ones after it which we want putting on the same group picture, do 'hold previous' -> group.
-(please update the manual tagger to do this... and the code that follows, presumably in main and in the ___visuals files related to group of 'n' / 3 row...
-
-Also, at the same time update the manual tagger such that when we initially do stock -> group, and then tab / click onto the next entry, if that next entry is empty, then we automatically assign the hold previous + group to that.
-
-Also, add a seventh option to the '⚠ too short for new footage' warning, which is to make the current entry the first entry of a group which will be combined together. (this will be option (6))
-
 -------------
-
-1) - option for just 'blank' and another additional 'random blank background' in the mediatype chooser 
-- blank is just white
-- 'random background' picks a random background from our backgrounds folder (_BACKGROUNDS/).
-
-(you'll have to update to allow for these two new options... + impelement the fnucitonlaity for that..)
-in main.. config... the ___visuals... etc.
-
-.. (and in the ___splitting_and_labelling as well...)
---> add it under 'NEW — brand-new material' in the media tagger etc... 
-etc.
-
-
-
-
 
 
 3) new media type option for 'timeline'... uses manim to generate a timeline affect where it shows a timeline and a moving thing that goes back to the given date. It then holds on that after doing the initial. 
+e.g. so If I pass data '1600', then it'll start at 2026, then move back to 1600s then 1600 pops up on the timeline once it gets there...
 
  movement. 
 
  in ___splitting_and_labelling ... (specifically the manual tagger..), have this under a new heading; new - maths 
 (e.g. as opposed to under 'NEW — brand-new material' ...)
-put it under the NEW — brand-new material, in a scrollable box...)
-(bear in mind- we'll add lots more like this in the future)
+put it seperate the NEW — brand-new material, in fact, have dots reprenting the tabs at the top, and have a second tab where we'll put these maths options. 
+so for now, we'll have the existing, but just with 2 small dots at the top, with the current one highlighted to show we're on that tab. there will then be arrows to move between the tabs. on the second tab, under the new heading there will just be this one new option. 
+(we will need some way to pass the data that will be be required for this manim thing to be made in the script to search term json some how... In a way that won't massively complicate the json, and will allow for lots of different types of data to be passed for other types of things...)
+    - perhaps just an additional field like 'data' or something? 
+    (which then, in the manual tagger, after selecting the 'timeline' option, the user will be asked to enter the data... for timeline this is straightforward as it'll just be years (we'll auto detect the current year in the code itself...).
+
+(bear in mind- we'll add lots more like this in the future, like creating a pie chart animation etc...)
+
+
+
+hmmmm...
+how will we determine the length of the animation?
+perhaps if the clip is 
+
+... hmmm so i guess the way this'll work for us is that we have a static of the final finished timeline. and then a seperate mp4 of the transition. 
+then when we have determined the scene length (which occurs at some point in the ___visuals stage...), we can then check: is the scene shorter than the transition? because if it is, we just show the finished one. If its longer, we show the transition, then hold the static finished position for the rest of the scene. 
+
+(in fact, add a note somewhere for AI future reference that we'll always use this method when 
+ just literally a standalone file like 'AI_READ_THIS.txt' or something...
 
 
 8) When I'm doing manual intervention, where I place my own image in the stock footage folder... is there any way we could open a window which the user can just paste into, which will then paste the image which we are using for that? (as an alternative option available... so they can manually place in the folder, or they can just paste in a picture that they've copied...
