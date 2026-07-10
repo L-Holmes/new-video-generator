@@ -200,6 +200,38 @@ check(all(1969 != y for y in ticks(2026, 1969))
 check(ticks(2026, 2026) and 2026 not in ticks(2026, 2026),
       "a timeline to THIS year still draws an axis (zero span is padded)")
 
+print("\n===== downloads: history.json is an index, not the only record =====")
+import json, importlib as _il
+# CACHE_IO is stubbed at the top of this file; the download cache is the real
+# thing we want to exercise, so put the real module back for this block.
+_stub_cio = sys.modules.pop("___visuals.CACHE_IO")
+_cio = _il.import_module("___visuals.CACHE_IO")
+_dl = _il.import_module("___visuals.DOWNLOADS")
+_sf = work / "stock_footage"; _sf.mkdir(parents=True, exist_ok=True)
+_dl.STOCK_FOOTAGE_CACHE_DIR = _sf
+_cio.HISTORY_FILE = _sf / "history.json"
+class _NoNetwork:
+    def get(self, *a, **k):
+        raise AssertionError("tried to download something already on disk")
+_dl.requests = _dl._http_session = _dl._wiki_session = _NoNetwork()
+_url = "https://videos.pexels.com/example/clip.mp4"
+_dest = _sf / f"pexels-{_dl._url_hash(_url)}.mp4"
+_dest.write_bytes(b"pretend footage")          # on disk, but NOT in history
+check(not (_sf / "history.json").exists(),
+      "no history.json: exactly what a `find -name '*.json' -delete` leaves")
+check(_dl._download_clip_parallel(_url) == str(_dest),
+      "a file on disk is a cache hit even with history.json gone (no network)")
+check(json.loads((_sf / "history.json").read_text()) == {_url: str(_dest)},
+      "...and the cache hit re-indexes it into a fresh history.json")
+_part = _sf / "pexels-deadbeefdead.mp4"
+_part.with_name(_part.name + ".part").write_bytes(b"half")
+check(_dl._already_downloaded("http://x/a.mp4", _part, lock=True) is None,
+      "a killed download's .part file is never mistaken for a finished one")
+_empty = _sf / "pexels-cafecafecafe.mp4"; _empty.touch()
+check(_dl._already_downloaded("http://x/b.mp4", _empty, lock=True) is None,
+      "a zero-byte file is not a cache hit")
+sys.modules["___visuals.CACHE_IO"] = _stub_cio   # the later stages want the stub
+
 print("\n===== per-type properties drive the stages =====")
 check(media_props(MediaType.AI_STOCK).is_ai_base
       and media_props(MediaType.AI_EDIT_PREVIOUS).is_ai_edit

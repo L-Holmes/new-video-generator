@@ -7,6 +7,13 @@ The five public download functions used to repeat the same md5 / extension /
 stream-to-file / cache-check / history-record logic. That shared core now
 lives in the private helpers below; each public function is a thin wrapper
 that keeps its original logging + concurrency (locking / retry) semantics.
+
+Nothing is downloaded twice. A file's name is a hash of its URL, so the cache
+check (_already_downloaded) trusts EITHER history.json or the file itself
+sitting on disk — history.json is only an index, and deleting it costs one
+re-index, not a re-download. Downloads are atomic (.part + rename), so a run
+killed mid-download leaves nothing for the next run to mistake for a complete
+file.
 """
 
 from __future__ import annotations
@@ -19,6 +26,7 @@ if __package__ in (None, ""):
 
 import hashlib
 import math
+import os
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -203,10 +211,46 @@ def _record_download(url: str, dest: Path, *, lock: bool) -> None:
         _write()
 
 
+def _already_downloaded(url: str, dest: Path, *, lock: bool) -> str | None:
+    """The bytes for `url`, if we already have them — else None.
+
+    There are two ways we might. history.json remembers the url→path mapping;
+    but `dest` is derived from a hash of the URL, so a file sitting AT `dest` is
+    this url's download and nothing else could have written that name. Checking
+    the disk too makes history.json a pure index: delete it (or any other cache
+    json) and the next run re-indexes what it finds, instead of spending minutes
+    re-downloading footage it already has.
+
+    Safe because downloads land at `dest` atomically (see _stream_to_file), so a
+    file there is a COMPLETE download, never a killed run's half-written one.
+    """
+    hit = _cached_local_path(url, lock=lock)
+    if hit:
+        return hit
+    try:
+        on_disk = dest.exists() and dest.stat().st_size > 0
+    except OSError:
+        return None
+    if not on_disk:
+        return None
+    _record_download(url, dest, lock=lock)  # re-index it for next time
+    return str(dest)
+
+
 def _stream_to_file(resp, dest: Path) -> None:
-    with open(dest, "wb") as f:
-        for chunk in resp.iter_content(chunk_size=65536):
-            f.write(chunk)
+    """Stream the response to `dest` ATOMICALLY: write a sibling .part file and
+    rename it into place. The rename is atomic, so `dest` either doesn't exist
+    or is a complete download — which is what lets _already_downloaded trust a
+    file it finds there."""
+    tmp = dest.with_name(dest.name + ".part")
+    try:
+        with open(tmp, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=65536):
+                f.write(chunk)
+        os.replace(tmp, dest)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 # ---------------------------------------------------------------------------
@@ -216,16 +260,16 @@ def _stream_to_file(resp, dest: Path) -> None:
 
 def _download_clip(url: str) -> str | None:
     """Download a single video to cache. Returns local path, or None on failure."""
-    hit = _cached_local_path(url, lock=False)
+    filename = f"pexels-{_url_hash(url)}.mp4"
+    STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    dest = STOCK_FOOTAGE_CACHE_DIR / filename
+
+    hit = _already_downloaded(url, dest, lock=False)
     if hit:
         print(f"  [cache hit] {Path(hit).name}")
         return hit
 
-    filename = f"pexels-{_url_hash(url)}.mp4"
-
     print(f"  [download] {filename} ...")
-    STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    dest = STOCK_FOOTAGE_CACHE_DIR / filename
 
     vid_resp = requests.get(url, stream=True, timeout=30)
     if vid_resp.status_code != 200:
@@ -240,16 +284,16 @@ def _download_clip(url: str) -> str | None:
 
 def _download_image(url: str) -> str | None:
     """Download a single image to cache. Returns local path, or None on failure."""
-    hit = _cached_local_path(url, lock=False)
+    filename = f"pexels-img-{_url_hash(url)}{_image_ext_for(url)}"
+    STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    dest = STOCK_FOOTAGE_CACHE_DIR / filename
+
+    hit = _already_downloaded(url, dest, lock=False)
     if hit:
         print(f"  [cache hit img] {Path(hit).name}")
         return hit
 
-    filename = f"pexels-img-{_url_hash(url)}{_image_ext_for(url)}"
-
     print(f"  [download img] {filename} ...")
-    STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    dest = STOCK_FOOTAGE_CACHE_DIR / filename
 
     try:
         img_resp = requests.get(url, stream=True, timeout=15)
@@ -268,13 +312,13 @@ def _download_image(url: str) -> str | None:
 
 def _download_clip_parallel(url: str) -> str | None:
     """Thread-safe, silent version of _download_clip using the shared session."""
-    hit = _cached_local_path(url, lock=True)
-    if hit:
-        return hit
-
     filename = f"pexels-{_url_hash(url)}.mp4"
     STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     dest = STOCK_FOOTAGE_CACHE_DIR / filename
+
+    hit = _already_downloaded(url, dest, lock=True)
+    if hit:
+        return hit
 
     try:
         vid_resp = _http_session.get(url, stream=True, timeout=30)
@@ -290,13 +334,13 @@ def _download_clip_parallel(url: str) -> str | None:
 
 def _download_image_parallel(url: str) -> str | None:
     """Thread-safe, silent version of _download_image using the shared session."""
-    hit = _cached_local_path(url, lock=True)
-    if hit:
-        return hit
-
     filename = f"pexels-img-{_url_hash(url)}{_image_ext_for(url)}"
     STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     dest = STOCK_FOOTAGE_CACHE_DIR / filename
+
+    hit = _already_downloaded(url, dest, lock=True)
+    if hit:
+        return hit
 
     try:
         img_resp = _http_session.get(url, stream=True, timeout=15)
@@ -320,13 +364,13 @@ def _download_wikipedia_image_parallel(url: str) -> str | None:
       - retries 429/503 with exponential backoff, honouring Retry-After,
       - sends Wikimedia's required descriptive User-Agent.
     """
-    hit = _cached_local_path(url, lock=True)
-    if hit:
-        return hit
-
     filename = f"wiki-img-{_url_hash(url)}{_image_ext_for(url, use_endswith=True)}"
     STOCK_FOOTAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     dest = STOCK_FOOTAGE_CACHE_DIR / filename
+
+    hit = _already_downloaded(url, dest, lock=True)
+    if hit:
+        return hit
 
     with _wiki_download_semaphore:  # throttle Wikimedia concurrency
         for attempt in range(1, WIKI_DOWNLOAD_MAX_RETRIES + 1):

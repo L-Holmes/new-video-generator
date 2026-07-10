@@ -101,7 +101,7 @@ TODO:
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
 
 
-find TESTER-CACHE -type f -name "*.json" -delete && rm -rf TESTER-OUTPUT/output.mp4
+rm -rf TESTER-OUTPUT/output.mp4 TESTER-CACHE/output_video_final.mp4 TESTER-CACHE/{joint,blank,map,collage,decorate}_scenes
 
 ----
 

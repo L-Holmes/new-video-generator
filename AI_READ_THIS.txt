@@ -72,7 +72,46 @@ The manual tagger picks it up on its own: its maths tab is built from the
 catalog, and its data form from MEDIA_TYPE_DATA_FIELDS.
 
 
-5. GROUPS (rule of n)
+5. CACHE LAYERS — WHAT A RESET SHOULD AND SHOULD NOT DELETE
+------------------------------------------------------------
+Inside <NAME>-CACHE/, these files each gate an EXPENSIVE stage. Deleting one
+does not "clean up"; it re-runs minutes of work.
+
+  footage_candidates.json        Pexels + Wikipedia metadata (Phase A).
+                                 Deleting it re-scrapes every scene.
+  stock_footage/history.json     The url -> local-path INDEX (Phase B).
+  AUDIO/<stem>.sentences.json    Whisper: the silence cutdown.
+  AUDIO/<stem>.processed.wav     ...same stage; both must survive.
+  script_timings_seconds.json    Whisper: the script/audio synchroniser.
+  stickman_scenes/               Paid fal.ai image generation. Same for
+  stickman_joint_scenes/         stickman_joint_scenes/ and ai_edit_scenes/.
+  ai_edit_scenes/
+  maths_scenes/                  manim renders (tens of seconds each).
+
+  So `find <NAME>-CACHE -name "*.json" -delete` is the WORST possible reset:
+  it hits four of the above and re-runs whisper, the metadata scrape and the
+  downloads, while leaving the media files it just orphaned.
+
+Everything else regenerates cheaply from ffmpeg (blank_scenes/, map_scenes/,
+joint_scenes/, collage_scenes/, decorate_scenes/, previous_previews/) and is
+safe to delete. final_script_to_clips.json is a snapshot of the review picks
+for the ai_edit preview, rewritten before it is read — deleting it costs
+nothing.
+
+To force a fresh render but keep the slow work:
+    rm -rf <NAME>-OUTPUT/output.mp4 <NAME>-CACHE/output_video_final.mp4 \
+           <NAME>-CACHE/{joint,blank,map,collage,decorate}_scenes
+
+Every cache check must be able to REBUILD ITS OWN INDEX from what is on disk.
+The downloaders are the model: a media file's name is a hash of its URL, so
+_already_downloaded() trusts the file at that path even when history.json is
+gone, and re-indexes it. Follow that pattern for any new cache — an index is a
+speedup, never the only record that the work was done. Write files atomically
+(.part + os.replace) so a killed run never leaves something a later run will
+mistake for finished output.
+
+
+6. GROUPS (rule of n)
 ---------------------
 A group is written the way it reads on screen: the first line carries a real
 base (`stock` / `ai_stock`) + the `group` modifier, and every line that joins
