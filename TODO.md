@@ -5,35 +5,23 @@
 x) perhpas add the other maths things whilst claude ready?
 at:
 
+TODO:
+I'm creating a video editting app, and using manim to generate the graphics. I want maybe just a selection of the main graphs that would cover like 95% of circumstances. 
+List the options that I should add. 
+(This is a general use tool,covering a wide range of topics. For my use it will be more logical and informative, rather than decorative).
+
 claude --resume e4bce00f-7f05-44e7-a6ae-fd7183302c6d
 
 
-3) new media type option for 'timeline'... uses manim to generate a timeline affect where it shows a timeline and a moving thing that goes back to the given date. It then holds on that after doing the initial. 
-e.g. so If I pass data '1600', then it'll start at 2026, then move back to 1600s then 1600 pops up on the timeline once it gets there...
-
- movement. 
-
- in ___splitting_and_labelling ... (specifically the manual tagger..), have this under a new heading; new - maths 
-(e.g. as opposed to under 'NEW — brand-new material' ...)
-put it seperate the NEW — brand-new material, in fact, have dots reprenting the tabs at the top, and have a second tab where we'll put these maths options. 
-so for now, we'll have the existing, but just with 2 small dots at the top, with the current one highlighted to show we're on that tab. there will then be arrows to move between the tabs. on the second tab, under the new heading there will just be this one new option. 
-(we will need some way to pass the data that will be be required for this manim thing to be made in the script to search term json some how... In a way that won't massively complicate the json, and will allow for lots of different types of data to be passed for other types of things...)
-    - perhaps just an additional field like 'data' or something? 
-    (which then, in the manual tagger, after selecting the 'timeline' option, the user will be asked to enter the data... for timeline this is straightforward as it'll just be years (we'll auto detect the current year in the code itself...).
-
-(bear in mind- we'll add lots more like this in the future, like creating a pie chart animation etc...)
+...
 
 
+- graphs / bars / ...
+    - Counter animations
+    Numbers tick up, bar fills, pie chart draws on. Perfect for stats you mention.
+    - hmmm - do i use manim for this? and generate code to then generate the thing? or what? 
 
-hmmmm...
-how will we determine the length of the animation?
-perhaps if the clip is 
 
-... hmmm so i guess the way this'll work for us is that we have a static of the final finished timeline. and then a seperate mp4 of the transition. 
-then when we have determined the scene length (which occurs at some point in the ___visuals stage...), we can then check: is the scene shorter than the transition? because if it is, we just show the finished one. If its longer, we show the transition, then hold the static finished position for the rest of the scene. 
-
-(in fact, add a note somewhere for AI future reference that we'll always use this method when 
- just literally a standalone file like 'AI_READ_THIS.txt' or something...
 
 
 8) When I'm doing manual intervention, where I place my own image in the stock footage folder... is there any way we could open a window which the user can just paste into, which will then paste the image which we are using for that? (as an alternative option available... so they can manually place in the folder, or they can just paste in a picture that they've copied...
@@ -54,48 +42,14 @@ It will then update an ongoing log file we have, which will do before and after,
 12) need an actual reliable thing for the words on screen... and perhaps have a flag that we change in config that determines whether it shows like the whole sentence on screen, but one word at once... or just each word one by one as it does now..
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ===========================================
 
 
 Ideas:
-- timeline for dates (maybe make this animated?)
-    - e.g. In 64 AD...
 - extend previous
     - take the previous, put it side by side with a second image. 
     e.g. Rome was not built in a day || but in burned in six
         -> rome construction -> rome construction + fire
-
-
-
-TODO:
-- Add the stamp thing back - for like 'traded for nutmeg!' etc?
-    - or do we sort of auto-populate the 'text' portion of the decorator to use that text, and then apply a 'stamp' affect to the text where it does the same styling with the red background?
-
-
-
-
 
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
@@ -113,10 +67,6 @@ rm -rf TESTER-OUTPUT/output.mp4 TESTER-CACHE/output_video_final.mp4 TESTER-CACHE
 
 tell me where to add stuff in an idiot proof way. before and after....
 
-
-
-
-
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
@@ -132,6 +82,10 @@ TODO THEN THEN:
             - so actually, this will be a new media type... 'addanothermappoint'... (?)
     - ==> Ideally I want to mark where is is on the map... If it's a country, show world map, if it's a county/town/city, show national map... Etc. and have a marker of the place I'm after...
     - (if it can't be done automatically, ask user to click where it should go, then add a pin and then text of what the place is called...) 
+    - ........
+    - well.. just make it work for like 'n' name places... 
+         up to a reasonable limit like 10 places...
+- Add a transtiion for things like the collage???
 
 
 
@@ -160,10 +114,6 @@ Manual TODO;
 
 
 Other ideas:
-- stock fallback
-    - (if all the stock is just rubbish... do i allow backup of generate ai image?)
-    - or could i do open . on the image folder where they should add the file to... or the file path..
-    - then auto detect when a new file has been added and ask them to confirm; 'is image_1.jpg the image for "Big Tower collapses"'? Y/N: [answer]
 - 2 to 3 brand colours? (for like labels.. text .. arrows.. stock.. etc.)
 - slight rotation for layered things...
     - hmmm . yeah so either layer on prexisting background
@@ -171,10 +121,6 @@ Other ideas:
     - i.e. better collage...
 - maybe transitions etc. for when I place something in a scene manually?? 
     - (even if i place multiple items in a scene? - e.g. adding 5 coins... could have default it adds them one by one, cutting one after the other... (unless the length of the clip isn't long enough?)
-- graphs / bars / ...
-    - Counter animations
-    Numbers tick up, bar fills, pie chart draws on. Perfect for stats you mention.
-    - hmmm - do i use manim for this? and generate code to then generate the thing? or what? 
 
     i.e. custom animations (manim?)
     - e.g. custom animated graph (e.g. bar chart or line going up.. . numbers ticking up...)
@@ -227,7 +173,7 @@ OPTIONS:
 
 
 
-## Abstract resumption engine (give full preceding text, ask it to identify what a particular "it"/"he"/"they" etc. refer to 
+## Abstract identification engine (give full preceding text, ask it to identify what a particular "it"/"he"/"they" etc. refer to 
 
 
 ## theme / context resolution 
@@ -243,120 +189,57 @@ E.g. so theoretically could wire into code that will colour code repeated things
 
 ## auto complete engine? 
 
+------
+
+def get_search_term(line:str, preceeding_lines:str[], full_text:str):
+    """
+    Get a line, which shall be shown as stock footage / wikipedia / maybe even AI...
+    Generate a search term for it.
+
+    """
+
+    # 1) Identify all visualisables
+
+    # 2) Replace abstract words with concrete words
+
+    # 2.5) The thing about identifying all details about a noun
+    # (don't know if we'll want to pre-generate the data set of nouns, and then identifying where they repeat in the text and their full descriptions...
+    # obviously it'll be dependent on the context up to that point... like if in the script we haven't revealed who a person is... then we don't want to show the final person...
+    # if we've just said 'car' so far, we don't want to do the full red toyota etc... (I don't think at least...)
+    
+
+
+    # n) Correct grammer for final search term
+    search_text = _generate_search_term(z)
+
+
+def _generate_search_term(search_text):
+    """
+    Adds correct grammer
+
+    e.g. Jar Nutmeg -> Jar of Nutmeg
+    e.g. Nero Emporar -> Emporer Nero
+    """
+    # (1) === Grammer engine ===
+
+
+    # (2) === translation engine to translate from english to english ===
+
+    return search_text
 
 ----------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------
 
+Other from better stock notes:
+- motion tracking labels?
+    - so the user sort of manually tracks a moving thing in a video, and we attach a label to it
+- update the object edit, such that we can add text behind a selected subject?
 
-BETTER STOCK NOTES:
-
-
-Zoom cuts. 
-
-### edit
-Slow zoom in/out
-Subtle handheld shake
-Push-ins
-Parallax effect
-Speed ramps
-Tiny rotation/drift
-
-### cut down
-- trim.
-
-### layer graphics on top
-captions
-arrows
-circles
-HUD graphics
-maps
-animated text
-UI overlays
-charts
-motion tracking labels
-
-
-### relevant sound effects
-
-whooshes
-ambient city noise
-keyboard clicks
-camera shutter sounds
-bass hits
-risers
-transition impacts
-
-### colour grade everything into one style
-one LUT,
-one grade,
-one contrast style.
-(Try equal: contrast, saturation, white balance, etc.)
-
-### add subtle imperfections / changes to not look like every other stock footage
-E.g.(?)
-film grain
-blur
-chromatic aberration
-bloom
-halation
-light leaks
-motion blur
-...
-
-### cropping
-crop tighter
-reframe subjects
-create closeups
-
-### speed manipulation
-slow motion for emotional moments
-hyperlapse speedups
-freeze frames
-reverse cuts
-speed ramps
-E.g. 100% → 300% → freeze → text appears
-
-### combine multiple related clips in sequence
-E.g. not just computer.. 
-But monitor, keyboard, typing, hard drive, etc.. 
-
-### transittions sparingly
-hard cuts
-motion blur cuts
-whip pans
-light directional transitions
-
-### masks and depth(?!?!)
-Put text BEHIND objects
-Foreground blur layers
-Duplicate subject cutouts
-Fake depth
-
-### cut visual changes to music????
-Cut:
-zooms,
-transitions,
-text pops,
-flashes,
-clip changes
-
-
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------
-
-
-
+????
 - synced music
     - have a theme, switch to different footage on the beats of a song??
-
-
-
 - speed ramps:
     - 100% -> 150% for boring middle section, snap back to 100% on beat. Great for walking, clouds, city timelapses.
-
-
 - character reactions library
 - Reuse a small library of stickman poses: thinking, pointing, shocked, shrug. Trigger by sentiment of line.
-
