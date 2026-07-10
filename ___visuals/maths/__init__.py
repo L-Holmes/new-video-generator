@@ -4,18 +4,24 @@ ___visuals/maths — manim animations built from a scene's `data` column.
 One module per maths media type. Each exposes a single render function with
 the SAME contract:
 
-    render_<type>(**data, out_mp4: str, out_png: str) -> float
+    render_<type>(**data, out_mp4: str, out_png: str) -> MathsRender
 
-It writes the TRANSITION (the animation) to `out_mp4`, the FINAL STILL (the
-animation's last frame, held) to `out_png`, and returns the transition's exact
-duration in seconds.
+It writes the TRANSITION (the animation) to `out_mp4` and the FINAL STILL (the
+animation's last frame) to `out_png`, and reports both the animation's real
+duration and its `min_playable_secs` — the shortest cut that still says
+something, everything past which is a trailing settle beat safe to trim.
 
 That pair is the house pattern for every fixed-length animation in a
 variable-length scene — see AI_READ_THIS.txt at the repo root. The generator in
-SCENE_GENERATORS, not the renderer, decides which of the two a given scene
-gets: a scene shorter than the transition would be cut off mid-animation, so it
-shows the finished still instead; a longer one plays the transition and then
-holds the still for the remainder.
+SCENE_GENERATORS, not the renderer, decides what a given scene gets: too short
+for even min_playable and it shows the finished still; long enough for the
+animation but not its settle and it plays the animation trimmed; longer still
+and it plays the animation, then holds the still for the remainder.
+
+Keep min_playable_secs HONEST and the animation SHORT. Narration lines are
+brief — a median line is around 1.3 seconds — so an animation that takes three
+seconds to make its point is one that will almost always be replaced by its own
+still.
 
 Adding a type (a pie chart, a bar race, …):
   1. CONFIG: a MEDIA_TYPE_CATALOG entry tagged Tag.MATHS, and its inputs in
@@ -25,6 +31,7 @@ Adding a type (a pie chart, a bar race, …):
 The tagger picks the new type up on its own — the maths tab is built from the
 catalog.
 """
+from ___visuals.maths._runner import MathsRender
 from ___visuals.maths.timeline import render_timeline
 
-__all__ = ["render_timeline"]
+__all__ = ["MathsRender", "render_timeline"]

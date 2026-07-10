@@ -19,16 +19,33 @@ ALWAYS use the transition + hold pattern:
       the mp4 with `ffmpeg -sseof`, so the still is by construction exactly
       what the animation settles on — never a re-render that might drift.)
 
+  End the animation with a short SETTLE beat, and report where it starts as
+  `min_playable_secs`. Everything before it is essential (the movement, the
+  reveal); the settle exists to be trimmed.
+
   Then, once the scene's runtime is known (SCENE_GENERATORS, which has the
   audio timings), pick per scene:
-    - runtime <= transition  ->  ONE footage entry: the FINAL STILL, baked to
-      a static mp4 of the full runtime. The animation is NOT played. A clipped
+    - runtime <  min_playable  ->  ONE entry: the FINAL STILL, baked to a
+      static mp4 of the full runtime. The animation is NOT played. A clipped
       animation reads as a glitch; the finished picture reads as a choice.
-    - runtime >  transition  ->  TWO footage entries, played back to back: the
+    - runtime <= transition    ->  ONE entry: the transition, trimmed to the
+      runtime. What is lost is settle, never the movement or the reveal.
+    - runtime >  transition    ->  TWO entries, played back to back: the
       transition at its own length, then the final still held for the rest.
 
   The entries are `{path: trim_seconds}` dicts and the trims must sum to the
   scene's runtime exactly. Every trim must be <= its file's real duration.
+
+  KEEP THE ANIMATION SHORT. Narration lines are brief — in a real script the
+  median is about 1.3s and most are under 3s. A three-second animation is one
+  that essentially never plays: every scene falls to the still and you are left
+  wondering why your transition "didn't show". Budget against the SCRIPT, not
+  against what looks good in isolation.
+
+  Cache the render under a key covering EVERY input — the data, but also the
+  durations and colours. `timeline_2026_to_1600` looks like a cache key and is
+  not one: shorten the travel time and it serves the old video forever.
+  ___visuals/maths/timeline.py::_cache_key hashes the lot.
 
   Live examples:
     ___visuals/SCENE_GENERATORS.py  generate_maths_scenes   (timeline)

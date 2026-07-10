@@ -30,7 +30,7 @@ import random
 import re
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from ___visuals.CACHE_IO import _resolve_to_local_path, load_json
 from CONFIG import (
@@ -77,6 +77,9 @@ from ___visuals.TIMING_MERGE import (
     _load_scene_timings,
 )
 from ___visuals.WORDS_ON_SCREEN import WordRenderConfig, render_scene_to_video
+
+if TYPE_CHECKING:  # the maths package pulls in manim — only for the annotation
+    from ___visuals.maths import MathsRender
 
 
 # === BEGIN verbatim move from main.py (scene generators) ===
@@ -735,40 +738,34 @@ def generate_blank_scenes(
 # ===========================================================================
 # A maths animation has a FIXED length; the scene it must fill does not. So
 # every maths renderer produces a pair — the transition mp4, and its final
-# frame as a still — and this generator chooses between them per scene:
+# frame as a still (see MathsRender) — and this generator chooses per scene:
 #
-#   scene SHORTER than the transition -> the finished still, full scene length.
-#       (playing the animation would cut it off mid-journey, which reads as a
-#        glitch rather than as a timeline.)
-#   scene LONGER  than the transition -> the transition, then the still held
-#       for whatever runtime is left. Two footage entries, played back to back,
-#       exactly as a joint scene plays its intro then its loop.
+#   scene < min_playable   -> the finished still, for the scene's whole length.
+#       There is not even room for the journey plus its reveal; a clipped
+#       animation reads as a glitch, a finished picture reads as a choice.
+#   scene <= transition    -> the animation alone, TRIMMED to the scene. What
+#       gets cut is the trailing settle beat the animation ends on, never the
+#       journey — that is exactly what min_playable promises.
+#   scene > transition     -> the animation, then the still held for whatever
+#       runtime is left. Two entries played back to back, exactly as a joint
+#       scene plays its intro then its loop.
 #
-# This is the house pattern for fixed-length animations — see AI_READ_THIS.txt.
+# The animation is never sped up, slowed down or looped to fit. See
+# AI_READ_THIS.txt, point 1.
 
 
-def _maths_render_timeline(data: dict, stem: str) -> tuple[str, str, float]:
-    """Render a timeline. Returns (transition_mp4, final_png, transition_secs)."""
+def _maths_render_timeline(data: dict, stem: str) -> "MathsRender":
+    """Render a timeline. The renderer names its own files: the cache key has
+    to cover every input to the render, and only the renderer knows what those
+    are (the years, but also the timings and the colours)."""
     from ___visuals.maths import render_timeline
-    from ___visuals.maths._runner import probe_duration
-    from ___visuals.maths.timeline import current_year
 
-    out_dir = Path(MATHS_SCENE_OUTPUT_DIR)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    year = int(data["year"])
-    # Keyed on the render's INPUTS, not the scene: two lines travelling back to
-    # the same year share one manim render (which takes tens of seconds). The
-    # start year is in the key because it comes from the clock — a run in
-    # January of the next year must not reuse December's line.
-    key = f"timeline_{current_year()}_to_{year}"
-    mp4, png = out_dir / f"{key}.mp4", out_dir / f"{key}.png"
-    render_timeline(year, str(mp4), str(png))
-    return str(mp4), str(png), probe_duration(str(mp4))
+    return render_timeline(int(data["year"]), str(MATHS_SCENE_OUTPUT_DIR))
 
 
 # media_type -> renderer. A new maths type lands here and nowhere else in this
 # file; the duration logic below is shared by all of them.
-_MATHS_RENDERERS: dict[MediaType, "Callable[[dict, str], tuple[str, str, float]]"] = {
+_MATHS_RENDERERS: dict[MediaType, "Callable[[dict, str], MathsRender]"] = {
     MediaType.TIMELINE: _maths_render_timeline,
 }
 
@@ -835,9 +832,7 @@ def generate_maths_scenes(
         print(f"[maths scenes]   scene duration = {duration:.3f}s")
 
         try:
-            transition_mp4, final_png, transition = _MATHS_RENDERERS[media_type](
-                scene_data(row), safe_stem
-            )
+            rendered = _MATHS_RENDERERS[media_type](scene_data(row), safe_stem)
         except Exception as exc:
             print(
                 f"[maths scenes] FATAL: {media_type.value} render failed for "
@@ -845,29 +840,46 @@ def generate_maths_scenes(
             )
             sys.exit(1)
 
-        print(f"[maths scenes]   transition     = {transition:.3f}s")
+        print(
+            f"[maths scenes]   animation      = {rendered.transition_secs:.3f}s "
+            f"(needs {rendered.min_playable_secs:.3f}s to say anything)"
+        )
 
-        if duration <= transition:
-            # No room for the journey — show where it ends up, for the whole
-            # scene. Never a clipped animation.
-            still_mp4 = str(out_dir / f"{media_type.value}_{idx:03d}_{safe_stem}.mp4")
-            _render_image_to_static_mp4(final_png, duration, still_mp4)
+        if duration < rendered.min_playable_secs:
+            # Not even room for the journey and its reveal — show where it ends
+            # up, for the whole scene. Never a clipped animation.
+            still_mp4 = str(
+                out_dir / f"{media_type.value}_{idx:03d}_{safe_stem}_still.mp4"
+            )
+            _render_image_to_static_mp4(rendered.still_png, duration, still_mp4)
             footage_map[script_text] = [{still_mp4: round(duration, 3)}]
             print(
-                f"[maths scenes]   ✓ scene is shorter than the animation — "
+                f"[maths scenes]   ✓ scene is too short for the animation — "
                 f"finished still only, {duration:.3f}s"
             )
             continue
 
-        hold = duration - transition
+        if duration <= rendered.transition_secs:
+            # Room for the journey, not for the whole settle beat that follows
+            # it. Play the animation and let the stitcher trim that tail.
+            footage_map[script_text] = [
+                {rendered.transition_mp4: round(duration, 3)}
+            ]
+            print(
+                f"[maths scenes]   ✓ animation only, trimmed to {duration:.3f}s "
+                f"({rendered.transition_secs - duration:.3f}s of settle cut)"
+            )
+            continue
+
+        hold = duration - rendered.transition_secs
         hold_mp4 = str(out_dir / f"{media_type.value}_{idx:03d}_{safe_stem}_hold.mp4")
-        _render_image_to_static_mp4(final_png, hold, hold_mp4)
+        _render_image_to_static_mp4(rendered.still_png, hold, hold_mp4)
         footage_map[script_text] = [
-            {transition_mp4: round(transition, 3)},
+            {rendered.transition_mp4: round(rendered.transition_secs, 3)},
             {hold_mp4: round(hold, 3)},
         ]
         print(
-            f"[maths scenes]   ✓ animation {transition:.3f}s "
+            f"[maths scenes]   ✓ animation {rendered.transition_secs:.3f}s "
             f"then hold {hold:.3f}s"
         )
 

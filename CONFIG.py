@@ -323,12 +323,19 @@ MATHS_SCENE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/maths_scenes")
 
 # Timeline: a marker sets off from the current year and travels back to
 # row["data"]["year"], then the year pops up where it landed.
-TIMELINE_TRAVEL_SEC: float = 2.2  # the marker's journey
-TIMELINE_LABEL_SEC: float = 0.7  # the year appearing once it lands
-TIMELINE_SETTLE_SEC: float = 0.35  # a beat on the finished line
-# => the transition is the sum of those three. A scene shorter than it never
-#    plays the animation at all (it would be cut mid-journey); it gets the
-#    finished timeline as a still instead.
+#
+# These are TIGHT on purpose. Narration lines are short — in a typical script
+# the median is around 1.3s and most are under 3s — so an animation of a
+# couple of seconds is one that actually gets to play. Make the journey
+# luxurious and every timeline silently falls back to its still.
+TIMELINE_TRAVEL_SEC: float = 1.1  # the marker's journey
+TIMELINE_LABEL_SEC: float = 0.4  # the year appearing once it lands
+TIMELINE_SETTLE_SEC: float = 0.5  # a beat on the finished line
+# The first two are ESSENTIAL: cut into them and you cut the journey or the
+# reveal. The settle is a TRAILING beat, there to be trimmed — a scene that
+# can fit travel+label plays the animation and simply loses some of the pause
+# at the end. Only a scene too short for even travel+label gives up and shows
+# the finished still for its whole length.
 TIMELINE_FPS: int = 30
 TIMELINE_RESOLUTION: tuple[int, int] = (1920, 1080)
 TIMELINE_BACKGROUND: str = "#FFFFFF"
@@ -340,9 +347,16 @@ TIMELINE_TICKS: int = 7
 
 
 def timeline_transition_seconds() -> float:
-    """How long a timeline's animation runs. The generator compares the scene's
-    runtime against this to decide whether the animation fits at all."""
+    """How long a timeline's animation runs, start to finish."""
     return TIMELINE_TRAVEL_SEC + TIMELINE_LABEL_SEC + TIMELINE_SETTLE_SEC
+
+
+def timeline_min_playable_seconds() -> float:
+    """The shortest the animation can be cut to and still SAY something: the
+    journey plus the year landing. Everything after that is the settle beat,
+    which the stitcher may trim away. A scene shorter than this gets the
+    finished still instead of a clipped journey."""
+    return TIMELINE_TRAVEL_SEC + TIMELINE_LABEL_SEC
 
 
 # ===========================================================================

@@ -7,8 +7,21 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import NamedTuple
 
 from CONFIG import TIMELINE_FPS, TIMELINE_RESOLUTION
+
+
+class MathsRender(NamedTuple):
+    """What every maths renderer hands back. See ___visuals/maths and point 1
+    of AI_READ_THIS.txt for how the generator chooses between the two files."""
+
+    transition_mp4: str  # the animation, at its natural length
+    still_png: str  # its final frame, for the hold (and the too-short case)
+    transition_secs: float  # the animation's REAL duration, probed
+    min_playable_secs: float  # the shortest cut that still says something —
+    #                          everything past it is a trailing settle beat the
+    #                          stitcher may trim. Below it: show the still.
 
 
 def render_manim_scene(

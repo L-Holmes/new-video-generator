@@ -9,19 +9,28 @@ AI_READ_THIS.txt): the transition mp4, and its last frame as a still.
 from __future__ import annotations
 
 import datetime
+import hashlib
 from pathlib import Path
 
 from CONFIG import (
     TIMELINE_ACCENT,
     TIMELINE_BACKGROUND,
+    TIMELINE_FPS,
     TIMELINE_INK,
     TIMELINE_LABEL_SEC,
+    TIMELINE_RESOLUTION,
     TIMELINE_SETTLE_SEC,
     TIMELINE_TICKS,
     TIMELINE_TRAVEL_SEC,
+    timeline_min_playable_seconds,
     timeline_transition_seconds,
 )
-from ___visuals.maths._runner import extract_last_frame, render_manim_scene
+from ___visuals.maths._runner import (
+    MathsRender,
+    extract_last_frame,
+    probe_duration,
+    render_manim_scene,
+)
 
 
 def current_year() -> int:
@@ -157,27 +166,56 @@ def _build_scene(start_year: int, target_year: int):
     return TimelineScene
 
 
-def render_timeline(year: int, out_mp4: str, out_png: str) -> float:
-    """Render the timeline that travels back to `year`.
+def _cache_key(start_year: int, target_year: int) -> str:
+    """A name covering EVERY input to the render.
 
-    Returns the transition's duration. Both artefacts are CACHED on disk: two
-    scenes asking for the same year (and rendered in the same calendar year)
-    reuse one render, which is worth doing — manim takes tens of seconds.
+    The years, obviously — including the start one, because it comes from the
+    clock and a run in January must not reuse December's line. But also the
+    look and the timings: shorten TIMELINE_TRAVEL_SEC and the old render is a
+    different video that happens to be about the same two years. A cache key
+    that misses an input is a cache that serves stale work forever.
+    """
+    look = (TIMELINE_TRAVEL_SEC, TIMELINE_LABEL_SEC, TIMELINE_SETTLE_SEC,
+            TIMELINE_FPS, TIMELINE_RESOLUTION, TIMELINE_TICKS,
+            TIMELINE_BACKGROUND, TIMELINE_INK, TIMELINE_ACCENT)
+    digest = hashlib.md5(repr(look).encode()).hexdigest()[:8]
+    return f"timeline_{start_year}_to_{target_year}_{digest}"
+
+
+def render_timeline(year: int, out_dir: str) -> MathsRender:
+    """Render the timeline that travels back to `year`, into `out_dir`.
+
+    Both artefacts are CACHED on disk under a key covering every input, so two
+    scenes asking for the same year reuse one render (manim takes tens of
+    seconds) but a config change re-renders.
     """
     target_year = int(year)
     start_year = current_year()
-    mp4, png = Path(out_mp4), Path(out_png)
+    key = _cache_key(start_year, target_year)
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    mp4, png = out / f"{key}.mp4", out / f"{key}.png"
 
     if mp4.exists() and png.exists():
         print(f"[timeline]   cached: {mp4.name}")
-        return timeline_transition_seconds()
+    else:
+        print(f"[timeline]   rendering {start_year} → {target_year} (manim)")
+        render_manim_scene(
+            scene_factory=_build_scene(start_year, target_year),
+            out_mp4=str(mp4),
+            background_colour=TIMELINE_BACKGROUND,
+        )
+        extract_last_frame(str(mp4), str(png))
+        print(f"[timeline]   ✓ transition {mp4.name} + final still {png.name}")
 
-    print(f"[timeline]   rendering {start_year} → {target_year} (manim)")
-    render_manim_scene(
-        scene_factory=_build_scene(start_year, target_year),
-        out_mp4=str(mp4),
-        background_colour=TIMELINE_BACKGROUND,
+    # The encoder lands a frame or two off the durations we asked manim for, so
+    # measure the file and scale the essential part by the same ratio rather
+    # than trusting the config arithmetic.
+    natural = probe_duration(str(mp4))
+    ratio = timeline_min_playable_seconds() / timeline_transition_seconds()
+    return MathsRender(
+        transition_mp4=str(mp4),
+        still_png=str(png),
+        transition_secs=natural,
+        min_playable_secs=natural * ratio,
     )
-    extract_last_frame(str(mp4), str(png))
-    print(f"[timeline]   ✓ transition {mp4.name} + final still {png.name}")
-    return timeline_transition_seconds()

@@ -43,8 +43,9 @@ from CONFIG import (
     group_scene_rows, media_props, normalise_scene_row,
     resolve_group_continuations, scene_data, scene_is_group_continuation,
     scene_is_grouped, scene_type, scene_wants_decorate,
-    timeline_transition_seconds,
+    timeline_min_playable_seconds, timeline_transition_seconds,
 )
+import importlib as _il
 
 print("===== the enum IS the catalog =====")
 check({t.value for t in MediaType} == set(MEDIA_TYPE_CATALOG),
@@ -180,8 +181,11 @@ except ValueError as e: err = str(e)
 check("takes no data" in err, "data on a type that declares none is refused")
 check(coerce_scene_data("timeline", {}, "t", require_all=False) == {},
       "require_all=False lets the tagger save a half-typed form")
-check(timeline_transition_seconds() > 0,
-      "the timeline's transition has a declared length")
+check(0 < timeline_min_playable_seconds() < timeline_transition_seconds(),
+      "the timeline's animation ends on a trimmable settle beat")
+check(timeline_transition_seconds() <= 2.5,
+      "the animation is short enough to actually play on a typical narration "
+      "line (the median is ~1.3s; a 3s+ animation always falls to its still)")
 
 print("\n===== timeline: the axis never spoils its own reveal =====")
 from ___visuals.maths.timeline import _axis_bounds, _tick_years
@@ -199,6 +203,19 @@ check(all(1969 != y for y in ticks(2026, 1969))
       "a fifty-year journey is marked per decade, inside the axis")
 check(ticks(2026, 2026) and 2026 not in ticks(2026, 2026),
       "a timeline to THIS year still draws an axis (zero span is padded)")
+from ___visuals.maths.timeline import _cache_key
+import CONFIG as _cfg
+_k1 = _cache_key(2026, 1600)
+_old_travel = _cfg.TIMELINE_TRAVEL_SEC
+_cfg.TIMELINE_TRAVEL_SEC = _old_travel + 1.0
+import ___visuals.maths.timeline as _tl
+_il.reload(_tl)
+check(_tl._cache_key(2026, 1600) != _k1,
+      "the render cache key covers the TIMINGS, not just the years — changing "
+      "them must not serve the old animation")
+_cfg.TIMELINE_TRAVEL_SEC = _old_travel
+_il.reload(_tl)
+check(_tl._cache_key(2026, 1600) == _k1, "...and restoring them restores the key")
 
 print("\n===== downloads: history.json is an index, not the only record =====")
 import json, importlib as _il
