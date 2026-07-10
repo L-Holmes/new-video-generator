@@ -2,6 +2,12 @@
 -------------
 
 
+x) perhpas add the other maths things whilst claude ready?
+at:
+
+claude --resume e4bce00f-7f05-44e7-a6ae-fd7183302c6d
+
+
 3) new media type option for 'timeline'... uses manim to generate a timeline affect where it shows a timeline and a moving thing that goes back to the given date. It then holds on that after doing the initial. 
 e.g. so If I pass data '1600', then it'll start at 2026, then move back to 1600s then 1600 pops up on the timeline once it gets there...
 
