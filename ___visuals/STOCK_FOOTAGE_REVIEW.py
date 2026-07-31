@@ -2346,6 +2346,248 @@ def _cleanup_unchosen(review_state, candidates_data, history_file, history_map):
 
 # ── MANUAL INTERVENTION (interactive CLI resolver) ────────────────────────────
 
+# Files the PIPELINE writes into stock_footage/ — never candidates for "the
+# file you just dropped in". The history map is the real filter (everything
+# downloaded is indexed there), but history.json can be deleted; the name
+# prefixes still identify pipeline files then.
+_PIPELINE_FILE_PREFIXES = ("pexels-", "wiki-img-", "nobg-", "edited-")
+
+
+def _foreign_files_newest_first(drop_dir: Path, history: dict,
+                                exclude: set[str] | None = None) -> list[Path]:
+    """The files in `drop_dir` the USER put there (newest first): not indexed
+    in history, not named like a pipeline artefact, not a temp file, and not
+    in `exclude` (files already used earlier in this resolving session)."""
+    known = {str(Path(p).resolve()) for p in history.values()}
+    exclude = exclude or set()
+    out = []
+    for f in drop_dir.iterdir():
+        if not f.is_file() or f.name.startswith("."):
+            continue
+        if f.suffix.lower() in (".part", ".tmp", ".json"):
+            continue
+        if f.name.startswith(_PIPELINE_FILE_PREFIXES):
+            continue
+        rp = str(f.resolve())
+        if rp in known or rp in exclude:
+            continue
+        out.append(f)
+    return sorted(out, key=lambda f: f.stat().st_mtime, reverse=True)
+
+
+def _still_for_preview(path: Path) -> Image.Image | None:
+    """A PIL image to preview `path` with: the image itself, or a video's
+    first frame pulled out with ffmpeg. None if neither works."""
+    if not _is_video_file(str(path)):
+        try:
+            return Image.open(path).convert("RGB")
+        except Exception:
+            return None
+    frame = Path(path).with_suffix(".preview.png")
+    try:
+        r = subprocess.run(
+            ["ffmpeg", "-y", "-nostdin", "-loglevel", "error",
+             "-i", str(path), "-frames:v", "1", str(frame)],
+            capture_output=True, text=True,
+        )
+        if r.returncode != 0 or not frame.exists():
+            return None
+        img = Image.open(frame).convert("RGB")
+        return img
+    except Exception:
+        return None
+    finally:
+        try:
+            frame.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
+def _probe_media_line(path: Path) -> str:
+    """One line describing `path` for the confirm window: kind, pixel size,
+    and (for a video) its duration."""
+    bits = ["video" if _is_video_file(str(path)) else "image"]
+    try:
+        if _is_video_file(str(path)):
+            r = subprocess.run(
+                ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                 "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
+                capture_output=True, text=True,
+            )
+            if r.returncode == 0 and r.stdout.strip():
+                bits.append(f"{float(r.stdout.strip()):.1f}s")
+        else:
+            with Image.open(path) as im:
+                bits.append(f"{im.width}×{im.height}")
+    except Exception:
+        pass
+    return " · ".join(bits)
+
+
+def _confirm_file_window(path: Path, scene_text: str, clip_label: str) -> bool:
+    """Show `path` (image, or a video's first frame) in a small window and ask
+    the user to confirm using it. Returns True on confirm. Falls back to a
+    plain y/N prompt if no display / tk is available."""
+    preview = _still_for_preview(path)
+    if preview is None:
+        print(f"  (no preview available for {path.name})")
+    else:
+        try:
+            return _yes_no_media_window(
+                preview,
+                title="confirm replacement file",
+                heading=f"Use this for {clip_label}?",
+                lines=[path.name, _probe_media_line(path),
+                       f'scene: "{scene_text[:70]}"'],
+                yes_label="✓ use this file   (Enter / Y)",
+                no_label="✗ no   (Esc / N)",
+            )
+        except tk.TclError:
+            pass  # headless — fall through to the console
+    try:
+        return input(f"  use {path.name}? [y/N]: ").strip().lower() == "y"
+    except (KeyboardInterrupt, EOFError):
+        return False
+
+
+def _yes_no_media_window(preview: Image.Image, title: str, heading: str,
+                         lines: list[str], yes_label: str, no_label: str) -> bool:
+    """A fresh little tk window: heading, the picture, caption lines, and a
+    yes/no choice (buttons + Enter/Y / Esc/N). Runs its own mainloop — the
+    review GUI is long gone when the CLI resolver runs."""
+    root = tk.Tk()
+    root.title(title)
+    root.configure(bg=BG)
+    result = {"ok": False}
+
+    tk.Label(root, text=heading, font=("Arial", 13, "bold"),
+             bg=BG, fg=TEXT_COL).pack(padx=16, pady=(14, 6))
+    img = preview.copy()
+    img.thumbnail((880, 560), Image.LANCZOS)
+    tk_img = ImageTk.PhotoImage(img, master=root)
+    tk.Label(root, image=tk_img, bg=SLOT_BG).pack(padx=16, pady=4)
+    for ln in lines:
+        tk.Label(root, text=ln, font=("Arial", 10), bg=BG,
+                 fg=HINT_COL).pack(padx=16)
+
+    def _done(ok: bool):
+        result["ok"] = ok
+        root.destroy()
+
+    row = tk.Frame(root, bg=BG)
+    row.pack(pady=12)
+    tk.Button(row, text=yes_label, font=("Arial", 11, "bold"),
+              bg="#234a30", fg="#bfe8c8",
+              command=lambda: _done(True)).pack(side="left", padx=8)
+    tk.Button(row, text=no_label, font=("Arial", 11),
+              bg="#4a2330", fg="#e8bfc8",
+              command=lambda: _done(False)).pack(side="left", padx=8)
+    for key in ("<Return>", "y", "Y"):
+        root.bind(key, lambda e: _done(True))
+    for key in ("<Escape>", "n", "N"):
+        root.bind(key, lambda e: _done(False))
+    root.protocol("WM_DELETE_WINDOW", lambda: _done(False))
+    root.attributes("-topmost", True)
+    root.focus_force()
+    root.mainloop()
+    return result["ok"]
+
+
+def _paste_image_window(drop_dir: Path, scene_text: str,
+                        clip_label: str) -> Path | None:
+    """A window the user can just PASTE into (Ctrl+V): the clipboard image is
+    previewed, and Enter saves it into stock_footage/ as this clip's file.
+    Copied FILES (a path on the clipboard) work too. Returns the saved path,
+    or None on cancel / no display."""
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        print("  ✗ no display for the paste window — drop a file in the "
+              "folder instead")
+        return None
+    root.title("paste replacement image")
+    root.configure(bg=BG)
+    state: dict = {"img": None, "src_file": None, "saved": None}
+
+    tk.Label(root, text=f"Paste the image for {clip_label}  (Ctrl+V)",
+             font=("Arial", 13, "bold"), bg=BG, fg=TEXT_COL
+             ).pack(padx=16, pady=(14, 2))
+    tk.Label(root, text=f'scene: "{scene_text[:70]}"', font=("Arial", 10),
+             bg=BG, fg=HINT_COL).pack(padx=16)
+    canvas = tk.Label(root, text="nothing pasted yet",
+                      width=64, height=16, bg=SLOT_BG, fg=HINT_COL)
+    canvas.pack(padx=16, pady=8)
+    status = tk.Label(root, text="", font=("Arial", 10), bg=BG, fg=HINT_COL)
+    status.pack(padx=16)
+
+    def _grab(_event=None):
+        try:
+            from PIL import ImageGrab
+            obj = ImageGrab.grabclipboard()
+        except Exception as exc:
+            status.config(
+                text=f"could not read the clipboard ({exc}) — on Linux "
+                     f"install xclip (X11) or wl-clipboard (Wayland)")
+            return
+        if isinstance(obj, list):  # some platforms hand back copied FILES
+            paths = [Path(p) for p in obj if Path(str(p)).is_file()]
+            if paths:
+                img = _still_for_preview(paths[0])
+                if img is None:
+                    status.config(text=f"can't preview {paths[0].name}")
+                    return
+                state["img"], state["src_file"] = img, paths[0]
+            else:
+                obj = None
+        elif obj is not None:
+            state["img"], state["src_file"] = obj.convert("RGB"), None
+        if obj is None:
+            status.config(text="the clipboard has no image on it — copy one, "
+                               "then Ctrl+V here")
+            return
+        shown = state["img"].copy()
+        shown.thumbnail((760, 460), Image.LANCZOS)
+        tk_img = ImageTk.PhotoImage(shown, master=root)
+        canvas.config(image=tk_img, text="", width=shown.width,
+                      height=shown.height)
+        canvas._img_ref = tk_img
+        status.config(text="looks right?  Enter = use it,  Ctrl+V = paste "
+                           "again,  Esc = cancel")
+
+    def _use(_event=None):
+        if state["img"] is None:
+            status.config(text="paste something first (Ctrl+V)")
+            return
+        stamp = time.strftime("%Y%m%d_%H%M%S")
+        if state["src_file"] is not None:  # a copied file — keep it verbatim
+            dest = drop_dir / f"pasted_{stamp}{state['src_file'].suffix.lower()}"
+            shutil.copy2(state["src_file"], dest)
+        else:
+            dest = drop_dir / f"pasted_{stamp}.png"
+            state["img"].save(dest)
+        state["saved"] = dest
+        root.destroy()
+
+    def _cancel(_event=None):
+        root.destroy()
+
+    row = tk.Frame(root, bg=BG)
+    row.pack(pady=12)
+    tk.Button(row, text="📋 paste (Ctrl+V)", font=("Arial", 11),
+              bg=PANEL_BG, fg=TEXT_COL, command=_grab).pack(side="left", padx=8)
+    tk.Button(row, text="✓ use this   (Enter)", font=("Arial", 11, "bold"),
+              bg="#234a30", fg="#bfe8c8", command=_use).pack(side="left", padx=8)
+    tk.Button(row, text="✗ cancel   (Esc)", font=("Arial", 11),
+              bg="#4a2330", fg="#e8bfc8", command=_cancel).pack(side="left", padx=8)
+    root.bind("<Control-v>", _grab)
+    root.bind("<Return>", _use)
+    root.bind("<Escape>", _cancel)
+    root.protocol("WM_DELETE_WINDOW", _cancel)
+    root.attributes("-topmost", True)
+    root.focus_force()
+    root.mainloop()
+    return state["saved"]
+
 
 def _resolve_manual_interventions_interactively(
     review_state, review_state_file, history_file, cache_dir
@@ -2356,8 +2598,15 @@ def _resolve_manual_interventions_interactively(
     Flow per pass:
         1) Print the numbered list of scenes still flagged.
         2) Ask which one to resolve.
-        3) Ask for the filename of each clip (relative to stock_footage/).
-        4) Verify the file exists.
+        3) For each clip the scene needs, offer three ways in:
+             · Enter        — use the newest file YOU added to stock_footage/
+                              (auto-detected: not in history, not named like a
+                              pipeline artefact), after confirming it in a
+                              preview window;
+             · 'p'          — paste an image straight off the clipboard into
+                              a window; it is saved into stock_footage/;
+             · a filename   — the old way, typed relative to stock_footage/.
+        4) Verify the file exists (a bad filename re-asks, never aborts).
         5) Auto-update history.json AND the review state file.
         6) Loop until no flagged scenes remain (or Ctrl-C exits cleanly —
            state is already saved on disk so re-running just resumes).
@@ -2415,38 +2664,75 @@ def _resolve_manual_interventions_interactively(
         history = _load_json_safe(history_file, {}) or {}
         new_footage = []
         aborted = False
+        used_this_scene: set[str] = set()
 
         for c in range(nclips):
-            try:
-                fname = input(
-                    f"  clip {c + 1}/{nclips} — filename in stock_footage/ "
-                    f"(or blank to abort): "
-                ).strip()
-            except (KeyboardInterrupt, EOFError):
-                print("\n[manual] Cancelled. State saved.")
-                sys.exit(0)
+            clip_label = f"clip {c + 1}/{nclips}"
+            full_path = None
 
-            if not fname:
+            while full_path is None:  # re-ask this clip until it resolves
+                # the newest file the USER dropped into the folder (if any) —
+                # rescanned every prompt, so "drop it in now, then hit Enter"
+                # works mid-conversation.
+                newest_list = _foreign_files_newest_first(
+                    drop_dir, history, exclude=used_this_scene)
+                newest = newest_list[0] if newest_list else None
+
+                if newest:
+                    added = time.strftime(
+                        "%H:%M:%S", time.localtime(newest.stat().st_mtime))
+                    hint = (f"Enter = use newest file '{newest.name}' "
+                            f"(added {added}), 'p' = paste from clipboard, "
+                            f"a filename, or 'x' to abort")
+                else:
+                    hint = ("filename in stock_footage/, 'p' = paste from "
+                            "clipboard, or blank to abort")
+                try:
+                    raw = input(f"  {clip_label} — {hint}: ").strip()
+                except (KeyboardInterrupt, EOFError):
+                    print("\n[manual] Cancelled. State saved.")
+                    sys.exit(0)
+
+                if raw.lower() == "x" or (not raw and newest is None):
+                    aborted = True
+                    break
+
+                if not raw:  # Enter → the auto-detected newest drop
+                    if _confirm_file_window(newest, st_text, clip_label):
+                        full_path = newest
+                    else:
+                        print("  → not that one — pick another way in\n")
+                    continue
+
+                if raw.lower() == "p":  # paste straight off the clipboard
+                    pasted = _paste_image_window(drop_dir, st_text, clip_label)
+                    if pasted is not None:
+                        full_path = pasted
+                    else:
+                        print("  → paste cancelled\n")
+                    continue
+
+                # a typed filename (strip any path components if a full path
+                # was pasted into the terminal)
+                cand = drop_dir / Path(raw).name
+                if cand.exists():
+                    full_path = cand
+                else:
+                    print(f"  ✗ not found: {cand}")
+                    print("     drop the file there, then answer again\n")
+
+            if aborted:
                 print("  → aborted, returning to menu\n")
-                aborted = True
-                break
-
-            # Strip any path components if the user pasted a full path
-            fname = Path(fname).name
-            full_path = drop_dir / fname
-
-            if not full_path.exists():
-                print(f"  ✗ not found: {full_path}")
-                print(f"     drop the file there and retry the scene\n")
-                aborted = True
                 break
 
             # URL key just needs to be unique per local file. Using the
             # basename keeps history.json readable and de-dupes if the same
             # file is reused across scenes.
+            fname = full_path.name
             url_key = f"local:{fname}"
             history[url_key] = str(full_path)
             new_footage.append({url_key: round(maxrt, 2)})
+            used_this_scene.add(str(full_path.resolve()))
             print(f"  ✓ {fname}")
 
         if aborted:

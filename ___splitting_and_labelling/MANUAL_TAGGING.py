@@ -623,6 +623,10 @@ def resolve_short_scene(data: Dict[str, dict], line: str, choice: str,
 class _State:
     def __init__(self, json_path: Path):
         self.json_path = json_path
+        # the ongoing change log: every split / join / media-type change /
+        # search-term change is appended here with before, after and the
+        # user's reason (when they gave one). Plain text, append-only.
+        self.log_path = json_path.with_name(json_path.name + ".changes.log")
         self.data: Dict[str, dict] = json.loads(
             json_path.read_text(encoding="utf-8"))
         # CONFIG.py's own convention is "<name>_script_to_search_term.json"
@@ -786,6 +790,7 @@ class _State:
             self.data = self.undo_stack.pop()
             self._commit()
             self._kick_recompute()
+            self._log("undo — reverted the change above", "", "", "", "")
             return None
         # snapshot BEFORE the change so a failed op leaves no undo entry
         snapshot = copy.deepcopy(self.data)
@@ -811,9 +816,77 @@ class _State:
             self.undo_stack.pop(0)
         self._commit()
         self._kick_recompute()
+        self._log_mutation(op, req, snapshot)
         return None
 
-    # (reason-logging was removed — split/join are direct)
+    # ---- the change log ---------------------------------------------------
+    # Task 10: every join / split / media-type change lands in the log with
+    # before + after and the reason the browser collected (it prompts on
+    # those actions). Search-term changes arrive separately through /logterm
+    # — they save on a per-keystroke debounce, so the browser logs one entry
+    # per EDIT (old committed term -> new) instead of one per keystroke.
+
+    def _log(self, kind: str, line: str, before: str, after: str,
+             reason: str) -> None:
+        """Append one entry. Logging must never break tagging, so any I/O
+        problem is reported and swallowed."""
+        try:
+            stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            head = f"[{stamp}] {kind}"
+            if line:
+                head += f' — "{line[:90]}"'
+            entry = head + "\n"
+            if before:
+                entry += f"  before: {before}\n"
+            if after:
+                entry += f"  after:  {after}\n"
+            if reason:
+                entry += f"  why:    {reason}\n"
+            with open(self.log_path, "a", encoding="utf-8") as fh:
+                fh.write(entry + "\n")
+        except Exception as exc:  # pragma: no cover - disk trouble only
+            print(f"  · could not write the change log: {exc}")
+
+    def _log_mutation(self, op: str, req: dict, before: Dict[str, dict]
+                      ) -> None:
+        """Work out what a successful mutation changed (by comparing the
+        pre-change snapshot with the live data) and log it."""
+        reason = (req.get("reason") or "").strip()
+        line = req.get("line", "")
+        if op == "save":
+            patch = req.get("patch", {}) or {}
+            if "media_type" not in patch:
+                return          # term/data keystrokes etc. — not logged here
+            old = (before.get(line, {}).get("media_type") or "").strip()
+            new = (self.data.get(line, {}).get("media_type") or "").strip()
+            if old != new:
+                self._log("media type", line, old or "(untagged)", new, reason)
+        elif op == "split":
+            halves = [k for k in self.data if k not in before]
+            self._log("split", line, f'"{line}"',
+                      "  +  ".join(f'"{k}"' for k in halves), reason)
+        elif op == "join":
+            gone = [k for k in before if k not in self.data]
+            merged = [k for k in self.data if k not in before]
+            self._log("join", "",
+                      "  +  ".join(f'"{k}"' for k in gone),
+                      "  +  ".join(f'"{k}"' for k in merged), reason)
+        elif op == "shortfix":
+            old = (before.get(line, {}).get("media_type") or "").strip()
+            self._log(f"short-scene fix ({req.get('choice', '?')})", line,
+                      old or "(untagged)",
+                      f"{req.get('media_type', '?')} via the too-short guard",
+                      reason)
+
+    def log_term(self, req: dict) -> None:
+        """One committed search-term edit from the browser (POST /logterm):
+        the term as it was when the line was opened -> as it was left."""
+        old = (req.get("before") or "").strip()
+        new = (req.get("after") or "").strip()
+        if not old or old == new:
+            return              # first-time tagging / no real change
+        self._log("search term", req.get("line", ""), f'"{old}"', f'"{new}"',
+                  (req.get("reason") or "").strip())
 
 
 def make_handler(state: _State):
@@ -852,6 +925,12 @@ def make_handler(state: _State):
                 req = {}
             if op == "finish":
                 state.finished_event.set()
+                self._send(json.dumps({"ok": True}))
+                return
+            if op == "logterm":
+                # log-only: the term itself was already saved by the
+                # debounced /save calls — this just records the edit.
+                state.log_term(req)
                 self._send(json.dumps({"ok": True}))
                 return
             err = state.mutate(op, req)
@@ -1344,8 +1423,18 @@ function disarmSplit(tx,i){
  tx.textContent=D.lines[i].line;
  $('#caret').style.display='none';$('#splittip').style.display='none';
 }
+// ---- change-log reasons ------------------------------------------------------
+// Task 10: joins, splits, media-type changes and search-term edits all land in
+// the server's change log (<json>.changes.log) with before/after; this asks
+// for the optional "why" that goes with them. Enter/cancel = no reason —
+// the change is still logged, just without one.
+function askWhy(what){
+ const r=prompt('change log — why did you '+what+'? (optional — Enter to skip)');
+ return r?r.trim():'';
+}
 async function doSplit(line,b){
- await post('/split',{line,index:b},line.slice(0,b).trim());
+ const reason=askWhy('split this line');
+ await post('/split',{line,index:b,reason},line.slice(0,b).trim());
  $('#caret').style.display='none';$('#splittip').style.display='none';
 }
 // ---- joining ----------------------------------------------------------------
@@ -1359,9 +1448,9 @@ function joinGhost(i,on){
  if(on&&!g) t.insertAdjacentHTML('beforeend',` <span class="ghostadd">${esc(D.lines[i].line)}</span>`);
  if(!on&&g) g.remove();
 }
-async function doJoin(i){
+async function doJoin(i,reason){
  if(i<=0)return;
- await post('/join',{line:D.lines[i].line},D.lines[i-1].line);
+ await post('/join',{line:D.lines[i].line,reason:reason||''},D.lines[i-1].line);
 }
 function startJoin(i){
  // MODAL: nothing else can happen until the user confirms or cancels.
@@ -1389,7 +1478,8 @@ async function confirmJoin(){
  const i=pendJoin; pendJoin=-1;
  $('#joinshield').classList.remove('open');
  $('#joinconfirm').classList.remove('open');
- await doJoin(i);
+ const reason=askWhy('join these lines');
+ await doJoin(i,reason);
 }
 // ---- mobile scissors flow -----------------------------------------------------
 function toggleScissors(){scissors=!scissors;$('#mscis').classList.toggle('on',scissors);
@@ -1421,6 +1511,7 @@ async function mobileSplitGo(){
 }
 // ---- editor ------------------------------------------------------------------
 function focusLine(i){
+ commitTermLog();   // leaving a line commits any pending term edit to the log
  const from=sel;
  sel=Math.max(0,Math.min(i,D.lines.length-1));
  step='media'; kbType=-1; ghostDismissed=false;   // fresh line: ghost is
@@ -1610,8 +1701,30 @@ function renderMods(){
  $('#modhint').textContent=has?'':'pick a base first — there must be something to put these on';
  hookInfos($('#modbar').parentElement);
 }
+// ---- search-term change tracking (task 10) -----------------------------------
+// The term saves on a per-keystroke debounce, so logging /save calls would log
+// every keystroke. Instead: remember the term as it stood when the line was
+// opened (the baseline), and when the user COMMITS an edit (leaves the box or
+// the line), log one entry — baseline -> final — asking why. A baseline that
+// was empty is first-time tagging, which isn't a "change" worth a log line.
+let termBase=null;
+function commitTermLog(){
+ if(!termBase)return;
+ const cur=D.lines.find(l=>l.line===termBase.line);
+ if(!cur){termBase=null;return;}       // the line was split/joined away
+ let now=cur.row.search_term||'';
+ if(D.lines[sel]&&D.lines[sel].line===termBase.line)now=$('#term').value;
+ if(termBase.val.trim()&&now.trim()!==termBase.val.trim()){
+   const reason=askWhy('change the search term from "'+termBase.val+'"');
+   fetch('/logterm',{method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({line:termBase.line,before:termBase.val,after:now,reason})});
+ }
+ termBase={line:termBase.line,val:now};
+}
 function renderTerm(){
  const L=D.lines[sel];
+ if(!termBase||termBase.line!==L.line)
+   termBase={line:L.line,val:L.row.search_term||''};
  const isTypo=L.row.media_type==='typography';
  // timeline & friends: the term is never read, so the card is not offered
  $('#termcard').style.display=usesTerm(L)?'block':'none';
@@ -1735,6 +1848,7 @@ function updateGhost(){
 }
 $('#term').addEventListener('focus',updateGhost);
 $('#term').addEventListener('blur',()=>setTimeout(updateGhost,120));
+$('#term').addEventListener('blur',commitTermLog);
 $('#term').addEventListener('input',()=>{updateGhost();debSave();});
 // dismiss the ghost suggestion WITHOUT accepting it: press → (right arrow)
 // while the field is empty. Handy when you're e.g. just decorating the
@@ -1778,7 +1892,11 @@ async function pick(name){const L=D.lines[sel];
  const grouped=(L.row.modifiers||[]).includes('group')&&b&&b.groupable;
  if(b&&b.new_footage&&L.words<D.min_new_words&&!grouped){openShort(name);return;}
  closeShort();                       // a fine choice — drop any open guard panel
- await post('/save',{line:L.line,patch:{media_type:name}},L.line);
+ // CHANGING an existing type is worth a log reason; first-time tagging isn't.
+ const prevType=L.row.media_type;
+ const reason=(prevType&&prevType!==name)
+   ?askWhy('change the media type from '+prevType+' to '+name):'';
+ await post('/save',{line:L.line,patch:{media_type:name},reason},L.line);
  const t2=$('#tostep2');
  t2.style.display='inline-block'; t2.classList.add('glow');
  // a type drawn from data (timeline) sends you to its form, not to a search

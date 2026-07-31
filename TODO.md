@@ -6,24 +6,6 @@ TODO;
 - bang out each of the below
 - then try an optimise the auto tagging...
 
-
-
-
-8) When running the main process, and after reviewing the fetched images, and then I'm doing manual intervention, where I place my own image in the stock footage folder... is there any way we could open a window which the user can just paste into, which will then paste the image which we are using for that? (as an alternative option available... so they can manually place in the folder, or they can just paste in a picture that they've copied...
-
-Also, if we manually add to the folder... and we've entered the number we are resolving.. can it not auto detect the most recent file that was added to the folder, and ask you to confirm it? (and ideally open a window which displays the image, so the user can confirm that they want to use that image/clip for the given entry...?)
-
-
-10) On the manual tagger, need a way for me to quickly log the change I made and why.
-
-so everytime I either: join a line, split a line, Or change a media type [and search text], it should ask for the reason why.
-
-
-
-It will then update an ongoing log file we have, which will do before and after, and then give the user's reason (if they gave one) 
-
-
-
 12) need an actual reliable thing for the words on screen... and perhaps have a flag that we change in config that determines whether it shows like the whole sentence on screen, but one word at once... or just each word one by one as it does now..
 
 
@@ -41,10 +23,7 @@ Ideas:
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 
-----------
-
 find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
-
 
 rm -rf TESTER-OUTPUT/output.mp4 TESTER-CACHE/output_video_final.mp4 TESTER-CACHE/{joint,blank,map,collage,decorate}_scenes
 
