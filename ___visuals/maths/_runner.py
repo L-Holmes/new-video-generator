@@ -100,6 +100,48 @@ def extract_last_frame(video_path: str, out_png: str) -> None:
         )
 
 
+def run_cached_maths_render(
+    *,
+    kind: str,
+    cache_key: str,
+    out_dir: str,
+    scene_factory,
+    background_colour: str,
+    essential_ratio: float,
+) -> MathsRender:
+    """The shared tail of every maths renderer: look `cache_key` up on disk,
+    render the scene + freeze its last frame on a miss, then probe the REAL
+    duration and scale the essential part by it (the encoder lands a frame or
+    two off what the config arithmetic promises, so never trust the sums).
+
+    `essential_ratio` is min_playable / transition as the CONFIG timings have
+    it; `cache_key` must already cover every input to the render — the data
+    AND the look (see AI_READ_THIS.txt, point 1)."""
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    mp4, png = out / f"{cache_key}.mp4", out / f"{cache_key}.png"
+
+    if mp4.exists() and png.exists():
+        print(f"[{kind}]   cached: {mp4.name}")
+    else:
+        print(f"[{kind}]   rendering (manim)")
+        render_manim_scene(
+            scene_factory=scene_factory,
+            out_mp4=str(mp4),
+            background_colour=background_colour,
+        )
+        extract_last_frame(str(mp4), str(png))
+        print(f"[{kind}]   ✓ transition {mp4.name} + final still {png.name}")
+
+    natural = probe_duration(str(mp4))
+    return MathsRender(
+        transition_mp4=str(mp4),
+        still_png=str(png),
+        transition_secs=natural,
+        min_playable_secs=natural * essential_ratio,
+    )
+
+
 def probe_duration(video_path: str) -> float:
     """The video's real duration, straight from the container."""
     result = subprocess.run(

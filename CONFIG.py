@@ -359,6 +359,56 @@ def timeline_min_playable_seconds() -> float:
     return TIMELINE_TRAVEL_SEC + TIMELINE_LABEL_SEC
 
 
+# Charts (counter / progress_bar / bar_chart / pie_chart / line_graph): the
+# same transition + hold pattern as the timeline, on the same tight budget —
+# see the note above TIMELINE_TRAVEL_SEC. One shared trio of timings: every
+# chart is BUILD (the number ticks / the bar fills / bars grow / slices sweep
+# / the line draws), then a REVEAL beat (value labels pop), then a trailing
+# settle there to be trimmed.
+CHART_ANIM_SEC: float = 1.0  # the build
+CHART_LABEL_SEC: float = 0.4  # the reveal beat once the build lands
+CHART_SETTLE_SEC: float = 0.5  # a beat on the finished chart (trimmable)
+CHART_BACKGROUND: str = "#FFFFFF"
+CHART_INK: str = "#1B1B1B"  # values, category labels, titles
+CHART_MUTED: str = "#898781"  # secondary ink: axis labels, small captions
+CHART_BASELINE: str = "#C3C2B7"  # baseline / axis hairlines
+CHART_TRACK: str = "#E1E0D9"  # the progress bar's empty track
+CHART_ACCENT: str = "#7D5BA6"  # every single-measure mark: the counter's
+#   digits, the progress fill, all bars, the trend line. One measure = one
+#   colour — many-coloured bars would claim an identity difference the data
+#   doesn't have.
+# Categorical palette for the PIE only (slices DO carry identity). Validated
+# on white in THIS order (dataviz six checks: worst adjacent CVD ΔE 16.3,
+# normal-vision 19.6) — the order is the colour-blind-safety mechanism, so
+# append, never shuffle. Two slots sit under 3:1 contrast on white; the
+# required relief is built into the renderer (white slice gaps + ink direct
+# labels on every slice).
+CHART_PALETTE: tuple[str, ...] = (
+    "#7D5BA6", "#EB6834", "#2A78D6", "#EDA100", "#E87BA4", "#008300",
+)
+
+
+def chart_transition_seconds() -> float:
+    """How long a chart's animation runs, start to finish."""
+    return CHART_ANIM_SEC + CHART_LABEL_SEC + CHART_SETTLE_SEC
+
+
+def chart_min_playable_seconds() -> float:
+    """The shortest a chart animation can be cut to and still say something:
+    the build plus the reveal. Past that is settle; below it, the still."""
+    return CHART_ANIM_SEC + CHART_LABEL_SEC
+
+
+def chart_look() -> tuple:
+    """Every shared input to a chart render that isn't the scene's own data —
+    goes into every chart cache key, so a timing/colour change re-renders
+    instead of serving the old video (see AI_READ_THIS.txt, point 1)."""
+    return (CHART_ANIM_SEC, CHART_LABEL_SEC, CHART_SETTLE_SEC,
+            TIMELINE_FPS, TIMELINE_RESOLUTION, CHART_BACKGROUND, CHART_INK,
+            CHART_MUTED, CHART_BASELINE, CHART_TRACK, CHART_ACCENT,
+            CHART_PALETTE)
+
+
 # ===========================================================================
 # SEARCH TERM TYPES   (FLAT SCHEMA — every "(type, variant)" is its own enum)
 # ===========================================================================
@@ -506,6 +556,50 @@ MEDIA_TYPE_CATALOG: dict[str, dict] = {
         "unused — the year comes from the data field.",
         "example": "examples/timeline.png",
     },
+    "counter": {
+        "tags": [Tag.MATHS],
+        "color": "#b03a68",
+        "info": "a big number ticks up from 0 to the value you give it, "
+        "with an optional prefix / suffix ('$', '%', ' million') and "
+        "a caption underneath. for any single stat you narrate. the "
+        "search term is unused — everything comes from the data form.",
+        "example": "examples/counter.png",
+    },
+    "progress_bar": {
+        "tags": [Tag.MATHS],
+        "color": "#0e7490",
+        "info": "a horizontal bar fills to the percentage you give it while "
+        "the number ticks up above. ONE quantity out of a whole "
+        "('73% of the ocean is unexplored') — for the parts of a "
+        "whole, use pie chart. the search term is unused.",
+        "example": "examples/progress_bar.png",
+    },
+    "bar_chart": {
+        "tags": [Tag.MATHS],
+        "color": "#c2571a",
+        "info": "labelled bars grow up side by side, values popping on top "
+        "— compare a few quantities. 2–6 'label: value' pairs in the "
+        "data form, drawn in that order. the search term is unused.",
+        "example": "examples/bar_chart.png",
+    },
+    "pie_chart": {
+        "tags": [Tag.MATHS],
+        "color": "#2f6f4f",
+        "info": "a pie draws itself on, one slice per 'label: value' share, "
+        "labels + computed percentages around it. the parts of one "
+        "whole — the values can be anything, they don't have to sum "
+        "to 100. the search term is unused.",
+        "example": "examples/pie_chart.png",
+    },
+    "line_graph": {
+        "tags": [Tag.MATHS],
+        "color": "#4a6fa5",
+        "info": "a trend line draws itself left to right across your "
+        "'label: value' points, then the final value pops. change "
+        "over time — the labels are the x axis (years, quarters), "
+        "evenly spaced. the search term is unused.",
+        "example": "examples/line_graph.png",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -642,10 +736,15 @@ MIN_DURATION_GATED_TYPES: set[str] = {
 # is a catalog entry, a row here, and a generator — no schema change anywhere.
 #
 # `kind` drives both the coercion below and the input the tagger renders:
-#   year   -> a whole year, sanity-bounded          (int)
-#   int    -> any whole number                      (int)
-#   number -> any number                            (float)
-#   text   -> a non-empty string                    (str)
+#   year    -> a whole year, sanity-bounded         (int)
+#   int     -> any whole number                     (int)
+#   number  -> any number                           (float)
+#   percent -> a number 0..100                      (float)
+#   text    -> a non-empty string                   (str)
+#   series  -> "label: value, label: value" pairs   (canonical str)
+#   shares  -> series, but values >= 0: parts of a whole, max 6
+# series/shares stay a STRING through the json — the tagger's input and the
+# file both hold the one-line spelling; renderers re-parse with parse_series.
 @dataclass(frozen=True)
 class DataField:
     name: str  # the key inside row["data"]
@@ -668,11 +767,182 @@ MEDIA_TYPE_DATA_FIELDS: dict[str, tuple[DataField, ...]] = {
             "you only give it the destination.",
         ),
     ),
+    "counter": (
+        DataField(
+            name="value",
+            label="target value",
+            kind="number",
+            placeholder="1500000",
+            help="the number the counter ticks up to, from 0. plain digits "
+            "only — put units in the prefix / suffix.",
+        ),
+        DataField(
+            name="prefix",
+            label="prefix",
+            kind="text",
+            required=False,
+            placeholder="$",
+            help="sits just before the number ('$', '£').",
+        ),
+        DataField(
+            name="suffix",
+            label="suffix",
+            kind="text",
+            required=False,
+            placeholder="%",
+            help="sits just after the number ('%', ' million', ' km'). "
+            "lead with a space for a word.",
+        ),
+        DataField(
+            name="label",
+            label="caption",
+            kind="text",
+            required=False,
+            placeholder="ships lost at sea",
+            help="a small caption under the number saying what it counts.",
+        ),
+    ),
+    "progress_bar": (
+        DataField(
+            name="percent",
+            label="percent full",
+            kind="percent",
+            placeholder="73",
+            help="how far the bar fills, 0–100. the number ticks up "
+            "alongside the fill.",
+        ),
+        DataField(
+            name="label",
+            label="caption",
+            kind="text",
+            required=False,
+            placeholder="of the ocean is unexplored",
+            help="a small caption under the bar.",
+        ),
+    ),
+    "bar_chart": (
+        DataField(
+            name="bars",
+            label="bars",
+            kind="shares",
+            placeholder="Rome: 900, Athens: 300, Sparta: 140",
+            help="2–6 'label: value' pairs, comma-separated. bars grow in "
+            "this order, values pop on top.",
+        ),
+        DataField(
+            name="title",
+            label="title",
+            kind="text",
+            required=False,
+            placeholder="army size",
+            help="a short title across the top of the chart.",
+        ),
+    ),
+    "pie_chart": (
+        DataField(
+            name="slices",
+            label="slices",
+            kind="shares",
+            placeholder="Portugal: 45, Spain: 30, others: 25",
+            help="2–6 'label: value' shares of one whole. percentages are "
+            "computed for you — the values needn't sum to 100.",
+        ),
+        DataField(
+            name="title",
+            label="title",
+            kind="text",
+            required=False,
+            placeholder="spice trade, 1550",
+            help="a short title across the top of the chart.",
+        ),
+    ),
+    "line_graph": (
+        DataField(
+            name="points",
+            label="points",
+            kind="series",
+            placeholder="1900: 12, 1950: 48, 2000: 95",
+            help="2–8 'label: value' points, drawn left to right. the "
+            "labels are the x axis (years, quarters — evenly spaced).",
+        ),
+        DataField(
+            name="title",
+            label="title",
+            kind="text",
+            required=False,
+            placeholder="world population, billions",
+            help="a short title across the top of the chart.",
+        ),
+    ),
 }
 
 # A year outside this range is a typo (a mistyped century, a stray digit),
 # not a date anyone narrates.
 DATA_YEAR_MIN, DATA_YEAR_MAX = -4000, 4000
+
+# series/shares bounds: one pair is not a chart, and past these counts the
+# labels stop fitting on a 1080p frame read at a glance. Shares cap lower —
+# the pie palette has six validated slots.
+SERIES_MIN_POINTS, SERIES_MAX_POINTS = 2, 8
+SHARES_MIN_PARTS, SHARES_MAX_PARTS = 2, 6
+SERIES_LABEL_MAX_CHARS = 24
+
+
+def parse_series(raw: object) -> list[tuple[str, float]]:
+    """The 'label: value, label: value' spelling -> [(label, value), ...].
+
+    The ONE parser for series data: coercion validates through it at tag
+    time, and the chart renderers re-parse the stored string through it at
+    render time, so the two can never disagree. Splits entries on commas /
+    newlines / semicolons; the LAST colon splits label from value, so a
+    label may itself contain one ('Q1: 2020: 5' reads as label 'Q1: 2020').
+    Raises ValueError, naming the entry, on anything malformed."""
+    entries = [e.strip() for e in re.split(r"[,\n;]", str(raw)) if e.strip()]
+    pairs: list[tuple[str, float]] = []
+    for entry in entries:
+        label, sep, value_text = entry.rpartition(":")
+        label = label.strip()
+        if not sep or not label:
+            raise ValueError(
+                f"{entry!r} is not 'label: value' (e.g. 'Rome: 900')"
+            )
+        if len(label) > SERIES_LABEL_MAX_CHARS:
+            raise ValueError(
+                f"label {label!r} is over {SERIES_LABEL_MAX_CHARS} chars — "
+                f"long labels don't fit beside a chart mark, shorten it"
+            )
+        try:
+            value = float(value_text)
+        except ValueError:
+            raise ValueError(
+                f"{value_text.strip()!r} in {entry!r} is not a number"
+            ) from None
+        if not math.isfinite(value):
+            raise ValueError(f"{entry!r} has a non-finite value")
+        pairs.append((label, value))
+    return pairs
+
+
+def _plain_number(value: float) -> str:
+    """A float as plain digits, never scientific ('%g' would spell 1500000 as
+    '1.5e+06'): '1500000', '300.5'."""
+    if float(value).is_integer():
+        return str(int(value))
+    return f"{value:.6f}".rstrip("0").rstrip(".")
+
+
+def format_series(pairs: list[tuple[str, float]]) -> str:
+    """The canonical spelling parse_series reads back: 'a: 1, b: 2.5'."""
+    return ", ".join(f"{label}: {_plain_number(value)}" for label, value in pairs)
+
+
+def format_chart_value(value: float) -> str:
+    """A value as printed ON a chart (bar tops, the line graph's reveal):
+    grouped for readability — '1,500,000', '2.5'. Not for the canonical series
+    string, where a comma would read as an entry separator."""
+    if float(value).is_integer():
+        return f"{int(value):,}"
+    return f"{value:,.6f}".rstrip("0").rstrip(".")
 
 
 def data_fields_for(media_type_name: str) -> tuple[DataField, ...]:
@@ -687,6 +957,36 @@ def _coerce_data_value(field: DataField, raw: object) -> object:
         if not text:
             raise ValueError(f"'{field.label}' cannot be empty")
         return text
+    if field.kind in ("series", "shares"):
+        pairs = parse_series(raw)  # ValueError names the bad entry
+        lo, hi = ((SHARES_MIN_PARTS, SHARES_MAX_PARTS)
+                  if field.kind == "shares"
+                  else (SERIES_MIN_POINTS, SERIES_MAX_POINTS))
+        if not lo <= len(pairs) <= hi:
+            raise ValueError(
+                f"'{field.label}' needs {lo}–{hi} 'label: value' pairs, "
+                f"got {len(pairs)}"
+            )
+        if field.kind == "shares":
+            negative = [lb for lb, v in pairs if v < 0]
+            if negative:
+                raise ValueError(
+                    f"'{field.label}' values are parts of a whole and can't "
+                    f"be negative ({', '.join(negative)})"
+                )
+            if not any(v > 0 for _, v in pairs):
+                raise ValueError(f"'{field.label}' values are all zero")
+        return format_series(pairs)
+    if field.kind == "percent":
+        try:
+            value = float(raw)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            raise ValueError(f"'{field.label}' must be a number, got {raw!r}")
+        if not 0 <= value <= 100:
+            raise ValueError(
+                f"'{field.label}' = {value:g} is not between 0 and 100"
+            )
+        return value
     if field.kind == "number":
         try:
             return float(raw)  # type: ignore[arg-type]
@@ -817,7 +1117,14 @@ MEDIA_PROPERTIES: dict[MediaType, MediaProperties] = {
     MediaType.AI_EDIT_PREVIOUS: MediaProperties(
         is_ai_base=True, is_ai_edit=True, acts_on_previous=True
     ),
-    MediaType.TIMELINE: MediaProperties(),  # generate_timeline_scenes renders it
+    # The maths family: all-default rows — generate_maths_scenes renders each
+    # from row["data"], nothing fetched or reviewed.
+    MediaType.TIMELINE: MediaProperties(),
+    MediaType.COUNTER: MediaProperties(),
+    MediaType.PROGRESS_BAR: MediaProperties(),
+    MediaType.BAR_CHART: MediaProperties(),
+    MediaType.PIE_CHART: MediaProperties(),
+    MediaType.LINE_GRAPH: MediaProperties(),
 }
 
 
@@ -1095,7 +1402,9 @@ DECORATE_RENDER_SAFETY_PAD_SEC: float = 0.08
 STAMP_SOURCE_TYPES: tuple[str, ...] = ("stock", "wikipedia", "ai_stock")
 TERM_OPTIONAL_TYPES: tuple[str, ...] = (
     "hold_previous", "background", "blank", "random_background",
-    "timeline",  # driven by row["data"], not by a search term
+    # the maths family is driven by row["data"], not by a search term
+    "timeline", "counter", "progress_bar", "bar_chart", "pie_chart",
+    "line_graph",
 )
 
 # --- LIVE VIDEO DECORATE (decorations layered over PLAYING footage) --------

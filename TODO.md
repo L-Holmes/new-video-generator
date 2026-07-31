@@ -2,29 +2,14 @@
 -------------
 
 
-x) perhpas add the other maths things whilst claude ready?
-at:
-
-TODO:
-I'm creating a video editting app, and using manim to generate the graphics. I want maybe just a selection of the main graphs that would cover like 95% of circumstances. 
-List the options that I should add. 
-(This is a general use tool,covering a wide range of topics. For my use it will be more logical and informative, rather than decorative).
-
-claude --resume e4bce00f-7f05-44e7-a6ae-fd7183302c6d
-
-
-...
-
-
-- graphs / bars / ...
-    - Counter animations
-    Numbers tick up, bar fills, pie chart draws on. Perfect for stats you mention.
-    - hmmm - do i use manim for this? and generate code to then generate the thing? or what? 
+TODO;
+- bang out each of the below
+- then try an optimise the auto tagging...
 
 
 
 
-8) When I'm doing manual intervention, where I place my own image in the stock footage folder... is there any way we could open a window which the user can just paste into, which will then paste the image which we are using for that? (as an alternative option available... so they can manually place in the folder, or they can just paste in a picture that they've copied...
+8) When running the main process, and after reviewing the fetched images, and then I'm doing manual intervention, where I place my own image in the stock footage folder... is there any way we could open a window which the user can just paste into, which will then paste the image which we are using for that? (as an alternative option available... so they can manually place in the folder, or they can just paste in a picture that they've copied...
 
 Also, if we manually add to the folder... and we've entered the number we are resolving.. can it not auto detect the most recent file that was added to the folder, and ask you to confirm it? (and ideally open a window which displays the image, so the user can confirm that they want to use that image/clip for the given entry...?)
 
@@ -63,10 +48,6 @@ find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/out
 
 rm -rf TESTER-OUTPUT/output.mp4 TESTER-CACHE/output_video_final.mp4 TESTER-CACHE/{joint,blank,map,collage,decorate}_scenes
 
-----
-
-tell me where to add stuff in an idiot proof way. before and after....
-
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
@@ -75,7 +56,7 @@ tell me where to add stuff in an idiot proof way. before and after....
 
 TODO THEN THEN:
 - for when a map is shown...
-    Add ability to show a map when:
+    Add ability to show a map when e.g. two or more place names are mentioned:
     - place names mentioned..
     - show both places on the same map
         - but create two pictures...
@@ -88,10 +69,6 @@ TODO THEN THEN:
 - Add a transtiion for things like the collage???
 
 
-
----------------
-
-
 ========================================================================
 ========================================================================
 ========================================================================
@@ -101,9 +78,7 @@ TODO THEN THEN:
 ===============================================================
 
 
-
 THEN:
-
 ------------------------------------------------------------------------------------------------------------------
 
 Manual TODO;

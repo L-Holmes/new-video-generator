@@ -6,7 +6,8 @@ Locally-rendered scene generators (no external candidates, no review):
   - generate_map_scenes        — highlighted place maps
   - generate_blank_scenes      — an empty canvas: a flat colour ("blank") or a
                                  backdrop from _BACKGROUNDS/ ("random_background")
-  - generate_maths_scenes      — manim animations of row["data"] ("timeline")
+  - generate_maths_scenes      — manim animations of row["data"] (timeline,
+                                 counter, progress_bar, bar/pie/line charts)
   - generate_stickman_explain_scenes — chosen stock/wiki clip on a board base
 
 plus the LOCAL_FOOTAGE_GENERATORS registry and run_all_local_generators that
@@ -763,10 +764,67 @@ def _maths_render_timeline(data: dict, stem: str) -> "MathsRender":
     return render_timeline(int(data["year"]), str(MATHS_SCENE_OUTPUT_DIR))
 
 
+def _maths_render_counter(data: dict, stem: str) -> "MathsRender":
+    from ___visuals.maths import render_counter
+
+    return render_counter(
+        float(data["value"]),
+        str(MATHS_SCENE_OUTPUT_DIR),
+        prefix=str(data.get("prefix", "")),
+        suffix=str(data.get("suffix", "")),
+        label=str(data.get("label", "")),
+    )
+
+
+def _maths_render_progress_bar(data: dict, stem: str) -> "MathsRender":
+    from ___visuals.maths import render_progress_bar
+
+    return render_progress_bar(
+        float(data["percent"]),
+        str(MATHS_SCENE_OUTPUT_DIR),
+        label=str(data.get("label", "")),
+    )
+
+
+def _maths_render_bar_chart(data: dict, stem: str) -> "MathsRender":
+    from ___visuals.maths import render_bar_chart
+
+    return render_bar_chart(
+        str(data["bars"]),
+        str(MATHS_SCENE_OUTPUT_DIR),
+        title=str(data.get("title", "")),
+    )
+
+
+def _maths_render_pie_chart(data: dict, stem: str) -> "MathsRender":
+    from ___visuals.maths import render_pie_chart
+
+    return render_pie_chart(
+        str(data["slices"]),
+        str(MATHS_SCENE_OUTPUT_DIR),
+        title=str(data.get("title", "")),
+    )
+
+
+def _maths_render_line_graph(data: dict, stem: str) -> "MathsRender":
+    from ___visuals.maths import render_line_graph
+
+    return render_line_graph(
+        str(data["points"]),
+        str(MATHS_SCENE_OUTPUT_DIR),
+        title=str(data.get("title", "")),
+    )
+
+
 # media_type -> renderer. A new maths type lands here and nowhere else in this
 # file; the duration logic below is shared by all of them.
 _MATHS_RENDERERS: dict[MediaType, "Callable[[dict, str], MathsRender]"] = {
     MediaType.TIMELINE: _maths_render_timeline,
+    MediaType.COUNTER: _maths_render_counter,
+    MediaType.PROGRESS_BAR: _maths_render_progress_bar,
+    MediaType.BAR_CHART: _maths_render_bar_chart,
+    MediaType.PIE_CHART: _maths_render_pie_chart,
+    MediaType.LINE_GRAPH: _maths_render_line_graph,
 }
 
 
@@ -776,7 +834,8 @@ def generate_maths_scenes(
     final_data: list[dict] | None = None,  # unused — registry signature uniformity
 ) -> dict[str, list[dict]]:
     """
-    Render every MATHS scene (timeline today; charts later) and return a
+    Render every MATHS scene (timeline, counter, progress bar, bar / pie /
+    line charts) and return a
     stitcher-ready map of:
 
         { script_text: [ {local_mp4_path: trim_seconds}, ... ], ... }
@@ -1024,7 +1083,8 @@ LOCAL_FOOTAGE_GENERATORS: dict[
     "typography": generate_read_out_scenes,  # MediaType.TYPOGRAPHY
     "map": generate_map_scenes,  # MediaType.MAP
     "blank": generate_blank_scenes,  # MediaType.BLANK + RANDOM_BACKGROUND
-    "maths": generate_maths_scenes,  # MediaType.TIMELINE (+ future charts)
+    "maths": generate_maths_scenes,  # timeline + the chart types (see
+    #   _MATHS_RENDERERS — that dict, not this line, is what routes them)
 }
 
 

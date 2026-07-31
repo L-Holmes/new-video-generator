@@ -38,9 +38,10 @@ def check(cond, label):
 from CONFIG import (
     GROUPABLE_TYPES, JOINT_LAYOUT_POSITIONS, JOINT_TYPE_SFX_MAP,
     MEDIA_PROPERTIES, MEDIA_TYPE_CATALOG, MODIFIERS, MediaType,
-    MEDIA_TYPE_TABS, Tag,
-    coerce_scene_data, data_fields_for,
-    group_scene_rows, media_props, normalise_scene_row,
+    MEDIA_TYPE_TABS, TERM_OPTIONAL_TYPES, Tag,
+    chart_min_playable_seconds, chart_transition_seconds,
+    coerce_scene_data, data_fields_for, format_series,
+    group_scene_rows, media_props, normalise_scene_row, parse_series,
     resolve_group_continuations, scene_data, scene_is_group_continuation,
     scene_is_grouped, scene_type, scene_wants_decorate,
     timeline_min_playable_seconds, timeline_transition_seconds,
@@ -217,6 +218,80 @@ _cfg.TIMELINE_TRAVEL_SEC = _old_travel
 _il.reload(_tl)
 check(_tl._cache_key(2026, 1600) == _k1, "...and restoring them restores the key")
 
+print("\n===== the chart types: counter / progress_bar / bar / pie / line =====")
+_charts = ("counter", "progress_bar", "bar_chart", "pie_chart", "line_graph")
+check(all(c in MEDIA_TYPE_CATALOG
+          and Tag.MATHS in MEDIA_TYPE_CATALOG[c]["tags"] for c in _charts),
+      "every chart type is a catalog entry on the maths tag (so the tagger's "
+      "maths tab shows it with no UI change)")
+check(all(c in TERM_OPTIONAL_TYPES for c in _charts),
+      "chart types need no search term — they are driven by row['data']")
+check(parse_series("Rome:900, Athens : 300.5") == [("Rome", 900.0),
+                                                   ("Athens", 300.5)]
+      and format_series(parse_series("a: 1.50, b: 2")) == "a: 1.5, b: 2",
+      "'label: value' pairs parse and re-print canonically")
+check(parse_series("Q1: 2020: 5") == [("Q1: 2020", 5.0)],
+      "the LAST colon splits, so a label may itself contain one")
+pc = {"media_type": "pie_chart",
+      "data": {"slices": "Gold:40, Silver:25.5,Bronze: 10", "title": "medals"}}
+normalise_scene_row("p", pc)
+check(scene_data(pc)["slices"] == "Gold: 40, Silver: 25.5, Bronze: 10",
+      "a typed slice list is stored in the canonical spelling (a STRING — it "
+      "round-trips through the tagger's text input)")
+for mt, bad, want in (
+        ("pie_chart", {"slices": "Gold: 40"}, "2–6"),
+        ("pie_chart", {"slices": "a: 4, b: -2"}, "negative"),
+        ("pie_chart", {"slices": "a: 0, b: 0"}, "all zero"),
+        ("bar_chart", {"bars": "Rome 900, Athens 300"}, "not 'label: value'"),
+        ("bar_chart", {"bars": "a: 1, b: two"}, "not a number"),
+        ("line_graph", {"points": ", ".join(f"p{i}: {i}" for i in range(9))},
+         "2–8"),
+        ("progress_bar", {"percent": 130}, "not between 0 and 100"),
+        ("counter", {"value": "many"}, "must be a number")):
+    err = ""
+    try: normalise_scene_row("t", {"media_type": mt, "data": bad})
+    except ValueError as e: err = str(e)
+    check(want in err, f"{mt} data refused: {want}")
+lg = {"media_type": "line_graph", "data": {"points": "1900: -5, 1950: 3"}}
+normalise_scene_row("l", lg)
+check(scene_data(lg)["points"] == "1900: -5, 1950: 3",
+      "a line graph may dip negative (a trend isn't shares of a whole)")
+pb = {"media_type": "progress_bar", "data": {"percent": "73"}}
+normalise_scene_row("pb", pb)
+check(scene_data(pb)["percent"] == 73.0,
+      "a percent typed into the tagger's <input> loads as a float")
+check(0 < chart_min_playable_seconds() < chart_transition_seconds()
+      and chart_transition_seconds() <= 2.5,
+      "chart animations end on a trimmable settle beat and stay short enough "
+      "to actually play (same budget note as the timeline)")
+from ___visuals.maths import bar_chart as _bc
+_k_bar = _bc._cache_key("a: 1, b: 2", "t")
+_old_anim = _cfg.CHART_ANIM_SEC
+_cfg.CHART_ANIM_SEC = _old_anim + 1.0
+check(_bc._cache_key("a: 1, b: 2", "t") != _k_bar,
+      "chart cache keys cover the look/timings, not just the data")
+_cfg.CHART_ANIM_SEC = _old_anim
+check(_bc._cache_key("a: 1, b: 2", "t") == _k_bar,
+      "...and restoring them restores the key")
+from ___visuals.maths.pie_chart import _slices as _pie_slices
+_sl = _pie_slices([("a", 1.0), ("b", 0.0), ("c", 3.0)])
+check([s[0] for s in _sl] == ["a", "c"]
+      and abs(sum(s[1] for s in _sl) - 1.0) < 1e-9
+      and _sl[0][2] != _sl[1][2],
+      "pie: zero shares are dropped, fractions sum to 1, colours come from "
+      "the palette in fixed slot order")
+from ___visuals.maths.line_graph import _positions as _lg_pos
+_ps = _lg_pos([("a", 5.0), ("b", 5.0), ("c", 5.0)])
+check(len({y for _, y in _ps}) == 1 and _ps[0][0] < _ps[1][0] < _ps[2][0],
+      "line: a flat series still draws (zero value-span is padded)")
+# SCENE_GENERATORS drags in the whole pipeline (downloads, whisper, …), which
+# the sandbox doesn't stub — check the registry at source level instead.
+_sg_src = (HERE / "___visuals" / "SCENE_GENERATORS.py").read_text()
+_registry = _sg_src.split("_MATHS_RENDERERS", 1)[1].split("}", 1)[0]
+check(all(f"MediaType.{c.upper()}:" in _registry
+          for c in ("timeline", *_charts)),
+      "every maths catalog type has a renderer in _MATHS_RENDERERS")
+
 print("\n===== downloads: history.json is an index, not the only record =====")
 import json, importlib as _il
 # CACHE_IO is stubbed at the top of this file; the download cache is the real
@@ -331,7 +406,9 @@ print("\n===== decorator: ONE persistent window per session =====")
 # draw.py needs tkinter (absent here) — stub the session; capture the runner
 SESSIONS = []
 drawstub = types.ModuleType("___visuals.decorator.draw")
-def _fake_session(base, window_title, tabs, stamps, work_dir):
+def _fake_session(base, window_title, tabs, stamps, work_dir, **kwargs):
+    # **kwargs: the editor keeps growing options (stamp_mode, …) the stub
+    # doesn't care about — swallow them so the suite doesn't break each time.
     SESSIONS.append({"base": base, "stamps": list(stamps or [])})
     return _fake_session.result
 drawstub.run_editor_session = _fake_session

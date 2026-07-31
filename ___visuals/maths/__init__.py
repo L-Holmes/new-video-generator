@@ -32,6 +32,19 @@ The tagger picks the new type up on its own — the maths tab is built from the
 catalog.
 """
 from ___visuals.maths._runner import MathsRender
+from ___visuals.maths.bar_chart import render_bar_chart
+from ___visuals.maths.counter import render_counter
+from ___visuals.maths.line_graph import render_line_graph
+from ___visuals.maths.pie_chart import render_pie_chart
+from ___visuals.maths.progress_bar import render_progress_bar
 from ___visuals.maths.timeline import render_timeline
 
-__all__ = ["MathsRender", "render_timeline"]
+__all__ = [
+    "MathsRender",
+    "render_bar_chart",
+    "render_counter",
+    "render_line_graph",
+    "render_pie_chart",
+    "render_progress_bar",
+    "render_timeline",
+]

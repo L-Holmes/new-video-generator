@@ -76,7 +76,9 @@ try:    # new names — re-export them from MEDIA_TYPES.py (one line) to keep
 except ImportError:
     STAMP_SOURCE_TYPES = ("stock", "wikipedia", "ai_stock")
     TERM_OPTIONAL_TYPES = ("hold_previous", "background",
-                           "blank", "random_background", "timeline")
+                           "blank", "random_background", "timeline",
+                           "counter", "progress_bar", "bar_chart",
+                           "pie_chart", "line_graph")
     JOINT_GROUP_CELLS = {"stock": 3, "ai_stock": 3}
     GROUP_CONTINUATION_TYPE = "hold_previous"
     MEDIA_TYPE_TABS = [{"name": "material", "label": "material", "columns": [
@@ -1523,8 +1525,8 @@ function renderData(){
  $('#datapanel').innerHTML=fields.map(f=>
    `<label class="dfield"><span class="dlbl">${esc(f.label)}`+
    `${f.required?'':' <i>(optional)</i>'}</span>`+
-   `<input id="d_${f.name}" type="${f.kind==='text'?'text':'number'}"`+
-   ` step="${f.kind==='number'?'any':'1'}"`+
+   `<input id="d_${f.name}" type="${['text','series','shares'].includes(f.kind)?'text':'number'}"`+
+   ` step="${['number','percent'].includes(f.kind)?'any':'1'}"`+
    ` value="${esc(String(d[f.name]??''))}" placeholder="${esc(f.placeholder)}">`+
    `<span class="dhelp">${esc(f.help)}</span></label>`).join('');
  fields.forEach(f=>{
