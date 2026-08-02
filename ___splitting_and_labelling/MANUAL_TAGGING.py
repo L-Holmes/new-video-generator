@@ -163,6 +163,9 @@ def _word_count(text: str) -> int:
     return len(re.findall(r"[\w']+", text or ""))
 
 HERE = Path(__file__).resolve().parent
+# every split / join / media-type / search-term change lands here, whichever
+# json is being tagged — one shared, append-only, human-readable report.
+REPORT_PATH = HERE.parent / "manual_tagging_changes_report.txt"
 _PLACE_LABELS = {"GPE", "LOC"}
 _NAME_LABELS = {"PERSON", "ORG", "FAC", "EVENT", "WORK_OF_ART", "NORP"}
 
@@ -623,10 +626,17 @@ def resolve_short_scene(data: Dict[str, dict], line: str, choice: str,
 class _State:
     def __init__(self, json_path: Path):
         self.json_path = json_path
-        # the ongoing change log: every split / join / media-type change /
-        # search-term change is appended here with before, after and the
-        # user's reason (when they gave one). Plain text, append-only.
-        self.log_path = json_path.with_name(json_path.name + ".changes.log")
+        # the ongoing change report: every split / join / media-type change /
+        # search-term change is appended here with the full sentence(s) it sits
+        # in, before + after, and the user's reason (when they give one through
+        # the bottom-right overlay). Plain text, append-only.
+        self.log_path = REPORT_PATH
+        # a reason can arrive AFTER its change (the overlay is optional and
+        # non-blocking): remember where the latest change's entries start in
+        # the file so /reason can rewrite them with the Reason block added.
+        self._log_lock = threading.Lock()
+        self._change_seq = 0
+        self._last_log: "tuple[int, list, int] | None" = None
         self.data: Dict[str, dict] = json.loads(
             json_path.read_text(encoding="utf-8"))
         # CONFIG.py's own convention is "<name>_script_to_search_term.json"
@@ -782,16 +792,22 @@ class _State:
             json.dumps(self.data, indent=2, ensure_ascii=False),
             encoding="utf-8")
 
-    def mutate(self, op: str, req: dict) -> Optional[str]:
+    def mutate(self, op: str, req: dict
+               ) -> "tuple[Optional[str], Optional[int], str]":
+        """Apply one mutation. Returns (error, change_id, label): change_id is
+        set when the change produced report entries — the browser's reason
+        overlay quotes it back through /reason — and label is a short human
+        description of what was logged ("Line split", …)."""
         self._checkpoint()
         if op == "undo":
             if not self.undo_stack:
-                return "nothing to undo"
+                return "nothing to undo", None, ""
             self.data = self.undo_stack.pop()
             self._commit()
             self._kick_recompute()
-            self._log("undo — reverted the change above", "", "", "", "")
-            return None
+            cid, label = self._write_entries(
+                ["### Undo\n- reverted the change above\n"])
+            return None, cid, label or "Undo"
         # snapshot BEFORE the change so a failed op leaves no undo entry
         snapshot = copy.deepcopy(self.data)
         if op == "save":
@@ -810,83 +826,151 @@ class _State:
             err = "unknown operation"
         if err:
             self.data = snapshot            # roll back any partial mutation
-            return err
+            return err, None, ""
         self.undo_stack.append(snapshot)
         if len(self.undo_stack) > 100:
             self.undo_stack.pop(0)
         self._commit()
         self._kick_recompute()
-        self._log_mutation(op, req, snapshot)
-        return None
+        cid, label = self._log_mutation(op, req, snapshot)
+        return None, cid, label
 
-    # ---- the change log ---------------------------------------------------
-    # Task 10: every join / split / media-type change lands in the log with
-    # before + after and the reason the browser collected (it prompts on
-    # those actions). Search-term changes arrive separately through /logterm
-    # — they save on a per-keystroke debounce, so the browser logs one entry
-    # per EDIT (old committed term -> new) instead of one per keystroke.
+    # ---- the change report ------------------------------------------------
+    # Every join / split / media-type change / search-term change lands in
+    # manual_tagging_changes_report.txt as its own "### …" entry: the full
+    # sentence(s) the affected line sits in, then before + after (mentioning
+    # the media type / search term only when that is what changed), then the
+    # reason IF the user adds one through the overlay. One mutation that
+    # changes several things writes several entries. Search-term changes
+    # arrive separately through /logterm — they save on a per-keystroke
+    # debounce, so the browser logs one entry per EDIT (old committed term ->
+    # new) instead of one per keystroke.
 
-    def _log(self, kind: str, line: str, before: str, after: str,
-             reason: str) -> None:
-        """Append one entry. Logging must never break tagging, so any I/O
-        problem is reported and swallowed."""
+    @staticmethod
+    def _full_sentences(keys, targets) -> "list[str]":
+        """The full sentence(s) the target line(s) are part of, rebuilt from
+        the whole script in order. A line that straddles a sentence border
+        (splits don't respect punctuation) reports every sentence it
+        touches."""
+        targets = set(targets)
+        full, spans = "", []
+        for k in keys:
+            if full:
+                full += " "
+            start = len(full)
+            full += k
+            spans.append((start, len(full), k))
+        sents, start = [], 0
+        for m in re.finditer(r"[.!?]+[\"'”’)\]]*(?:\s+|$)", full):
+            sents.append((start, m.end(), full[start:m.end()].strip()))
+            start = m.end()
+        if start < len(full):
+            sents.append((start, len(full), full[start:].strip()))
+        tspans = [(s, e) for s, e, k in spans if k in targets]
+        return [txt for s, e, txt in sents
+                if any(s < te and e > ts for ts, te in tspans)]
+
+    @staticmethod
+    def _entry(title: str, sentences, before, after) -> str:
+        """One report entry (no trailing separator, no Reason — that is
+        appended later if the user gives one). before/after are lists of
+        pre-formatted item strings."""
+        out = f"### {title}\nFull sentence(s):\n"
+        out += "".join(f'- "{s}"\n' for s in sentences) or "- (unknown)\n"
+        out += "Before:\n" + "".join(f"- {b}\n" for b in before)
+        out += "After:\n" + "".join(f"- {a}\n" for a in after)
+        return out
+
+    def _write_entries(self, entries: "list[str]"
+                       ) -> "tuple[Optional[int], str]":
+        """Append the entries and remember where they start, so a reason
+        arriving later can be folded in. Logging must never break tagging, so
+        any I/O problem is reported and swallowed."""
+        if not entries:
+            return None, ""
+        labels = " + ".join(e.splitlines()[0].lstrip("# ") for e in entries)
         try:
-            stamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            head = f"[{stamp}] {kind}"
-            if line:
-                head += f' — "{line[:90]}"'
-            entry = head + "\n"
-            if before:
-                entry += f"  before: {before}\n"
-            if after:
-                entry += f"  after:  {after}\n"
-            if reason:
-                entry += f"  why:    {reason}\n"
-            with open(self.log_path, "a", encoding="utf-8") as fh:
-                fh.write(entry + "\n")
+            with self._log_lock:
+                self._change_seq += 1
+                offset = (self.log_path.stat().st_size
+                          if self.log_path.exists() else 0)
+                with open(self.log_path, "a", encoding="utf-8") as fh:
+                    fh.write("".join(e + "\n" for e in entries))
+                self._last_log = (offset, list(entries), self._change_seq)
+                return self._change_seq, labels
         except Exception as exc:  # pragma: no cover - disk trouble only
-            print(f"  · could not write the change log: {exc}")
+            print(f"  · could not write the change report: {exc}")
+            return None, ""
+
+    def attach_reason(self, change_id: int, reason: str) -> None:
+        """Fold a late-arriving reason into the change it belongs to. Only the
+        LATEST change can still take one (a newer change supersedes the
+        offer), and the file is rewritten from the remembered offset — this
+        process is its only writer while tagging runs."""
+        reason = (reason or "").strip()
+        if not reason:
+            return
+        try:
+            with self._log_lock:
+                if not self._last_log or self._last_log[2] != change_id:
+                    return
+                offset, entries, _ = self._last_log
+                body = "".join(e + f'Reason:\n- "{reason}"\n\n'
+                               for e in entries)
+                with open(self.log_path, "r+b") as fh:
+                    fh.seek(offset)
+                    fh.truncate()
+                    fh.write(body.encode("utf-8"))
+        except Exception as exc:  # pragma: no cover - disk trouble only
+            print(f"  · could not write the change report: {exc}")
 
     def _log_mutation(self, op: str, req: dict, before: Dict[str, dict]
-                      ) -> None:
+                      ) -> "tuple[Optional[int], str]":
         """Work out what a successful mutation changed (by comparing the
-        pre-change snapshot with the live data) and log it."""
-        reason = (req.get("reason") or "").strip()
+        pre-change snapshot with the live data) and report it — one entry PER
+        KIND of change, so a shortfix that joins two lines and retags a third
+        writes a Line join entry and a Media type entry."""
+        entries = []
         line = req.get("line", "")
-        if op == "save":
-            patch = req.get("patch", {}) or {}
-            if "media_type" not in patch:
-                return          # term/data keystrokes etc. — not logged here
-            old = (before.get(line, {}).get("media_type") or "").strip()
-            new = (self.data.get(line, {}).get("media_type") or "").strip()
-            if old != new:
-                self._log("media type", line, old or "(untagged)", new, reason)
-        elif op == "split":
+        if op == "split":
             halves = [k for k in self.data if k not in before]
-            self._log("split", line, f'"{line}"',
-                      "  +  ".join(f'"{k}"' for k in halves), reason)
+            entries.append(self._entry(
+                "Line split", self._full_sentences(before, [line]),
+                [f'"{line}"'], [f'"{k}"' for k in halves]))
         elif op == "join":
             gone = [k for k in before if k not in self.data]
             merged = [k for k in self.data if k not in before]
-            self._log("join", "",
-                      "  +  ".join(f'"{k}"' for k in gone),
-                      "  +  ".join(f'"{k}"' for k in merged), reason)
-        elif op == "shortfix":
-            old = (before.get(line, {}).get("media_type") or "").strip()
-            self._log(f"short-scene fix ({req.get('choice', '?')})", line,
-                      old or "(untagged)",
-                      f"{req.get('media_type', '?')} via the too-short guard",
-                      reason)
+            entries.append(self._entry(
+                "Line join", self._full_sentences(before, gone),
+                [f'"{k}"' for k in gone], [f'"{k}"' for k in merged]))
+        # media-type changes on ANY surviving line, whatever op caused them
+        # (a plain retag, or a shortfix retagging this line + a neighbour)
+        for key in self.data:
+            if key not in before:
+                continue
+            old = (before[key].get("media_type") or "").strip()
+            new = (self.data[key].get("media_type") or "").strip()
+            if old and old != new:      # first-time tagging isn't a "change"
+                entries.append(self._entry(
+                    "Media type", self._full_sentences(self.data, [key]),
+                    [f'"{key}" [{old}]'], [f'"{key}" [{new or "untagged"}]']))
+        return self._write_entries(entries)
 
-    def log_term(self, req: dict) -> None:
+    def log_term(self, req: dict) -> "tuple[Optional[int], str]":
         """One committed search-term edit from the browser (POST /logterm):
         the term as it was when the line was opened -> as it was left."""
+        line = req.get("line", "")
         old = (req.get("before") or "").strip()
         new = (req.get("after") or "").strip()
         if not old or old == new:
-            return              # first-time tagging / no real change
-        self._log("search term", req.get("line", ""), f'"{old}"', f'"{new}"',
-                  (req.get("reason") or "").strip())
+            return None, ""     # first-time tagging / no real change
+        mt = (self.data.get(line, {}).get("media_type") or "").strip()
+        tag = f" [{mt}]" if mt else ""
+        entry = self._entry(
+            "Search term", self._full_sentences(self.data, [line]),
+            [f'"{line}"{tag}\n    - search: "{old}"'],
+            [f'"{line}"{tag}\n    - search: "{new}"'])
+        return self._write_entries([entry])
 
 
 def make_handler(state: _State):
@@ -930,11 +1014,20 @@ def make_handler(state: _State):
             if op == "logterm":
                 # log-only: the term itself was already saved by the
                 # debounced /save calls — this just records the edit.
-                state.log_term(req)
+                cid, label = state.log_term(req)
+                self._send(json.dumps({"ok": True, "change_id": cid,
+                                       "label": label}))
+                return
+            if op == "reason":
+                # the optional "why" from the bottom-right overlay, folded
+                # into the change it belongs to (if it is still the latest)
+                state.attach_reason(int(req.get("change_id") or 0),
+                                    req.get("reason") or "")
                 self._send(json.dumps({"ok": True}))
                 return
-            err = state.mutate(op, req)
-            body = json.dumps({"ok": err is None, "error": err})
+            err, cid, label = state.mutate(op, req)
+            body = json.dumps({"ok": err is None, "error": err,
+                               "change_id": cid, "label": label})
             self._send(body, code=200 if err is None else 400)
     return Handler
 
@@ -1101,6 +1194,14 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
  #finbox{background:#1d2b1f;border:2px solid #2e7d32;border-radius:14px;padding:28px 36px;text-align:center;display:flex;flex-direction:column;gap:10px;font-size:18px;max-width:420px}
  #finbox button{margin-top:8px;padding:9px 18px;border-radius:8px;border:1px solid #4a5060;background:#232733;color:#cdd;cursor:pointer;font-size:14px}
  #toast{position:fixed;left:14px;bottom:14px;background:#20302a;color:#7bd88f;border-radius:8px;padding:5px 13px;font-size:12px;opacity:0;transition:opacity .3s;z-index:40;pointer-events:none}
+ #whycard{position:fixed;right:14px;bottom:14px;z-index:45;width:300px;background:#241f12;border:1px solid var(--gold);border-radius:10px;padding:10px 12px;box-shadow:0 6px 24px #0009;display:none}
+ #whycard .wtitle{color:var(--gold);font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:7px}
+ #whycard .wtitle .wkind{background:#3a3218;border-radius:5px;padding:1px 7px;font-weight:600;flex:none}
+ #whycard .wtitle:hover{text-decoration:underline}
+ #whybody{display:none;margin-top:8px}
+ #whybody input{width:100%;box-sizing:border-box;background:#0f1116;color:#fff;border:1px solid #6e5c2a;border-radius:6px;padding:7px;font:inherit}
+ #whybody button{margin-top:7px;padding:6px 14px;border-radius:7px;border:0;background:var(--gold);color:#222;font-weight:600;cursor:pointer;font-size:13px}
+ #whycard.saved .wtitle{color:#7bd88f;cursor:default}
  #mback,#donebtn,#mobactions,#msplit,#joinconfirm,#joinshield{display:none}
  @media (max-width:700px){
   #wrap{display:block;height:auto}
@@ -1244,6 +1345,7 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
 <div id="pop"></div>
 <div id="caret"></div><div id="splittip">click to break here</div>
 <div id="toast">saved ✓</div>
+<div id="whycard"></div>
 <div id="finwrap"><div id="finbox">
  <div style="font-size:42px;color:#7bd88f">✓</div>
  <div>finished — everything is saved to the json.</div>
@@ -1423,18 +1525,43 @@ function disarmSplit(tx,i){
  tx.textContent=D.lines[i].line;
  $('#caret').style.display='none';$('#splittip').style.display='none';
 }
-// ---- change-log reasons ------------------------------------------------------
-// Task 10: joins, splits, media-type changes and search-term edits all land in
-// the server's change log (<json>.changes.log) with before/after; this asks
-// for the optional "why" that goes with them. Enter/cancel = no reason —
-// the change is still logged, just without one.
-function askWhy(what){
- const r=prompt('change log — why did you '+what+'? (optional — Enter to skip)');
- return r?r.trim():'';
+// ---- change-report reasons ---------------------------------------------------
+// Joins, splits, media-type changes and search-term edits all land in the
+// change report (manual_tagging_changes_report.txt) with the full sentence(s)
+// + before/after. The reason is OPTIONAL and never blocks: a small overlay
+// sits bottom-right after a logged change — click it to type why (POST
+// /reason folds it into the entry just written). It clears on the next change.
+let whyId=null;
+function showWhy(changeId,label){
+ whyId=changeId;
+ const c=$('#whycard');
+ c.classList.remove('saved');
+ c.innerHTML=`<div class="wtitle" onclick="expandWhy()">✎`+
+  `<span class="wkind">${esc(label)}</span> logged — click to add why (optional)</div>`+
+  `<div id="whybody"><input id="whytext" placeholder="reason for this change…">`+
+  `<button onclick="sendWhy()">save reason</button></div>`;
+ c.style.display='block';
+}
+function expandWhy(){
+ const b=$('#whybody'); if(!b)return;
+ b.style.display='block';
+ const t=$('#whytext'); t.focus();
+ t.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();sendWhy();}
+                 if(e.key==='Escape'){hideWhy();}};
+}
+function hideWhy(){whyId=null;$('#whycard').style.display='none';}
+async function sendWhy(){
+ const t=$('#whytext'); const reason=t?t.value.trim():'';
+ if(!reason||whyId===null){hideWhy();return;}
+ await fetch('/reason',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({change_id:whyId,reason})}).catch(()=>{});
+ const c=$('#whycard');
+ c.classList.add('saved');
+ c.innerHTML='<div class="wtitle">reason saved ✓</div>';
+ setTimeout(hideWhy,900);
 }
 async function doSplit(line,b){
- const reason=askWhy('split this line');
- await post('/split',{line,index:b,reason},line.slice(0,b).trim());
+ await post('/split',{line,index:b},line.slice(0,b).trim());
  $('#caret').style.display='none';$('#splittip').style.display='none';
 }
 // ---- joining ----------------------------------------------------------------
@@ -1448,9 +1575,9 @@ function joinGhost(i,on){
  if(on&&!g) t.insertAdjacentHTML('beforeend',` <span class="ghostadd">${esc(D.lines[i].line)}</span>`);
  if(!on&&g) g.remove();
 }
-async function doJoin(i,reason){
+async function doJoin(i){
  if(i<=0)return;
- await post('/join',{line:D.lines[i].line,reason:reason||''},D.lines[i-1].line);
+ await post('/join',{line:D.lines[i].line},D.lines[i-1].line);
 }
 function startJoin(i){
  // MODAL: nothing else can happen until the user confirms or cancels.
@@ -1478,8 +1605,7 @@ async function confirmJoin(){
  const i=pendJoin; pendJoin=-1;
  $('#joinshield').classList.remove('open');
  $('#joinconfirm').classList.remove('open');
- const reason=askWhy('join these lines');
- await doJoin(i,reason);
+ await doJoin(i);
 }
 // ---- mobile scissors flow -----------------------------------------------------
 function toggleScissors(){scissors=!scissors;$('#mscis').classList.toggle('on',scissors);
@@ -1701,12 +1827,12 @@ function renderMods(){
  $('#modhint').textContent=has?'':'pick a base first — there must be something to put these on';
  hookInfos($('#modbar').parentElement);
 }
-// ---- search-term change tracking (task 10) -----------------------------------
+// ---- search-term change tracking ---------------------------------------------
 // The term saves on a per-keystroke debounce, so logging /save calls would log
 // every keystroke. Instead: remember the term as it stood when the line was
 // opened (the baseline), and when the user COMMITS an edit (leaves the box or
-// the line), log one entry — baseline -> final — asking why. A baseline that
-// was empty is first-time tagging, which isn't a "change" worth a log line.
+// the line), log one entry — baseline -> final — offering the reason overlay.
+// A baseline that was empty is first-time tagging, not a "change" worth a log.
 let termBase=null;
 function commitTermLog(){
  if(!termBase)return;
@@ -1715,9 +1841,10 @@ function commitTermLog(){
  let now=cur.row.search_term||'';
  if(D.lines[sel]&&D.lines[sel].line===termBase.line)now=$('#term').value;
  if(termBase.val.trim()&&now.trim()!==termBase.val.trim()){
-   const reason=askWhy('change the search term from "'+termBase.val+'"');
    fetch('/logterm',{method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({line:termBase.line,before:termBase.val,after:now,reason})});
+     body:JSON.stringify({line:termBase.line,before:termBase.val,after:now})})
+    .then(r=>r.json()).then(j=>{if(j.change_id)showWhy(j.change_id,j.label);})
+    .catch(()=>{});
  }
  termBase={line:termBase.line,val:now};
 }
@@ -1892,11 +2019,9 @@ async function pick(name){const L=D.lines[sel];
  const grouped=(L.row.modifiers||[]).includes('group')&&b&&b.groupable;
  if(b&&b.new_footage&&L.words<D.min_new_words&&!grouped){openShort(name);return;}
  closeShort();                       // a fine choice — drop any open guard panel
- // CHANGING an existing type is worth a log reason; first-time tagging isn't.
- const prevType=L.row.media_type;
- const reason=(prevType&&prevType!==name)
-   ?askWhy('change the media type from '+prevType+' to '+name):'';
- await post('/save',{line:L.line,patch:{media_type:name},reason},L.line);
+ // CHANGING an existing type gets a report entry (the server diffs it) and
+ // the reason overlay pops bottom-right; first-time tagging isn't logged.
+ await post('/save',{line:L.line,patch:{media_type:name}},L.line);
  const t2=$('#tostep2');
  t2.style.display='inline-block'; t2.classList.add('glow');
  // a type drawn from data (timeline) sends you to its form, not to a search
@@ -2010,6 +2135,11 @@ async function post(url,body,keepLine,quietReload){
    }
    alert(j.error||'error');return false;}
  toast();
+ // the reason overlay follows the LATEST change: a logged change replaces it,
+ // any other real mutation clears it. Quiet (per-keystroke) saves leave it
+ // alone — typing a term must not yank away the offer for the change before.
+ if(j.change_id)showWhy(j.change_id,j.label||'change');
+ else if(!quietReload)hideWhy();
  if(quietReload){
    // Keep whatever the user is typing in: the reload rebuilds these elements,
    // so remember the focused field BY ID and put its value + caret back. (The

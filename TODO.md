@@ -8,7 +8,6 @@ TODO;
 
 12) need an actual reliable thing for the words on screen... and perhaps have a flag that we change in config that determines whether it shows like the whole sentence on screen, but one word at once... or just each word one by one as it does now..
 
-
 ===========================================
 
 

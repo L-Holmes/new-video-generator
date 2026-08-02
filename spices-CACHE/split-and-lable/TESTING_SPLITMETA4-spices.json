@@ -1,0 +1,510 @@
+[
+  [
+    "If you open",
+    [
+      12
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "open"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        0,
+        3
+      ],
+      "list": null
+    }
+  ],
+  [
+    "your kitchen cupboard right now, you probably have",
+    [
+      12
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "kitchen",
+        "cupboard"
+      ],
+      "nouns": [
+        "kitchen",
+        "cupboard"
+      ],
+      "head_noun": "cupboard",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        3,
+        12
+      ],
+      "list": null
+    }
+  ],
+  [
+    "a jar of nutmeg.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "jar",
+        "nutmeg"
+      ],
+      "nouns": [
+        "jar",
+        "nutmeg"
+      ],
+      "head_noun": "jar",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        12,
+        17
+      ],
+      "list": null
+    }
+  ],
+  [
+    "It costs about two dollars.",
+    [
+      1009,
+      18,
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "about two dollars",
+          "label": "MONEY"
+        }
+      ],
+      "keywords": [
+        "two",
+        "dollars"
+      ],
+      "nouns": [
+        "dollar"
+      ],
+      "head_noun": "dollar",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": true,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        17,
+        23
+      ],
+      "list": null
+    }
+  ],
+  [
+    "But in the 1600s,",
+    [
+      1001,
+      18,
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "the 1600s",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "1600s"
+      ],
+      "nouns": [
+        "1600"
+      ],
+      "head_noun": "1600",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        23,
+        28
+      ],
+      "list": null
+    }
+  ],
+  [
+    "this little wrinkled seed was",
+    [
+      15
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "little",
+        "wrinkled",
+        "seed"
+      ],
+      "nouns": [
+        "seed"
+      ],
+      "head_noun": "seed",
+      "demonstrative": true,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        28,
+        33
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the single most contested resource on",
+    [
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "contested",
+        "resource"
+      ],
+      "nouns": [
+        "resource"
+      ],
+      "head_noun": "resource",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        33,
+        39
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the planet.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "planet"
+      ],
+      "nouns": [
+        "planet"
+      ],
+      "head_noun": "planet",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        39,
+        42
+      ],
+      "list": null
+    }
+  ],
+  [
+    "It was worth more than",
+    [
+      39
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "worth"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        42,
+        47
+      ],
+      "list": null
+    }
+  ],
+  [
+    "its weight in gold.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "weight",
+        "gold"
+      ],
+      "nouns": [
+        "weight",
+        "gold"
+      ],
+      "head_noun": "weight",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        47,
+        52
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Nutmeg only grew",
+    [
+      12
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Nutmeg",
+          "label": "PERSON"
+        }
+      ],
+      "keywords": [
+        "nutmeg",
+        "grew"
+      ],
+      "nouns": [
+        "nutmeg"
+      ],
+      "head_noun": "nutmeg",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        52,
+        55
+      ],
+      "list": null
+    }
+  ],
+  [
+    "in one place on Earth:",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "one",
+          "label": "CARDINAL"
+        },
+        {
+          "text": "Earth",
+          "label": "LOC"
+        }
+      ],
+      "keywords": [
+        "one",
+        "place",
+        "earth"
+      ],
+      "nouns": [
+        "place",
+        "earth"
+      ],
+      "head_noun": "place",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        55,
+        61
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the Banda Islands.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "the Banda Islands",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "banda",
+        "islands"
+      ],
+      "nouns": [
+        "banda",
+        "islands"
+      ],
+      "head_noun": "islands",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        61,
+        65
+      ],
+      "list": null
+    }
+  ],
+  [
+    "A tiny, incredibly remote volcanic archipelago in",
+    [
+      24
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "tiny",
+        "remote",
+        "volcanic",
+        "archipelago"
+      ],
+      "nouns": [
+        "archipelago"
+      ],
+      "head_noun": "archipelago",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        65,
+        73
+      ],
+      "list": null
+    }
+  ],
+  [
+    "modern-day Indonesia.",
+    [],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "modern-day",
+          "label": "DATE"
+        },
+        {
+          "text": "Indonesia",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "modern",
+        "day",
+        "indonesia"
+      ],
+      "nouns": [
+        "day",
+        "indonesia"
+      ],
+      "head_noun": "indonesia",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "nutmeg",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        73,
+        78
+      ],
+      "list": null
+    }
+  ]
+]

@@ -1,10 +1,8 @@
 {
-  "Rome was not built in a day. But it burned in": {
+  "Rome was not built in a day.": {
     "search_term": "Rome",
-    "media_type": "blank",
-    "modifiers": [
-      "caption"
-    ],
+    "media_type": "wikipedia",
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -14,14 +12,11 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
+    ]
   },
-  "six.": {
-    "search_term": "Rome",
-    "media_type": "stock",
+  "But it burned in six.": {
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -31,16 +26,12 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1,
-      7
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
+      1
+    ]
   },
   "In 64 AD,": {
-    "search_term": "Rome",
-    "media_type": "stock",
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -50,16 +41,12 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1,
       7
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
+    ]
   },
   "a fire started in": {
-    "search_term": "fire",
-    "media_type": "background",
+    "search_term": "",
+    "media_type": "hold_previous",
     "modifiers": [
       "decorate"
     ],
@@ -72,8 +59,7 @@
     "music_fade_out": 0,
     "rule_ids": [
       14
-    ],
-    "data": {}
+    ]
   },
   "the merchant stalls near": {
     "search_term": "",
@@ -88,11 +74,10 @@
     "music_fade_out": 0,
     "rule_ids": [
       18
-    ],
-    "data": {}
+    ]
   },
-  "the Circus Maximus. Driven by": {
-    "search_term": "",
+  "the Circus Maximus.": {
+    "search_term": "Circus Maximus",
     "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
@@ -103,14 +88,40 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1,
+      1
+    ]
+  },
+  "Driven by": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
       29
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
+    ]
   },
   "wind,": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ]
+  },
+  "this hungry blaze devoured": {
     "search_term": "",
     "media_type": "stock",
     "modifiers": [],
@@ -122,35 +133,12 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      7
-    ],
-    "stamp_source": null,
-    "stamp_decorate": false,
-    "data": {}
-  },
-  "this hungry blaze devoured": {
-    "search_term": "fire",
-    "media_type": "hold_previous",
-    "modifiers": [
-      "decorate"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
       61
-    ],
-    "stamp_source": "stock",
-    "stamp_decorate": false,
-    "data": {}
+    ]
   },
   "temples,": {
-    "search_term": "temple",
-    "media_type": "stock_on_board",
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -161,9 +149,7 @@
     "music_fade_out": 0,
     "rule_ids": [
       8
-    ],
-    "stamp_source": null,
-    "data": {}
+    ]
   },
   "villas, and": {
     "search_term": "",
@@ -178,12 +164,11 @@
     "music_fade_out": 0,
     "rule_ids": [
       15
-    ],
-    "data": {}
+    ]
   },
   "entire districts.": {
     "search_term": "",
-    "media_type": "stock",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -194,17 +179,12 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
+    ]
   },
   "The city was rebuilt by": {
-    "search_term": "city",
-    "media_type": "hold_previous",
-    "modifiers": [
-      "decorate"
-    ],
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -216,10 +196,7 @@
       1000,
       59,
       29
-    ],
-    "stamp_decorate": true,
-    "stamp_source": "wikipedia",
-    "data": {}
+    ]
   },
   "a very unpopular emperor.": {
     "search_term": "",
@@ -234,8 +211,7 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ],
-    "data": {}
+    ]
   },
   "Which brings us to Nero.": {
     "search_term": "Nero",
@@ -250,11 +226,10 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ],
-    "data": {}
+    ]
   },
   "He blamed": {
-    "search_term": "Nero Nero",
+    "search_term": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -266,17 +241,12 @@
     "music_fade_out": 0,
     "rule_ids": [
       12
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
+    ]
   },
   "a small religious sect, and": {
     "search_term": "",
     "media_type": "stock",
-    "modifiers": [
-      "collage"
-    ],
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -286,8 +256,7 @@
     "music_fade_out": 0,
     "rule_ids": [
       15
-    ],
-    "data": {}
+    ]
   },
   "the rest is history.": {
     "search_term": "",
@@ -302,7 +271,6 @@
     "music_fade_out": 0,
     "rule_ids": [
       1010
-    ],
-    "data": {}
+    ]
   }
 }

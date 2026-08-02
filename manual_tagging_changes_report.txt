@@ -1,0 +1,11 @@
+### Line join
+Full sentence(s):
+- "In 64 AD, a fire started in the merchant stalls near the Circus Maximus."
+Before:
+- "In"
+- "64 AD,"
+After:
+- "In 64 AD,"
+Reason:
+- "Short prevoius non-visualisable sentence, then something non-important like a date, just join"
+

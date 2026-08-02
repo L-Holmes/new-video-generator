@@ -1,3 +1,4 @@
+uv run MANUAL_TAGGING.py
 
 
 

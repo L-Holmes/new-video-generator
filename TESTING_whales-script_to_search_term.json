@@ -1,10 +1,8 @@
 {
-  "Rome was not built in a day. But it burned in": {
-    "search_term": "Rome",
-    "media_type": "blank",
-    "modifiers": [
-      "caption"
-    ],
+  "Here's the thing.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -14,52 +12,11 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
+    ]
   },
-  "six.": {
-    "search_term": "Rome",
-    "media_type": "stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1,
-      7
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
-  },
-  "In 64 AD,": {
-    "search_term": "Rome",
-    "media_type": "stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1,
-      7
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
-  },
-  "a fire started in": {
-    "search_term": "fire",
-    "media_type": "background",
+  "In the middle of the Sahara sits": {
+    "search_term": "",
+    "media_type": "hold_previous",
     "modifiers": [
       "decorate"
     ],
@@ -71,11 +28,10 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      14
-    ],
-    "data": {}
+      12
+    ]
   },
-  "the merchant stalls near": {
+  "a valley called": {
     "search_term": "",
     "media_type": "wikipedia",
     "modifiers": [],
@@ -88,11 +44,10 @@
     "music_fade_out": 0,
     "rule_ids": [
       18
-    ],
-    "data": {}
+    ]
   },
-  "the Circus Maximus. Driven by": {
-    "search_term": "",
+  "Wadi Al-Hitan.": {
+    "search_term": "Wadi Al-Hitan",
     "media_type": "wikipedia",
     "modifiers": [],
     "group_id": null,
@@ -103,16 +58,12 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1,
-      29
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
+      1
+    ]
   },
-  "wind,": {
+  "Scientists digging there found": {
     "search_term": "",
-    "media_type": "stock",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -122,14 +73,26 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      7
-    ],
-    "stamp_source": null,
-    "stamp_decorate": false,
-    "data": {}
+      29
+    ]
   },
-  "this hungry blaze devoured": {
-    "search_term": "fire",
+  "ribs,": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      8
+    ]
+  },
+  "vertebrae,": {
+    "search_term": "vertebrae, teeth and entire skulls",
     "media_type": "hold_previous",
     "modifiers": [
       "decorate"
@@ -142,30 +105,11 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      61
-    ],
-    "stamp_source": "stock",
-    "stamp_decorate": false,
-    "data": {}
-  },
-  "temples,": {
-    "search_term": "temple",
-    "media_type": "stock_on_board",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
       8
     ],
-    "stamp_source": null,
-    "data": {}
+    "stamp_source": "stock"
   },
-  "villas, and": {
+  "teeth, and": {
     "search_term": "",
     "media_type": "",
     "modifiers": [],
@@ -178,50 +122,9 @@
     "music_fade_out": 0,
     "rule_ids": [
       15
-    ],
-    "data": {}
+    ]
   },
-  "entire districts.": {
-    "search_term": "",
-    "media_type": "stock",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
-  },
-  "The city was rebuilt by": {
-    "search_term": "city",
-    "media_type": "hold_previous",
-    "modifiers": [
-      "decorate"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1000,
-      59,
-      29
-    ],
-    "stamp_decorate": true,
-    "stamp_source": "wikipedia",
-    "data": {}
-  },
-  "a very unpopular emperor.": {
+  "entire skulls.": {
     "search_term": "",
     "media_type": "",
     "modifiers": [],
@@ -234,12 +137,11 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ],
-    "data": {}
+    ]
   },
-  "Which brings us to Nero.": {
-    "search_term": "Nero",
-    "media_type": "wikipedia",
+  "Whale skulls.": {
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -250,11 +152,72 @@
     "music_fade_out": 0,
     "rule_ids": [
       1
-    ],
-    "data": {}
+    ]
   },
-  "He blamed": {
-    "search_term": "Nero Nero",
+  "The ground looked as if": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      41
+    ]
+  },
+  "an ocean had simply dried up around them.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1008,
+      29,
+      1
+    ]
+  },
+  "Every fossil was intact except": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      57
+    ]
+  },
+  "one.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "Locals swear": {
+    "search_term": "",
     "media_type": "",
     "modifiers": [],
     "group_id": null,
@@ -266,30 +229,9 @@
     "music_fade_out": 0,
     "rule_ids": [
       12
-    ],
-    "stamp_decorate": false,
-    "stamp_source": null,
-    "data": {}
+    ]
   },
-  "a small religious sect, and": {
-    "search_term": "",
-    "media_type": "stock",
-    "modifiers": [
-      "collage"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      15
-    ],
-    "data": {}
-  },
-  "the rest is history.": {
+  "the wind sounds like": {
     "search_term": "",
     "media_type": "",
     "modifiers": [],
@@ -301,8 +243,112 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1010
+      35
+    ]
+  },
+  "whale song at": {
+    "search_term": "",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      15
+    ]
+  },
+  "night.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "And then": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      60
+    ]
+  },
+  "boom,": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ]
+  },
+  "a sandstorm buried the site for a decade.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ]
+  },
+  "Recovering it cost": {
+    "search_term": "",
+    "media_type": "wikipedia",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      18
+    ]
+  },
+  "about $2 million.": {
+    "search_term": "$2 million",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "caption"
     ],
-    "data": {}
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": []
   }
 }
