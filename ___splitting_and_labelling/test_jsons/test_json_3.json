@@ -1,0 +1,292 @@
+{
+  "In 1996,": {
+    "search_term": "",
+    "media_type": "bar_chart",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ],
+    "data": {
+      "bars": "bar 1: 1996,, bar 2: 511, bar 3: 375"
+    }
+  },
+  "a rookie guard shot 511 three pointers and": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      49
+    ],
+    "data": {}
+  },
+  "missed 375 of them.": {
+    "search_term": "",
+    "media_type": "bar_chart",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1005,
+      43,
+      1
+    ],
+    "data": {
+      "bars": "bar 1: 1996,, bar 2: 511, bar 3: 375"
+    }
+  },
+  "Every coach in the league told him to stop.": {
+    "search_term": "league",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "He shot more": {
+    "search_term": "",
+    "media_type": "wikipedia",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      18
+    ],
+    "data": {}
+  },
+  "the next season.": {
+    "search_term": "next season",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "Attempts across the league grew": {
+    "search_term": "",
+    "media_type": "line_graph",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12
+    ],
+    "data": {
+      "points": "point 1: 9,000, point 2: 1996, point 3: 24,000, point 4: 2016., point 5: 39"
+    }
+  },
+  "from 9,000 a year in": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      24
+    ],
+    "data": {}
+  },
+  "1996 to 24,000 by 2016.": {
+    "search_term": "",
+    "media_type": "line_graph",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {
+      "points": "point 1: 9,000, point 2: 1996, point 3: 24,000, point 4: 2016., point 5: 39"
+    }
+  },
+  "Today,": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ],
+    "data": {}
+  },
+  "39% of every shot taken comes": {
+    "search_term": "",
+    "media_type": "line_graph",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12
+    ],
+    "data": {
+      "points": "point 1: 9,000, point 2: 1996, point 3: 24,000, point 4: 2016., point 5: 39"
+    }
+  },
+  "from behind the arc.": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "The game did not quietly evolve.": {
+    "search_term": "game",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "One stubborn player dragged it,": {
+    "search_term": "One stubborn player",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ],
+    "data": {}
+  },
+  "kicking and": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      49
+    ],
+    "data": {}
+  },
+  "screaming, into": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1000,
+      8,
+      39
+    ],
+    "data": {}
+  },
+  "a completely different sport.": {
+    "search_term": "completely sport",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [],
+    "data": {}
+  }
+}

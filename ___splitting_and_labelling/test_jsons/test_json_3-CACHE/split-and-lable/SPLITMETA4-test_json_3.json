@@ -1,0 +1,581 @@
+[
+  [
+    "In 1996,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "1996",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "1996"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        0,
+        3
+      ],
+      "list": null
+    }
+  ],
+  [
+    "a rookie guard shot 511 three pointers and",
+    [
+      49
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "511",
+          "label": "CARDINAL"
+        },
+        {
+          "text": "three",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "rookie",
+        "guard",
+        "shot",
+        "511",
+        "three",
+        "pointers"
+      ],
+      "nouns": [
+        "rookie",
+        "guard",
+        "pointer"
+      ],
+      "head_noun": "guard",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        3,
+        11
+      ],
+      "list": null
+    }
+  ],
+  [
+    "missed 375 of them.",
+    [
+      1005,
+      43,
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "375",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "missed",
+        "375"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        11,
+        16
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Every coach in the league told him to stop.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "coach",
+        "league"
+      ],
+      "nouns": [
+        "coach",
+        "league"
+      ],
+      "head_noun": "coach",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 9,
+      "span": [
+        16,
+        26
+      ],
+      "list": null
+    }
+  ],
+  [
+    "He shot more",
+    [
+      18
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "shot"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        26,
+        29
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the next season.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "the next season",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "next",
+        "season"
+      ],
+      "nouns": [
+        "season"
+      ],
+      "head_noun": "season",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        29,
+        33
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Attempts across the league grew",
+    [
+      12
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "attempts",
+        "league",
+        "grew"
+      ],
+      "nouns": [
+        "attempt",
+        "league"
+      ],
+      "head_noun": "attempt",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        33,
+        38
+      ],
+      "list": null
+    }
+  ],
+  [
+    "from 9,000 a year in",
+    [
+      24
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "9,000",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "9,000",
+        "year"
+      ],
+      "nouns": [
+        "year"
+      ],
+      "head_noun": "year",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        38,
+        43
+      ],
+      "list": null
+    }
+  ],
+  [
+    "1996 to 24,000 by 2016.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "1996",
+          "label": "DATE"
+        },
+        {
+          "text": "24,000",
+          "label": "CARDINAL"
+        },
+        {
+          "text": "2016",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "1996",
+        "24,000",
+        "2016"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        43,
+        49
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Today,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Today",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "today"
+      ],
+      "nouns": [
+        "today"
+      ],
+      "head_noun": "today",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        49,
+        51
+      ],
+      "list": null
+    }
+  ],
+  [
+    "39% of every shot taken comes",
+    [
+      12
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "39%",
+          "label": "PERCENT"
+        }
+      ],
+      "keywords": [
+        "39",
+        "shot"
+      ],
+      "nouns": [
+        "shot"
+      ],
+      "head_noun": "shot",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        51,
+        58
+      ],
+      "list": null
+    }
+  ],
+  [
+    "from behind the arc.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "arc"
+      ],
+      "nouns": [
+        "arc"
+      ],
+      "head_noun": "arc",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        58,
+        63
+      ],
+      "list": null
+    }
+  ],
+  [
+    "The game did not quietly evolve.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "game",
+        "evolve"
+      ],
+      "nouns": [
+        "game"
+      ],
+      "head_noun": "game",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        63,
+        70
+      ],
+      "list": null
+    }
+  ],
+  [
+    "One stubborn player dragged it,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "One",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "one",
+        "stubborn",
+        "player",
+        "dragged"
+      ],
+      "nouns": [
+        "player"
+      ],
+      "head_noun": "player",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        70,
+        76
+      ],
+      "list": null
+    }
+  ],
+  [
+    "kicking and",
+    [
+      49
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "kicking"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        76,
+        78
+      ],
+      "list": null
+    }
+  ],
+  [
+    "screaming, into",
+    [
+      1000,
+      8,
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "screaming"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        78,
+        81
+      ],
+      "list": null
+    }
+  ],
+  [
+    "a completely different sport.",
+    [],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "sport"
+      ],
+      "nouns": [
+        "sport"
+      ],
+      "head_noun": "sport",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "league",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        81,
+        86
+      ],
+      "list": null
+    }
+  ]
+]

@@ -1,0 +1,343 @@
+{
+  "I got fired on a Tuesday.": {
+    "search_term": "Tuesday",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "Not laid off.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "Fired.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "My manager called me into": {
+    "search_term": "My manager called me into",
+    "media_type": "stock",
+    "modifiers": [
+      "collage"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      15
+    ],
+    "data": {}
+  },
+  "the small room with the broken blind, said": {
+    "search_term": "broken blind",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      45
+    ],
+    "data": {}
+  },
+  "the words,": {
+    "search_term": "the words",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      25
+    ],
+    "stamp_source": "stock",
+    "data": {}
+  },
+  "and stared": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      39
+    ],
+    "data": {}
+  },
+  "at his hands the whole time.": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "I walked out to": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      38
+    ],
+    "data": {}
+  },
+  "my car,": {
+    "search_term": "my car",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ],
+    "data": {}
+  },
+  "sat there,": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      8
+    ],
+    "data": {}
+  },
+  "and did not cry.": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "Then I drove": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12
+    ],
+    "data": {}
+  },
+  "to the beach and": {
+    "search_term": "beach",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      49
+    ],
+    "data": {}
+  },
+  "ate an entire bag of crisps.": {
+    "search_term": "crisps",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1005,
+      12,
+      1
+    ],
+    "data": {}
+  },
+  "Two years later,": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ],
+    "data": {}
+  },
+  "that company folded.": {
+    "search_term": "company",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "I am not saying": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      45
+    ],
+    "data": {}
+  },
+  "that was my doing.": {
+    "search_term": "my doing",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "I am saying the crisps were incredible.": {
+    "search_term": "crisps",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [],
+    "data": {}
+  }
+}

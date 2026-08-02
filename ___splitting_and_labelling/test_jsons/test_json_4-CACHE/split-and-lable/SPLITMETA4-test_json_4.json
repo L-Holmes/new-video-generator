@@ -1,0 +1,607 @@
+[
+  [
+    "I got fired on a Tuesday.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Tuesday",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "fired",
+        "tuesday"
+      ],
+      "nouns": [
+        "tuesday"
+      ],
+      "head_noun": "tuesday",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        0,
+        7
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Not laid off.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "laid"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        7,
+        11
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Fired.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "fired"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        11,
+        13
+      ],
+      "list": null
+    }
+  ],
+  [
+    "My manager called me into",
+    [
+      15
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "manager"
+      ],
+      "nouns": [
+        "manager"
+      ],
+      "head_noun": "manager",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        13,
+        18
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the small room with the broken blind, said",
+    [
+      45
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "small",
+        "room",
+        "broken",
+        "blind"
+      ],
+      "nouns": [
+        "room",
+        "blind"
+      ],
+      "head_noun": "room",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        18,
+        27
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the words,",
+    [
+      25
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "words"
+      ],
+      "nouns": [
+        "word"
+      ],
+      "head_noun": "word",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        27,
+        30
+      ],
+      "list": null
+    }
+  ],
+  [
+    "and stared",
+    [
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "stared"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        30,
+        32
+      ],
+      "list": null
+    }
+  ],
+  [
+    "at his hands the whole time.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "hands",
+        "time"
+      ],
+      "nouns": [
+        "hand",
+        "time"
+      ],
+      "head_noun": "hand",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        32,
+        39
+      ],
+      "list": null
+    }
+  ],
+  [
+    "I walked out to",
+    [
+      38
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "walked"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        39,
+        43
+      ],
+      "list": null
+    }
+  ],
+  [
+    "my car,",
+    [
+      7
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "car"
+      ],
+      "nouns": [
+        "car"
+      ],
+      "head_noun": "car",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        43,
+        46
+      ],
+      "list": null
+    }
+  ],
+  [
+    "sat there,",
+    [
+      8
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "sat"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        46,
+        49
+      ],
+      "list": null
+    }
+  ],
+  [
+    "and did not cry.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "cry"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        49,
+        54
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Then I drove",
+    [
+      12
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "drove"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        54,
+        57
+      ],
+      "list": null
+    }
+  ],
+  [
+    "to the beach and",
+    [
+      49
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "beach"
+      ],
+      "nouns": [
+        "beach"
+      ],
+      "head_noun": "beach",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        57,
+        61
+      ],
+      "list": null
+    }
+  ],
+  [
+    "ate an entire bag of crisps.",
+    [
+      1005,
+      12,
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "ate",
+        "bag",
+        "crisps"
+      ],
+      "nouns": [
+        "bag",
+        "crisp"
+      ],
+      "head_noun": "bag",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        61,
+        68
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Two years later,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Two years later",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "two",
+        "years"
+      ],
+      "nouns": [
+        "year"
+      ],
+      "head_noun": "year",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        68,
+        72
+      ],
+      "list": null
+    }
+  ],
+  [
+    "that company folded.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "company",
+        "folded"
+      ],
+      "nouns": [
+        "company"
+      ],
+      "head_noun": "company",
+      "demonstrative": true,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        72,
+        76
+      ],
+      "list": null
+    }
+  ],
+  [
+    "I am not saying",
+    [
+      45
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        76,
+        80
+      ],
+      "list": null
+    }
+  ],
+  [
+    "that was my doing.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "doing"
+      ],
+      "nouns": [
+        "doing"
+      ],
+      "head_noun": "doing",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        80,
+        85
+      ],
+      "list": null
+    }
+  ],
+  [
+    "I am saying the crisps were incredible.",
+    [],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "crisps",
+        "incredible"
+      ],
+      "nouns": [
+        "crisp"
+      ],
+      "head_noun": "crisp",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "crisp",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        85,
+        93
+      ],
+      "list": null
+    }
+  ]
+]

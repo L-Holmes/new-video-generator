@@ -1,0 +1,716 @@
+[
+  [
+    "Skip Rome.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Skip Rome",
+          "label": "PERSON"
+        }
+      ],
+      "keywords": [
+        "skip",
+        "rome"
+      ],
+      "nouns": [
+        "skip",
+        "rome"
+      ],
+      "head_noun": "rome",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        0,
+        3
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Fly into Bologna instead.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Bologna",
+          "label": "PERSON"
+        }
+      ],
+      "keywords": [
+        "fly",
+        "bologna"
+      ],
+      "nouns": [
+        "bologna"
+      ],
+      "head_noun": "bologna",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        3,
+        8
+      ],
+      "list": null
+    }
+  ],
+  [
+    "It sits",
+    [
+      18
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "sits"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        8,
+        10
+      ],
+      "list": null
+    }
+  ],
+  [
+    "40 minutes from",
+    [
+      14
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "40 minutes",
+          "label": "TIME"
+        }
+      ],
+      "keywords": [
+        "40",
+        "minutes"
+      ],
+      "nouns": [
+        "minute"
+      ],
+      "head_noun": "minute",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        10,
+        13
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Florence,",
+    [
+      7
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Florence",
+          "label": "ORG"
+        }
+      ],
+      "keywords": [
+        "florence"
+      ],
+      "nouns": [
+        "florence"
+      ],
+      "head_noun": "florence",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        13,
+        15
+      ],
+      "list": null
+    }
+  ],
+  [
+    "90 minutes from",
+    [
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "90 minutes",
+          "label": "TIME"
+        }
+      ],
+      "keywords": [
+        "90",
+        "minutes"
+      ],
+      "nouns": [
+        "minute"
+      ],
+      "head_noun": "minute",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        15,
+        18
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Venice,",
+    [
+      25
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Venice",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "venice"
+      ],
+      "nouns": [
+        "venice"
+      ],
+      "head_noun": "venice",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        18,
+        20
+      ],
+      "list": null
+    }
+  ],
+  [
+    "and nobody is there.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        20,
+        25
+      ],
+      "list": null
+    }
+  ],
+  [
+    "The old centre is wrapped in",
+    [
+      29
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "old",
+        "centre",
+        "wrapped"
+      ],
+      "nouns": [
+        "centre"
+      ],
+      "head_noun": "centre",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        25,
+        31
+      ],
+      "list": null
+    }
+  ],
+  [
+    "porticoes:",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "porticoes"
+      ],
+      "nouns": [
+        "portico"
+      ],
+      "head_noun": "portico",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        31,
+        33
+      ],
+      "list": null
+    }
+  ],
+  [
+    "38 kilometres of covered walkway, so",
+    [
+      10
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "38 kilometres",
+          "label": "QUANTITY"
+        }
+      ],
+      "keywords": [
+        "38",
+        "kilometres",
+        "covered",
+        "walkway"
+      ],
+      "nouns": [
+        "kilometre",
+        "walkway"
+      ],
+      "head_noun": "kilometre",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        33,
+        40
+      ],
+      "list": null
+    }
+  ],
+  [
+    "it can pour with",
+    [
+      1000,
+      12,
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "pour"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        40,
+        44
+      ],
+      "list": null
+    }
+  ],
+  [
+    "rain and you never get",
+    [
+      54
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "rain"
+      ],
+      "nouns": [
+        "rain"
+      ],
+      "head_noun": "rain",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        44,
+        49
+      ],
+      "list": null
+    }
+  ],
+  [
+    "wet.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "wet"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        49,
+        51
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Eat tagliatelle al ragu,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "eat",
+        "tagliatelle",
+        "al",
+        "ragu"
+      ],
+      "nouns": [
+        "tagliatelle",
+        "al",
+        "ragu"
+      ],
+      "head_noun": "ragu",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        51,
+        56
+      ],
+      "list": null
+    }
+  ],
+  [
+    "not spaghetti bolognese,",
+    [
+      9
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "spaghetti",
+        "bolognese"
+      ],
+      "nouns": [
+        "bolognese"
+      ],
+      "head_noun": "bolognese",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        56,
+        60
+      ],
+      "list": null
+    }
+  ],
+  [
+    "which does not exist here.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        60,
+        66
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Climb the Asinelli tower at sunset.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "climb",
+        "asinelli",
+        "tower",
+        "sunset"
+      ],
+      "nouns": [
+        "asinelli",
+        "tower",
+        "sunset"
+      ],
+      "head_noun": "tower",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        66,
+        73
+      ],
+      "list": null
+    }
+  ],
+  [
+    "That is 498 steps.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "498",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "498",
+        "steps"
+      ],
+      "nouns": [
+        "step"
+      ],
+      "head_noun": "step",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        73,
+        78
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Then walk",
+    [
+      12
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "walk"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        78,
+        80
+      ],
+      "list": null
+    }
+  ],
+  [
+    "back down and drink a spritz for",
+    [
+      24
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "drink",
+        "spritz"
+      ],
+      "nouns": [
+        "spritz"
+      ],
+      "head_noun": "spritz",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        80,
+        87
+      ],
+      "list": null
+    }
+  ],
+  [
+    "three euros.",
+    [],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "three",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "three",
+        "euros"
+      ],
+      "nouns": [
+        "euro"
+      ],
+      "head_noun": "euro",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "minute",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        87,
+        90
+      ],
+      "list": null
+    }
+  ]
+]

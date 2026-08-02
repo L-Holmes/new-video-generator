@@ -1,0 +1,346 @@
+[
+  [
+    "You are not procrastinating because you are lazy.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "procrastinating",
+        "lazy"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        0,
+        9
+      ],
+      "list": null
+    }
+  ],
+  [
+    "You are procrastinating because finishing means finding out. As long as the",
+    [
+      1008,
+      1,
+      1007,
+      41
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "procrastinating",
+        "finishing"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 12,
+      "span": [
+        9,
+        22
+      ],
+      "list": null
+    }
+  ],
+  [
+    "essay is unwritten,",
+    [
+      7
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "essay",
+        "unwritten"
+      ],
+      "nouns": [
+        "essay"
+      ],
+      "head_noun": "essay",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        22,
+        26
+      ],
+      "list": null
+    }
+  ],
+  [
+    "it could still be brilliant.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "brilliant"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        26,
+        32
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Starting is cheap.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "cheap"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        32,
+        36
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Finishing is a verdict.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "finishing",
+        "verdict"
+      ],
+      "nouns": [
+        "finishing",
+        "verdict"
+      ],
+      "head_noun": "finishing",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        36,
+        41
+      ],
+      "list": null
+    }
+  ],
+  [
+    "So what actually helps?",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        41,
+        46
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Making the thing smaller than",
+    [
+      39
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "thing",
+        "smaller"
+      ],
+      "nouns": [
+        "thing"
+      ],
+      "head_noun": "thing",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        46,
+        51
+      ],
+      "list": null
+    }
+  ],
+  [
+    "your fear of it.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "fear"
+      ],
+      "nouns": [
+        "fear"
+      ],
+      "head_noun": "fear",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        51,
+        56
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Write one bad sentence.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "one",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "write",
+        "one",
+        "bad",
+        "sentence"
+      ],
+      "nouns": [
+        "sentence"
+      ],
+      "head_noun": "sentence",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        56,
+        61
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Fear cannot survive contact with a first draft.",
+    [],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "first",
+          "label": "ORDINAL"
+        }
+      ],
+      "keywords": [
+        "fear",
+        "survive",
+        "contact",
+        "first",
+        "draft"
+      ],
+      "nouns": [
+        "fear",
+        "contact",
+        "draft"
+      ],
+      "head_noun": "fear",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "fear",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 9,
+      "span": [
+        61,
+        71
+      ],
+      "list": null
+    }
+  ]
+]

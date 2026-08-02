@@ -40,3 +40,40 @@ MANUAL_TAGGING.
 Never delete: MEDIA_TYPES.py, prompts/, BASE_RULES.md, MASTER_RULES.md,
 your scripts and finished jsons. Everything under *-CACHE and TESTING_* is
 regenerable (see other-markdown-guides/RESET_AFTER_TEST.md).
+
+
+# Testing
+
+## trying the auto tagger on the ten fixture scripts
+
+```
+uv run TEST_AUTO_TAGGER.py --list        what the ten fixtures are
+uv run TEST_AUTO_TAGGER.py --test 1      fixture 1: auto-tag it, then open it
+```
+
+One fixture at a time. `--test <n>` resets test_jsons/test_json_<n>.json to
+its pristine untagged copy, runs Auto_add_mediatypes.py over it (the full
+detection table and flowchart printout), prints a line-by-line review of what
+it decided, then opens MANUAL_TAGGING.py on that same file so you can see the
+result as a page. Ctrl-C the tagger when you have finished with that one and
+run the next number. Nothing you do there touches a real script.
+
+The ten are different KINDS of short video on purpose — a mystery, a recipe,
+sports stats, a personal story, a money video, a nature fact, a product
+review, a travel guide, a history mystery, and a piece of advice with almost
+nothing filmable in it. Each is split by the real sentence splitter, so they
+arrive with real rule_ids, list runs and reveals, exactly like step 1's
+output.
+
+```
+uv run TEST_AUTO_TAGGER.py --test 4 --no-manual   printout only, no browser
+uv run TEST_AUTO_TAGGER.py --test 4 --keep        carry on, don't reset
+uv run TEST_AUTO_TAGGER.py --all                  all ten + a scoreboard,
+                                                  no browser — what you watch
+                                                  while changing STEP 2 rules
+uv run TEST_AUTO_TAGGER.py --build --force        re-split the scripts (only
+                                                  after a splitter change)
+```
+
+Judge it by the house rule: a row left empty is fine, a row tagged WRONG is
+the expensive one. Fixtures, sources and what's regenerable: test_jsons/README.md.

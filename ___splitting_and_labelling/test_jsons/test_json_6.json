@@ -1,0 +1,312 @@
+{
+  "The immortal jellyfish is": {
+    "search_term": "The immortal jellyfish is",
+    "media_type": "stock",
+    "modifiers": [
+      "collage"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      15
+    ],
+    "data": {}
+  },
+  "roughly the size of your fingernail.": {
+    "search_term": "your fingernail",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "When it is starving,": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1001,
+      10,
+      7
+    ],
+    "data": {}
+  },
+  "injured, or simply old, it does something": {
+    "search_term": "injured, or simply old, it does something",
+    "media_type": "stock",
+    "modifiers": [
+      "collage"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1005,
+      8,
+      15
+    ],
+    "data": {}
+  },
+  "no other animal on": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      39
+    ],
+    "data": {}
+  },
+  "Earth can do.": {
+    "search_term": "Earth",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "It turns back into a baby.": {
+    "search_term": "baby",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "The cells rewind,": {
+    "search_term": "cells",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ],
+    "data": {}
+  },
+  "the tentacles retract,": {
+    "search_term": "tentacles",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      8
+    ],
+    "data": {}
+  },
+  "and it sinks": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12
+    ],
+    "data": {}
+  },
+  "to the seafloor as": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      39
+    ],
+    "data": {}
+  },
+  "a polyp.": {
+    "search_term": "polyp",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "Then it grows all the way up again.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1008,
+      54,
+      1
+    ],
+    "data": {}
+  },
+  "Researchers in Kyoto watched": {
+    "search_term": "Kyoto",
+    "media_type": "wikipedia",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      45
+    ],
+    "data": {}
+  },
+  "a single one do": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "caption"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      24
+    ],
+    "data": {}
+  },
+  "this fourteen times.": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "It is not truly immortal.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "It is just very, very hard to finish.": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [],
+    "data": {}
+  }
+}

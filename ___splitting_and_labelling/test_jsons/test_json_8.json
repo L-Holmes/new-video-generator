@@ -1,0 +1,376 @@
+{
+  "Skip Rome.": {
+    "search_term": "Skip Rome",
+    "media_type": "wikipedia",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "Fly into Bologna instead.": {
+    "search_term": "Bologna",
+    "media_type": "wikipedia",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "It sits": {
+    "search_term": "",
+    "media_type": "bar_chart",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      18
+    ],
+    "data": {
+      "bars": "bar 1: 40, bar 2: 90"
+    }
+  },
+  "40 minutes from": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      14
+    ],
+    "data": {}
+  },
+  "Florence,": {
+    "search_term": "",
+    "media_type": "bar_chart",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ],
+    "data": {
+      "bars": "bar 1: 40, bar 2: 90"
+    }
+  },
+  "90 minutes from": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      39
+    ],
+    "data": {}
+  },
+  "Venice,": {
+    "search_term": "",
+    "media_type": "bar_chart",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      25
+    ],
+    "data": {
+      "bars": "bar 1: 40, bar 2: 90"
+    }
+  },
+  "and nobody is there.": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "The old centre is wrapped in": {
+    "search_term": "old centre",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      29
+    ],
+    "data": {}
+  },
+  "porticoes:": {
+    "search_term": "porticoes",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "38 kilometres of covered walkway, so": {
+    "search_term": "covered walkway",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      10
+    ],
+    "data": {}
+  },
+  "it can pour with": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1000,
+      12,
+      39
+    ],
+    "data": {}
+  },
+  "rain and you never get": {
+    "search_term": "rain",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      54
+    ],
+    "data": {}
+  },
+  "wet.": {
+    "search_term": "wet",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "Eat tagliatelle al ragu,": {
+    "search_term": "tagliatelle al ragu",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      7
+    ],
+    "data": {}
+  },
+  "not spaghetti bolognese,": {
+    "search_term": "bolognese",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      9
+    ],
+    "data": {}
+  },
+  "which does not exist here.": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "Climb the Asinelli tower at sunset.": {
+    "search_term": "Asinelli tower",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "That is 498 steps.": {
+    "search_term": "498 steps",
+    "media_type": "stock",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      1
+    ],
+    "data": {}
+  },
+  "Then walk": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      12
+    ],
+    "data": {}
+  },
+  "back down and drink a spritz for": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "caption"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      24
+    ],
+    "data": {}
+  },
+  "three euros.": {
+    "search_term": "three euros",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [],
+    "data": {}
+  }
+}

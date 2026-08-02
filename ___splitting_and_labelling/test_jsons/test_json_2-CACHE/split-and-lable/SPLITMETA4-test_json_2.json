@@ -1,0 +1,638 @@
+[
+  [
+    "Stop chopping your garlic.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "chopping",
+        "garlic"
+      ],
+      "nouns": [
+        "garlic"
+      ],
+      "head_noun": "garlic",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        0,
+        5
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Here's the thing.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "thing"
+      ],
+      "nouns": [
+        "thing"
+      ],
+      "head_noun": "thing",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        5,
+        10
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Everything you love about garlic bread comes from",
+    [
+      14
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "love",
+        "garlic",
+        "bread"
+      ],
+      "nouns": [
+        "bread"
+      ],
+      "head_noun": "bread",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        10,
+        18
+      ],
+      "list": null
+    }
+  ],
+  [
+    "three things:",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "three",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "three",
+        "things"
+      ],
+      "nouns": [
+        "thing"
+      ],
+      "head_noun": "thing",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        18,
+        21
+      ],
+      "list": null
+    }
+  ],
+  [
+    "butter,",
+    [
+      8
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "butter"
+      ],
+      "nouns": [
+        "butter"
+      ],
+      "head_noun": "butter",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        21,
+        23
+      ],
+      "list": null
+    }
+  ],
+  [
+    "salt, and",
+    [
+      15
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "salt"
+      ],
+      "nouns": [
+        "salt"
+      ],
+      "head_noun": "salt",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        23,
+        26
+      ],
+      "list": null
+    }
+  ],
+  [
+    "time.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "time"
+      ],
+      "nouns": [
+        "time"
+      ],
+      "head_noun": "time",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        26,
+        28
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Take one whole head,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "one",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "one",
+        "head"
+      ],
+      "nouns": [
+        "head"
+      ],
+      "head_noun": "head",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        28,
+        33
+      ],
+      "list": null
+    }
+  ],
+  [
+    "slice the top clean off, and drown it in",
+    [
+      1005,
+      12,
+      15
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "slice",
+        "top",
+        "clean",
+        "drown"
+      ],
+      "nouns": [
+        "top"
+      ],
+      "head_noun": "top",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 9,
+      "span": [
+        33,
+        43
+      ],
+      "list": null
+    }
+  ],
+  [
+    "olive oil.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "olive",
+        "oil"
+      ],
+      "nouns": [
+        "oil"
+      ],
+      "head_noun": "oil",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        43,
+        46
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Ninety minutes in the oven at 150 degrees.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Ninety minutes",
+          "label": "TIME"
+        },
+        {
+          "text": "150 degrees",
+          "label": "QUANTITY"
+        }
+      ],
+      "keywords": [
+        "ninety",
+        "minutes",
+        "oven",
+        "150",
+        "degrees"
+      ],
+      "nouns": [
+        "minute",
+        "oven",
+        "degree"
+      ],
+      "head_noun": "minute",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        46,
+        55
+      ],
+      "list": null
+    }
+  ],
+  [
+    "It comes out golden,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "golden"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        55,
+        60
+      ],
+      "list": null
+    }
+  ],
+  [
+    "sweet,",
+    [
+      25
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "sweet"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        60,
+        62
+      ],
+      "list": null
+    }
+  ],
+  [
+    "and soft enough to spread with",
+    [
+      1004,
+      47,
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "soft",
+        "spread"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        62,
+        68
+      ],
+      "list": null
+    }
+  ],
+  [
+    "a spoon.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "spoon"
+      ],
+      "nouns": [
+        "spoon"
+      ],
+      "head_noun": "spoon",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        68,
+        71
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Squeeze the cloves straight onto warm sourdough. That is it. No",
+    [
+      1008,
+      1,
+      1007,
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "squeeze",
+        "cloves",
+        "warm",
+        "sourdough"
+      ],
+      "nouns": [
+        "clove",
+        "sourdough"
+      ],
+      "head_noun": "clove",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 11,
+      "span": [
+        71,
+        84
+      ],
+      "list": null
+    }
+  ],
+  [
+    "pan,",
+    [
+      7
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "pan"
+      ],
+      "nouns": [
+        "pan"
+      ],
+      "head_noun": "pan",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        84,
+        86
+      ],
+      "list": null
+    }
+  ],
+  [
+    "no chopping",
+    [
+      61
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "chopping"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        86,
+        88
+      ],
+      "list": null
+    }
+  ],
+  [
+    "board,",
+    [
+      8
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "board"
+      ],
+      "nouns": [
+        "board"
+      ],
+      "head_noun": "board",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        88,
+        90
+      ],
+      "list": null
+    }
+  ],
+  [
+    "no crying.",
+    [],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "crying"
+      ],
+      "nouns": [
+        "crying"
+      ],
+      "head_noun": "crying",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "garlic",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        90,
+        93
+      ],
+      "list": null
+    }
+  ]
+]

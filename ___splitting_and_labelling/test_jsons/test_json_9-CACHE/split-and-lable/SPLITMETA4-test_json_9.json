@@ -1,0 +1,569 @@
+[
+  [
+    "In 1518,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "1518",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "1518"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        0,
+        3
+      ],
+      "list": null
+    }
+  ],
+  [
+    "a woman stepped",
+    [
+      12
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "woman",
+        "stepped"
+      ],
+      "nouns": [
+        "woman"
+      ],
+      "head_noun": "woman",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        3,
+        6
+      ],
+      "list": null
+    }
+  ],
+  [
+    "into a street in",
+    [
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "street"
+      ],
+      "nouns": [
+        "street"
+      ],
+      "head_noun": "street",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        6,
+        10
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Strasbourg and began to dance.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Strasbourg",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "strasbourg",
+        "dance"
+      ],
+      "nouns": [
+        "strasbourg"
+      ],
+      "head_noun": "strasbourg",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        10,
+        16
+      ],
+      "list": null
+    }
+  ],
+  [
+    "She did not stop.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        16,
+        21
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Within a week,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "a week",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "week"
+      ],
+      "nouns": [
+        "week"
+      ],
+      "head_noun": "week",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        21,
+        25
+      ],
+      "list": null
+    }
+  ],
+  [
+    "34 people had joined her.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "34",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "34",
+        "people",
+        "joined"
+      ],
+      "nouns": [
+        "people"
+      ],
+      "head_noun": "people",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        25,
+        31
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Within a month,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "a month",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "month"
+      ],
+      "nouns": [
+        "month"
+      ],
+      "head_noun": "month",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        31,
+        35
+      ],
+      "list": null
+    }
+  ],
+  [
+    "there were 400.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "400",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "400"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        35,
+        39
+      ],
+      "list": null
+    }
+  ],
+  [
+    "The city's answer was to",
+    [
+      32
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "city",
+        "answer"
+      ],
+      "nouns": [
+        "city",
+        "answer"
+      ],
+      "head_noun": "city",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        39,
+        45
+      ],
+      "list": null
+    }
+  ],
+  [
+    "hire musicians, on",
+    [
+      15
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "hire",
+        "musicians"
+      ],
+      "nouns": [
+        "musician"
+      ],
+      "head_noun": "musician",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        45,
+        49
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the theory that",
+    [
+      10
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "theory"
+      ],
+      "nouns": [
+        "theory"
+      ],
+      "head_noun": "theory",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        49,
+        52
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the dancers simply needed to get it out of",
+    [
+      15
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "dancers"
+      ],
+      "nouns": [
+        "dancer"
+      ],
+      "head_noun": "dancer",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 9,
+      "span": [
+        52,
+        61
+      ],
+      "list": null
+    }
+  ],
+  [
+    "their system.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "system"
+      ],
+      "nouns": [
+        "system"
+      ],
+      "head_noun": "system",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        61,
+        64
+      ],
+      "list": null
+    }
+  ],
+  [
+    "People danced until they collapsed.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "people",
+        "danced",
+        "collapsed"
+      ],
+      "nouns": [
+        "people"
+      ],
+      "head_noun": "people",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        64,
+        70
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Some of them died.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "died"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        70,
+        75
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Nobody has ever explained it.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        75,
+        81
+      ],
+      "list": null
+    }
+  ],
+  [
+    "The best guess we have involves mouldy bread.",
+    [],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "best",
+        "guess",
+        "mouldy",
+        "bread"
+      ],
+      "nouns": [
+        "guess",
+        "bread"
+      ],
+      "head_noun": "guess",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "street",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        81,
+        90
+      ],
+      "list": null
+    }
+  ]
+]

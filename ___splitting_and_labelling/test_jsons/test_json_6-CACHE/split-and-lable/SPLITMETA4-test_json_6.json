@@ -1,0 +1,564 @@
+[
+  [
+    "The immortal jellyfish is",
+    [
+      15
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "immortal",
+        "jellyfish"
+      ],
+      "nouns": [
+        "jellyfish"
+      ],
+      "head_noun": "jellyfish",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        0,
+        4
+      ],
+      "list": null
+    }
+  ],
+  [
+    "roughly the size of your fingernail.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "size",
+        "fingernail"
+      ],
+      "nouns": [
+        "size",
+        "fingernail"
+      ],
+      "head_noun": "size",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        4,
+        11
+      ],
+      "list": null
+    }
+  ],
+  [
+    "When it is starving,",
+    [
+      1001,
+      10,
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "starving"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        11,
+        16
+      ],
+      "list": null
+    }
+  ],
+  [
+    "injured, or simply old, it does something",
+    [
+      1005,
+      8,
+      15
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "injured",
+        "old"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        16,
+        25
+      ],
+      "list": null
+    }
+  ],
+  [
+    "no other animal on",
+    [
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "animal"
+      ],
+      "nouns": [
+        "animal"
+      ],
+      "head_noun": "animal",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        25,
+        29
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Earth can do.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Earth",
+          "label": "LOC"
+        }
+      ],
+      "keywords": [
+        "earth"
+      ],
+      "nouns": [
+        "earth"
+      ],
+      "head_noun": "earth",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        29,
+        33
+      ],
+      "list": null
+    }
+  ],
+  [
+    "It turns back into a baby.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "turns",
+        "baby"
+      ],
+      "nouns": [
+        "baby"
+      ],
+      "head_noun": "baby",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        33,
+        40
+      ],
+      "list": null
+    }
+  ],
+  [
+    "The cells rewind,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "cells",
+        "rewind"
+      ],
+      "nouns": [
+        "cell"
+      ],
+      "head_noun": "cell",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        40,
+        44
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the tentacles retract,",
+    [
+      8
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "tentacles",
+        "retract"
+      ],
+      "nouns": [
+        "tentacle"
+      ],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        44,
+        48
+      ],
+      "list": null
+    }
+  ],
+  [
+    "and it sinks",
+    [
+      12
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "sinks"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        48,
+        51
+      ],
+      "list": null
+    }
+  ],
+  [
+    "to the seafloor as",
+    [
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "seafloor"
+      ],
+      "nouns": [
+        "seafloor"
+      ],
+      "head_noun": "seafloor",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        51,
+        55
+      ],
+      "list": null
+    }
+  ],
+  [
+    "a polyp.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "polyp"
+      ],
+      "nouns": [
+        "polyp"
+      ],
+      "head_noun": "polyp",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        55,
+        58
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Then it grows all the way up again.",
+    [
+      1008,
+      54,
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "grows",
+        "way"
+      ],
+      "nouns": [
+        "way"
+      ],
+      "head_noun": "way",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        58,
+        67
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Researchers in Kyoto watched",
+    [
+      45
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "Kyoto",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "researchers",
+        "kyoto",
+        "watched"
+      ],
+      "nouns": [
+        "researcher",
+        "kyoto"
+      ],
+      "head_noun": "researcher",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        67,
+        71
+      ],
+      "list": null
+    }
+  ],
+  [
+    "a single one do",
+    [
+      24
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "one"
+      ],
+      "nouns": [
+        "one"
+      ],
+      "head_noun": "one",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        71,
+        75
+      ],
+      "list": null
+    }
+  ],
+  [
+    "this fourteen times.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "fourteen",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "fourteen",
+        "times"
+      ],
+      "nouns": [
+        "time"
+      ],
+      "head_noun": "time",
+      "demonstrative": true,
+      "pronoun_subject": false,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        75,
+        79
+      ],
+      "list": null
+    }
+  ],
+  [
+    "It is not truly immortal.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "immortal"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        79,
+        85
+      ],
+      "list": null
+    }
+  ],
+  [
+    "It is just very, very hard to finish.",
+    [],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "hard",
+        "finish"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "jellyfish",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        85,
+        95
+      ],
+      "list": null
+    }
+  ]
+]

@@ -1,0 +1,672 @@
+[
+  [
+    "A flat white costs about four pounds.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "about four pounds",
+          "label": "QUANTITY"
+        }
+      ],
+      "keywords": [
+        "flat",
+        "white",
+        "costs",
+        "four",
+        "pounds"
+      ],
+      "nouns": [
+        "cost",
+        "pound"
+      ],
+      "head_noun": "cost",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        0,
+        8
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Buy one every working day and you hand",
+    [
+      18
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "one",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "buy",
+        "one",
+        "working",
+        "day",
+        "hand"
+      ],
+      "nouns": [
+        "day"
+      ],
+      "head_noun": "day",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        8,
+        16
+      ],
+      "list": null
+    }
+  ],
+  [
+    "over £1,000 a year.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "over £1,000",
+          "label": "MONEY"
+        }
+      ],
+      "keywords": [
+        "1,000",
+        "year"
+      ],
+      "nouns": [
+        "year"
+      ],
+      "head_noun": "year",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": true,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        16,
+        22
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Invest the same money instead and after",
+    [
+      1005,
+      12,
+      1000,
+      39,
+      15
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "invest",
+        "money"
+      ],
+      "nouns": [
+        "money"
+      ],
+      "head_noun": "money",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        22,
+        29
+      ],
+      "list": null
+    }
+  ],
+  [
+    "thirty years it is worth",
+    [
+      19
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "thirty years",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "thirty",
+        "years",
+        "worth"
+      ],
+      "nouns": [
+        "year"
+      ],
+      "head_noun": "year",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        29,
+        34
+      ],
+      "list": null
+    }
+  ],
+  [
+    "£79,000.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "79,000",
+          "label": "MONEY"
+        }
+      ],
+      "keywords": [
+        "79,000"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": true,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        34,
+        37
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Every pound of that pot splits three ways:",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "three",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "pound",
+        "pot",
+        "splits",
+        "three",
+        "ways"
+      ],
+      "nouns": [
+        "pound",
+        "pot",
+        "way"
+      ],
+      "head_noun": "pound",
+      "demonstrative": true,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        37,
+        46
+      ],
+      "list": null
+    }
+  ],
+  [
+    "45% from the money you put in,",
+    [
+      51
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "45%",
+          "label": "PERCENT"
+        }
+      ],
+      "keywords": [
+        "45",
+        "money",
+        "put"
+      ],
+      "nouns": [
+        "money"
+      ],
+      "head_noun": "money",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        46,
+        55
+      ],
+      "list": null
+    }
+  ],
+  [
+    "35% from growth, and",
+    [
+      15
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "35%",
+          "label": "PERCENT"
+        }
+      ],
+      "keywords": [
+        "35",
+        "growth"
+      ],
+      "nouns": [
+        "growth"
+      ],
+      "head_noun": "growth",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        55,
+        61
+      ],
+      "list": null
+    }
+  ],
+  [
+    "20% from",
+    [
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "20%",
+          "label": "PERCENT"
+        }
+      ],
+      "keywords": [
+        "20"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        61,
+        64
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the growth on",
+    [
+      39
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "growth"
+      ],
+      "nouns": [
+        "growth"
+      ],
+      "head_noun": "growth",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        64,
+        67
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the growth.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "growth"
+      ],
+      "nouns": [
+        "growth"
+      ],
+      "head_noun": "growth",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        67,
+        70
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Here is the part nobody mentions.",
+    [
+      1001,
+      42,
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "part",
+        "mentions"
+      ],
+      "nouns": [
+        "part"
+      ],
+      "head_noun": "part",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        70,
+        77
+      ],
+      "list": null
+    }
+  ],
+  [
+    "68% of the whole thing arrives",
+    [
+      12
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "68%",
+          "label": "PERCENT"
+        }
+      ],
+      "keywords": [
+        "68",
+        "thing",
+        "arrives"
+      ],
+      "nouns": [
+        "thing"
+      ],
+      "head_noun": "thing",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        77,
+        84
+      ],
+      "list": null
+    }
+  ],
+  [
+    "in the final decade.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "the final decade",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "final",
+        "decade"
+      ],
+      "nouns": [
+        "decade"
+      ],
+      "head_noun": "decade",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        84,
+        89
+      ],
+      "list": null
+    }
+  ],
+  [
+    "The first ten years look",
+    [
+      12
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "The first ten years",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "first",
+        "ten",
+        "years"
+      ],
+      "nouns": [
+        "year"
+      ],
+      "head_noun": "year",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        89,
+        94
+      ],
+      "list": null
+    }
+  ],
+  [
+    "like nothing is happening at all.",
+    [
+      1008,
+      54,
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        94,
+        101
+      ],
+      "list": null
+    }
+  ],
+  [
+    "That is the test, and",
+    [
+      1000,
+      1001,
+      15,
+      7,
+      15
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "test"
+      ],
+      "nouns": [
+        "test"
+      ],
+      "head_noun": "test",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        101,
+        107
+      ],
+      "list": null
+    }
+  ],
+  [
+    "most people quit at year four.",
+    [],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "year four",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "most",
+        "people",
+        "quit",
+        "year",
+        "four"
+      ],
+      "nouns": [
+        "people",
+        "year"
+      ],
+      "head_noun": "people",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "growth",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        107,
+        114
+      ],
+      "list": null
+    }
+  ]
+]

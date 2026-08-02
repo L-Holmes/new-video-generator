@@ -1,0 +1,601 @@
+[
+  [
+    "There is a phone box standing in",
+    [
+      1009,
+      12,
+      29
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "phone",
+        "box",
+        "standing"
+      ],
+      "nouns": [
+        "phone",
+        "box"
+      ],
+      "head_noun": "box",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        0,
+        7
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the middle of a field in",
+    [
+      15
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "middle",
+        "field"
+      ],
+      "nouns": [
+        "middle",
+        "field"
+      ],
+      "head_noun": "middle",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        7,
+        13
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Japan.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "Japan",
+          "label": "GPE"
+        }
+      ],
+      "keywords": [
+        "japan"
+      ],
+      "nouns": [
+        "japan"
+      ],
+      "head_noun": "japan",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 1,
+      "span": [
+        13,
+        15
+      ],
+      "list": null
+    }
+  ],
+  [
+    "It is not connected to anything.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "connected"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        15,
+        22
+      ],
+      "list": null
+    }
+  ],
+  [
+    "No line,",
+    [
+      8
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "line"
+      ],
+      "nouns": [
+        "line"
+      ],
+      "head_noun": "line",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        22,
+        25
+      ],
+      "list": null
+    }
+  ],
+  [
+    "no dial tone,",
+    [
+      8
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "dial",
+        "tone"
+      ],
+      "nouns": [
+        "dial",
+        "tone"
+      ],
+      "head_noun": "tone",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        25,
+        29
+      ],
+      "list": null
+    }
+  ],
+  [
+    "no bill.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "bill"
+      ],
+      "nouns": [
+        "bill"
+      ],
+      "head_noun": "bill",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        29,
+        32
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Locals call it the wind phone.",
+    [
+      1
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "locals",
+        "wind",
+        "phone"
+      ],
+      "nouns": [
+        "local",
+        "wind",
+        "phone"
+      ],
+      "head_noun": "local",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        32,
+        39
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Since 2011,",
+    [
+      1001,
+      41,
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [
+        {
+          "text": "2011",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "2011"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        39,
+        42
+      ],
+      "list": null
+    }
+  ],
+  [
+    "more than 30,000 people have travelled",
+    [
+      12
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "more than 30,000",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "30,000",
+        "people",
+        "travelled"
+      ],
+      "nouns": [
+        "people"
+      ],
+      "head_noun": "people",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        42,
+        48
+      ],
+      "list": null
+    }
+  ],
+  [
+    "there to speak to someone who died.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "speak",
+        "died"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        48,
+        56
+      ],
+      "list": null
+    }
+  ],
+  [
+    "They pick up",
+    [
+      38
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "pick"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        56,
+        59
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the handset, they say",
+    [
+      1008,
+      7,
+      45
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "handset"
+      ],
+      "nouns": [
+        "handset"
+      ],
+      "head_noun": "handset",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        59,
+        64
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the thing they never got to say,",
+    [
+      8
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "thing"
+      ],
+      "nouns": [
+        "thing"
+      ],
+      "head_noun": "thing",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        64,
+        72
+      ],
+      "list": null
+    }
+  ],
+  [
+    "and they hang up.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "hang"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        72,
+        77
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Somebody wrote",
+    [
+      12
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "wrote"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        77,
+        79
+      ],
+      "list": null
+    }
+  ],
+  [
+    "in the notebook beside it:\"",
+    [
+      1002,
+      1,
+      5
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "notebook"
+      ],
+      "nouns": [
+        "notebook"
+      ],
+      "head_noun": "notebook",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": true,
+      "n_tokens": 5,
+      "span": [
+        79,
+        86
+      ],
+      "list": null
+    }
+  ],
+  [
+    "I am still setting a place for you at dinner.\"",
+    [
+      1002,
+      1,
+      5
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "setting",
+        "place",
+        "dinner"
+      ],
+      "nouns": [
+        "place",
+        "dinner"
+      ],
+      "head_noun": "place",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": true,
+      "n_tokens": 10,
+      "span": [
+        86,
+        98
+      ],
+      "list": null
+    }
+  ],
+  [
+    "The phone has never rung back.",
+    [],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "phone",
+        "rung"
+      ],
+      "nouns": [
+        "phone"
+      ],
+      "head_noun": "phone",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "phone",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        98,
+        105
+      ],
+      "list": null
+    }
+  ]
+]

@@ -1,0 +1,550 @@
+[
+  [
+    "I have typed on this",
+    [
+      1000,
+      12,
+      19
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "typed"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": true,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        0,
+        5
+      ],
+      "list": null
+    }
+  ],
+  [
+    "£29 keyboard for eight months.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "29",
+          "label": "MONEY"
+        },
+        {
+          "text": "eight months",
+          "label": "DATE"
+        }
+      ],
+      "keywords": [
+        "29",
+        "keyboard",
+        "eight",
+        "months"
+      ],
+      "nouns": [
+        "keyboard",
+        "month"
+      ],
+      "head_noun": "keyboard",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": true,
+      "in_quote": false,
+      "n_tokens": 6,
+      "span": [
+        5,
+        12
+      ],
+      "list": null
+    }
+  ],
+  [
+    "The keys are loud,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "keys",
+        "loud"
+      ],
+      "nouns": [
+        "key"
+      ],
+      "head_noun": "key",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        12,
+        17
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the plastic creaks, and",
+    [
+      15
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "plastic",
+        "creaks"
+      ],
+      "nouns": [
+        "plastic",
+        "creak"
+      ],
+      "head_noun": "creak",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 4,
+      "span": [
+        17,
+        22
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the cable is welded on. It is also the",
+    [
+      1008,
+      1,
+      1007,
+      35
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "cable",
+        "welded"
+      ],
+      "nouns": [
+        "cable"
+      ],
+      "head_noun": "cable",
+      "demonstrative": false,
+      "pronoun_subject": true,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 9,
+      "span": [
+        22,
+        32
+      ],
+      "list": null
+    }
+  ],
+  [
+    "best thing on my desk.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "best",
+        "thing",
+        "desk"
+      ],
+      "nouns": [
+        "thing",
+        "desk"
+      ],
+      "head_noun": "thing",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        32,
+        38
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Compare it to",
+    [
+      1000,
+      39,
+      15
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "compare"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        38,
+        41
+      ],
+      "list": null
+    }
+  ],
+  [
+    "the £180 board I sent back:",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "180",
+          "label": "MONEY"
+        }
+      ],
+      "keywords": [
+        "180",
+        "board",
+        "sent"
+      ],
+      "nouns": [
+        "board"
+      ],
+      "head_noun": "board",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": true,
+      "in_quote": false,
+      "n_tokens": 7,
+      "span": [
+        41,
+        49
+      ],
+      "list": null
+    }
+  ],
+  [
+    "same switches,",
+    [
+      8
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "switches"
+      ],
+      "nouns": [
+        "switch"
+      ],
+      "head_noun": "switch",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        49,
+        52
+      ],
+      "list": null
+    }
+  ],
+  [
+    "same layout,",
+    [
+      8
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "layout"
+      ],
+      "nouns": [
+        "layout"
+      ],
+      "head_noun": "layout",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 2,
+      "span": [
+        52,
+        55
+      ],
+      "list": null
+    }
+  ],
+  [
+    "half the weight.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [
+        {
+          "text": "half",
+          "label": "CARDINAL"
+        }
+      ],
+      "keywords": [
+        "weight"
+      ],
+      "nouns": [
+        "weight"
+      ],
+      "head_noun": "weight",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        55,
+        59
+      ],
+      "list": null
+    }
+  ],
+  [
+    "The expensive one needed software,",
+    [
+      7
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "expensive",
+        "one",
+        "software"
+      ],
+      "nouns": [
+        "software"
+      ],
+      "head_noun": "software",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        59,
+        65
+      ],
+      "list": null
+    }
+  ],
+  [
+    "an account, and",
+    [
+      15
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "account"
+      ],
+      "nouns": [
+        "account"
+      ],
+      "head_noun": "account",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        65,
+        69
+      ],
+      "list": null
+    }
+  ],
+  [
+    "a firmware update.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "firmware",
+        "update"
+      ],
+      "nouns": [
+        "firmware",
+        "update"
+      ],
+      "head_noun": "update",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        69,
+        73
+      ],
+      "list": null
+    }
+  ],
+  [
+    "This one has",
+    [
+      43
+    ],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "one"
+      ],
+      "nouns": [
+        "one"
+      ],
+      "head_noun": "one",
+      "demonstrative": true,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": true,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 3,
+      "span": [
+        73,
+        76
+      ],
+      "list": null
+    }
+  ],
+  [
+    "a switch on the back.",
+    [
+      1
+    ],
+    {
+      "opener": false,
+      "ents": [],
+      "keywords": [
+        "switch",
+        "back"
+      ],
+      "nouns": [
+        "switch",
+        "back"
+      ],
+      "head_noun": "switch",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 5,
+      "span": [
+        76,
+        82
+      ],
+      "list": null
+    }
+  ],
+  [
+    "Guess which of them has never once crashed.",
+    [],
+    {
+      "opener": true,
+      "ents": [],
+      "keywords": [
+        "guess",
+        "crashed"
+      ],
+      "nouns": [],
+      "head_noun": "",
+      "demonstrative": false,
+      "pronoun_subject": false,
+      "script_topic": "switch",
+      "has_visualisable": true,
+      "has_number": false,
+      "has_money": false,
+      "in_quote": false,
+      "n_tokens": 8,
+      "span": [
+        82,
+        91
+      ],
+      "list": null
+    }
+  ]
+]
