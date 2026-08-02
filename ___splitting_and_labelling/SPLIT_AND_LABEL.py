@@ -172,11 +172,12 @@ def _auto_tag(out_path: Path) -> None:
             print(f"[auto-tag] unavailable ({exc}) — skipping")
             return
     try:
+        from auto_tag_engine import apply_flowchart, detect_attributes
         data = _load_json(out_path)
-        results, founds = auto.run_checks(data)
+        attrs, lines = detect_attributes(data, auto.collect_attributes)
         print(f"[auto-tag] flowchart over {len(data)} row(s) "
               f"(EMPTY rows only):")
-        changed = auto.assign(data, results, founds)
+        changed = apply_flowchart(data, attrs, lines, auto.decide)
         if changed:
             _save_json(out_path, data)
             print(f"[auto-tag] filled {len(changed)} row(s) -> {out_path}")

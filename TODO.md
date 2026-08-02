@@ -1,3 +1,13 @@
+- perhaps don't log every single change to the manual_tagging_changes_report.txt...
+    - only ones that user has give a reason for (reason can be empty)
+- once the Auto_add_mediatypes.py has been sorted:
+    - go through an implement hthe logic myself for determining how to split, and what mediaypes / search terms to use.
+- then:
+    - start going through lots of example scripts.
+    - use the manual tagger to adjust.
+    - (basically start building up the list of changes that we have made...)
+
+
 
 -------------
 

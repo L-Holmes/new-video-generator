@@ -264,9 +264,16 @@ try:
     check(True, "auto-tagger selftest: 3 checks fire right; existing tags "
                 "never overwritten")
 except AssertionError as exc:
+    import traceback; traceback.print_exc()
     check(False, f"auto-tagger selftest failed: {exc}")
-check(all(r.media_type in AUTO.MEDIA_TYPES for r in AUTO.FLOWCHART),
-      "every flowchart rule targets a REAL catalog type")
+from auto_tag_engine import check_flowchart
+try:
+    # every branch the flowchart can reach must name a real catalog type and
+    # real modifiers, and every attribute must point at a real detector
+    check_flowchart(AUTO.Attr, AUTO.decide)
+    check(True, "every flowchart branch targets a REAL catalog type")
+except AssertionError as exc:
+    check(False, f"flowchart targets something unknown: {exc}")
 
 print()
 print("FINAL RESULT:", "ALL PASS" if not fails else f"{len(fails)} FAILURES: {fails}")

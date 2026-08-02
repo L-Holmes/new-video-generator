@@ -1,11 +1,9 @@
-### Line join
+### Line split
 Full sentence(s):
-- "In 64 AD, a fire started in the merchant stalls near the Circus Maximus."
+- "The city was rebuilt by a very unpopular emperor."
 Before:
-- "In"
-- "64 AD,"
+- "The city was rebuilt by a very unpopular emperor."
 After:
-- "In 64 AD,"
-Reason:
-- "Short prevoius non-visualisable sentence, then something non-important like a date, just join"
+- "The city was rebuilt by a"
+- "very unpopular emperor."
 

@@ -111,9 +111,11 @@
     "data": {}
   },
   "wind,": {
-    "search_term": "",
-    "media_type": "stock",
-    "modifiers": [],
+    "search_term": "Circus Maximus",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -183,7 +185,7 @@
   },
   "entire districts.": {
     "search_term": "",
-    "media_type": "stock",
+    "media_type": "hold_previous",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -199,7 +201,7 @@
     "stamp_source": null,
     "data": {}
   },
-  "The city was rebuilt by": {
+  "The city was rebuilt by a": {
     "search_term": "city",
     "media_type": "hold_previous",
     "modifiers": [
@@ -215,16 +217,23 @@
     "rule_ids": [
       1000,
       59,
-      29
+      29,
+      1
     ],
     "stamp_decorate": true,
     "stamp_source": "wikipedia",
-    "data": {}
+    "data": {},
+    "_split_before": {
+      "text": "very unpopular emperor.",
+      "glue": " "
+    }
   },
-  "a very unpopular emperor.": {
-    "search_term": "",
-    "media_type": "",
-    "modifiers": [],
+  "very unpopular emperor.": {
+    "search_term": "city",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "decorate"
+    ],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -233,8 +242,13 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
+      1000,
+      59,
+      29,
       1
     ],
+    "stamp_decorate": true,
+    "stamp_source": "wikipedia",
     "data": {}
   },
   "Which brings us to Nero.": {
@@ -253,7 +267,7 @@
     ],
     "data": {}
   },
-  "He blamed": {
+  "He blamed a small religious sect, and the rest is history.": {
     "search_term": "Nero Nero",
     "media_type": "",
     "modifiers": [],
@@ -265,44 +279,12 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      12
+      12,
+      15,
+      1010
     ],
     "stamp_decorate": false,
     "stamp_source": null,
-    "data": {}
-  },
-  "a small religious sect, and": {
-    "search_term": "",
-    "media_type": "stock",
-    "modifiers": [
-      "collage"
-    ],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      15
-    ],
-    "data": {}
-  },
-  "the rest is history.": {
-    "search_term": "",
-    "media_type": "",
-    "modifiers": [],
-    "group_id": null,
-    "position": "1",
-    "sfx": "none",
-    "sfx_timing": "loop_start",
-    "music": "none",
-    "music_trim_seconds": 0,
-    "music_fade_out": 0,
-    "rule_ids": [
-      1010
-    ],
     "data": {}
   }
 }

@@ -631,12 +631,14 @@ class _State:
         # in, before + after, and the user's reason (when they give one through
         # the bottom-right overlay). Plain text, append-only.
         self.log_path = REPORT_PATH
-        # a reason can arrive AFTER its change (the overlay is optional and
-        # non-blocking): remember where the latest change's entries start in
-        # the file so /reason can rewrite them with the Reason block added.
+        # NOTHING IS EVER WRITTEN AUTOMATICALLY. A change only reaches the
+        # report when the user types a reason and clicks "save reason" in the
+        # bottom-right overlay. Until then its entries just wait here in
+        # memory, and if the user ignores the overlay (or makes another
+        # change first) they are dropped and never hit the file.
         self._log_lock = threading.Lock()
         self._change_seq = 0
-        self._last_log: "tuple[int, list, int] | None" = None
+        self._pending_log: "tuple[list, int] | None" = None
         self.data: Dict[str, dict] = json.loads(
             json_path.read_text(encoding="utf-8"))
         # CONFIG.py's own convention is "<name>_script_to_search_term.json"
@@ -836,15 +838,20 @@ class _State:
         return None, cid, label
 
     # ---- the change report ------------------------------------------------
-    # Every join / split / media-type change / search-term change lands in
-    # manual_tagging_changes_report.txt as its own "### …" entry: the full
-    # sentence(s) the affected line sits in, then before + after (mentioning
-    # the media type / search term only when that is what changed), then the
-    # reason IF the user adds one through the overlay. One mutation that
-    # changes several things writes several entries. Search-term changes
-    # arrive separately through /logterm — they save on a per-keystroke
-    # debounce, so the browser logs one entry per EDIT (old committed term ->
-    # new) instead of one per keystroke.
+    # NOTHING GOES IN THE REPORT UNLESS THE USER CLICKS "SAVE REASON".
+    #
+    # A join / split / media-type change / search-term change builds its
+    # "### …" entry — the full sentence(s) the affected line sits in, then
+    # before + after (mentioning the media type / search term only when that
+    # is what changed) — and that entry then WAITS IN MEMORY. Only when the
+    # user types a reason in the bottom-right overlay and clicks "save
+    # reason" is it appended to manual_tagging_changes_report.txt, reason and
+    # all. Tag away without explaining yourself and the file stays untouched.
+    #
+    # One mutation that changes several things writes several entries (all on
+    # the same click). Search-term changes arrive separately through /logterm
+    # — they save on a per-keystroke debounce, so the browser offers one entry
+    # per EDIT (old committed term -> new) instead of one per keystroke.
 
     @staticmethod
     def _full_sentences(keys, targets) -> "list[str]":
@@ -883,44 +890,39 @@ class _State:
 
     def _write_entries(self, entries: "list[str]"
                        ) -> "tuple[Optional[int], str]":
-        """Append the entries and remember where they start, so a reason
-        arriving later can be folded in. Logging must never break tagging, so
-        any I/O problem is reported and swallowed."""
+        """HOLD the entries in memory — nothing is written to the report here.
+        They are only ever put on disk by attach_reason(), i.e. when the user
+        clicks "save reason". A change with no reason is simply forgotten."""
         if not entries:
             return None, ""
         labels = " + ".join(e.splitlines()[0].lstrip("# ") for e in entries)
-        try:
-            with self._log_lock:
-                self._change_seq += 1
-                offset = (self.log_path.stat().st_size
-                          if self.log_path.exists() else 0)
-                with open(self.log_path, "a", encoding="utf-8") as fh:
-                    fh.write("".join(e + "\n" for e in entries))
-                self._last_log = (offset, list(entries), self._change_seq)
-                return self._change_seq, labels
-        except Exception as exc:  # pragma: no cover - disk trouble only
-            print(f"  · could not write the change report: {exc}")
-            return None, ""
+        with self._log_lock:
+            self._change_seq += 1
+            self._pending_log = (list(entries), self._change_seq)
+            return self._change_seq, labels
 
     def attach_reason(self, change_id: int, reason: str) -> None:
-        """Fold a late-arriving reason into the change it belongs to. Only the
-        LATEST change can still take one (a newer change supersedes the
-        offer), and the file is rewritten from the remembered offset — this
-        process is its only writer while tagging runs."""
+        """THE ONLY THING THAT EVER WRITES TO THE CHANGE REPORT. The user has
+        typed a reason and clicked "save reason", so now — and only now — the
+        change it belongs to is appended, with the reason on the end.
+
+        Only the LATEST change can still take a reason (a newer change
+        supersedes the offer), and an empty reason writes nothing. Logging
+        must never break tagging, so any I/O problem is reported and
+        swallowed."""
         reason = (reason or "").strip()
         if not reason:
             return
         try:
             with self._log_lock:
-                if not self._last_log or self._last_log[2] != change_id:
+                if not self._pending_log or self._pending_log[1] != change_id:
                     return
-                offset, entries, _ = self._last_log
+                entries, _ = self._pending_log
                 body = "".join(e + f'Reason:\n- "{reason}"\n\n'
                                for e in entries)
-                with open(self.log_path, "r+b") as fh:
-                    fh.seek(offset)
-                    fh.truncate()
-                    fh.write(body.encode("utf-8"))
+                with open(self.log_path, "a", encoding="utf-8") as fh:
+                    fh.write(body)
+                self._pending_log = None     # written once, never twice
         except Exception as exc:  # pragma: no cover - disk trouble only
             print(f"  · could not write the change report: {exc}")
 
@@ -1526,18 +1528,20 @@ function disarmSplit(tx,i){
  $('#caret').style.display='none';$('#splittip').style.display='none';
 }
 // ---- change-report reasons ---------------------------------------------------
-// Joins, splits, media-type changes and search-term edits all land in the
-// change report (manual_tagging_changes_report.txt) with the full sentence(s)
-// + before/after. The reason is OPTIONAL and never blocks: a small overlay
-// sits bottom-right after a logged change — click it to type why (POST
-// /reason folds it into the entry just written). It clears on the next change.
+// NOTHING IS WRITTEN TO THE CHANGE REPORT UNTIL YOU CLICK "save reason".
+// Joins, splits, media-type changes and search-term edits prepare an entry
+// (full sentence(s) + before/after) and the overlay offers it bottom-right.
+// Type why and click save reason (POST /reason) and THAT is what writes it to
+// manual_tagging_changes_report.txt. Ignore the overlay, or make another
+// change, and the entry is dropped — the file never sees it.
 let whyId=null;
 function showWhy(changeId,label){
  whyId=changeId;
  const c=$('#whycard');
  c.classList.remove('saved');
  c.innerHTML=`<div class="wtitle" onclick="expandWhy()">✎`+
-  `<span class="wkind">${esc(label)}</span> logged — click to add why (optional)</div>`+
+  `<span class="wkind">${esc(label)}</span> logged — click (or press <b>space</b>) `+
+  `to add why (optional)</div>`+
   `<div id="whybody"><input id="whytext" placeholder="reason for this change…">`+
   `<button onclick="sendWhy()">save reason</button></div>`;
  c.style.display='block';
@@ -1831,7 +1835,8 @@ function renderMods(){
 // The term saves on a per-keystroke debounce, so logging /save calls would log
 // every keystroke. Instead: remember the term as it stood when the line was
 // opened (the baseline), and when the user COMMITS an edit (leaves the box or
-// the line), log one entry — baseline -> final — offering the reason overlay.
+// the line), OFFER one entry — baseline -> final — through the reason overlay.
+// It only reaches the report if the user then clicks "save reason".
 // A baseline that was empty is first-time tagging, not a "change" worth a log.
 let termBase=null;
 function commitTermLog(){
@@ -2019,8 +2024,9 @@ async function pick(name){const L=D.lines[sel];
  const grouped=(L.row.modifiers||[]).includes('group')&&b&&b.groupable;
  if(b&&b.new_footage&&L.words<D.min_new_words&&!grouped){openShort(name);return;}
  closeShort();                       // a fine choice — drop any open guard panel
- // CHANGING an existing type gets a report entry (the server diffs it) and
- // the reason overlay pops bottom-right; first-time tagging isn't logged.
+ // CHANGING an existing type prepares a report entry (the server diffs it)
+ // and offers it through the bottom-right reason overlay — it is only
+ // written if the user clicks "save reason". First-time tagging isn't logged.
  await post('/save',{line:L.line,patch:{media_type:name}},L.line);
  const t2=$('#tostep2');
  t2.style.display='inline-block'; t2.classList.add('glow');
@@ -2193,6 +2199,10 @@ function showFinish(){$('#finwrap').classList.add('open');
 function hideFinish(){$('#finwrap').classList.remove('open');closeEditor();}
 document.addEventListener('keydown',e=>{
  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+ // space = shortcut for "click the ✎ card" — opens the why box and focuses it,
+ // so a reason can be typed without reaching for the mouse.
+ if((e.key===' '||e.key==='Spacebar')&&whyId!==null&&$('#whycard').style.display==='block'){
+   e.preventDefault();expandWhy();return;}
  if(e.key==='ArrowDown'){focusLine(sel+1);e.preventDefault();}
  else if(e.key==='ArrowUp'){focusLine(sel-1);e.preventDefault();}
  else if(step==='media'&&(e.key==='['||e.key===']')){

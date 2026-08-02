@@ -63,6 +63,134 @@ from typing import Dict, List, NamedTuple, Set, Optional, Tuple
 import spacy
 from spacy.tokens import Doc, Span, Token
 
+# =============================================================================
+# SHARED TEXT LOGIC  —  every word list, regex, threshold and text-check that
+# this file and Auto_add_mediatypes.py both rely on now lives in ONE place:
+#     ___splitting_and_labelling/shared_text_logic.py
+# Nothing lexical is defined in this file any more.  The names below are
+# imported verbatim, so the rules read exactly as they always did.
+# =============================================================================
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parent))
+
+from shared_text_logic import (  # noqa: E402
+    # --- rule ids (SECTION 1) ---
+    RULE_DESCRIPTIONS, describe_rule, SPLIT_RULE_IDS, LIST_RUN_RULE_IDS,
+    # --- punctuation & symbols (2.1) ---
+    HARD_PUNCT, DASH_PUNCT, LONG_DASH_PUNCT, OPEN_QUOTES, CLOSE_QUOTES,
+    ANY_QUOTE, APOSTROPHES, OPEN_BRACKETS, CLOSE_BRACKETS, CURRENCY_SYMS,
+    MARKDOWN_EMPHASIS_CHARS,
+    # --- spaCy tag / dep / entity sets (2.2) ---
+    WH_TAGS, RELATIVE_PRONOUN_TAGS, REVEAL_ENTS, LOCATION_ENTS, NUMERIC_ENTS,
+    NUMERIC_NO_REVEAL, NUMERIC_QUALIFIER_ENTS, VERB_MOD_DEPS, AUX_LIKE_DEPS,
+    PARTICLE_DEPS, LIGHTWEIGHT_POS,
+    # --- function words & closed classes (2.3) ---
+    PROMISCUOUS_PREPS, DISCOURSE_INIT, ADV_INTRODUCERS, TRANSITION_ADVERBS,
+    COMPARATIVE_MARKERS, NEGATION_TOKENS, APPROXIMATOR_WORDS,
+    ANAPHORIC_SUBJECT_PRONOUNS, NOUN_LIST_BLOCKED_PREPS,
+    NOUN_LIST_SPLITTABLE_PREPS,
+    # --- verb meaning families (2.4) ---
+    COPULA_BE_LEMMAS, COPULA_SENSORY_LEMMAS, COPULA_BECOMING_LEMMAS,
+    COPULA_STAYING_LEMMAS, COPULA_JUDGMENT_LEMMAS, STRONG_COPULA_LEMMAS,
+    ALL_COPULA_LEMMAS, COPULAR_LEMMAS, COPULAR_FORMS,
+    POSSESSION_CORE_LEMMAS, POSSESSION_CONTAIN_LEMMAS,
+    POSSESSION_FEATURE_LEMMAS, POSSESSION_NEGATIVE_LEMMAS,
+    POSSESSION_HIDDEN_LEMMAS, ALL_POSSESSION_LEMMAS,
+    CREATION_PRODUCE_LEMMAS, CREATION_BUILD_LEMMAS, CREATION_CREATE_LEMMAS,
+    CREATION_CRAFT_LEMMAS, CREATION_DESIGN_LEMMAS, CREATION_CAUSE_LEMMAS,
+    CREATION_ENABLE_LEMMAS, ALL_CREATION_LEMMAS,
+    PERCEPTION_SEE_LEMMAS, PERCEPTION_FIND_LEMMAS, PERCEPTION_REALIZE_LEMMAS,
+    PERCEPTION_THINK_LEMMAS, PERCEPTION_KNOW_LEMMAS, PERCEPTION_REVEAL_LEMMAS,
+    PERCEPTION_SAY_LEMMAS, PERCEPTION_SENSE_LEMMAS, ALL_PERCEPTION_LEMMAS,
+    EQUATION_EQUAL_LEMMAS, EQUATION_MEAN_LEMMAS, EQUATION_REFER_LEMMAS,
+    ALL_EQUATION_LEMMAS, EQUATION_PHRASAL_PARTICLES,
+    COMPARISON_RESEMBLE_LEMMAS,
+    RESULT_THAT_INTENSIFIERS, RESULT_THAN_INTENSIFIERS,
+    RESULT_TO_INTENSIFIERS, ALL_RESULT_INTENSIFIERS,
+    # --- weak / non-visual vocabulary (2.5) ---
+    WEAK_VERB_LEMMAS, WEAK_VERB_FORMS, WEAK_ADJ_LEMMAS,
+    # --- measurement words (2.6) ---
+    MEASURE_NOUNS,
+    # --- spatial prepositions (2.7) ---
+    SPATIAL_LOCATIVE_PREPS, SPATIAL_DIRECTIONAL_PREPS, SPATIAL_TEMPORAL_PREPS,
+    ALL_SPATIAL_PREPS,
+    # --- fixed multi-word phrases (2.8) ---
+    FROZEN_BIGRAMS, IDIOM_PHRASES, DISCOURSE_PIVOT_PHRASES,
+    EXCEPTION_SINGLE_MARKERS, EXCEPTION_BIGRAMS,
+    # --- sound effects (2.9) ---
+    SFX_WORDS,
+    # --- topic & era lexicons (2.10) ---
+    GENERIC_TOPIC_NOUNS, ERA_STYLE_NOUNS,
+    # --- regexes (2.13) ---
+    PARAGRAPH_BREAK_RX, WHITESPACE_RUN_RX, PUNCT_ONLY_RX,
+    # --- thresholds (2.14) ---
+    MIN_LEAD_FOR_CLAUSE_SPLIT, MIN_LEAD_FOR_BUT_OR, MIN_LEAD_FOR_AND_CLAUSE,
+    MIN_LEAD_FOR_ENTITY, LONG_PREP_SUBTREE_MIN, RUNON_SENT_MIN_TOKENS,
+    RUNON_WINDOW, LONG_LEAD_TO_ROOT, SHORT_TAIL_TO_PUNCT, SHORT_SUBORD_CLAUSE,
+    SHORT_SENT_NO_SPLIT, LONG_SUBORD_OPENER_TOKENS, LONG_COMMA_LEAD_CONTENT,
+    LONG_COMMA_TAIL_CONTENT, INFINITIVE_SPLIT_SENT_MIN,
+    INFINITIVE_SPLIT_LEAD_MIN, INFINITIVE_SPLIT_TAIL_MIN, OF_REVEAL_SENT_MIN,
+    OF_REVEAL_LEAD_MIN, PROGRESSIVE_SENT_MIN, PROGRESSIVE_LEAD_MIN,
+    COPULA_REVEAL_SENT_MIN, COPULA_REVEAL_CHUNK_MIN, PP_PRON_PART_SENT_MIN,
+    PP_PRON_PART_LEAD_MIN, AUX_PP_REVEAL_LEAD_MIN, CHAINED_PART_SENT_MIN,
+    DOBJ_DISQUAL_SENT_MIN, MIN_LEAD_FOR_DESCRIPTOR,
+    RESULT_INTENSIFIER_LOOKBACK, SPATIAL_PREP_SUBTREE_MIN_NOUNS,
+    SPATIAL_PREP_SENT_MIN_TOKENS, SPATIAL_PREP_LEAD_MIN, COMPARISON_SENT_MIN,
+    COMPARISON_LEAD_MIN, EXCEPTION_SENT_MIN, EXCEPTION_LEAD_MIN,
+    DISCOURSE_PIVOT_MIN_TAIL, AGENT_REVEAL_SENT_MIN, AGENT_REVEAL_LEAD_MIN,
+    LIST_ITEM_MAX_TOKENS, LIST_MIN_TAGGED,
+    # --- the shared spaCy model (SECTION 0) ---
+    get_nlp_required,
+    # --- named text checks (SECTION 4) ---
+    is_ellipsis_text, is_only_punctuation,
+    # --- named token checks (SECTION 5) ---
+    verb_is_used_as_equation, verb_is_used_as_copula,
+    verb_has_substantial_object, verb_has_substantial_complement,
+    is_ordinal_token, is_inside_compound_named_entity,
+    is_inside_hyphen_compound, is_inside_frozen_bigram,
+    is_big_punctuation_split_point, is_inside_runon_sentence,
+    noun_chunk_containing, tokens_to_next_punctuation, count_content_tokens,
+    has_visualisable_content, find_idiom_spans,
+)
+
+# --- the old private names, kept as thin aliases so every rule below reads
+# --- exactly as it did before the extraction (see shared_text_logic.py).
+_nlp = get_nlp_required
+_SPLIT_RULE_IDS = SPLIT_RULE_IDS
+_LIST_RULE_IDS = LIST_RUN_RULE_IDS
+_LIST_ITEM_MAX_TOKENS = LIST_ITEM_MAX_TOKENS
+_LIST_MIN_TAGGED = LIST_MIN_TAGGED
+_GENERIC_TOPIC_NOUNS = GENERIC_TOPIC_NOUNS
+_ANAPHORIC_SUBJECT_PRONOUNS = ANAPHORIC_SUBJECT_PRONOUNS
+_PARA_BREAK_RE = PARAGRAPH_BREAK_RX
+_WS_RUN_RE = WHITESPACE_RUN_RX
+PUNCT_ONLY_RE = PUNCT_ONLY_RX
+BLOCKED_PREPS = NOUN_LIST_BLOCKED_PREPS
+SPLITTABLE_PREPS = NOUN_LIST_SPLITTABLE_PREPS
+APPROX_ADV = APPROXIMATOR_WORDS
+APPROX_LEMMAS = APPROXIMATOR_WORDS
+APOS = APOSTROPHES
+EMPH_CHARS = MARKDOWN_EMPHASIS_CHARS
+REL_TAGS = RELATIVE_PRONOUN_TAGS
+_is_equation_use = verb_is_used_as_equation
+_is_copular_use = verb_is_used_as_copula
+_is_substantial_dobj = verb_has_substantial_object
+_has_substantial_complement = verb_has_substantial_complement
+_is_ordinal = is_ordinal_token
+_matches_ellipsis = is_ellipsis_text
+_in_compound_ne = is_inside_compound_named_entity
+_in_hyphen_compound = is_inside_hyphen_compound
+_is_frozen_bigram_split = is_inside_frozen_bigram
+_is_big_punct_split = is_big_punctuation_split_point
+_is_in_runon = is_inside_runon_sentence
+_chunk_containing = noun_chunk_containing
+_tokens_to_next_punct = tokens_to_next_punctuation
+_content_count = count_content_tokens
+_has_visualisable_content = has_visualisable_content
+_idiom_spans = find_idiom_spans
+
+
 
 # === VERSION marker — change me when shipping a new revision ===========
 # The user can check this at runtime: `from sentence_splitter import VERSION`.
@@ -131,649 +259,28 @@ def merge_chunks(a: Chunk, b: Chunk, sep: str = " ",
     return Chunk((a.text + sep + b.text).strip(), merged_ids)
 
 
-# =============================================================================
-# RULE_DESCRIPTIONS — decode a chunk's `ids` into human-readable phrases
-# =============================================================================
-# This is the lookup table we use to make sense of a Chunk's `ids`: every
-# integer that ends up in a Chunk.ids list is a "rule id", and this map turns
-# it back into a plain-English description of WHAT that rule spotted in the
-# line — written so anyone can read it, no grammar jargon required.
-#
-# Reading the examples:
-#   • For SPLITTING rules, "|" marks where the rule puts the line break, e.g.
-#     'The dog jumped.' | 'The man ran.'  means the rule split between them.
-#   • For MERGING rules, "+" shows the two pieces being joined and "→" shows
-#     the result, e.g.  'is' + 'big' → 'is big'.
-#
-# NUMBERING SCHEME (matches the "RULE n" headers above each function):
-#   • Rules 0 and 0.5  → the two PRE-PROCESSING passes (strip_markdown /
-#     normalise_punct).  They reshape raw text and never create a split, so
-#     they are deliberately NOT in this map.
-#   • 1–60             → the SPLITTING rules (the positive pipeline).  Numbers
-#     1–21 and 23–52 are the original header numbers, kept verbatim.  22 is an
-#     unused gap in the historical numbering and is intentionally left absent.
-#     53–55 are newly assigned (the "after the existing ones" slots) to the
-#     three splitting rules that the codebase never gave a number.
-#     56–60 are the v18 additions: comparison reveal, exception reveal,
-#     discourse-pivot hook, passive-agent reveal, and SFX beat.
-#   • 1000+            → the MERGING rules (the post-processing glue passes:
-#     _merge_throwaways / _fuse_orphans / _post_merge_unvisualisable).  They
-#     start at 1000 so a merge id can never be confused with a split id.
-RULE_DESCRIPTIONS: Dict[int, str] = {
-    # ---- SPLITTING RULES (positive pipeline) --------------------------------
-    1:  "the line ends with . ! ? ; or : — "
-        "e.g. 'The dog jumped.' | 'The man ran.'",
-    2:  "a dash breaks the line — e.g. 'it was huge —' | 'completely massive'",
-    3:  "the line ends on a '...' or '…' — e.g. 'and then...' | 'silence'",
-    4:  "the dramatic phrase right before a '...' gets its own line — "
-        "e.g. 'the driest place on Earth' | '...'",
-    5:  "a phrase in quotation marks gets its own line — "
-        "e.g. she yelled | 'stop right there'",
-    6:  "an aside in (brackets) gets its own line — "
-        "e.g. 'the house' | '(built in 1920)' | 'was old'",
-    7:  "a scene-setting opener that ends in a comma — "
-        "e.g. 'In the morning,' | 'we left'",
-    8:  "a comma that separates two clauses or list items — "
-        "e.g. 'she ran,' | 'he walked'",
-    9:  "a comma that introduces a 'who / which / that...' description — "
-        "e.g. 'the dog,' | 'which was huge'",
-    10: "a joining word like 'when', 'because', 'which' or 'that' starts a "
-        "new part — e.g. 'he left' | 'because it rained'",
-    11: "a 'but', 'or', 'so' or 'yet' after a long first part — "
-        "e.g. 'we tried for hours' | 'but it failed'",
-    12: "one complete action has finished and the next begins — "
-        "e.g. 'the baker kneaded the bread' | 'while the fire crackled'",
-    13: "a very long wind-up finally reaches its main verb (a safety net for "
-        "run-on sentences) — e.g. 'the tall man in the long red coat' | 'walked in'",
-    14: "a long 'in / on / at / with...' phrase — "
-        "e.g. 'she hid' | 'beneath the old wooden floor'",
-    15: "a run of things listed with no verb between them — "
-        "e.g. 'ribs,' | 'vertebrae,' | 'skulls'",
-    16: "another 'thing, the thing, the thing' list that the usual list-finder "
-        "misses — e.g. 'the red car' | 'the blue truck'",
-    17: "a wrap-up word like 'all', 'both', 'each' or 'every' right after a "
-        "list — e.g. 'cars, trucks, bikes' | 'all sped past'",
-    18: "a name worth a dramatic reveal — a person, place, date or amount — "
-        "e.g. 'a valley called' | 'Wadi Al-Hitan'",
-    19: "an amount of money gets its own line — e.g. 'it costs' | '$800,000'",
-    20: "a short command on its own — e.g. 'Stop.' | 'Look around.'",
-    21: "an 'and' or 'or' joining two complete sentences — "
-        "e.g. 'she sang' | 'and he danced'",
-    # 22 — intentionally unused (historical gap in the numbering)
-    23: "a describing word revealed in the middle of a sentence — "
-        "e.g. 'the water that was' | 'freezing cold'",
-    24: "a sentence ending on a number or amount — "
-        "e.g. 'the whales vanished' | 'millions of years ago'",
-    25: "an extra comma-list pattern the basic comma rule misses — "
-        "e.g. 'soaked,' | 'frozen,' | 'exhausted'",
-    26: "a long 'if / when / because...' opener that ends in a comma — "
-        "e.g. 'if you already know the answer,' | 'you can skip ahead'",
-    27: "a sentence ending on a pair of describing words — "
-        "e.g. 'the place felt' | 'calm and alien'",
-    28: "a chunky 'of / in / with...' phrase stuffed with nouns and no verb — "
-        "e.g. 'a tale' | 'of kings and battles'",
-    29: "an '-ing' or '-ed' word that introduces what comes next — "
-        "e.g. 'revealing' | 'a hidden cave'",
-    30: "after a place or name, the 'in / on / at...' that says WHERE splits "
-        "off — e.g. 'Alvord Desert' | 'in Oregon'",
-    31: "a comma after a long, meaty clause — "
-        "e.g. 'after searching the whole house for hours,' | 'they gave up'",
-    32: "a 'to do something' inside a long sentence — "
-        "e.g. 'they travelled for days' | 'to reach the coast'",
-    33: "a sentence ending on an 'of ...' phrase — "
-        "e.g. 'one of the driest' | 'climates on Earth'",
-    34: "an 'is / was ...-ing' action in progress — "
-        "e.g. 'the crowd was' | 'slowly gathering'",
-    35: "an 'is / looks / feels...' followed by the thing it describes — "
-        "e.g. 'the sky is' | 'a deep burning red'",
-    36: "an 'it / them + -ing/-ed' description after a small word like 'of' — "
-        "e.g. 'the feeling' | 'of being watched'",
-    37: "a sentence ending on a describing word plus an 'in / on / for...' "
-        "phrase — e.g. 'the road is straight' | 'for absurd distances'",
-    38: "a two-word verb (like 'set up', 'sped past') and the thing it acts "
-        "on — e.g. 'they set up' | 'a huge tent'",
-    39: "the thing after a preposition gets its own line — "
-        "e.g. 'shapes appeared' | 'in the rock'",
-    40: "a scene-change word like 'then', 'later' or 'suddenly' — "
-        "e.g. 'they waited' | 'then everything changed'",
-    41: "a joining word like 'as', 'while' or 'if' left hanging as a "
-        "cliffhanger — e.g. 'it works' | 'because'",
-    42: "'X is / looks / becomes Y' — split to reveal the Y — "
-        "e.g. 'the desert becomes' | 'a frozen wasteland'",
-    43: "'X has / owns / contains Y' — split to reveal the Y — "
-        "e.g. 'the valley holds' | 'ancient whale bones'",
-    44: "'X made / built / created Y' — split to reveal the Y — "
-        "e.g. 'the river carved' | 'a deep canyon'",
-    45: "'X saw / found / knew Y' — split to reveal the Y — "
-        "e.g. 'scientists discovered' | 'fossil skeletons'",
-    46: "'X moves through / into / across Y' — split to reveal the place — "
-        "e.g. 'water flowed' | 'across the plain'",
-    47: "'so / such / more ... that / than ...' — split right before the "
-        "payoff — e.g. 'so flat' | 'that satellites use it'",
-    48: "'X means / equals / stands for Y' — split to reveal the meaning — "
-        "e.g. 'the name means' | 'Valley of the Whales'",
-    49: "an 'and' / 'or' sitting between two picture-able things — "
-        "e.g. 'dunes' | 'and blistering heat'",
-    50: "after a title-name like 'Alaric the Goth', split before the verb — "
-        "e.g. 'Alaric the Goth' | 'invaded Rome'",
-    51: "the first item of a list gets its own line too — "
-        "e.g. 'dunes,' | 'heat, and silence'",
-    52: "a sentence ending on a label that explains the thing just named — "
-        "e.g. 'they found bones' | 'the remains of a whale'",
-    # 53–55 — newly numbered (formerly unnumbered splitting rules)
-    53: "a number or date right at the start of a sentence — "
-        "e.g. 'In 1946,' | 'everything changed'",
-    54: "the sentence ends on a describing word or phrase that paints the "
-        "picture — e.g. 'the water was' | 'freezing cold'",
-    55: "a roughly-this-much amount like 'nearly 500' or 'about two miles' — "
-        "e.g. 'it stretched' | 'for nearly 100 miles'",
-    # 56–60 — v18 additions
-    56: "a comparison with 'like' / 'as if' / 'resembling' — cut to the "
-        "compared image — e.g. 'it looked' | 'like a graveyard of giants'",
-    57: "an exception reveal with 'except' or 'apart from' — cut to the one "
-        "thing left out — e.g. 'everything burned' | 'except one house'",
-    58: "a retention hook like 'here's the thing' or 'which brings us to' "
-        "gets its own beat — e.g. 'here's the thing' | 'the map was wrong'",
-    59: "the doer in a passive 'by ...' phrase — cut to who or what did it — "
-        "e.g. 'it was discovered' | 'by a local farmer'",
-    60: "a sound word like 'boom' or 'crash' stands alone as an SFX sync "
-        "point — e.g. 'and then' | 'boom' | 'the roof came down'",
-    61: "a strong verb that introduces a comma list is cut from item one — "
-        "e.g. 'the blaze devoured' | 'temples,' | 'villas,'",
-
-    # ---- MERGING RULES (post-processing glue passes) ------------------------
-    1000: "a tiny leftover bit (like 'and' or 'the') is attached to the line "
-          "BEFORE it, where it belongs — "
-          "e.g. 'the curious child' + 'and' → 'the curious child and'",
-    1001: "a tiny leftover bit is attached to the line AFTER it, where it "
-          "belongs — e.g. 'is' + 'big' → 'is big'",
-    1002: "a lonely piece of punctuation ('...', a dash, a stray quote) is "
-          "stuck back onto the nearest line — e.g. 'Yep.' + '...' → 'Yep....'",
-    1003: "a lone noun is reunited with the 'that / which...' description that "
-          "follows it — e.g. 'regions' + 'that are now dry' → "
-          "'regions that are now dry'",
-    1004: "a short scrap is joined back to the 'to / of / with...' word it "
-          "completes — e.g. 'it costs about' + 'two dollars' → "
-          "'it costs about two dollars'",
-    1005: "a lone '-ing / -ed' verb is reunited with the thing it acts on — "
-          "e.g. 'revealing' + 'evidence' → 'revealing evidence'",
-    1006: "a stranded 'the / a / this' is joined to its noun — "
-          "e.g. 'the' + 'mountain' → 'the mountain'",
-    1007: "a 'the / a' is pulled back from the next line onto a wordy "
-          "connector, so the next line can start on a real word — "
-          "e.g. 'but what if' + 'the' (from 'the planet') → "
-          "'but what if the' | 'planet'",
-    1008: "a line with nothing you could picture is folded into the line "
-          "BEFORE it — e.g. 'dogs run' + 'but' → 'dogs run but'",
-    1010: "an idiomatic saying ('the rest is history') is kept whole and "
-          "counts as non-visual — hold the previous image through it",
-    1009: "a line with nothing you could picture is folded into the line "
-          "AFTER it — e.g. 'but' + 'the dog runs' → 'but the dog runs'",
-}
+# RULE_DESCRIPTIONS + describe_rule() — the id → plain-English table.
+# → moved to shared_text_logic.py, SECTION 1.1 (imported at the top of this file).
 
 
-def describe_rule(rule_id: int) -> str:
-    """Return the human-readable description for a rule id (see
-    RULE_DESCRIPTIONS), or a clear placeholder if the id is unknown."""
-    return RULE_DESCRIPTIONS.get(rule_id, f"<unknown rule id {rule_id}>")
+# _SPLIT_RULE_IDS — which rule stamps which id (aliased to SPLIT_RULE_IDS).
+# → moved to shared_text_logic.py, SECTION 1.2 (imported at the top of this file).
 
 
-# =============================================================================
-# SPLIT-RULE ID WIRING  —  which positive rules currently record their id
-# =============================================================================
-# Maps a positive-pipeline rule's *function name* to the id it stamps onto a
-# chunk when it creates a split (see RULE_DESCRIPTIONS for the numbers and what
-# each one means).
-#
-# ALL splitting rules are now wired (1–60, with 22 being the intentional gap in
-# the historical numbering).  When a rule introduces a split, the LEFT piece of
-# that split records the rule's id (the recording machinery lives in
-# split_text_into_sections()).  A boundary is credited to the FIRST rule (in
-# pipeline order) that introduces it; later rules that would land on the same
-# boundary leave it unchanged, since the split already exists.
-_SPLIT_RULE_IDS: Dict[str, int] = {
-    "rule_hard_punct":                  1,
-    "rule_dashes":                      2,
-    "rule_ellipsis":                    3,
-    "rule_pre_ellipsis_reveal":         4,
-    "rule_quotes":                      5,
-    "rule_brackets":                    6,
-    "rule_initial_adverbial_comma":     7,
-    "rule_comma_split":                 8,
-    "rule_appositive_comma":            9,
-    "rule_clause_starters":             10,
-    "rule_but_or_coord":                11,
-    "rule_verb_clause":                 12,
-    "rule_long_lead_in":                13,
-    "rule_long_preps":                  14,
-    "rule_noun_lists":                  15,
-    "rule_bare_noun_lists":             16,
-    "rule_list_quantifiers":            17,
-    "rule_entity_reveal":               18,
-    "rule_currency_reveal":             19,
-    "rule_imperative_start":            20,
-    "rule_and_or_clause":               21,
-    # 22 — intentional gap (no rule owns this number)
-    "rule_adjective_reveal":            23,
-    "rule_numeric_phrase_reveal":       24,
-    "rule_comma_list_extension":        25,
-    "rule_long_subord_comma":           26,
-    "rule_terminal_adj_coord":          27,
-    "rule_pp_intro_reveal":             28,
-    "rule_participle_split":            29,
-    "rule_post_entity_split":           30,
-    "rule_long_clause_comma":           31,
-    "rule_infinitive_split":            32,
-    "rule_terminal_of_reveal":          33,
-    "rule_progressive_split":           34,
-    "rule_copula_attr_reveal":          35,
-    "rule_pron_participle_pp_reveal":   36,
-    "rule_terminal_pp_after_copula":    37,
-    "rule_phrasal_object_reveal":       38,
-    "rule_prep_object_reveal":          39,
-    "rule_transition_adverb":           40,
-    "rule_sconj_hang":                  41,
-    "rule_copula_reveal_split":         42,
-    "rule_possession_reveal_split":     43,
-    "rule_creation_reveal_split":       44,
-    "rule_perception_reveal_split":     45,
-    "rule_spatial_prep_reveal_split":   46,
-    "rule_result_clause_reveal_split":  47,
-    "rule_equation_reveal_split":       48,
-    "rule_and_visualisables_split":     49,
-    "rule_title_appositive_verb_split": 50,
-    "rule_first_list_item_split":       51,
-    "rule_terminal_specifier_reveal":   52,
-    # 53–55 — the three rules the codebase never gave a header number
-    "rule_numeric_intro_reveal":        53,
-    "rule_terminal_descriptor":         54,
-    "rule_numeric_approximator_reveal": 55,
-    # 56–60 — v18 additions
-    "rule_comparison_reveal":           56,
-    "rule_exception_reveal":            57,
-    "rule_discourse_pivot":             58,
-    "rule_passive_agent_reveal":        59,
-    "rule_sfx_beat":                    60,
-    "rule_verb_list_reveal":            61,
-}
+# CONFIG — punctuation sets, spaCy tag/entity/dep sets, function words, measure nouns, frozen bigrams and every lead-in / clause-length threshold.
+# → moved to shared_text_logic.py, SECTION 2.1-2.3 + 2.6 + 2.14 (imported at the top of this file).
 
 
-# =============================================================================
-# CONFIG  —  punctuation / structural sets
-# (lexical content lives in spaCy's POS/DEP/NER tags, not here, so the rules
-#  generalise across vocabulary)
-# =============================================================================
-
-# Sentence-final punctuation — always closes a line.
-HARD_PUNCT       = {".", "!", "?", ";", ":"}
-
-# Dashes — em (—), en (–), figure (—), double-hyphen (--), single hyphen (-),
-# minus (−).  In-word hyphens are filtered out via whitespace check.
-DASH_PUNCT       = {"—", "–", "--", "-", "−"}
-
-# "Long" dashes — em / en / double-hyphen.  These ALWAYS earn a split before
-# AND after themselves when whitespace-flanked.  Single hyphen "-" is more
-# delicate (could be in-word) and handled separately in rule_dashes.
-LONG_DASH_PUNCT  = {"—", "–", "--"}
-
-# Quotation marks — straight, smart, French «», German „".
-OPEN_QUOTES      = {'"', "\u201C", "\u2018", "\u00AB", "\u2039", "\u201E", "\u201A", "`"}
-CLOSE_QUOTES     = {'"', "\u201D", "\u2019", "\u00BB", "\u203A"}
-ANY_QUOTE        = OPEN_QUOTES | CLOSE_QUOTES
-
-# Brackets.
-OPEN_BRACKETS    = {"(", "[", "{"}
-CLOSE_BRACKETS   = {")", "]", "}"}
-
-# Currency symbols — split BEFORE these when followed by a digit.
-CURRENCY_SYMS    = {"$", "£", "€", "¥", "₹", "₽", "¢"}
-
-# Penn-Treebank tags for wh-words.  Replaces any hard-coded
-# "where/that/who/..." list — generalises to who / whom / whose / what /
-# which / where / when / why / how with no string matching.
-#   WDT  wh-determiner    : that, which, what
-#   WP   wh-pronoun       : who, whom
-#   WP$  poss. wh-pronoun : whose
-#   WRB  wh-adverb        : where, when, why, how
-WH_TAGS          = {"WDT", "WP", "WP$", "WRB"}
-
-# Named-entity types worth introducing on their own line ("the reveal").
-REVEAL_ENTS      = {
-    "PERSON", "ORG", "GPE", "LOC", "FAC", "NORP",
-    "EVENT", "WORK_OF_ART", "PRODUCT", "LAW", "LANGUAGE",
-    "DATE", "TIME", "MONEY", "QUANTITY", "PERCENT",
-}
-
-# Multi-token entity types that earn a "post-entity" split (RULE 30).
-LOCATION_ENTS    = {"GPE", "LOC", "FAC", "ORG", "PERSON", "EVENT", "WORK_OF_ART"}
-
-# Numeric/measure entities — atomic, never cut internally.
-NUMERIC_ENTS     = {"CARDINAL", "ORDINAL", "QUANTITY", "MONEY",
-                    "DATE", "TIME", "PERCENT"}
-
-# Numeric ent labels we DON'T want to "reveal" when single-token (these are
-# usually part of measure phrases like "thousands of kilometers").
-NUMERIC_NO_REVEAL = {"CARDINAL", "QUANTITY", "PERCENT", "ORDINAL"}
-
-# Numeric/measurement entity types that, when preceded by an ADP in a shorter
-# sentence, are qualifier PPs ("in the 19th century", "for 40 years", "by
-# 1946") rather than reveals.  Used by RULE 18 condition (ii').
-NUMERIC_QUALIFIER_ENTS = {"DATE", "TIME", "MONEY", "QUANTITY",
-                          "PERCENT", "CARDINAL", "ORDINAL"}
-
-# A verb whose dep is one of these is *not heading a top-level clause*,
-# so we do NOT use it as a clause boundary.  Includes:
-#   amod          : "the running man"
-#   acl, acl:relcl: "the man (who is) running for office"
-#   advcl         : "running fast, he tripped" / "while the fire crackled"
-#   relcl         : UD relative-clause label
-#   ccomp         : clausal complement — "she said [he left]"
-#   xcomp         : open clausal complement — "tries [to leave]", "left [stranded]"
-#   oprd          : object predicate — "called him [crazy]"
-#   csubj         : clausal subject — "[that he came] surprised her"
-# Adding ccomp/xcomp/oprd keeps verb chains together inside subordinate
-# clauses (fixes "feels like it's remembering being underwater" etc.).
-VERB_MOD_DEPS    = {"amod", "acl", "acl:relcl", "advcl", "relcl",
-                    "ccomp", "xcomp", "oprd", "csubj"}
-
-# Aux / negation deps — never split between aux/neg and the main verb.
-#   "doesn't find", "had been running", "is going", "won't say"
-AUX_LIKE_DEPS    = {"aux", "auxpass", "neg"}
-
-# Phrasal-verb particle dep — keep the particle joined to its verb.
-#   "sped past", "laid down", "set up", "look around"
-PARTICLE_DEPS    = {"prt", "compound:prt"}
-
-# POS classes that are too "lightweight" to stand alone as a chunk —
-# fragments containing only these will be merged into a neighbour.
-LIGHTWEIGHT_POS  = {"CCONJ", "SCONJ", "DET", "ADP", "PART", "PRON", "AUX",
-                    "ADV", "INTJ"}
-
-# Prepositions that almost never want a split AFTER them (bind tightly to NP).
-PROMISCUOUS_PREPS = {"of"}
-
-# Common measurement / time / quantifier words that mustn't split from a
-# preceding number — "15 meters", "40 million", "3 thousand years".
-MEASURE_NOUNS    = {
-    "meter", "meters", "metre", "metres",
-    "foot", "feet", "yard", "yards", "mile", "miles",
-    "kilometer", "kilometers", "kilometre", "kilometres",
-    "inch", "inches", "centimeter", "centimeters", "centimetre", "centimetres",
-    "millimeter", "millimeters", "millimetre", "millimetres",
-    "pound", "pounds", "kilogram", "kilograms", "kilo", "kilos",
-    "ton", "tons", "tonne", "tonnes", "ounce", "ounces", "gram", "grams",
-    "thousand", "million", "billion", "trillion", "hundred", "dozen",
-    "second", "seconds", "minute", "minutes", "hour", "hours",
-    "day", "days", "week", "weeks", "month", "months",
-    "year", "years", "decade", "decades", "century", "centuries",
-    "millennium", "millennia",
-    "degree", "degrees", "percent", "percentage",
-}
-
-# Frozen multi-word idioms we never split inside (kept tiny — POS/DEP do the
-# rest).  Bigrams: when token i.lower_ == first and (i+1).lower_ == second,
-# no split is allowed between them.
-FROZEN_BIGRAMS   = {
-    ("what", "if"),       # hypothetical opener
-    ("as", "if"),         # similarity
-    ("even", "if"),
-    ("as", "though"),
-    ("kind", "of"),       # hedges
-    ("sort", "of"),
-    ("type", "of"),
-    ("a", "lot"),
-    ("at", "least"),
-    ("at", "most"),
-    ("at", "all"),
-    ("of", "course"),
-    ("used", "to"),       # "used to be" — keep verb glued to "to"
-    ("able", "to"),
-    ("going", "to"),
-    ("have", "to"),
-    ("had", "to"),
-    ("got", "to"),
-    ("want", "to"),
-    ("wants", "to"),
-    ("wanted", "to"),
-    ("need", "to"),
-    ("needs", "to"),
-    ("needed", "to"),
-    ("try", "to"),
-    ("tried", "to"),
-}
-
-# Sentence-initial discourse markers that cling to the rest of their sentence
-# even when followed by a comma ("Anyway, here is..." → no split after "Anyway,").
-DISCOURSE_INIT   = {
-    "anyway", "well", "so", "now", "yeah", "yep", "okay", "ok", "right",
-    "honestly", "actually", "basically", "essentially", "literally",
-    "obviously", "clearly", "frankly", "interestingly", "ironically",
-    "fortunately", "unfortunately", "naturally",
-    "hmm", "huh", "oh", "ah",
-}
-
-# Adverbs that introduce a reveal entity ("specifically Kerala", "namely Smith").
-# When one of these immediately precedes a reveal entity, allow the reveal
-# even with only 1 token of lead-in.
-ADV_INTRODUCERS  = {
-    "specifically", "especially", "namely", "particularly", "notably",
-    "essentially", "primarily", "mainly", "chiefly", "principally",
-    "exactly", "precisely", "literally",
-}
-
-# Adverbs that signal a new visual shot/scene transition.
-TRANSITION_ADVERBS = {
-    "then", "later", "suddenly", "eventually", "finally",
-    "afterwards", "subsequently", "next", "soon", "now",
-    # v18.4 expansion — more scene-change cues
-    "afterward", "meanwhile", "immediately", "instantly", "overnight",
-    "tonight", "today", "tomorrow", "yesterday", "abruptly", "gradually",
-}
-
-# Tunables ----------------------------------------------------------------
-MIN_LEAD_FOR_CLAUSE_SPLIT = 3       # tokens before wh/SCONJ to enable split
-MIN_LEAD_FOR_BUT_OR       = 3       # tokens before "but"/"or" coord
-MIN_LEAD_FOR_AND_CLAUSE   = 5       # tokens before clause-and ("X and he Y")
-MIN_LEAD_FOR_ENTITY       = 2       # tokens before entity to count as a "reveal"
-LONG_PREP_SUBTREE_MIN     = 5       # ADP subtree size before we split after it
-                                    # (was 7 — missed "in a very physical way" type splits)
-RUNON_SENT_MIN_TOKENS     = 30      # sentence length needed to enable runon-suppress
-RUNON_WINDOW              = 18      # tokens either side checked for punctuation
-LONG_LEAD_TO_ROOT         = 12      # force split BEFORE ROOT after this long a lead
-SHORT_TAIL_TO_PUNCT       = 3       # don't split verb if remainder to next punct ≤ this
-SHORT_SUBORD_CLAUSE       = 2       # don't split before SCONJ if its clause is ≤ this many tokens
-                                    # (was 3 — over-suppressed "anyway, here is a sentence /
-                                    #  that has punctuatoin" because "that has punctuatoin" has
-                                    #  exactly 3 tokens to next punct.)
-SHORT_SENT_NO_SPLIT       = 4       # sentences with ≤ this many *non-punct* tokens are
-                                    # never split internally.  Per-rule guards inside
-                                    # rule_verb_clause / rule_long_preps / rule_clause_starters
-                                    # do most of the work now (≤ 8-9 token threshold there);
-                                    # this just catches the genuinely tiny ones.
-LONG_SUBORD_OPENER_TOKENS = 6       # tokens needed inside an SCONJ/wh-led opener
-                                    # before we split after its closing comma (RULE 26)
-
-# --- thresholds for NEW rules (31-38) ---------------------------------------
-LONG_COMMA_LEAD_CONTENT   = 5       # min content tokens in lead before generic-long-comma split (RULE 31)
-LONG_COMMA_TAIL_CONTENT   = 3       # min content tokens in tail
-INFINITIVE_SPLIT_SENT_MIN = 12      # RULE 32: min sent ntok to allow `to + VERB` split
-INFINITIVE_SPLIT_LEAD_MIN = 2       # Was 6. FROZEN_BIGRAMS protects "want to", etc. = 6
-INFINITIVE_SPLIT_TAIL_MIN = 4
-OF_REVEAL_SENT_MIN        = 12      # RULE 33: terminal-of reveal
-OF_REVEAL_LEAD_MIN        = 5
-PROGRESSIVE_SENT_MIN      = 10      # RULE 34: split before VBG in `be + Ving`
-PROGRESSIVE_LEAD_MIN      = 3
-COPULA_REVEAL_SENT_MIN    = 7       # RULE 35: copula-attribute reveal
-COPULA_REVEAL_CHUNK_MIN   = 2       # RULE 35: min noun-chunk length to count as reveal
-PP_PRON_PART_SENT_MIN     = 9       # RULE 36: PP-with-PRON-participle reveal
-PP_PRON_PART_LEAD_MIN     = 2
-AUX_PP_REVEAL_LEAD_MIN    = 3       # RULE 37: terminal `'s about X` reveal
-CHAINED_PART_SENT_MIN     = 11      # RULE 38: chained-participle reveal
-DOBJ_DISQUAL_SENT_MIN     = 8       # min sent length to allow dobj-disqualifier in RULE 12
-
-# Comparative markers — when a verb's dobj subtree contains one, the dobj is
-# a "reveal NP" worth splitting before instead of gluing.
-COMPARATIVE_MARKERS = {"than", "more", "less", "fewer"}
-
-
-# =============================================================================
-# spaCy MODEL — load once, reuse across calls.
-# =============================================================================
-_NLP = None
-def _nlp() -> "spacy.language.Language":
-    global _NLP
-    if _NLP is None:
-        _NLP = spacy.load("en_core_web_sm")
-    return _NLP
+# the spaCy model loader — ONE model is now shared with the tagger (_nlp = get_nlp_required).
+# → moved to shared_text_logic.py, SECTION 0 (imported at the top of this file).
 
 
 # =============================================================================
 # UTILITY HELPERS
 # =============================================================================
 
-def _is_equation_use(verb_tok: Token) -> bool:
-    """
-    Check whether an equation-family verb is in its equation sense.
-
-    For non-phrasal verbs (mean, represent, signify, equal, denote,
-    symbolize, imply, indicate, suggest), any transitive use with a
-    dobj or ccomp qualifies.
-
-    For phrasal verbs (stand for, refer to, amount to, boil down to,
-    come down to, translate to/into), the specific particle/prep must
-    appear as a child (or in the immediate forward context).
-
-    Examples:
-        "X means Y"               → True
-        "X stands for Y"          → True (particle "for" present)
-        "X stands tall"           → False (no "for" particle)
-        "X refers to Y"           → True ("to" prep present)
-        "X refers back to Y"      → True ("to" prep present)
-        "X refers a case"         → False (no "to" prep)
-    """
-    lemma = verb_tok.lemma_.lower()
-    if lemma not in EQUATION_PHRASAL_PARTICLES:
-        return True  # non-phrasal equation verb, always counts
-    required_parts = EQUATION_PHRASAL_PARTICLES[lemma]
-    # Look in immediate children for prep/particle matching
-    for child in verb_tok.children:
-        if child.lower_ in required_parts and child.pos_ in {"ADP", "PART"}:
-            return True
-    # Also scan up to 3 tokens ahead for the particle (spaCy may attach
-    # it elsewhere in the tree, e.g. as a separate ADP token)
-    doc = verb_tok.doc
-    for j in range(verb_tok.i + 1, min(verb_tok.i + 4, len(doc))):
-        if doc[j].lower_ in required_parts:
-            return True
-        if doc[j].text in HARD_PUNCT:
-            break
-    return False
-
-def _has_substantial_complement(verb_tok: Token) -> Tuple[bool, Optional[Token]]:
-    """
-    Determine whether a verb has a SUBSTANTIAL complement (dobj or ccomp)
-    suitable for a reveal split, and return the complement head if so.
-
-    Used by Family 4 (perception/cognition).  Differs from
-    _is_substantial_dobj in that it also accepts ccomp clausal
-    complements like "that he was late", "what had to be done".
-
-    Returns:
-        (True, complement_head) if substantial complement exists
-        (False, None)           otherwise
-
-    Substantial means the complement is:
-        • dobj with substantial subtree (per _is_substantial_dobj logic)
-        OR
-        • ccomp clause with ≥3 tokens in subtree
-        OR
-        • xcomp with VERB head (open clausal: "saw him leave")
-
-    Examples:
-        "noticed the strange shape"
-            → dobj 'shape', subtree [the, strange, shape] → True
-        "noticed that he was late"
-            → ccomp 'late' (or 'was'), subtree ≥3 tokens → True
-        "knew what to do"
-            → ccomp 'do' with WH-clause → True
-        "saw him leave"
-            → xcomp 'leave' with VERB → True
-        "saw it"
-            → dobj 'it', PRON subtree, length 1 → False
-        "knows."
-            → no complement → False
-    """
-    # Check dobj first
-    dobj = next((c for c in verb_tok.children if c.dep_ in {"dobj", "obj"}), None)
-    if dobj is not None:
-        subtree = list(dobj.subtree)
-        if len(subtree) >= 3:
-            return (True, dobj)
-        n_adj = sum(1 for x in subtree if x.pos_ == "ADJ")
-        n_nouns = sum(1 for x in subtree if x.pos_ in {"NOUN", "PROPN"})
-        has_relcl = any(c.dep_ in {"acl", "acl:relcl", "relcl"}
-                        for c in dobj.children)
-        has_comp = any(x.lower_ in COMPARATIVE_MARKERS for x in subtree)
-        if n_adj >= 1 or n_nouns >= 2 or has_relcl or has_comp:
-            return (True, dobj)
-
-    # Check ccomp
-    ccomp = next((c for c in verb_tok.children if c.dep_ == "ccomp"), None)
-    if ccomp is not None:
-        subtree_len = len(list(ccomp.subtree))
-        if subtree_len >= 3:
-            return (True, ccomp)
-
-    # Check xcomp with VERB head ("saw him leave", "watched it fall")
-    xcomp = next((c for c in verb_tok.children
-                  if c.dep_ == "xcomp" and c.pos_ == "VERB"), None)
-    if xcomp is not None:
-        return (True, xcomp)
-
-    return (False, None)
-
-def _is_substantial_dobj(verb_tok: Token) -> bool:
-    """
-    Determine whether a verb has a SUBSTANTIAL direct-object reveal payload.
-
-    Used by Family 2 (possession verbs) and Family 3 (creation verbs) to
-    decide whether the dobj NP is worth revealing on its own line.
-    A "substantial" dobj has at least one of:
-
-        • ≥1 ADJ modifier in subtree     ("great cycle paths")
-        • ≥2 NOUN/PROPN tokens in subtree ("calibration tools larger than cities")
-        • a relative-clause child         ("evidence that he was lying")
-        • a comparative marker            ("more sand than ever before")
-        • ≥3 total tokens in subtree      ("a long winding road")
-
-    Returns False when:
-        • verb has no dobj
-        • dobj is a bare pronoun / single short noun ("has it", "owns one")
-
-    Examples:
-        "you have great cycle paths"
-            → dobj 'paths' subtree = [great, cycle, paths] → True (3 tokens)
-        "she had a strange dream"
-            → dobj 'dream' subtree = [a, strange, dream] → True (ADJ modifier)
-        "the cave harbors thousands of bats"
-            → dobj 'thousands' subtree = [thousands, of, bats] → True
-        "I have it"
-            → dobj 'it' subtree = [it] → False
-        "we own three houses"
-            → dobj 'houses' subtree = [three, houses] → True (2+ tokens + NUM)
-    """
-    dobj = next((c for c in verb_tok.children if c.dep_ in {"dobj", "obj"}), None)
-    if dobj is None:
-        return False
-    subtree = list(dobj.subtree)
-    if len(subtree) >= 3:
-        return True
-    n_adj = sum(1 for x in subtree if x.pos_ == "ADJ")
-    n_nouns = sum(1 for x in subtree if x.pos_ in {"NOUN", "PROPN"})
-    has_relcl = any(c.dep_ in {"acl", "acl:relcl", "relcl"}
-                    for c in dobj.children)
-    has_comp = any(x.lower_ in COMPARATIVE_MARKERS for x in subtree)
-    return n_adj >= 1 or n_nouns >= 2 or has_relcl or has_comp
+# verb-sense checks: is this verb an equation use / does it have a substantial object or complement?
+# → moved to shared_text_logic.py, SECTION 5 (imported at the top of this file).
 
 def _prev_split(splits: Set[int], i: int) -> int:
     """Largest split index strictly less than *i*."""
@@ -784,145 +291,8 @@ def _next_split(splits: Set[int], i: int, doc_len: int) -> int:
     return min((s for s in splits if s > i), default=doc_len)
 
 
-def _in_compound_ne(doc: Doc, i: int) -> bool:
-    """
-    True if cutting at *i* would split a multi-token named entity
-    (e.g. between "John" and "Ford", or "New" and "York City").
-    """
-    if i <= 0 or i >= len(doc):
-        return False
-    left, right = doc[i - 1], doc[i]
-    return (left.ent_iob_ in {"B", "I"}
-            and right.ent_iob_ == "I"
-            and left.ent_type_ == right.ent_type_)
-
-
-def _is_copular_use(verb_tok: Token) -> bool:
-    """
-    Determine whether a verb token is being used COPULARLY (linking
-    subject to predicate) vs TRANSITIVELY or PREPOSITIONALLY.
-
-    (Full docstring unchanged — see previous version.)
-
-    NEW: also accepts a ccomp child whose ROOT is a participle (VBN/VBG)
-    or adjective.  spaCy's small model sometimes parses "remained
-    convinced that..." with "convinced" as ccomp rather than xcomp;
-    this catches that variant.
-    """
-    for child in verb_tok.children:
-        if child.dep_ in {"acomp", "oprd", "attr"}:
-            return True
-        if child.dep_ == "xcomp" and child.pos_ in {"ADJ", "VERB", "AUX"}:
-            return True
-        if child.dep_ == "ccomp" and (child.tag_ in {"VBN", "VBG"}
-                                       or child.pos_ == "ADJ"):
-            return True
-    return False
-
-
-def _in_hyphen_compound(doc: Doc, i: int) -> bool:
-    """True if *i* would cut a hyphenated compound: 'self-driving', 'follow-up'."""
-    if i <= 0 or i >= len(doc):
-        return False
-    if doc[i - 1].text == "-" and not doc[i - 1].whitespace_:
-        return True
-    if doc[i].text == "-" and not doc[i - 1].whitespace_:
-        return True
-    return False
-
-
-def _is_ordinal(tok: Token) -> bool:
-    """Detect ordinals (first, 3rd, ...) without a hard-coded word list."""
-    if tok.ent_type_ == "ORDINAL":
-        return True
-    return bool(re.match(r"^\d+(st|nd|rd|th)$", tok.lower_))
-
-
-def _matches_ellipsis(text: str) -> bool:
-    """Detect ..., ...., or … (single-character ellipsis)."""
-    return bool(re.fullmatch(r"\.{2,}|\u2026+", text))
-
-
-def _is_big_punct_split(doc: Doc, i: int) -> bool:
-    """True if the split at *i* is "punctuation-driven" — either the token
-    immediately to its LEFT or to its RIGHT is "big" (non-comma) punctuation
-    that should always force a line-break:
-
-        • hard-punct      .  !  ?  ;  :
-        • ellipsis        ...  ….
-        • dash            —   –   --   -
-        • quote           "  '  “  ”  ‘  ’  «  »  ‹  ›  „  ‚  `
-        • bracket         (  )  [  ]  {  }
-
-    These splits are NEVER wiped by any anti-rule.  Big punctuation marks
-    a deliberate visual break by the writer — even short sentences should
-    honour it.  (Commas are deliberately NOT included: they're soft
-    break-points and the existing comma rules decide when to split.)
-    """
-    if i <= 0 or i > len(doc):
-        return False
-    BIG = HARD_PUNCT | DASH_PUNCT | ANY_QUOTE | OPEN_BRACKETS | CLOSE_BRACKETS
-    # left side
-    if i > 0:
-        lt = doc[i - 1]
-        if lt.text in BIG or _matches_ellipsis(lt.text):
-            return True
-    # right side
-    if i < len(doc):
-        rt = doc[i]
-        if rt.text in BIG or _matches_ellipsis(rt.text):
-            return True
-    return False
-
-
-def _is_in_runon(doc: Doc, i: int) -> bool:
-    """
-    True if token *i* lives in a long sentence (≥ RUNON_SENT_MIN_TOKENS)
-    AND no hard punctuation appears within RUNON_WINDOW tokens either side.
-    Used to suppress fine-grained verb splits inside list-heavy passages
-    (e.g. the lighthouse paragraph).  CRUCIAL: returns False for short
-    sentences so ordinary S-V-O sentences ("the cat sat on the mat") still
-    split after the verb.
-    """
-    sent = doc[i].sent
-    if len(sent) < RUNON_SENT_MIN_TOKENS:
-        return False
-    lo = max(0, i - RUNON_WINDOW)
-    hi = min(len(doc), i + RUNON_WINDOW)
-    return not any(t.text in HARD_PUNCT for t in doc[lo:hi])
-
-
-def _is_frozen_bigram_split(doc: Doc, i: int) -> bool:
-    """True if cutting at *i* would split a frozen bigram like 'what if'."""
-    if i <= 0 or i >= len(doc):
-        return False
-    pair = (doc[i - 1].lower_, doc[i].lower_)
-    return pair in FROZEN_BIGRAMS
-
-
-def _chunk_containing(doc: Doc, i: int) -> Optional[Span]:
-    """Return the noun_chunk containing token index *i*, or None."""
-    for nc in doc.noun_chunks:
-        if nc.start <= i < nc.end:
-            return nc
-    return None
-
-
-def _tokens_to_next_punct(doc: Doc, i: int) -> int:
-    """Return the number of tokens from *i* (inclusive) up to the next
-    HARD_PUNCT or comma (or end of doc)."""
-    j = i
-    while j < len(doc) and doc[j].text not in HARD_PUNCT and doc[j].text != ",":
-        j += 1
-    return j - i
-
-
-def _content_count(doc: Doc, lo: int, hi: int) -> int:
-    """Count NOUN/PROPN/VERB/ADJ/ADV/NUM tokens in doc[lo:hi].  Used by
-    the long-clause / infinitive / progressive / `of`-reveal rules to
-    measure how much "real content" is on each side of a candidate split."""
-    return sum(1 for x in doc[lo:hi]
-               if x.pos_ in {"NOUN", "PROPN", "VERB", "ADJ", "ADV", "NUM"})
+# token & span checks: compound entities, hyphen compounds, ordinals, ellipses, big-punctuation splits, run-ons, frozen bigrams, noun chunks, distance to punctuation, content counts.
+# → moved to shared_text_logic.py, SECTION 5 (imported at the top of this file).
 
 
 # --- debug helpers ---------------------------------------------------------
@@ -968,595 +338,12 @@ def _debug_print_stage(name: str, was_applied: bool,
     print(f"==> {name} ({status}){bang}")
     print(f"    {_format_chunks_debug(chunks)}")
 
-# =============================================================================
-# EQUATION / DEFINITION LEMMA SETS  (Family 7 — "X means/equals/represents Y")
-#
-# Verbs whose complement defines, equates, or signifies the subject.
-# Structurally similar to Family 4 (perception) but semantically narrower:
-# the verb explicitly links a concept to its definition / equivalent /
-# meaning.
-#
-# These verbs often appear in short definitional sentences ("X means Y."),
-# so the sentence-length threshold is slightly lower than Families 2-4.
-# =============================================================================
+# the verb MEANING FAMILIES (equation / result / spatial / perception / creation / possession / copula), the v18 lexicons (comparison, exception, discourse pivot, SFX) and the weak (non-visual) verb + adjective vocabulary.
+# → moved to shared_text_logic.py, SECTION 2.4 + 2.5 (imported at the top of this file).
 
-# Direct equation.
-EQUATION_EQUAL_LEMMAS = {
-    "equal", "represent", "signify", "symbolize", "symbolise",
-    "denote", "stand",  # "stands for X"
-}
 
-# Definition / explanation.
-EQUATION_MEAN_LEMMAS = {
-    "mean", "imply", "indicate", "suggest", "translate",  # "translates to/into"
-}
-
-# Refer / amount to.
-EQUATION_REFER_LEMMAS = {
-    "refer",  # "refers to"
-    "amount",  # "amounts to"
-    "boil",    # "boils down to"
-    "come",    # "comes down to"
-}
-
-ALL_EQUATION_LEMMAS = (EQUATION_EQUAL_LEMMAS
-                       | EQUATION_MEAN_LEMMAS
-                       | EQUATION_REFER_LEMMAS)
-
-# Some equation verbs are phrasal — they need a specific particle/prep
-# to be in the equation sense.  Without the particle, they're something
-# else entirely:
-#   • "stand" alone = stand up.  "stand for X" = represent.
-#   • "refer" alone = make a reference.  "refer to X" = mean.
-#   • "amount" alone = (rare).  "amount to X" = equal.
-#   • "boil" alone = cook.  "boil down to X" = equal in essence.
-#   • "come" alone = arrive.  "come down to X" = equal in essence.
-#   • "translate" alone = render.  "translate to/into X" = equate.
-# These require the specific particle for the rule to fire.
-EQUATION_PHRASAL_PARTICLES = {
-    "stand": {"for"},
-    "refer": {"to"},
-    "amount": {"to"},
-    "boil": {"to"},          # "boil down to" — "to" is the key prep
-    "come": {"to"},          # "comes down to" — "to" is the key prep
-    "translate": {"to", "into"},
-}
-
-# =============================================================================
-# RESULT-CLAUSE INTENSIFIERS  (Family 6 — "so X that Y", "more X than Y")
-#
-# Words that, when paired with a downstream connector ("that", "than",
-# "to"), form a result-clause construction whose downstream payload is
-# the reveal.
-#
-# Patterns gated by these intensifiers:
-#   • "so" + ADJ/ADV + "that"      → split AFTER "that"
-#   • "such" + (DET) + NOUN + "that" → split AFTER "that"
-#   • "more/less/fewer" + ... + "than" → split AFTER "than"
-#   • "too" + ADJ + "to"           → split AFTER "to"
-#   • ADJ + "enough" + "to"        → split AFTER "to"
-#
-# Without an intensifier, the connector is not a result-clause introducer:
-#   "the man that left"   ("that" is WDT relative, not SCONJ)
-#   "I want to leave"     ("to" is plain infinitive, not result)
-#   "the book that I read" (no intensifier upstream)
-# =============================================================================
-
-# Intensifiers that, paired with "that", introduce a result clause.
-RESULT_THAT_INTENSIFIERS = {"so", "such"}
-
-# Intensifiers that, paired with "than", introduce a comparison.
-# (RESULT_THAN comparatives also include JJR/RBR tags — handled
-# structurally, not by this set.)
-RESULT_THAN_INTENSIFIERS = {"more", "less", "fewer"}
-
-# Intensifiers that, paired with "to + VERB", introduce a result.
-RESULT_TO_INTENSIFIERS = {"too", "enough"}
-
-# Combined for fast membership check
-ALL_RESULT_INTENSIFIERS = (RESULT_THAT_INTENSIFIERS
-                            | RESULT_THAN_INTENSIFIERS
-                            | RESULT_TO_INTENSIFIERS)
-
-# Lookback window — how far back to search for an intensifier from the
-# connector token.  6 tokens covers patterns like
-# "so well preserved that..." (3 tokens between "so" and "that").
-RESULT_INTENSIFIER_LOOKBACK = 6
-
-
-# =============================================================================
-# SPATIAL PREPOSITION SETS  (Family 5 — "X moves/sits/extends through Y")
-#
-# Prepositions whose object NP is a visual locative or trajectory reveal.
-# Distinguishes "spatial-reveal" preps from "qualifier" preps:
-#
-#   • SPATIAL preps open into rich locative / directional NPs that paint
-#     a visual ("through heat haze for absurd distances").  These earn
-#     a split AFTER the prep when the subtree is substantial.
-#
-#   • QUALIFIER preps almost always bind tightly to their head NP
-#     ("of India", "with care", "for fun", "as a child") and should NOT
-#     be split after.  These overlap with PROMISCUOUS_PREPS.
-#
-# Notes on tricky members:
-#   • "around" — spatial usually, but also approximative ("around 40 years")
-#     which spaCy tags as a quantmod / advmod, not an ADP.  The ADP-pos
-#     check filters that out.
-#   • "over" — spatial AND temporal AND "about" sense.  We accept all,
-#     since they all open into rich subtrees ("over the years",
-#     "over the hill").
-#   • "before / after / during / since / until" — primarily temporal,
-#     but visually-rich temporal reveals ("during one temporary version
-#     of the map") still benefit from a split.  Included.
-# =============================================================================
-
-# Locative / static-position prepositions.
-SPATIAL_LOCATIVE_PREPS = {
-    "in", "on", "at", "under", "beneath", "below", "above", "over",
-    "behind", "between", "among", "amongst", "amid", "amidst",
-    "around", "near", "beside", "inside", "outside", "within",
-    "throughout", "against", "atop", "upon", "underneath",
-}
-
-# Directional / trajectory prepositions.
-SPATIAL_DIRECTIONAL_PREPS = {
-    "into", "onto", "through", "across", "along", "past",
-    "toward", "towards", "beyond", "off", "via",
-}
-
-# Temporal prepositions — often qualifier-flavored, but accepted when
-# subtree is rich enough.
-SPATIAL_TEMPORAL_PREPS = {
-    "during", "since", "until", "till", "before", "after", "while",
-}
-
-ALL_SPATIAL_PREPS = (SPATIAL_LOCATIVE_PREPS
-                     | SPATIAL_DIRECTIONAL_PREPS
-                     | SPATIAL_TEMPORAL_PREPS)
-
-# Tunables for Family 5
-SPATIAL_PREP_SUBTREE_MIN_NOUNS = 2     # nouns required in subtree
-SPATIAL_PREP_SENT_MIN_TOKENS   = 8    # sentence length floor
-SPATIAL_PREP_LEAD_MIN          = 3     # content tokens before the prep
-
-
-# =============================================================================
-# PERCEPTION / COGNITION LEMMA SETS  (Family 4 — "X sees/finds/knows Y")
-#
-# Verbs whose dobj OR ccomp carries the reveal payload — what was seen,
-# found, realized, claimed, suggested.  Structurally similar to Families
-# 2 and 3 but accepts BOTH dobj-style ("noticed the stain") and
-# ccomp-style ("noticed that he was late") complements.
-#
-# Sub-families grouped by semantic role:
-# =============================================================================
-
-# Perceive — direct sensory perception.
-PERCEPTION_SEE_LEMMAS = {
-    "see", "spot", "notice", "observe", "witness", "glimpse",
-    "perceive", "detect",
-}
-
-# Find — discovery / encounter.
-PERCEPTION_FIND_LEMMAS = {
-    "find", "discover", "uncover", "unearth", "encounter",
-}
-
-# Realize — cognitive arrival.
-PERCEPTION_REALIZE_LEMMAS = {
-    "realize", "realise", "recognize", "recognise",
-    "understand", "grasp", "comprehend",
-}
-
-# Think — opinion / supposition.  v18: + picture/envision/visualise —
-# direct-address imagery cues ("picture a wall of water ten stories tall").
-PERCEPTION_THINK_LEMMAS = {
-    "think", "believe", "suspect", "assume", "suppose", "reckon",
-    "imagine", "guess",
-    "picture", "envision", "visualize", "visualise",
-}
-
-# Know / mean / imply — knowledge & signification.
-PERCEPTION_KNOW_LEMMAS = {
-    "know", "mean", "signify", "imply", "indicate", "suggest",
-}
-
-# Reveal — disclosure verbs (often the reveal IS the punchline).
-PERCEPTION_REVEAL_LEMMAS = {
-    "reveal", "show", "demonstrate", "expose", "disclose",
-}
-
-# Say — speech-act introducers.  v18: + swear/insist/warn/whisper/promise —
-# unquoted claims ("locals swear the lights move on their own").
-PERCEPTION_SAY_LEMMAS = {
-    "say", "claim", "argue", "declare", "announce", "report",
-    "state", "mention", "admit", "confess",
-    "swear", "insist", "warn", "whisper", "promise",
-}
-
-# Sense — v18: non-visual sensory perception ("you can hear the ice
-# cracking", "watch the tide swallow the road").  The copular uses of
-# "feel"/"smell"/"taste" ("feels cold") take acomp, not dobj/ccomp, so
-# _has_substantial_complement keeps them out of RULE 45 automatically —
-# only the transitive perception uses fire.
-PERCEPTION_SENSE_LEMMAS = {
-    "hear", "overhear", "watch", "smell", "taste", "sense", "feel",
-}
-
-ALL_PERCEPTION_LEMMAS = (PERCEPTION_SEE_LEMMAS
-                         | PERCEPTION_FIND_LEMMAS
-                         | PERCEPTION_REALIZE_LEMMAS
-                         | PERCEPTION_THINK_LEMMAS
-                         | PERCEPTION_KNOW_LEMMAS
-                         | PERCEPTION_REVEAL_LEMMAS
-                         | PERCEPTION_SAY_LEMMAS
-                         | PERCEPTION_SENSE_LEMMAS)
-
-
-# =============================================================================
-# v18 LEXICONS + TUNABLES  (RULES 56–60)
-# =============================================================================
-
-# --- RULE 56 — comparison reveal ------------------------------------------
-# Resemblance verbs whose dobj IS the compared image ("resembles a giant
-# ribcage").  Kept tiny; "look/seem/appear like" is handled via the
-# ADP-'like' branch, not here.
-COMPARISON_RESEMBLE_LEMMAS = {"resemble", "mimic", "mirror"}
-
-COMPARISON_SENT_MIN = 7      # min non-punct tokens in sentence
-COMPARISON_LEAD_MIN = 2      # min tokens since last split before the marker
-
-# --- RULE 57 — exception reveal -------------------------------------------
-# Single-token exception markers.  "besides" is deliberately absent — its
-# discourse use ("Besides, ...") dominates in scripts.
-EXCEPTION_SINGLE_MARKERS = {"except", "excluding"}
-# Two-token exception markers, matched on (token, next_token) lowercase.
-EXCEPTION_BIGRAMS = {
-    ("apart", "from"), ("aside", "from"),
-    ("other", "than"), ("save", "for"),
-}
-EXCEPTION_SENT_MIN = 5
-EXCEPTION_LEAD_MIN = 2
-
-# --- RULE 58 — discourse pivot / retention hook ---------------------------
-# Fixed multi-word retention hooks.  Matched on lowercase token sequences
-# (spaCy tokenizes "here's" as "here" + "'s"; smart apostrophes are
-# normalised in the matcher).  Purely lexical by design — these are
-# script-writing idioms, not grammar.
-DISCOURSE_PIVOT_PHRASES: List[Tuple[str, ...]] = [
-    ("here", "'s", "the", "thing"),  ("here", "is", "the", "thing"),
-    ("here", "'s", "the", "catch"),  ("here", "is", "the", "catch"),
-    ("here", "'s", "the", "kicker"), ("here", "is", "the", "kicker"),
-    ("here", "'s", "why"),           ("here", "is", "why"),
-    ("which", "brings", "us", "to"), ("which", "brings", "me", "to"),
-    ("believe", "it", "or", "not"),
-    ("long", "story", "short"),
-    ("it", "gets", "worse"), ("it", "gets", "better"),
-    ("it", "gets", "weirder"), ("it", "gets", "stranger"),
-    ("as", "a", "result"),
-    ("in", "other", "words"),
-    ("wait", "for", "it"),
-    ("but", "wait"),
-    ("plot", "twist"),
-    ("fun", "fact"),
-    ("spoiler", "alert"),
-    ("get", "this"),        # extra guard in the rule: must be clause-final
-]
-# Pre-sorted longest-first so the matcher prefers the longest hook at
-# any position ("here's the thing" beats a hypothetical ("here", "'s")).
-DISCOURSE_PIVOT_PHRASES.sort(key=len, reverse=True)
-
-DISCOURSE_PIVOT_MIN_TAIL = 2   # non-punct tokens needed after the hook
-                               # before we also split AFTER it
-
-# --- RULE 59 — passive agent reveal ---------------------------------------
-AGENT_REVEAL_SENT_MIN = 6
-AGENT_REVEAL_LEAD_MIN = 3
-
-# --- RULE 60 — SFX / onomatopoeia beat -------------------------------------
-# Sound-effect words that earn their own line when used BARE (no determiner,
-# no subject, no object — "and then boom the roof came down").  Noun uses
-# ("the crash"), verb uses ("cars crash", "snap a photo") and compounds
-# ("crash site", "pop culture") are filtered structurally in the rule.
-SFX_WORDS = {
-    "boom", "kaboom", "bang", "crash", "smash", "bam", "wham", "pow",
-    "whoosh", "woosh", "swoosh", "thud", "thump", "snap", "crack",
-    "pop", "buzz", "roar", "splash", "slam", "screech", "clang",
-    "crunch", "zap", "thwack", "clunk",
-    # v18.4 expansion
-    "click", "rattle", "rumble", "hiss", "sizzle", "fizz", "thunk",
-    "plop", "splat", "squelch", "ding", "honk", "vroom", "whirr",
-    "clatter", "creak", "crackle", "whack", "boing", "ping",
-}
-
-
-# =============================================================================
-# CREATION LEMMA SETS  (Family 3 — "X produced/created/built Y")
-# 
-# Verbs whose direct-object subtree IS the visual reveal — what was made,
-# built, designed, formed, or transformed.  Same structural pattern as
-# Family 2 (possession): verb + substantial dobj → split AFTER verb.
-# 
-# The differentiator from Family 2: creation verbs describe an ACTION
-# that produces the object, where possession verbs describe a STATE of
-# having it.  Structurally, the split logic is identical — both rely on
-# _is_substantial_dobj.  We keep them as separate rules for clarity and
-# so they can be tuned independently if needed.
-# 
-# Excluded by design:
-#   • "make" — too ambiguous: causative ("make him cry"), idiomatic
-#     ("make sense"), and creation ("make a chair") all take dobj-like
-#     structures.  The causative/idiomatic uses dominate by frequency;
-#     adding "make" would over-fire.  If you want to revisit later, the
-#     disambiguator would be: dobj is NOT a PRON, NOT an "oprd"-taking
-#     pattern, AND dobj subtree has ≥1 modifier.
-#   • "grow" — could be cultivation ("grew tomatoes") but also copular
-#     ("grew tired"), already in Family 1's COPULA_BECOMING set.
-#   • "form" — same conflict: "form a circle" (creation) vs "crystals
-#     form quickly" (intransitive becoming).
-#   • "cast" — too ambiguous: cast a vote / cast iron / cast a shadow.
-# =============================================================================
-
-# Production / manufacture.
-CREATION_PRODUCE_LEMMAS = {
-    "produce", "manufacture", "generate", "fabricate", "yield",
-}
-
-# Building / construction.
-CREATION_BUILD_LEMMAS = {
-    "build", "construct", "assemble", "erect", "raise",
-}
-
-# Pure creation (bringing into existence).
-CREATION_CREATE_LEMMAS = {
-    "create", "invent", "conceive", "establish", "found", "launch",
-    "introduce",
-}
-
-# Crafting / shaping (hands-on creation).
-CREATION_CRAFT_LEMMAS = {
-    "craft", "shape", "sculpt", "mold", "mould", "forge",
-}
-
-# Design / development.
-CREATION_DESIGN_LEMMAS = {
-    "design", "develop", "devise", "engineer", "pioneer", "architect",
-}
-
-# Causation / triggering — reveals what was caused or made possible.
-CREATION_CAUSE_LEMMAS = {
-    "cause", "trigger", "spark", "prompt", "drive",
-}
-
-# Enabling — reveals what was made possible.
-CREATION_ENABLE_LEMMAS = {
-    "enable", "allow", "permit", "let",
-}
-
-ALL_CREATION_LEMMAS = (CREATION_PRODUCE_LEMMAS
-                       | CREATION_BUILD_LEMMAS
-                       | CREATION_CREATE_LEMMAS
-                       | CREATION_CRAFT_LEMMAS
-                       | CREATION_DESIGN_LEMMAS
-                       | CREATION_CAUSE_LEMMAS
-                       | CREATION_ENABLE_LEMMAS)
-
-
-# =============================================================================
-# POSSESSION LEMMA SETS  (Family 2 — "X has/owns/contains/lacks Y")
-#
-# Verbs whose direct-object subtree is the reveal payload.  Hardcoded
-# lemma sets (small closed-ish classes), but each verb's "is this a
-# reveal use" decision is fully structural:
-#   • verb has a dobj
-#   • dobj subtree is "substantial" (see _is_substantial_dobj)
-#   • verb's own dep is NOT aux/auxpass (filters perfect-aspect "have")
-#
-# Excluded by design:
-#   • hold, carry, bear — too ambiguous between contain-sense and
-#     transport/grip-sense; both take dobj so structural disambiguation
-#     isn't reliable.
-#   • want — desire-sense vs lack-sense too overlapping.
-# =============================================================================
-
-# Core possession.  "have" is the trickiest because it doubles as perfect-
-# aspect auxiliary; the dep != aux check filters that out.
-POSSESSION_CORE_LEMMAS = {"have", "own", "possess"}
-
-# Containment verbs.
-POSSESSION_CONTAIN_LEMMAS = {
-    "contain", "include", "comprise", "encompass",
-}
-
-# Featuring / providing verbs.
-POSSESSION_FEATURE_LEMMAS = {
-    "feature", "boast", "offer", "provide", "present",
-}
-
-# Negative possession — often a punchline reveal.
-POSSESSION_NEGATIVE_LEMMAS = {
-    "lack", "miss", "need", "require",
-}
-
-# Hidden-containment.
-POSSESSION_HIDDEN_LEMMAS = {
-    "harbor", "harbour", "house",
-}
-
-ALL_POSSESSION_LEMMAS = (POSSESSION_CORE_LEMMAS
-                         | POSSESSION_CONTAIN_LEMMAS
-                         | POSSESSION_FEATURE_LEMMAS
-                         | POSSESSION_NEGATIVE_LEMMAS
-                         | POSSESSION_HIDDEN_LEMMAS)
-
-
-# =============================================================================
-# COPULA LEMMA SETS  (Family 1 — linking verbs / "X is/looks/becomes Y")
-# 
-# Closed sets of linking-verb lemmas grouped by sub-family.  The lemma set
-# is hardcoded because copulas form a CLOSED CLASS — but the per-token
-# decision of "is this copular here?" is fully structural via dep labels
-# (_is_copular_use).  Hardcoded lemma → NLP disambiguator → fire/skip.
-# =============================================================================
-
-# "be" group — the only sub-family that REQUIRES an intensifier or
-# substantial complement to trigger a reveal split.  Bare "is + ADJ"
-# does NOT split — "is happy", "is simple", "is busy" stay whole.
-COPULA_BE_LEMMAS = {"be"}
-
-# Sensory copulas — perception-based linking verbs.  Fire even on a
-# bare ADJ complement because the verb itself carries reveal weight.
-# "looks microscopic" splits at "looks |".
-COPULA_SENSORY_LEMMAS = {
-    "look", "sound", "feel", "taste", "smell", "seem", "appear",
-}
-
-# Becoming copulas — transformation linking verbs.  Disambiguator
-# blocks transitive uses ("got a letter", "turned the wheel").
-COPULA_BECOMING_LEMMAS = {
-    "become", "get", "grow", "turn", "go", "come", "fall", "run",
-}
-
-# Staying copulas — persistence linking verbs.
-COPULA_STAYING_LEMMAS = {
-    "remain", "stay", "keep", "continue",
-}
-
-# Judgment / verdict copulas.
-COPULA_JUDGMENT_LEMMAS = {
-    "prove",
-}
-
-# "Strong" copulas — fire on a bare ADJ complement (no intensifier needed).
-STRONG_COPULA_LEMMAS = (COPULA_SENSORY_LEMMAS
-                        | COPULA_BECOMING_LEMMAS
-                        | COPULA_STAYING_LEMMAS
-                        | COPULA_JUDGMENT_LEMMAS)
-
-# Full union — every lemma the copula rule recognises.
-ALL_COPULA_LEMMAS = COPULA_BE_LEMMAS | STRONG_COPULA_LEMMAS
-
-# Negation tokens — when one immediately follows a copula, the split
-# should land AFTER the negation so the contraction reads as one unit:
-# "isn't | really big"  not  "is | n't really big"
-NEGATION_TOKENS = {"n't", "not", "never"}
-
-# Lemma set for "weak" verbs that shouldn't qualify a chunk as visualisable
-# on their own — copulas and similar functional verbs.  A chunk containing
-# ONLY weak verbs (no nouns, no adjectives, no concrete verbs) is essentially
-# a connective phrase ("It's", "that has", "which were", "had been").
-WEAK_VERB_LEMMAS = {
-    "be", "have", "do", "get", "make", "go", "come",
-    "seem", "appear", "become", "remain", "stay",
-    # v18.2 — transactional / light verbs that paint no picture on their
-    # own ("It costs", "Which brings us to", "what you're holding").  The
-    # image, when there is one, always lives in the accompanying NOUN, so
-    # excluding these verbs from visualisability/keywords never loses a
-    # visual — it only stops verb-only lines counting as picture-able and
-    # verb-only search terms ("costs", "brings", "find") being emitted.
-    "cost", "bring", "take", "find", "mean", "keep", "let", "need",
-    "want", "know", "think", "say", "tell", "happen", "matter",
-    "include", "involve", "require", "use", "try", "hold",
-    # v18.4 expansion — perception/cognition/aspect verbs whose image
-    # always lives in the accompanying noun
-    "allow", "begin", "start", "stop", "end", "continue", "cause",
-    "help", "consider", "believe", "decide", "expect", "feel", "hear",
-    "see", "look", "call", "ask", "understand", "realize", "realise",
-    "remember", "forget", "learn", "notice", "wonder", "agree",
-    "describe", "explain", "refer", "relate", "depend", "occur",
-    "exist", "provide", "offer", "receive", "own", "contain", "belong",
-    "manage", "fail", "attempt", "plan", "intend", "tend", "suppose",
-}
-
-# All surface forms of the above weak verbs, including clitic contractions.
-# Some spaCy parses tag clitics with non-canonical lemmas ("'re" instead of
-# "be") so the lemma-based check alone misses them.  We also check the
-# token's text.lower() against this set.
-WEAK_VERB_FORMS = {
-    # be
-    "be", "am", "is", "are", "was", "were", "been", "being",
-    "'s", "’s", "'re", "’re", "'m", "’m", "'ve", "’ve",
-    # have
-    "have", "has", "had", "having", "'d", "’d", "'ll", "’ll",
-    # do
-    "do", "does", "did", "done", "doing",
-    # get
-    "get", "gets", "got", "gotten", "getting",
-    # make
-    "make", "makes", "made", "making",
-    # go
-    "go", "goes", "went", "gone", "going",
-    # come
-    "come", "comes", "came", "coming",
-    # seem / appear / become / remain / stay
-    "seem", "seems", "seemed", "seeming",
-    "appear", "appears", "appeared", "appearing",
-    "become", "becomes", "became", "becoming",
-    "remain", "remains", "remained", "remaining",
-    "stay", "stays", "stayed", "staying",
-    # v18.2 additions (irregular surfaces of the new weak lemmas)
-    "cost", "costs", "brought", "bring", "brings", "bringing",
-    "take", "takes", "took", "taken", "taking",
-    "find", "finds", "found", "finding",
-    "mean", "means", "meant", "meaning",
-    "keep", "keeps", "kept", "keeping",
-    "know", "knows", "knew", "known", "knowing",
-    "think", "thinks", "thought", "thinking",
-    "say", "says", "said", "saying", "tell", "tells", "told", "telling",
-    "hold", "holds", "held", "holding",
-    # v18.4 irregular surfaces of the expanded weak lemmas
-    "began", "begun", "saw", "seen", "heard", "felt", "understood",
-    "forgot", "forgotten", "learnt", "realised", "realized",
-}
-
-# Lemma set for "weak" adjectives — quantifier-ish words that spaCy tags
-# as ADJ but don't add visual content on their own.  A chunk like "many",
-# "much", "few", "some" alone is not visualisable.  Real descriptive ADJs
-# ("red", "tiny", "ancient", "brilliant") are visualisable.
-WEAK_ADJ_LEMMAS = {
-    "many", "much", "more", "less", "few", "fewer", "some", "any",
-    "such", "other", "same", "different", "various", "several",
-    "certain", "particular", "specific", "general",
-    "own", "whole", "entire", "main", "only", "very", "too",
-    # v18.4 expansion — quantity / hedging / abstract adjectives that paint
-    # no picture on their own
-    "numerous", "countless", "multiple", "additional", "further", "extra",
-    "overall", "usual", "common", "typical", "normal", "standard",
-    "possible", "likely", "probable", "potential", "available", "able",
-    "mere", "single", "sole", "former", "latter", "recent", "current",
-    "actual", "eventual", "respective", "relevant", "similar", "equal",
-}
-
-
-def _has_visualisable_content(doc: Doc, lo: int, hi: int) -> bool:
-    """
-    True if the span has at least one tangible/concrete content token,
-    OR the span is long enough (≥4 non-punct tokens) to read as a
-    legitimate line even without concrete content tokens.
-
-    (Existing docstring continues...)
-
-    NEW: clauses ≥4 non-punct tokens are accepted regardless of POS
-    density.  This handles relative/wh-clauses like "what had to be done",
-    "that the boss had quit", which are functionally reveal-worthy even
-    though their POS density is weak (PRON + AUX + AUX + VBN).
-    """
-    # Length-based acceptance for substantial spans
-    ntok = sum(1 for t in doc[lo:hi] if not t.is_punct and not t.is_space)
-    if ntok >= 4:
-        return True
-
-    for t in doc[lo:hi]:
-        if t.pos_ in {"NOUN", "PROPN", "NUM"}:
-            return True
-        if t.pos_ == "ADJ" and t.lemma_.lower() not in WEAK_ADJ_LEMMAS:
-            return True
-        if t.pos_ == "VERB":
-            lemma_weak = t.lemma_.lower() in WEAK_VERB_LEMMAS
-            text_weak  = t.text.lower() in WEAK_VERB_FORMS
-            if not (lemma_weak or text_weak):
-                return True
-    return False
+# has_visualisable_content() — is there anything in this span you could put on screen?
+# → moved to shared_text_logic.py, SECTION 5 (imported at the top of this file).
 
 
 # =============================================================================
@@ -1592,8 +379,8 @@ def rule_strip_markdown(text: str) -> str:
 #   • every remaining whitespace run (newlines, tabs, multi-spaces) collapses
 #     to a single space.
 # -----------------------------------------------------------------------------
-_PARA_BREAK_RE = re.compile(r"([^\s.!?;:…])[ \t]*\n[ \t]*\n\s*")
-_WS_RUN_RE = re.compile(r"\s+")
+# the paragraph-break / whitespace-run regexes.
+# → moved to shared_text_logic.py, SECTION 2.13 (imported at the top of this file).
 
 
 def rule_normalise_whitespace(text: str) -> str:
@@ -2254,20 +1041,8 @@ def rule_noun_lists(doc: Doc) -> Set[int]:
     out = set()
     chunks = list(doc.noun_chunks)
 
-    # Explicit prep sets for visual typography splitting
-    BLOCKED_PREPS = {
-        "of", "with", "for", "about", "as", "like", "than", "per", "via"
-    }
-    SPLITTABLE_PREPS = {
-        # location
-        "in", "at", "on", "under", "over", "above", "below", "beneath",
-        "behind", "beside", "between", "among", "around", "near", "by",
-        "inside", "outside", "within", "into", "onto", "through", "across",
-        "along", "past", "toward", "towards", "off", "up", "down",
-        "underneath", "against", "upon",
-        # time
-        "after", "before", "during", "since", "until", "till"
-    }
+    # BLOCKED_PREPS / SPLITTABLE_PREPS — which prepositions may be cut after in a list.
+    # → moved to shared_text_logic.py, SECTION 2.3 (imported at the top of this file).
 
     for a, b in zip(chunks[:-1], chunks[1:]):
         between = doc[a.end:b.start]
@@ -2764,7 +1539,8 @@ def rule_and_or_clause(doc: Doc, splits: Set[int]) -> Set[int]:
 #     a real VERB (not AUX) — catches "...looks | microscopic" where the
 #     head-distance is only 2 but the sentence has plenty of build-up.
 # -----------------------------------------------------------------------------
-MIN_LEAD_FOR_DESCRIPTOR = 5
+# MIN_LEAD_FOR_DESCRIPTOR.
+# → moved to shared_text_logic.py, SECTION 2.14 (imported at the top of this file).
 
 def rule_terminal_descriptor(doc: Doc, splits: Set[int]) -> Set[int]:
     """Split BEFORE a terminal descriptor that "reveals the visual quality".
@@ -2999,8 +1775,8 @@ def rule_numeric_approximator_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
       "spans over | three continents"
     """
     DEBUG = False
-    APPROX_ADV = {"nearly", "almost", "about", "roughly", "approximately",
-                  "around", "over", "just", "only", "barely", "merely"}
+    # APPROX_ADV → APPROXIMATOR_WORDS.
+    # → moved to shared_text_logic.py, SECTION 2.3 (imported at the top of this file).
     out = set()
     for t in doc:
         if t.lower_ not in APPROX_ADV:
@@ -3679,17 +2455,8 @@ def rule_progressive_split(doc: Doc, splits: Set[int]) -> Set[int]:
 def rule_copula_attr_reveal(doc: Doc, splits: Set[int]) -> Set[int]:
     out = set()
     
-    # Verbs that act as copulas (linking subject to visual predicate)
-    COPULAR_LEMMAS = {
-        "be", "feel", "look", "seem", "appear", "become", "remain", "stay",
-        "sound", "taste", "smell", "prove", "turn"
-    }
-    COPULAR_FORMS = {
-        "is", "are", "was", "were", "am", "be", "been", "being",
-        "'s", "’s", "'re", "’re", "'m", "’m",
-        "feels", "looks", "seems", "appears", "becomes", "remains", "stays",
-        "felt", "looked", "seemed", "appeared", "became", "remained", "stayed"
-    }
+    # COPULAR_LEMMAS / COPULAR_FORMS — verbs that link a subject to a visual predicate.
+    # → moved to shared_text_logic.py, SECTION 2.4 (imported at the top of this file).
     
     for chunk in doc.noun_chunks:
         # 1. Is the chunk heavy enough to be a visual reveal on its own?
@@ -5690,8 +4457,8 @@ def anti_rule_compound_ne(doc: Doc, splits: Set[int]) -> Set[int]:
     spaCy, but the approximator + number boundary is a deliberate reveal
     target — splitting between them is the whole point of rule_numeric_approximator_reveal.
     """
-    APPROX_LEMMAS = {"nearly", "almost", "about", "roughly", "approximately",
-                     "around", "over", "just", "only", "barely", "merely"}
+    # APPROX_LEMMAS → APPROXIMATOR_WORDS (the same set the approximate-amount rule uses).
+    # → moved to shared_text_logic.py, SECTION 2.3 (imported at the top of this file).
     bad = set()
     for i in splits:
         if not _in_compound_ne(doc, i):
@@ -5757,7 +4524,8 @@ def anti_rule_hyphen_compound(doc: Doc, splits: Set[int]) -> Set[int]:
 #     apostrophe character AND verify the tokens were unspaced in source.
 def anti_rule_possessive(doc: Doc, splits: Set[int]) -> Set[int]:
     bad = set()
-    APOS = {"'", "\u2019", "\u2018", "`"}
+    # APOS → APOSTROPHES.
+    # → moved to shared_text_logic.py, SECTION 2.1 (imported at the top of this file).
 
     def _has_apos(s: str) -> bool:
         return any(c in APOS for c in s)
@@ -6006,7 +4774,8 @@ def anti_rule_compound_noun(doc: Doc, splits: Set[int]) -> Set[int]:
 #     Markers detected: * ** _ __  (and trailing punctuation after the closer).
 def anti_rule_markdown_emphasis(doc: Doc, splits: Set[int]) -> Set[int]:
     bad = set()
-    EMPH_CHARS = {"*", "_"}
+    # EMPH_CHARS → MARKDOWN_EMPHASIS_CHARS.
+    # → moved to shared_text_logic.py, SECTION 2.1 (imported at the top of this file).
 
     def _is_emph(tok: Token) -> bool:
         s = tok.text
@@ -6435,8 +5204,8 @@ def _fuse_orphans(doc: Doc, chunks: ChunkMap, chunk_spans: List[Tuple[int, int]]
     if len(chunks) <= 1:
         return chunks, chunk_spans
 
-    REL_TAGS  = {"WDT", "WP", "WP$", "WRB"}
-    PUNCT_ONLY_RE = re.compile(r"^[^\w\s]+$")  # no letters/digits
+    # REL_TAGS → RELATIVE_PRONOUN_TAGS (the wh-tag set) and PUNCT_ONLY_RE.
+    # → moved to shared_text_logic.py, SECTION 2.2 + 2.13 (imported at the top of this file).
 
     def _content_tokens(lo: int, hi: int) -> List[Token]:
         return [t for t in doc[lo:hi] if not t.is_punct and not t.is_space]
@@ -7218,109 +5987,15 @@ def split_text_into_sections_with_meta(text: str,
             for c, m in zip(chunks, metas)]
 
 
-# Rule ids that mark a chunk as an item of a list run (see _build_chunks_meta).
-_LIST_RULE_IDS = {15, 16, 25, 51}
-_LIST_ITEM_MAX_TOKENS = 5   # a real list item is short ("scurvy," "pirates,")
-_LIST_MIN_TAGGED = 2        # >=2 tagged boundaries -> >=3 on-screen cells
+# the list-run rule ids, their size thresholds, the generic topic nouns and the anaphoric pronouns.
+# → moved to shared_text_logic.py, SECTION 1.3 + 2.10 + 2.14 (imported at the top of this file).
 
-# Generic nouns that must never win the "script topic" vote — they appear in
-# every script regardless of subject.  A LINGUISTIC category list (like the
-# weak-verb sets), not a world-knowledge answer key.
-_GENERIC_TOPIC_NOUNS = {
-    "thing", "way", "time", "year", "day", "part", "place", "people",
-    "world", "lot", "kind", "sort", "one", "story", "fact", "reason",
-    # v18.4 expansion
-    "bit", "case", "side", "end", "point", "idea", "example", "problem",
-    "question", "answer", "moment", "name", "word", "line", "video",
-    "subject", "matter", "area", "number", "amount", "group", "level",
-    "order", "form", "type", "use", "need", "man", "woman", "guy",
-}
-
-# Pronouns that make a line lean on an earlier subject ("It was worth...").
-# "you" is deliberately absent — narration addresses the viewer constantly.
-_ANAPHORIC_SUBJECT_PRONOUNS = {"it", "they", "he", "she"}
-
-# Idiomatic SAYINGS — a stretch of words that means something as a UNIT and
-# paints no literal picture ("the rest is history" is not about history
-# footage).  Two effects, both automatic:
-#   1. the splitter never cuts INSIDE an idiom — it stays one line;
-#   2. its tokens don't count as keywords/nouns/visualisable content, so an
-#      idiom-only line correctly reads as "hold the previous image".
-# Token tuples, lowercased, matched against the parsed doc.
-IDIOM_PHRASES = {
-    ("the", "rest", "is", "history"),
-    ("long", "story", "short"),
-    ("at", "the", "end", "of", "the", "day"),
-    ("when", "all", "is", "said", "and", "done"),
-    ("believe", "it", "or", "not"),
-    ("truth", "be", "told"),
-    ("needless", "to", "say"),
-    ("as", "it", "turns", "out"),
-    ("for", "what", "it", "'s", "worth"),
-    ("against", "all", "odds"),
-    ("sooner", "or", "later"),
-    ("little", "did", "they", "know"),
-    ("little", "did", "he", "know"),
-    ("little", "did", "she", "know"),
-    ("lo", "and", "behold"),
-    ("by", "and", "large"),
-    ("all", "things", "considered"),
-    ("time", "will", "tell"),
-    ("in", "a", "nutshell"),
-    ("out", "of", "the", "blue"),
-    ("come", "rain", "or", "shine"),
-    ("against", "the", "odds"),
-    ("easier", "said", "than", "done"),
-    ("last", "but", "not", "least"),
-    ("more", "or", "less"),
-    ("give", "or", "take"),
-    ("one", "way", "or", "another"),
-}
+# IDIOM_PHRASES and find_idiom_spans().
+# → moved to shared_text_logic.py, SECTION 2.8 + 5 (imported at the top of this file).
 
 
-def _idiom_spans(doc: Doc) -> List[Tuple[int, int]]:
-    """All (lo, hi) token spans in the doc matching an idiom phrase."""
-    lowers = [t.lower_ for t in doc]
-    spans: List[Tuple[int, int]] = []
-    for phrase in IDIOM_PHRASES:
-        L = len(phrase)
-        for i in range(len(lowers) - L + 1):
-            if tuple(lowers[i:i + L]) == phrase:
-                spans.append((i, i + L))
-    return spans
-
-
-# Noun lemmas whose stock footage should be styled "historical" once the
-# script has mentioned an old date: people-roles, vessels, conflict,
-# institutions.  A LINGUISTIC category lexicon (all the splitter's word
-# lists live here) — consumed by SEARCH_TERM_SYNTHESIS.
-ERA_STYLE_NOUNS = {
-    # people & roles
-    "merchant", "sailor", "trader", "soldier", "pirate", "explorer",
-    "settler", "colonist", "peasant", "farmer", "monk", "priest",
-    "blacksmith", "knight", "samurai", "warrior", "gladiator", "viking",
-    "crusader", "conqueror", "slave", "servant", "messenger", "scribe",
-    # rulers & nobility
-    "king", "queen", "emperor", "empress", "prince", "princess",
-    "pharaoh", "sultan", "tsar", "czar", "monarch", "duke", "duchess",
-    "lord", "lady", "nobleman", "chief", "chieftain", "shogun",
-    # military & command
-    "general", "admiral", "captain", "commander", "army", "navy",
-    "legion", "regiment", "cavalry", "infantry", "archer", "musketeer",
-    # vessels & travel
-    "ship", "boat", "vessel", "fleet", "galleon", "caravel", "frigate",
-    "voyage", "expedition", "caravan", "chariot", "carriage",
-    # conflict & power
-    "battle", "war", "siege", "conquest", "invasion", "rebellion",
-    "revolution", "uprising", "raid", "duel", "crusade", "plague",
-    # institutions & places-of-power
-    "empire", "kingdom", "dynasty", "colony", "monopoly", "treaty",
-    "throne", "crown", "court", "castle", "fortress", "palace",
-    "temple", "cathedral", "monastery", "harbor", "harbour", "port",
-    # objects of the era
-    "sword", "shield", "spear", "cannon", "musket", "armor", "armour",
-    "scroll", "parchment", "coin", "chest", "spice", "silk",
-}
+# ERA_STYLE_NOUNS.
+# → moved to shared_text_logic.py, SECTION 2.10 (imported at the top of this file).
 
 
 def _build_chunks_meta(doc: Doc, chunks: ChunkMap,
