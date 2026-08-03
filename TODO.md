@@ -1,3 +1,11 @@
+- I've prepared the tests for testing the auto tagger.  
+    - see the readme for how to proceed.
+
+
+
+
+
+
 - ensure/double check again that we don't log every single change to the manual_tagging_changes_report.txt...
     - only ones that user has give a reason for (reason can be empty)
 - once the Auto_add_mediatypes.py has been sorted:
