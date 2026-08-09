@@ -38,6 +38,13 @@ What's on the page
     the search term. grey ghost suggestion appears when the box is focused
     — tab to accept — plus big tap-to-append noun/place chips. once both
     steps are done a "continue to next" button appears right there.
+  - WHY? (bottom-right): every action — a split, a join, the first media
+    type a line ever gets as much as a re-tag, a search-term edit, decorate,
+    a data form, a stamp pick — offers to record why you did it, named by
+    the line index and the action ("Line 12 — search term changed"). Offers
+    queue, so carrying on working never loses the chance to explain an
+    earlier one; answer them one at a time, or skip. NOTHING reaches
+    manual_tagging_changes_report.txt unless you actually give a reason.
   - a FINISH button that pulses green when every line is done.
   - phones: no index numbers, per-row join buttons, a ✂ split tool (tap
     the tool, tap a line, tap where — nudge arrows move the point one
@@ -163,9 +170,14 @@ def _word_count(text: str) -> int:
     return len(re.findall(r"[\w']+", text or ""))
 
 HERE = Path(__file__).resolve().parent
-# every split / join / media-type / search-term change lands here, whichever
-# json is being tagged — one shared, append-only, human-readable report.
+# every EXPLAINED change (split, join, media type, extras, search term, data
+# form, stamp) lands here, whichever json is being tagged — one shared,
+# append-only, human-readable report. No reason given, nothing written.
 REPORT_PATH = HERE.parent / "manual_tagging_changes_report.txt"
+# how many un-explained changes keep their "why?" offer alive at once. The
+# overlay works through them newest-first; beyond this the oldest are dropped
+# (never written), because an offer from 40 changes ago is noise, not a prompt.
+_MAX_PENDING = 40
 _PLACE_LABELS = {"GPE", "LOC"}
 _NAME_LABELS = {"PERSON", "ORG", "FAC", "EVENT", "WORK_OF_ART", "NORP"}
 
@@ -633,12 +645,15 @@ class _State:
         self.log_path = REPORT_PATH
         # NOTHING IS EVER WRITTEN AUTOMATICALLY. A change only reaches the
         # report when the user types a reason and clicks "save reason" in the
-        # bottom-right overlay. Until then its entries just wait here in
-        # memory, and if the user ignores the overlay (or makes another
-        # change first) they are dropped and never hit the file.
+        # bottom-right overlay. Until then its entries just QUEUE UP here in
+        # memory: every change keeps its offer alive (a newer one no longer
+        # supersedes it), so making three changes in a row and then explaining
+        # them one by one works. Anything still un-explained when the session
+        # ends was never written — the file only ever gets reasoned changes.
         self._log_lock = threading.Lock()
         self._change_seq = 0
-        self._pending_log: "tuple[list, int] | None" = None
+        # change_id -> {"entries": [entry dict], "label": str}, oldest first
+        self._pending: Dict[int, dict] = {}
         self.data: Dict[str, dict] = json.loads(
             json_path.read_text(encoding="utf-8"))
         # CONFIG.py's own convention is "<name>_script_to_search_term.json"
@@ -776,6 +791,9 @@ class _State:
                 # on a line below it (task 11).
                 "min_new_words": _MIN_NEW_WORDS,
                 "recommend_status": status,
+                # changes still waiting for a "why" — a page reload keeps the
+                # offers instead of quietly losing them
+                "pending": self.pending(),
                 "lines": [{"line": line, "row": row,
                            "words": _word_count(line),
                            "suggest": self.suggest[line],
@@ -807,8 +825,9 @@ class _State:
             self.data = self.undo_stack.pop()
             self._commit()
             self._kick_recompute()
-            cid, label = self._write_entries(
-                ["### Undo\n- reverted the change above\n"])
+            cid, label = self._write_entries([self._entry(
+                "Undo", ["(the change above)"],
+                ["the change above"], ["reverted"])])
             return None, cid, label or "Undo"
         # snapshot BEFORE the change so a failed op leaves no undo entry
         snapshot = copy.deepcopy(self.data)
@@ -840,18 +859,41 @@ class _State:
     # ---- the change report ------------------------------------------------
     # NOTHING GOES IN THE REPORT UNLESS THE USER CLICKS "SAVE REASON".
     #
-    # A join / split / media-type change / search-term change builds its
-    # "### …" entry — the full sentence(s) the affected line sits in, then
-    # before + after (mentioning the media type / search term only when that
-    # is what changed) — and that entry then WAITS IN MEMORY. Only when the
-    # user types a reason in the bottom-right overlay and clicks "save
+    # EVERY action offers a why: a split, a join, tagging a media type (the
+    # FIRST one on a line just as much as a change to an existing one),
+    # editing the search term, adding/removing decorate & friends, filling in
+    # a data form, picking a stamp source. Each builds its "### …" entry — the
+    # full sentence(s) the affected line sits in, then before + after of
+    # whatever actually changed — and that entry WAITS IN MEMORY. Only when
+    # the user types a reason in the bottom-right overlay and clicks "save
     # reason" is it appended to manual_tagging_changes_report.txt, reason and
     # all. Tag away without explaining yourself and the file stays untouched.
     #
-    # One mutation that changes several things writes several entries (all on
-    # the same click). Search-term changes arrive separately through /logterm
-    # — they save on a per-keystroke debounce, so the browser offers one entry
-    # per EDIT (old committed term -> new) instead of one per keystroke.
+    # Offers QUEUE (see `_pending`): a newer change no longer throws the older
+    # one away, so you can tag a media type, type a term, move to the next
+    # line, and still be offered the why for each of them in turn.
+    #
+    # Titles say WHICH action on WHICH line ("Line 12 — search term changed"),
+    # matching the index shown down the left of the line list, so a reason can
+    # never be attached to the wrong thing by accident.
+    #
+    # One mutation that changes several things builds several entries (all
+    # under one change_id, so one reason covers them). Typed fields (search
+    # term, data forms) save on a per-keystroke debounce: their entries
+    # COALESCE — the pending offer keeps its original "before" and just moves
+    # its "after" along — so an edit is one offer, not one per letter.
+
+    # the row fields a change is worth reporting, with how to say them out
+    # loud. Everything else on a row (position, group_id, …) is derived by
+    # recompute() rather than chosen by the user, so it is never logged.
+    _LOGGED_FIELDS = (("media_type", "media type"),
+                      ("modifiers", "extras"),
+                      ("search_term", "search term"),
+                      ("data", "data fields"),
+                      ("stamp_source", "stamp source"),
+                      ("stamp_decorate", "decorate the stamp first"))
+    # typed fields — one debounced save per keystroke, so their offers merge
+    _COALESCING_FIELDS = {"search_term", "data"}
 
     @staticmethod
     def _full_sentences(keys, targets) -> "list[str]":
@@ -878,101 +920,211 @@ class _State:
                 if any(s < te and e > ts for ts, te in tspans)]
 
     @staticmethod
-    def _entry(title: str, sentences, before, after) -> str:
-        """One report entry (no trailing separator, no Reason — that is
-        appended later if the user gives one). before/after are lists of
-        pre-formatted item strings."""
-        out = f"### {title}\nFull sentence(s):\n"
-        out += "".join(f'- "{s}"\n' for s in sentences) or "- (unknown)\n"
-        out += "Before:\n" + "".join(f"- {b}\n" for b in before)
-        out += "After:\n" + "".join(f"- {a}\n" for a in after)
-        return out
+    def _verb(old, new) -> str:
+        return "set" if not old else ("cleared" if not new else "changed")
 
-    def _write_entries(self, entries: "list[str]"
+    @staticmethod
+    def _entry(title: str, sentences, before, after,
+               coalesce=None, stem: str = "", raw=(None, None)) -> dict:
+        """One report entry, kept STRUCTURED until it is written: a coalescing
+        entry (a typed field) has its `after` replaced as the user keeps
+        typing, which pre-formatted text could not do. before/after are lists
+        of ready-to-print item strings; `coalesce` is the (line, field) key
+        that later saves of the same edit merge into; `stem` + `raw` are what
+        a merge needs to re-say the title ("… search term set" can become
+        "… search term changed" as the edit grows)."""
+        return {"title": title, "sentences": list(sentences),
+                "before": list(before), "after": list(after),
+                "coalesce": coalesce, "stem": stem, "raw": tuple(raw)}
+
+    @staticmethod
+    def _render(entry: dict, reason: str) -> str:
+        out = f"### {entry['title']}\nFull sentence(s):\n"
+        out += "".join(f'- "{s}"\n' for s in entry["sentences"]) \
+            or "- (unknown)\n"
+        out += "Before:\n" + "".join(f"- {b}\n" for b in entry["before"])
+        out += "After:\n" + "".join(f"- {a}\n" for a in entry["after"])
+        return out + f'Reason:\n- "{reason}"\n\n'
+
+    @staticmethod
+    def _label(entries: "list[dict]") -> str:
+        return " + ".join(e["title"] for e in entries)
+
+    def _write_entries(self, entries: "list[dict]"
                        ) -> "tuple[Optional[int], str]":
-        """HOLD the entries in memory — nothing is written to the report here.
-        They are only ever put on disk by attach_reason(), i.e. when the user
-        clicks "save reason". A change with no reason is simply forgotten."""
+        """QUEUE the entries in memory — nothing is written to the report
+        here. They are only ever put on disk by attach_reason(), i.e. when the
+        user clicks "save reason". A change nobody explains is never written.
+
+        A single coalescing entry (one keystroke of a search term, say) folds
+        into the pending offer for the same line+field instead of queueing a
+        new one: same change_id, same "before", newer "after". Typing an edit
+        and then undoing it by hand cancels the offer altogether."""
         if not entries:
             return None, ""
-        labels = " + ".join(e.splitlines()[0].lstrip("# ") for e in entries)
         with self._log_lock:
+            key = entries[0]["coalesce"] if len(entries) == 1 else None
+            if key:
+                for cid, pend in list(self._pending.items()):
+                    prev = pend["entries"][0]
+                    if len(pend["entries"]) != 1 or prev["coalesce"] != key:
+                        continue
+                    merged = dict(entries[0], before=prev["before"])
+                    if merged["before"] == merged["after"]:
+                        del self._pending[cid]      # typed back to how it was
+                        return None, ""
+                    # the whole edit, not its last keystroke, decides whether
+                    # this reads as "set", "changed" or "cleared"
+                    old_raw, new_raw = prev["raw"][0], merged["raw"][1]
+                    merged["raw"] = (old_raw, new_raw)
+                    if merged["stem"]:
+                        merged["title"] = (f"{merged['stem']} "
+                                           f"{self._verb(old_raw, new_raw)}")
+                    pend["entries"] = [merged]
+                    pend["label"] = self._label([merged])
+                    return cid, pend["label"]
             self._change_seq += 1
-            self._pending_log = (list(entries), self._change_seq)
-            return self._change_seq, labels
+            label = self._label(entries)
+            self._pending[self._change_seq] = {"entries": entries,
+                                               "label": label}
+            while len(self._pending) > _MAX_PENDING:
+                self._pending.pop(next(iter(self._pending)))
+            return self._change_seq, label
+
+    def pending(self) -> "list[dict]":
+        """The still-un-explained changes, oldest first — the browser offers
+        them one at a time (newest first) in the bottom-right overlay."""
+        with self._log_lock:
+            return [{"id": cid, "label": p["label"]}
+                    for cid, p in self._pending.items()]
+
+    def dismiss(self, change_id: int, every: bool = False) -> None:
+        """"no reason needed" — drop the offer (or the whole queue, when the
+        user clicks skip all) without writing anything."""
+        with self._log_lock:
+            if every:
+                self._pending.clear()
+            else:
+                self._pending.pop(change_id, None)
 
     def attach_reason(self, change_id: int, reason: str) -> None:
         """THE ONLY THING THAT EVER WRITES TO THE CHANGE REPORT. The user has
         typed a reason and clicked "save reason", so now — and only now — the
         change it belongs to is appended, with the reason on the end.
 
-        Only the LATEST change can still take a reason (a newer change
-        supersedes the offer), and an empty reason writes nothing. Logging
-        must never break tagging, so any I/O problem is reported and
-        swallowed."""
+        ANY still-pending change can take a reason (not just the newest): the
+        overlay works through a queue, and a reason typed while a later change
+        lands must still land on the change it was written about. An empty
+        reason writes nothing. Logging must never break tagging, so any I/O
+        problem is reported and swallowed."""
         reason = (reason or "").strip()
         if not reason:
             return
         try:
             with self._log_lock:
-                if not self._pending_log or self._pending_log[1] != change_id:
+                pend = self._pending.pop(change_id, None)  # written once only
+                if not pend:
                     return
-                entries, _ = self._pending_log
-                body = "".join(e + f'Reason:\n- "{reason}"\n\n'
-                               for e in entries)
+                body = "".join(self._render(e, reason)
+                               for e in pend["entries"])
                 with open(self.log_path, "a", encoding="utf-8") as fh:
                     fh.write(body)
-                self._pending_log = None     # written once, never twice
         except Exception as exc:  # pragma: no cover - disk trouble only
             print(f"  · could not write the change report: {exc}")
+
+    @staticmethod
+    def _where(keys, key) -> str:
+        """"Line 12" — the index the line list shows down its left-hand side
+        (0-based, same as the browser), so the report names the same line the
+        user was looking at."""
+        keys = list(keys)
+        return f"Line {keys.index(key)}" if key in keys else "Line"
+
+    @staticmethod
+    def _value(field: str, value) -> str:
+        """A field's value the way a human reads it back."""
+        if field == "modifiers":
+            return ", ".join(value or []).replace("_", " ") or "(none)"
+        if field == "stamp_decorate":
+            return "yes" if value else "no"
+        if field == "data":
+            return ", ".join(f"{k}={v}" for k, v in (value or {}).items()) \
+                or "(none)"
+        return str(value or "").strip() or "(none)"
+
+    @staticmethod
+    def _normalise(field: str, row: dict):
+        val = row.get(field)
+        if field == "modifiers":
+            return list(val or [])
+        if field == "data":
+            return dict(val or {})
+        if field == "stamp_decorate":
+            return bool(val)
+        return (val or "").strip()
+
+    def _field_entries(self, key: str, old_row: dict,
+                       new_row: dict) -> "list[dict]":
+        """One entry per field the user actually changed on this line —
+        media type, extras, search term, data form, stamp settings — whether
+        it is the FIRST value the field has ever had ("set") or a change to
+        one that was already there ("changed")."""
+        out = []
+        where = self._where(self.data, key)
+        sentences = self._full_sentences(self.data, [key])
+        for field, label in self._LOGGED_FIELDS:
+            old = self._normalise(field, old_row)
+            new = self._normalise(field, new_row)
+            if old == new:
+                continue
+            stem = f"{where} — {label}"
+            title = f"{stem} {self._verb(old, new)}"
+            if field == "media_type":
+                before = [f'"{key}" [{old or "untagged"}]']
+                after = [f'"{key}" [{new or "untagged"}]']
+            else:
+                def item(mt, val):
+                    tag = f" [{mt}]" if mt else ""
+                    return (f'"{key}"{tag}\n'
+                            f'    - {label}: {self._value(field, val)}')
+                before = [item(self._normalise("media_type", old_row), old)]
+                after = [item(self._normalise("media_type", new_row), new)]
+            out.append(self._entry(
+                title, sentences, before, after,
+                coalesce=((key, field) if field in self._COALESCING_FIELDS
+                          else None),
+                stem=stem, raw=(old, new)))
+        return out
 
     def _log_mutation(self, op: str, req: dict, before: Dict[str, dict]
                       ) -> "tuple[Optional[int], str]":
         """Work out what a successful mutation changed (by comparing the
-        pre-change snapshot with the live data) and report it — one entry PER
+        pre-change snapshot with the live data) and offer it — one entry PER
         KIND of change, so a shortfix that joins two lines and retags a third
-        writes a Line join entry and a Media type entry."""
+        offers a Line join entry and a media type entry under one why."""
         entries = []
         line = req.get("line", "")
         if op == "split":
             halves = [k for k in self.data if k not in before]
             entries.append(self._entry(
-                "Line split", self._full_sentences(before, [line]),
+                f"{self._where(before, line)} split",
+                self._full_sentences(before, [line]),
                 [f'"{line}"'], [f'"{k}"' for k in halves]))
         elif op == "join":
             gone = [k for k in before if k not in self.data]
             merged = [k for k in self.data if k not in before]
             entries.append(self._entry(
-                "Line join", self._full_sentences(before, gone),
+                f"{self._where(before, line)} joined into the line above",
+                self._full_sentences(before, gone),
                 [f'"{k}"' for k in gone], [f'"{k}"' for k in merged]))
-        # media-type changes on ANY surviving line, whatever op caused them
-        # (a plain retag, or a shortfix retagging this line + a neighbour)
+        # field changes on ANY surviving line, whatever op caused them (a
+        # plain retag, a term edit, a shortfix retagging this line AND a
+        # neighbour, the auto-tagging of a group cell …)
         for key in self.data:
-            if key not in before:
-                continue
-            old = (before[key].get("media_type") or "").strip()
-            new = (self.data[key].get("media_type") or "").strip()
-            if old and old != new:      # first-time tagging isn't a "change"
-                entries.append(self._entry(
-                    "Media type", self._full_sentences(self.data, [key]),
-                    [f'"{key}" [{old}]'], [f'"{key}" [{new or "untagged"}]']))
+            if key in before:
+                entries.extend(
+                    self._field_entries(key, before[key], self.data[key]))
         return self._write_entries(entries)
-
-    def log_term(self, req: dict) -> "tuple[Optional[int], str]":
-        """One committed search-term edit from the browser (POST /logterm):
-        the term as it was when the line was opened -> as it was left."""
-        line = req.get("line", "")
-        old = (req.get("before") or "").strip()
-        new = (req.get("after") or "").strip()
-        if not old or old == new:
-            return None, ""     # first-time tagging / no real change
-        mt = (self.data.get(line, {}).get("media_type") or "").strip()
-        tag = f" [{mt}]" if mt else ""
-        entry = self._entry(
-            "Search term", self._full_sentences(self.data, [line]),
-            [f'"{line}"{tag}\n    - search: "{old}"'],
-            [f'"{line}"{tag}\n    - search: "{new}"'])
-        return self._write_entries([entry])
 
 
 def make_handler(state: _State):
@@ -1013,23 +1165,26 @@ def make_handler(state: _State):
                 state.finished_event.set()
                 self._send(json.dumps({"ok": True}))
                 return
-            if op == "logterm":
-                # log-only: the term itself was already saved by the
-                # debounced /save calls — this just records the edit.
-                cid, label = state.log_term(req)
-                self._send(json.dumps({"ok": True, "change_id": cid,
-                                       "label": label}))
-                return
             if op == "reason":
                 # the optional "why" from the bottom-right overlay, folded
-                # into the change it belongs to (if it is still the latest)
+                # into the change it belongs to. The reply carries whatever
+                # is still un-explained, so the overlay can offer the next one.
                 state.attach_reason(int(req.get("change_id") or 0),
                                     req.get("reason") or "")
-                self._send(json.dumps({"ok": True}))
+                self._send(json.dumps({"ok": True,
+                                       "pending": state.pending()}))
+                return
+            if op == "dismiss":
+                # "no reason needed" — the offer goes away, nothing is written
+                state.dismiss(int(req.get("change_id") or 0),
+                              bool(req.get("all")))
+                self._send(json.dumps({"ok": True,
+                                       "pending": state.pending()}))
                 return
             err, cid, label = state.mutate(op, req)
             body = json.dumps({"ok": err is None, "error": err,
-                               "change_id": cid, "label": label})
+                               "change_id": cid, "label": label,
+                               "pending": state.pending()})
             self._send(body, code=200 if err is None else 400)
     return Handler
 
@@ -1196,13 +1351,18 @@ PAGE = r'''<!doctype html><html><head><meta charset="utf-8">
  #finbox{background:#1d2b1f;border:2px solid #2e7d32;border-radius:14px;padding:28px 36px;text-align:center;display:flex;flex-direction:column;gap:10px;font-size:18px;max-width:420px}
  #finbox button{margin-top:8px;padding:9px 18px;border-radius:8px;border:1px solid #4a5060;background:#232733;color:#cdd;cursor:pointer;font-size:14px}
  #toast{position:fixed;left:14px;bottom:14px;background:#20302a;color:#7bd88f;border-radius:8px;padding:5px 13px;font-size:12px;opacity:0;transition:opacity .3s;z-index:40;pointer-events:none}
- #whycard{position:fixed;right:14px;bottom:14px;z-index:45;width:300px;background:#241f12;border:1px solid var(--gold);border-radius:10px;padding:10px 12px;box-shadow:0 6px 24px #0009;display:none}
- #whycard .wtitle{color:var(--gold);font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:7px}
- #whycard .wtitle .wkind{background:#3a3218;border-radius:5px;padding:1px 7px;font-weight:600;flex:none}
- #whycard .wtitle:hover{text-decoration:underline}
+ #whycard{position:fixed;right:14px;bottom:14px;z-index:45;width:310px;background:#241f12;border:1px solid var(--gold);border-radius:10px;padding:10px 12px;box-shadow:0 6px 24px #0009;display:none}
+ #whycard .wtitle{color:var(--gold);font-size:12.5px;cursor:pointer}
+ #whycard .wtitle .wkind{background:#3a3218;border-radius:5px;padding:2px 7px;font-weight:600;display:inline-block;line-height:1.35}
+ #whycard .wtitle:hover .wkind{text-decoration:underline}
+ #whycard .whyhint{color:#b9a877;font-size:11.5px;margin-top:5px;cursor:pointer}
+ #whycard .whymore{color:#e0a44a;font-size:11px;margin-top:5px}
+ #whycard .whymore b{color:var(--gold)}
+ #whycard .whymore .skipall{color:#9a8c66;text-decoration:underline;cursor:pointer;margin-left:6px}
  #whybody{display:none;margin-top:8px}
  #whybody input{width:100%;box-sizing:border-box;background:#0f1116;color:#fff;border:1px solid #6e5c2a;border-radius:6px;padding:7px;font:inherit}
  #whybody button{margin-top:7px;padding:6px 14px;border-radius:7px;border:0;background:var(--gold);color:#222;font-weight:600;cursor:pointer;font-size:13px}
+ #whybody button.wskip{background:#3a3218;color:#cbbc8e;font-weight:500;margin-left:6px}
  #whycard.saved .wtitle{color:#7bd88f;cursor:default}
  #mback,#donebtn,#mobactions,#msplit,#joinconfirm,#joinshield{display:none}
  @media (max-width:700px){
@@ -1391,6 +1551,7 @@ async function load(keepLine){
  if(keepLine){const i=D.lines.findIndex(L=>L.line===keepLine); if(i>=0) sel=i;}
  sel=Math.max(0,Math.min(sel,D.lines.length-1));
  renderKey(); renderList(); renderEditor(); updateFinish();
+ setPending(D.pending);          // offers survive a reload of the page state
 }
 function baseOf(n){return D.catalog.bases.find(b=>b.name===n);}
 function isCell(L){return (L.row.modifiers||[]).includes('group');}
@@ -1529,40 +1690,86 @@ function disarmSplit(tx,i){
 }
 // ---- change-report reasons ---------------------------------------------------
 // NOTHING IS WRITTEN TO THE CHANGE REPORT UNTIL YOU CLICK "save reason".
-// Joins, splits, media-type changes and search-term edits prepare an entry
-// (full sentence(s) + before/after) and the overlay offers it bottom-right.
+// EVERY action offers one: splits, joins, tagging a media type (the first one
+// on a line as much as a re-tag), search-term edits, decorate/caption/group,
+// data forms, stamp picks. The server prepares the entry (full sentence(s) +
+// before/after) and hands back the QUEUE of changes nobody has explained yet;
+// the overlay offers them bottom-right, newest first, and never throws one
+// away just because you carried on working — tag a line, type its term, walk
+// on to the next one, and each of those is still waiting to be explained.
 // Type why and click save reason (POST /reason) and THAT is what writes it to
-// manual_tagging_changes_report.txt. Ignore the overlay, or make another
-// change, and the entry is dropped — the file never sees it.
-let whyId=null;
-function showWhy(changeId,label){
- whyId=changeId;
+// manual_tagging_changes_report.txt. Skip (POST /dismiss), or leave it hanging
+// when you finish, and the entry never reaches the file.
+let whyQ=[];            // [{id,label}] un-explained changes, oldest first
+let whyId=null;         // the one the card is offering right now
+function setPending(list){whyQ=list||[];renderWhy();}
+function whyOpen(){const b=$('#whybody');return !!b&&b.style.display==='block';}
+function renderWhy(){
  const c=$('#whycard');
+ if(!whyQ.length){whyId=null;c.style.display='none';c.innerHTML='';return;}
+ // A reason being typed is never yanked away: while the box is open it keeps
+ // offering the change it was opened for, and anything that lands meanwhile
+ // simply queues up behind it (the counter says how many).
+ if(whyOpen()&&whyId!==null&&whyQ.some(p=>p.id===whyId)){renderWhyMore();return;}
+ const top=whyQ[whyQ.length-1];
+ whyId=top.id;
  c.classList.remove('saved');
- c.innerHTML=`<div class="wtitle" onclick="expandWhy()">✎`+
-  `<span class="wkind">${esc(label)}</span> logged — click (or press <b>space</b>) `+
-  `to add why (optional)</div>`+
-  `<div id="whybody"><input id="whytext" placeholder="reason for this change…">`+
-  `<button onclick="sendWhy()">save reason</button></div>`;
+ c.innerHTML=`<div class="wtitle" onclick="expandWhy()">✎ `+
+  `<span class="wkind">${esc(top.label)}</span></div>`+
+  `<div class="whyhint" onclick="expandWhy()">click (or press <b>space</b>) `+
+  `to say why you did this (optional)</div>`+
+  `<div class="whymore"></div>`+
+  `<div id="whybody"><input id="whytext" placeholder="why did you do this?…">`+
+  `<button onclick="sendWhy()">save reason</button>`+
+  `<button class="wskip" onclick="skipWhy()">skip</button></div>`;
  c.style.display='block';
+ renderWhyMore();
+}
+// "+3 more changes waiting" — the queue behind the one on offer
+function renderWhyMore(){
+ const m=document.querySelector('#whycard .whymore'); if(!m)return;
+ const n=whyQ.filter(p=>p.id!==whyId).length;
+ m.innerHTML=n?`<b>+${n}</b> more change${n===1?'':'s'} waiting for a why`+
+   `<span class="skipall" onclick="skipAllWhy()">· skip all</span>`:'';
 }
 function expandWhy(){
  const b=$('#whybody'); if(!b)return;
  b.style.display='block';
  const t=$('#whytext'); t.focus();
  t.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();sendWhy();}
-                 if(e.key==='Escape'){hideWhy();}};
+                 if(e.key==='Escape'){skipWhy();}};
 }
-function hideWhy(){whyId=null;$('#whycard').style.display='none';}
+// the offer for THIS change goes away (nothing is written) and the next one
+// in the queue is offered straight away
+async function skipWhy(){
+ if(whyId===null){setPending(whyQ);return;}
+ const id=whyId; whyId=null;
+ const j=await postJSON('/dismiss',{change_id:id});
+ setPending(j?j.pending:whyQ.filter(p=>p.id!==id));
+}
+async function skipAllWhy(){
+ whyId=null;
+ const j=await postJSON('/dismiss',{all:true});
+ setPending(j?j.pending:[]);
+}
 async function sendWhy(){
  const t=$('#whytext'); const reason=t?t.value.trim():'';
- if(!reason||whyId===null){hideWhy();return;}
- await fetch('/reason',{method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({change_id:whyId,reason})}).catch(()=>{});
+ if(!reason||whyId===null){skipWhy();return;}
+ const id=whyId; whyId=null;
+ const j=await postJSON('/reason',{change_id:id,reason});
  const c=$('#whycard');
  c.classList.add('saved');
  c.innerHTML='<div class="wtitle">reason saved ✓</div>';
- setTimeout(hideWhy,900);
+ // a beat to read the tick, then the next un-explained change is offered
+ setTimeout(()=>{c.classList.remove('saved');
+                 setPending(j?j.pending:whyQ.filter(p=>p.id!==id));},900);
+}
+async function postJSON(url,body){
+ try{
+  const r=await fetch(url,{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return await r.json();
+ }catch(e){return null;}
 }
 async function doSplit(line,b){
  await post('/split',{line,index:b},line.slice(0,b).trim());
@@ -1641,7 +1848,8 @@ async function mobileSplitGo(){
 }
 // ---- editor ------------------------------------------------------------------
 function focusLine(i){
- commitTermLog();   // leaving a line commits any pending term edit to the log
+ flushTermSave();   // leaving a line saves its last keystrokes right away, so
+                    // the change (and its why) is the one you just made
  const from=sel;
  sel=Math.max(0,Math.min(i,D.lines.length-1));
  step='media'; kbType=-1; ghostDismissed=false;   // fresh line: ghost is
@@ -1831,32 +2039,14 @@ function renderMods(){
  $('#modhint').textContent=has?'':'pick a base first — there must be something to put these on';
  hookInfos($('#modbar').parentElement);
 }
-// ---- search-term change tracking ---------------------------------------------
-// The term saves on a per-keystroke debounce, so logging /save calls would log
-// every keystroke. Instead: remember the term as it stood when the line was
-// opened (the baseline), and when the user COMMITS an edit (leaves the box or
-// the line), OFFER one entry — baseline -> final — through the reason overlay.
-// It only reaches the report if the user then clicks "save reason".
-// A baseline that was empty is first-time tagging, not a "change" worth a log.
-let termBase=null;
-function commitTermLog(){
- if(!termBase)return;
- const cur=D.lines.find(l=>l.line===termBase.line);
- if(!cur){termBase=null;return;}       // the line was split/joined away
- let now=cur.row.search_term||'';
- if(D.lines[sel]&&D.lines[sel].line===termBase.line)now=$('#term').value;
- if(termBase.val.trim()&&now.trim()!==termBase.val.trim()){
-   fetch('/logterm',{method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({line:termBase.line,before:termBase.val,after:now})})
-    .then(r=>r.json()).then(j=>{if(j.change_id)showWhy(j.change_id,j.label);})
-    .catch(()=>{});
- }
- termBase={line:termBase.line,val:now};
-}
+// ---- search-term changes -----------------------------------------------------
+// The term saves on a per-keystroke debounce, and the SERVER folds those saves
+// together: every keystroke of one edit updates the same pending offer (its
+// "before" stays the term you started from), so the overlay shows one
+// "Line 12 — search term changed" for the edit, not one per letter. Typing an
+// edit and then typing it back to what it was cancels the offer.
 function renderTerm(){
  const L=D.lines[sel];
- if(!termBase||termBase.line!==L.line)
-   termBase={line:L.line,val:L.row.search_term||''};
  const isTypo=L.row.media_type==='typography';
  // timeline & friends: the term is never read, so the card is not offered
  $('#termcard').style.display=usesTerm(L)?'block':'none';
@@ -1980,7 +2170,7 @@ function updateGhost(){
 }
 $('#term').addEventListener('focus',updateGhost);
 $('#term').addEventListener('blur',()=>setTimeout(updateGhost,120));
-$('#term').addEventListener('blur',commitTermLog);
+$('#term').addEventListener('blur',flushTermSave);
 $('#term').addEventListener('input',()=>{updateGhost();debSave();});
 // dismiss the ghost suggestion WITHOUT accepting it: press → (right arrow)
 // while the field is empty. Handy when you're e.g. just decorating the
@@ -2012,9 +2202,23 @@ $('#term').addEventListener('keydown',e=>{
 function chip(w){const t=$('#term');t.value=(t.value?t.value+' ':'')+w;updateGhost();debSave();}
 let tmr=null;
 function debSave(){clearTimeout(tmr);tmr=setTimeout(()=>{
+ tmr=null;
  post('/save',{line:D.lines[sel].line,patch:{search_term:$('#term').value}},
       D.lines[sel].line,true);
  if(!D.lines[sel].row.media_type)flash('#mediacard');},400);}
+// Leaving the box (or the line) must not leave the last keystrokes waiting in
+// that 400ms timer: save them NOW so the change — and the why it is offered
+// for — belongs to the line you were actually typing on. Deliberately no
+// reload: we are usually mid-render for another line, and pulling the rows out
+// from under it would fight the caret. The pending queue is still refreshed.
+function flushTermSave(){
+ if(tmr!==null){clearTimeout(tmr);tmr=null;}
+ const L=D.lines[sel], t=$('#term');
+ if(!L||!t||(L.row.search_term||'')===t.value)return;
+ L.row.search_term=t.value;                  // keep the line list in step
+ postJSON('/save',{line:L.line,patch:{search_term:t.value}})
+   .then(j=>{if(j&&j.ok)setPending(j.pending);});
+}
 async function pick(name){const L=D.lines[sel];
  const b=baseOf(name);
  // BRAND-NEW footage on a line too short to stand on its own would just
@@ -2141,11 +2345,11 @@ async function post(url,body,keepLine,quietReload){
    }
    alert(j.error||'error');return false;}
  toast();
- // the reason overlay follows the LATEST change: a logged change replaces it,
- // any other real mutation clears it. Quiet (per-keystroke) saves leave it
- // alone — typing a term must not yank away the offer for the change before.
- if(j.change_id)showWhy(j.change_id,j.label||'change');
- else if(!quietReload)hideWhy();
+ // the overlay mirrors the server's queue of un-explained changes: this
+ // mutation's own offer joins it (per-keystroke term/data saves fold into the
+ // offer already there rather than piling up), and nothing already waiting is
+ // thrown away just because another change happened.
+ setPending(j.pending);
  if(quietReload){
    // Keep whatever the user is typing in: the reload rebuilds these elements,
    // so remember the focused field BY ID and put its value + caret back. (The
@@ -2229,7 +2433,8 @@ async function boot(){
  D=await (await fetch('/data')).json();
  const st=D.recommend_status||{state:'ready'};
  if(st.state==='ready'){ $('#loadscreen').style.display='none';
-   sel=0; renderKey(); renderList(); renderEditor(); updateFinish(); return; }
+   sel=0; renderKey(); renderList(); renderEditor(); updateFinish();
+   setPending(D.pending); return; }
  etaLeft=st.eta_seconds||3; showEta();
  etaTick=setInterval(()=>{etaLeft=Math.max(0,etaLeft-1);showEta();},1000);
  const poll=async()=>{
@@ -2238,6 +2443,7 @@ async function boot(){
    if(s==='ready'){
      clearInterval(etaTick); $('#loadscreen').style.display='none';
      sel=0; renderKey(); renderList(); renderEditor(); updateFinish();
+     setPending(D.pending);
    } else {
      if(D.recommend_status&&D.recommend_status.eta_seconds<etaLeft)
        etaLeft=D.recommend_status.eta_seconds;

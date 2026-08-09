@@ -1,11 +1,28 @@
+AUTO SEARCH TERM DETECTION:
+(do i write this myself?)
+
+- for the logic that auto detects the search term...
+    - if we have a prevoius line like: "there is a phone box standing in a field in japan", then...
+    - and next/future line: 
+        "it is not connected to anything"
+    - then we know 'it' is the phone box as:
+        - it was the first (and thus main) thing that was introduced.
+        --> the other details of '*in* a field' and *in* japan, are just details about the phone...
+        --> we also know that 'connected' is related to 'phone box' as they commonly need connections...
+        - so basically, think about the logic i just mentioned (identifying the key noun subject (if there is one), and differentiating other nouns / visualisables which are secondary to that / adding detail...
+        --> so then we can more accurately give better predictoins for the most likely visaulsiable for when we encounter words like 'in' later on...
+    - also, look at the context around 'in' (or words like that relating to other nouns...)
+        --> if there are other words like 'connected', then think of the probability of that word being related to each of the candidate nouns/visualisables (e.g. 'phone box' / 'field'), and get scores of all that..
+    --> add those as two extra stages for us to get more accurate noun associations
+    e.g.2.- same with later on... it says 'locals call it the wind phone'... 'wind phone' is obviously relatded to the phone box... and then because we already know htat phone box is a 'higher up' / bigger 'importance score' (a new metric!) visualisable, we also know its more likely to be referring to that anyway!
+    - so yeah, add lots of logic for this
+
+
+-------------
+
+
 - I've prepared the tests for testing the auto tagger.  
     - see the readme for how to proceed.
-
-
-
-
-
-
 - ensure/double check again that we don't log every single change to the manual_tagging_changes_report.txt...
     - only ones that user has give a reason for (reason can be empty)
 - once the Auto_add_mediatypes.py has been sorted:
@@ -16,9 +33,7 @@
     - (basically start building up the list of changes that we have made...)
 
 
-
 -------------
-
 
 TODO;
 - bang out each of the below

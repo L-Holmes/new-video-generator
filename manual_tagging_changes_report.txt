@@ -7,3 +7,79 @@ After:
 - "The city was rebuilt by a"
 - "very unpopular emperor."
 
+### Media type
+Full sentence(s):
+- "There is a phone box standing in the middle of a field in Japan."
+Before:
+- "the middle of a field in" [stock]
+After:
+- "the middle of a field in" [hold_previous]
+Reason:
+- "we are revealing what the phone box is standing in- we have a joint scene here- the phone box is in the field, so we do a joint scene with both in."
+
+### Search term
+Full sentence(s):
+- "There is a phone box standing in the middle of a field in Japan."
+Before:
+- "the middle of a field in" [hold_previous]
+    - search: "the middle of a field in"
+After:
+- "the middle of a field in" [hold_previous]
+    - search: "field"
+Reason:
+- "its just field, that is the only visualisable noun- that is the place where the phone box is standing"
+
+### Search term
+Full sentence(s):
+- "There is a phone box standing in the middle of a field in Japan."
+Before:
+- "Japan." [hold_previous]
+    - search: "Japane"
+After:
+- "Japan." [hold_previous]
+    - search: "Japanese flag"
+Reason:
+- "because of the previous sentence context 'in japan', we either do a map or add some japanese thing to the scene. In this case, we'll add a japanese flag onto it, so we'll search for stock of japanese flag, and add that to the scene. If japan was mentioned sperately (not relation to 'in' etc), we might do a new..."
+
+### Media type
+Full sentence(s):
+- "Since 2011, more than 30,000 people have travelled there to speak to someone who died."
+Before:
+- "Since 2011," [bar_chart]
+After:
+- "Since 2011," [timeline]
+Reason:
+- "since implies date, and 2011 seems like a plausiable date, so we know its a date, and since its 'since' we know that we should use timeline or just even stamping '2011' (its not statistics!)"
+
+### Media type
+Full sentence(s):
+- "Since 2011, more than 30,000 people have travelled there to speak to someone who died."
+Before:
+- "more than 30,000 people have travelled" [hold_previous]
+After:
+- "more than 30,000 people have travelled" [counter]
+Reason:
+- "30,000 is just a single statistic, by itself, and its not time.. so must be a counter.."
+
+### Line join
+Full sentence(s):
+- "Since 2011, more than 30,000 people have travelled there to speak to someone who died."
+- "They pick up the handset, they say the thing they never got to say, and they hang up."
+Before:
+- "there to speak to someone who died."
+- "They pick up"
+After:
+- "there to speak to someone who died. They pick up"
+Reason:
+- "not visualisable, so just extend the previous.. we could do 'pick up' as a visualisable verb, but... hmmm maybe we could actually! its just i don't thikn there will be good stock footage of that..."
+
+### Media type
+Full sentence(s):
+- "Somebody wrote in the notebook beside it:" I am still setting a place for you at dinner.""
+Before:
+- "Somebody wrote in the notebook beside it:"" [hold_previous]
+After:
+- "Somebody wrote in the notebook beside it:"" [stock]
+Reason:
+- "new sentence and only tangentially related- so start-anew. especially since hold previous had gone on for a few words previous.."
+

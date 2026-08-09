@@ -18,10 +18,10 @@
     "data": {}
   },
   "the middle of a field in": {
-    "search_term": "field",
-    "media_type": "hold_previous",
+    "search_term": "the middle of a field in",
+    "media_type": "stock",
     "modifiers": [
-      "decorate"
+      "collage"
     ],
     "group_id": null,
     "position": "1",
@@ -33,12 +33,10 @@
     "rule_ids": [
       15
     ],
-    "data": {},
-    "stamp_decorate": false,
-    "stamp_source": "stock"
+    "data": {}
   },
   "Japan.": {
-    "search_term": "Japanese flag",
+    "search_term": "Japan",
     "media_type": "hold_previous",
     "modifiers": [
       "decorate"
@@ -54,15 +52,12 @@
       1
     ],
     "stamp_source": "stock",
-    "data": {},
-    "stamp_decorate": false
+    "data": {}
   },
   "It is not connected to anything.": {
-    "search_term": "phone box",
-    "media_type": "stock",
-    "modifiers": [
-      "decorate"
-    ],
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
     "group_id": null,
     "position": "1",
     "sfx": "none",
@@ -73,13 +68,11 @@
     "rule_ids": [
       1
     ],
-    "data": {},
-    "stamp_decorate": false,
-    "stamp_source": null
+    "data": {}
   },
   "No line,": {
-    "search_term": "electrical line",
-    "media_type": "hold_previous",
+    "search_term": "",
+    "media_type": "",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -91,9 +84,7 @@
     "rule_ids": [
       8
     ],
-    "data": {},
-    "stamp_decorate": false,
-    "stamp_source": null
+    "data": {}
   },
   "no dial tone,": {
     "search_term": "dial tone",
@@ -111,9 +102,7 @@
     "rule_ids": [
       8
     ],
-    "data": {},
-    "stamp_decorate": true,
-    "stamp_source": "stock"
+    "data": {}
   },
   "no bill.": {
     "search_term": "bill",
@@ -131,12 +120,10 @@
     "rule_ids": [
       1
     ],
-    "data": {},
-    "stamp_source": "stock",
-    "stamp_decorate": false
+    "data": {}
   },
   "Locals call it the wind phone.": {
-    "search_term": "Japanese Wind Phone",
+    "search_term": "wind phone",
     "media_type": "stock",
     "modifiers": [],
     "group_id": null,
@@ -149,13 +136,11 @@
     "rule_ids": [
       1
     ],
-    "data": {},
-    "stamp_decorate": false,
-    "stamp_source": null
+    "data": {}
   },
   "Since 2011,": {
     "search_term": "",
-    "media_type": "timeline",
+    "media_type": "bar_chart",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -170,14 +155,12 @@
       7
     ],
     "data": {
-      "year": 2011
-    },
-    "stamp_decorate": false,
-    "stamp_source": null
+      "bars": "bar 1: 2011,, bar 2: 30,000"
+    }
   },
   "more than 30,000 people have travelled": {
     "search_term": "",
-    "media_type": "counter",
+    "media_type": "hold_previous",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -189,15 +172,11 @@
     "rule_ids": [
       12
     ],
-    "data": {
-      "value": 30000.0
-    },
-    "stamp_decorate": false,
-    "stamp_source": null
+    "data": {}
   },
-  "there to speak to someone who died. They pick up the handset, they say": {
-    "search_term": "wind phone people",
-    "media_type": "stock",
+  "there to speak to someone who died.": {
+    "search_term": "",
+    "media_type": "bar_chart",
     "modifiers": [],
     "group_id": null,
     "position": "1",
@@ -207,15 +186,45 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      1,
-      38,
+      1
+    ],
+    "data": {
+      "bars": "bar 1: 2011,, bar 2: 30,000"
+    }
+  },
+  "They pick up": {
+    "search_term": "",
+    "media_type": "",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
+      38
+    ],
+    "data": {}
+  },
+  "the handset, they say": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
       1008,
       7,
       45
     ],
-    "data": {},
-    "stamp_decorate": false,
-    "stamp_source": null
+    "data": {}
   },
   "the thing they never got to say,": {
     "search_term": "",
@@ -249,9 +258,9 @@
     ],
     "data": {}
   },
-  "Somebody wrote in the notebook beside it:\"": {
+  "Somebody wrote": {
     "search_term": "\nI am still setting a place for you at dinner.",
-    "media_type": "stock",
+    "media_type": "hold_previous",
     "modifiers": [
       "caption"
     ],
@@ -263,18 +272,33 @@
     "music_trim_seconds": 0,
     "music_fade_out": 0,
     "rule_ids": [
-      12,
+      12
+    ],
+    "data": {}
+  },
+  "in the notebook beside it:\"": {
+    "search_term": "",
+    "media_type": "hold_previous",
+    "modifiers": [
+      "caption"
+    ],
+    "group_id": null,
+    "position": "1",
+    "sfx": "none",
+    "sfx_timing": "loop_start",
+    "music": "none",
+    "music_trim_seconds": 0,
+    "music_fade_out": 0,
+    "rule_ids": [
       1002,
       1,
       5
     ],
-    "data": {},
-    "stamp_decorate": false,
-    "stamp_source": null
+    "data": {}
   },
   "I am still setting a place for you at dinner.\"": {
-    "search_term": "I am still setting a place for you at dinner.\"",
-    "media_type": "typography",
+    "search_term": "",
+    "media_type": "hold_previous",
     "modifiers": [
       "caption"
     ],
@@ -290,9 +314,7 @@
       1,
       5
     ],
-    "data": {},
-    "stamp_decorate": false,
-    "stamp_source": null
+    "data": {}
   },
   "The phone has never rung back.": {
     "search_term": "phone",
