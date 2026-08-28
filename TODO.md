@@ -23,8 +23,6 @@ AUTO SEARCH TERM DETECTION:
 
 - I've prepared the tests for testing the auto tagger.  
     - see the readme for how to proceed.
-- ensure/double check again that we don't log every single change to the manual_tagging_changes_report.txt...
-    - only ones that user has give a reason for (reason can be empty)
 - once the Auto_add_mediatypes.py has been sorted:
     - go through an implement hthe logic myself for determining how to split, and what mediaypes / search terms to use.
 - then:
@@ -49,6 +47,8 @@ Ideas:
     - take the previous, put it side by side with a second image. 
     e.g. Rome was not built in a day || but in burned in six
         -> rome construction -> rome construction + fire
+
+or almost like 'rearrange and add more elements to a joint image!?!?'
 
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
