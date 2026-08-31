@@ -34,7 +34,7 @@ rm -rf CACHE-spices/ && rm -rf
 
 prerequs;
 ```
-uv sync && uv run python -m spacy download en_core_web_sm
+uv sync && uv run python -m spacy download en_core_web_sm && uv run python -m spacy download en_core_web_trf && uv pip install faster-whisper num2words maverick  fastcoref
 ```
 
 
@@ -111,7 +111,6 @@ Image folder structure
 --------------
 
 # prereqs
-uv pip install faster-whisper num2words
 
 sudo apt install xdotool -y 
 
@@ -172,7 +171,6 @@ animation story time| odd1stout  | x |  y
 
 
 
-uv run python -m spacy download en_core_web_sm
 uv run python -m pytest test_sentence_splitter.py -v
 
 

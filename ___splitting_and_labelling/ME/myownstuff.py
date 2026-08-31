@@ -54,34 +54,46 @@ Definitions:
         ~~~~
 --------------------------------------------------------------------------------------
 """
+from abstract_term_resolver import resolve_all_abstract_terms
 
 BUILT_VISUALISABLE_DATA=False
+VISUALISABLE_DATA = None
 
 def get_visualisable_data(sentece_splitter_output):
     """
-    Main function o
+    Main function
+
+    @input sentece_splitter_output = each of the sentences, split into scenes.
+    e.g. 
+     [
+        Chunk(text='In Egypt,', ids=[]),
+        Chunk(text="there's a valley filled with whale skeletons.", ids=[]),
+        Chunk(text='It was once covered by', ids=[]),
+        Chunk(text='the Tethys Sea.', ids=[])
+    ]
 
     """
     BUILT_VISUALISABLE_DATA=False
     if not BUILT_VISUALISABLE_DATA:
-        visualisable_data = _build_visualisable_data(sentece_splitter_output)
-    return visualisable_data
-
+        input_list = [chunk.text for chunk in sentence_splitter_output] # ["In Egypt", "there's a valley filled with whale skeletons.", "It was once covered by", "the Tethys Sea."]
+        VISUALISABLE_DATA = _build_visualisable_data(input_list)
+        BUILT_VISUALISABLE_DATA=True
+    return VISUALISABLE_DATA
 
 def _build_visualisable_data():
     """
     @input The text.
     e.g.
     "
-    The tractor and the cat, Molly, went down the lane. 
-    They passed a bee.
-    It revved really loud. The cat didn't like it.
-    So she poured yellow paint onto the tractor. It swished and swerved after having the paint splatter its windscreen.
-    It then crashed into the lampost by accident.
-    The yellow and black guy flew away.
-    Its windscreen broke.
-    "
-
+    [
+        The tractor and the cat, Molly, went down the lane. 
+        They passed a bee.
+        It revved really loud. The cat didn't like it.
+        So she poured yellow paint onto the tractor. It swished and swerved after having the paint splatter its windscreen.
+        It then crashed into the lampost by accident.
+        The yellow and black guy flew away.
+        Its windscreen broke.
+    ]
 
     @generates:
     (as a pseudo intermediary step)
@@ -92,8 +104,43 @@ def _build_visualisable_data():
     --> [v2-with-yellow-paint-splat-and-broken-window]
         --> [ploughing]
 
-
     @output
+    
+    {
+
+        The tractor and the cat, Molly, went down the lane.:{
+                "cumulative_abstract_terms":["tractor", "cat", "lane", "bee"],
+
+
+                --------------------------------------------------------------
+                hmmmmmmmmmm jump.
+                perhaps a map from the visualisable to all we know about it?
+                e.g.
+
+                "The [1] and the [2], Molly, went down the lane"
+                ==> 
+                [1]:
+                    "visualisable":tractor
+                    "variant":null / base version
+                    "action":null / unknown / base action
+                    "location"?: null/ base / unknown / presumably farmland.
+                --------------------------------------------------------------
+
+                importance?
+                    - which are the most important visualisables in the sentence?
+                        - based on prevoius context?
+                        - based on what has recently changed (obviolulsy most important)
+
+        }
+
+
+        They passed a bee.
+        It revved really loud. The cat didn't like it.
+        So she poured yellow paint onto the tractor. It swished and swerved after having the paint splatter its windscreen.
+        It then crashed into the lampost by accident.
+        The yellow and black guy flew away.
+        Its windscreen broke.
+        
 
 
     """
@@ -101,8 +148,6 @@ def _build_visualisable_data():
     sentences = split(input_text, <end-of-sentence-regex>)
 
     for sentence, next_sentence in sentences:
-        # 1)i)  Find all abstract terms
-
         # 1)ii) 
         #      i.e. Build the cumulative list of visualisables (TODO: only concrete ones?)
         #      e.g. The tractor and the cat, Molly, went down the lane. --> ["tractor", "cat", "lane"] 
@@ -113,6 +158,7 @@ def _build_visualisable_data():
         # 2) Resolve all abstract terms
         # for each unknown, determine which visualisable it points to
         # e.g. " *it* plouged the field"  --> " [the tractor] ploughed the field
+        resolve_all_abstract_terms()
 
         # ??) 
         #    - match verbs to visualisables?
@@ -123,24 +169,7 @@ def _build_visualisable_data():
         # x) [BONUS] Resolve all wishy washy terms.
         # e.g. "The yellow and black guy flew away." -> "The [bee] flew away"
 
-    BUILT_VISUALISABLE_DATA=True
     return 
-
-
-
-# ==============================================================================
-
-def _resolve_all_abstract_terms():
-    pass
-
-    # 1) Here is the text up to the [abstract point], and then next sentence
-    # e.g. 
-    #      "The tractor and the cat, Molly, went down the lane. They passed a bee. The cat didn't like it."
-
-
-    # 2) Call _Large Language Model_, ask it to resolve what the target abstract word is
-    # e.g. 
-    #     "What does the [It] refer to?"
 
 # ==============================================================================
 

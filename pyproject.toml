@@ -28,6 +28,7 @@ dependencies = [
     "ultralytics>=8.4.68",
     "click>=8.4.1",
     "manim>=0.20.1",
+    "maverick-coref>=1.0.7",
 ]
 
 [dependency-groups]
