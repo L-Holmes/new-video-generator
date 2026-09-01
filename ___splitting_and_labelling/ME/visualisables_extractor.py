@@ -2295,10 +2295,16 @@ def _change_events(doc, vis) -> list[str]:
     if is_patient and _is_change_verb(verb):
         out.append(_verb_phrase(doc, verb))
 
-    # (b) caused motion: something was put onto it
+    # (b) caused motion: something was PUT onto it.
+    #     The verb has to be one of motion, or locative inversion walks
+    #     straight in: "In the middle of the Sahara SITS a valley" has the
+    #     same shape (pobj of a spatial prep, verb with an object) but the
+    #     Sahara does not thereby acquire a valley. WordNet separates them
+    #     cleanly — pour/throw/drop/put are motion, sit/stand/lie/contain
+    #     are not.
     spatial = STL.SPATIAL_LOCATIVE_PREPS | STL.SPATIAL_DIRECTIONAL_PREPS
     if (root.dep_ == "pobj" and root.head.lower_ in spatial
-            and root.head.head.i == verb.i):
+            and root.head.head.i == verb.i and _is_motion_verb(verb)):
         for child in verb.children:
             if child.dep_ not in {"dobj", "obj"}:
                 continue
