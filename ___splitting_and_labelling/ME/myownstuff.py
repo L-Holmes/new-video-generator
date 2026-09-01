@@ -117,13 +117,32 @@ def _build_visualisable_data():
                 perhaps a map from the visualisable to all we know about it?
                 e.g.
 
-                "The [1] and the [2], Molly, went down the lane"
-                ==> 
-                [1]:
-                    "visualisable":tractor
-                    "variant":null / base version
-                    "action":null / unknown / base action
-                    "location"?: null/ base / unknown / presumably farmland.
+                "The [1] and the [2], Molly, went down the lane":{
+                    [1]:{
+                            "visualisable":tractor
+                            "variant":null / base version
+                            "action":null / unknown / base action
+                            "location"?: null/ base / unknown / presumably farmland.
+                    },
+                    [2]:{
+                            ...
+                    }
+                },
+                "[3] passed a [4]":{
+                    [1]:{
+                            "visualisable": [1], [2]
+                            "variant":null / base version
+                            "action":null / unknown / base action
+                            "location"?: the lane
+                     },
+                     [2]:{
+                            "visualisable": "bee"
+                            "variant":null / base version
+                            "action":null / unknown / base action
+                            "location"?:  null/ base / unknown / presumably farmland.
+                     }
+                }
+                            
                 --------------------------------------------------------------
 
                 importance?

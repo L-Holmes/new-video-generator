@@ -1,3 +1,92 @@
+
+
+(0)
+According to the logic in sentence_splitter.py (which does a lot of 'splitting on visualisables'
+create a bullet pointed list stating extensively and completely the definition of what a 'visaulisable' is, in NLP terms
+My personal defintion is something we can represent in our video. Something we can easily picture.
+something we can draw. etc. etc.
+keep it straightforward and simple.
+for each, give examples.
+e.g. 
+- All capital named nouns. 
+    - e.g. "New York city", "Albert Einstein", etc...
+- ...
+literally that simple.
+
+put results in VISUALISABLES_NLP_DEFINITION.txt
+
+
+(0.5)
+Following the guide at VISUALISABLES_NLP_DEFINITION.txt
+implement the logic to identify 
+keep logic straightfoward and step by step. 
+ideally one main orchestration function were we can clearly see each step like a bash function.
+
+
+(3) 
+regarding:
+abstract_term_resolver.py
+and related:
+     myownstuff.py
+
+
+- my planned method isolated each sentence to only the current line, next line, and
+  preceeding lines (since we don't want to spoil anything that is coming up later)...
+    is that worth doing?
+    would it increase accuracy etc?
+
+
+
+
+-----
+(2)
+so our aim is to identify all visualisables and put them in a map.
+- make it so we get it in the correct output method:
+    so it takes as input the target line, all lines before, and rest of that sentence + the sentence after if applicable.
+
+
+    e.g. input:
+      visualisables = create_visualisables_entry(input_text:str, rest_of_line_plus_next_sentence:str, all_preceeding_text:str)
+    visualisables = create_visualisables_entry("The tractor and the cat, Molly, went down the lane.", 
+                    "They passed a bee", null)
+    
+    e.g. output:
+
+    "The [1] and the [2], Molly, went down the lane":{
+        [1]:{
+                "visualisable":tractor
+                "variant":null / base version
+                "action":null / unknown / base action
+                "location"?: null/ base / unknown / presumably farmland.   (or well, in this case we know its 'the lane')
+        },
+        [2]:{
+                ...
+        }
+        (maybe we'd have [3] as 'the lane'.. but lets just see what the code produces!)
+    },
+        
+    maybe we'll want to create a struct to represent the map.
+    to note: for now we just populate the 'visualisable' value. rest are left as null/unknown etc.
+
+
+(3)
+- Integrate the abstract value into main code.
+    visualisables = add_abstract_values_to_visualisables_map(input_text:str, rest_of_line_plus_next_sentence:str, all_preceeding_text:str)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------
+
 AUTO SEARCH TERM DETECTION:
 (do i write this myself?)
 
