@@ -171,7 +171,7 @@ def _build_visualisable_data():
         #      i.e. Build the cumulative list of visualisables (TODO: only concrete ones?)
         #      e.g. The tractor and the cat, Molly, went down the lane. --> ["tractor", "cat", "lane"] 
         #           They passed a bee                                   --> ["tractor", "cat", "lane", "bee"] 
-        line_to_found_visualisables = add_found_visalisables(line, line_to_found_visualisables)
+        line_to_found_visualisables = # from visualsables extractor...
 
 
         # 2) Resolve all abstract terms

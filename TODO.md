@@ -1,24 +1,9 @@
 
 
-(0)
-According to the logic in sentence_splitter.py (which does a lot of 'splitting on visualisables'
-create a bullet pointed list stating extensively and completely the definition of what a 'visaulisable' is, in NLP terms
-My personal defintion is something we can represent in our video. Something we can easily picture.
-something we can draw. etc. etc.
-keep it straightforward and simple.
-for each, give examples.
-e.g. 
-- All capital named nouns. 
-    - e.g. "New York city", "Albert Einstein", etc...
-- ...
-literally that simple.
-
-put results in VISUALISABLES_NLP_DEFINITION.txt
-
 
 (0.5)
 Following the guide at VISUALISABLES_NLP_DEFINITION.txt
-implement the logic to identify 
+implement the logic to identify visualisables in a given line.
 keep logic straightfoward and step by step. 
 ideally one main orchestration function were we can clearly see each step like a bash function.
 if using algorithms / logic, prefer to use 
@@ -30,27 +15,7 @@ To note:
   alongside each split line, mentioning why it was split.
   You may or may not want to use this, depending on if it is useful or not to you. 
 
-
-
-
-(3) 
-regarding:
-abstract_term_resolver.py
-and related:
-     myownstuff.py
-
-
-- my planned method isolated each sentence to only the current line, next line, and
-  preceeding lines (since we don't want to spoil anything that is coming up later)...
-    is that worth doing?
-    would it increase accuracy etc?
-
-
-
-
------
-(2)
-so our aim is to identify all visualisables and put them in a map.
+so our aim is to identify all visualisables in the given line, and put them in a map.
 - make it so we get it in the correct output method:
     so it takes as input the target line, all lines before, and rest of that sentence + the sentence after if applicable.
 
@@ -78,6 +43,29 @@ so our aim is to identify all visualisables and put them in a map.
         
     maybe we'll want to create a struct to represent the map.
     to note: for now we just populate the 'visualisable' value. rest are left as null/unknown etc.
+
+
+phase 1)
+*OUTLINE*/plan all the logic and functions in visualisables_extractor.py.
+    (i.e. creating the functions and their docstrings, the main orchestration calling all of them, etc.)
+If there are any research tasks (e.g. searching for existing reliable tools that would help us), save
+that for phase 2.
+
+same the full implementatoin for phase 3
+
+(3) 
+regarding:
+abstract_term_resolver.py
+and related:
+     myownstuff.py
+
+
+- my planned method isolated each sentence to only the current line, next line, and
+  preceeding lines (since we don't want to spoil anything that is coming up later)...
+    is that worth doing?
+    would it increase accuracy etc?
+
+
 
 
 (3)
