@@ -21,6 +21,16 @@ Following the guide at VISUALISABLES_NLP_DEFINITION.txt
 implement the logic to identify 
 keep logic straightfoward and step by step. 
 ideally one main orchestration function were we can clearly see each step like a bash function.
+if using algorithms / logic, prefer to use 
+ pre-existing things with scientific proof, backing and reigourous benchmarking. (in the same way as how abstract_term_resolver.py, did not implement its own logic, but rather reuse that of existing tools.
+         prioritise using existing reliable tools!)
+
+To note:
+- Our sentence splitter (source of the input to our main myownstuff.py file puts additional data 
+  alongside each split line, mentioning why it was split.
+  You may or may not want to use this, depending on if it is useful or not to you. 
+
+
 
 
 (3) 
@@ -49,6 +59,7 @@ so our aim is to identify all visualisables and put them in a map.
       visualisables = create_visualisables_entry(input_text:str, rest_of_line_plus_next_sentence:str, all_preceeding_text:str)
     visualisables = create_visualisables_entry("The tractor and the cat, Molly, went down the lane.", 
                     "They passed a bee", null)
+        (again, you may want to also pass in the tags from the sentence splitter if they're useful)
     
     e.g. output:
 

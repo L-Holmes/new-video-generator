@@ -1,0 +1,203 @@
+================================================================================
+WHAT IS A "VISUALISABLE"?
+================================================================================
+
+Plain-English definition:
+  A visualisable is a word (or short phrase) that gives us something to PUT ON
+  SCREEN. Something you could draw, film, photograph, point a camera at, or
+  animate. If you read the word and a picture appears in your head, it is a
+  visualisable. If you read it and nothing appears, it is not.
+
+The code's version of that test lives in:
+  shared_text_logic.py -> has_visualisable_content(doc, lo, hi)   (SECTION 5)
+and it is used all over sentence_splitter.py to decide where a line may be cut
+and which lines are allowed to stand on their own.
+
+The code's test, in one sentence:
+  A span of text is visualisable if it contains at least ONE noun, proper noun,
+  number, strong adjective, or strong (non-weak) verb -- OR if it is simply
+  long enough (4+ non-punctuation tokens) to read as a real line on its own.
+
+
+================================================================================
+PART 1 -- THINGS THAT *ARE* VISUALISABLES
+================================================================================
+
+- All capitalised / named nouns (spaCy POS = PROPN, or a named entity).
+  These are the strongest kind: a named thing can always be shown, because you
+  can go and fetch the actual photo of it.
+    - e.g. "New York City", "Albert Einstein", "the Titanic", "Mount Everest",
+           "Coca-Cola", "the Roman Empire", "World War Two"
+    - the entity labels the code trusts (REVEAL_ENTS / NAME_ENT_LABELS):
+      PERSON, ORG, GPE (countries/cities), LOC, FAC (buildings), NORP
+      (nationalities), EVENT, WORK_OF_ART, PRODUCT, LAW, LANGUAGE
+    - a run of capitals joined by NAME_CONNECTORS is ONE visualisable:
+      "of, the, de, da, van, der, von, al, el, la, le, bin, ibn"
+        - e.g. "Alaric the Goth", "Vasco da Gama", "John Paul II of Spain"
+    - BUT a capital at the start of a sentence is not automatically a name.
+      CAP_STOPWORDS ("The", "But", "When", "January", "Monday"...) can never
+      start a name run.
+
+- Ordinary concrete nouns (POS = NOUN) -- the everyday stuff of the world.
+    - e.g. "tractor", "cat", "jar", "nutmeg", "shelf", "ship", "castle",
+           "phone box", "field", "lane", "bee"
+    - includes compound nouns, which stay glued together as one picture:
+        - e.g. "phone box", "crash site", "spice trade", "stock footage"
+
+- Whole noun phrases (spaCy noun_chunks) -- the noun plus the words attached
+  to it. This is the unit we actually search for, not the bare noun.
+    - e.g. "a jar of nutmeg" (not just "jar"), "a wall of water",
+           "the old wooden ship"
+    - determiners ("a", "the") and weak adjectives are stripped off first:
+      "a jar of nutmeg sat on the shelf" -> the visualisable is "jar of nutmeg"
+
+- Numbers and quantities (POS = NUM, or like_num).
+  A number is visualisable because we can put it on screen as a counter, a
+  bar chart, a pie, a progress bar or a timeline.
+    - e.g. "900 ships", "4,000 tons", "73%", "£4,000", "two thirds"
+    - the numeric entity labels: CARDINAL, ORDINAL, QUANTITY, MONEY, PERCENT
+    - a number and its measure word are ONE visualisable, never split apart
+      (MEASURE_NOUNS): "15 metres", "40 million", "3 thousand years",
+      "90 degrees", "12 percent"
+
+- Dates, years and times (entity DATE / TIME).
+    - e.g. "1946", "the 19th century", "the 1600s", "midnight", "August 1945"
+    - shown as a timeline marker travelling to that year.
+
+- Money and currency.
+    - e.g. "£4,000", "$2 million", "a fortune in silver"
+
+- Strong descriptive adjectives (POS = ADJ, and NOT in WEAK_ADJ_LEMMAS).
+  These change what the picture LOOKS like, so they are visual.
+    - e.g. "red", "tiny", "ancient", "brilliant", "rusted", "microscopic",
+           "frozen", "golden", "enormous"
+
+- Strong / concrete verbs (POS = VERB, and NOT in WEAK_VERB_LEMMAS or
+  WEAK_VERB_FORMS). These are actions you can actually film happening.
+    - e.g. "jumped", "sailed", "exploded", "melted", "collapsed", "ran",
+           "burned", "sank", "smashed", "climbed"
+    - verb families the splitter treats as carrying a picture:
+        - creation: "build", "construct", "forge", "sculpt", "invent"
+        - motion / spatial: "moves through", "sits under", "extends across"
+        - transformation: "turns red", "rots away", "freezes over"
+
+- Sound-effect words used bare (SFX_WORDS) -- they earn their own line and
+  their own on-screen moment.
+    - e.g. "boom", "crash", "bang", "whoosh", "thud", "snap", "sizzle",
+           "ding", "vroom"
+    - "and then BOOM the roof came down" -> "boom" is its own visual beat.
+
+- Two visualisables joined by "and" / "or" = TWO separate visualisables, and
+  the splitter cuts between them (RULE 49 -- rule_and_visualisables_split).
+    - e.g. "dust | and rock", "John | and Mary", "calming | and alien"
+    - so "The tractor and the cat went down the lane" contains the
+      visualisables: "tractor", "cat", "lane"
+
+- A LENGTH FALLBACK: any span of 4 or more non-punctuation tokens counts as
+  visualisable even if none of the above matched. Long enough to be a real
+  line, so we let it stand and hold whatever image is on screen.
+    - e.g. "what had to be done", "everything they had ever known"
+    - this is a mercy rule, not a real picture.
+
+
+================================================================================
+PART 2 -- THINGS THAT ARE *NOT* VISUALISABLES
+================================================================================
+(A line made only of these cannot be filmed. The splitter refuses to leave it
+ alone on its own line -- anti_rule_content_starved and the 1008/1009 merges
+ glue it onto a neighbour so it keeps showing the previous image.)
+
+- Pronouns (POS = PRON). They point at a picture, they are not one.
+    - e.g. "it", "they", "he", "she", "we", "you", "this", "that"
+    - "It's" / "they were" -> nothing to show.
+
+- Weak / light verbs (WEAK_VERB_LEMMAS + WEAK_VERB_FORMS). The picture, if
+  there is one, always lives in the NOUN next to them, never in the verb.
+    - linking: "be, is, are, was, were, seem, appear, become, remain, stay"
+    - light:   "have, do, get, make, go, come, take, bring, keep, hold, use"
+    - mental:  "know, think, say, tell, mean, believe, decide, expect,
+                understand, remember, forget, realise, notice, wonder"
+    - admin:   "include, involve, require, provide, offer, receive, contain,
+                manage, fail, attempt, plan, intend, tend, suppose"
+    - "cost, need, want, matter, happen, allow, begin, start, stop, cause"
+    - contractions count too: "'s, 're, 'm, 've, 'd, 'll"
+
+- Weak / quantifier adjectives (WEAK_ADJ_LEMMAS). They say HOW MUCH, not
+  what it looks like.
+    - e.g. "many, much, more, less, few, some, any, several, various,
+            certain, particular, specific, general, own, whole, entire,
+            main, only, very, numerous, countless, multiple, additional,
+            usual, common, typical, normal, standard, possible, likely,
+            potential, available, mere, single, former, latter, recent,
+            current, actual, similar, equal"
+
+- Generic topic nouns (GENERIC_TOPIC_NOUNS). Technically nouns, but they turn
+  up in every script about anything, so they never earn a picture of their own.
+    - e.g. "thing, way, time, year, day, part, place, people, world, lot,
+            kind, sort, story, fact, reason, bit, case, side, end, point,
+            idea, example, problem, question, answer, moment, name, word,
+            line, video, subject, matter, area, number, amount, group,
+            level, order, form, type, use, need, man, woman, guy"
+    - "the main thing was..." -> nothing to draw.
+
+- Function words / lightweight POS (LIGHTWEIGHT_POS). Pure grammar glue.
+    - CCONJ: "and, or, but"
+    - SCONJ: "because, although, while, if"
+    - DET:   "the, a, this, those"
+    - ADP:   "of, in, on, with, for"
+    - PART:  "to, not, 's"
+    - AUX:   "will, would, can, must, has been"
+    - ADV:   "then, however, actually, basically"
+    - INTJ:  "oh, well, hmm"
+
+- Idioms and fixed sayings (IDIOM_PHRASES). The words are concrete but the
+  meaning is not -- filming them literally would be wrong.
+    - e.g. "the rest is history", "at the end of the day", "out of the blue",
+           "against all odds", "long story short", "easier said than done",
+           "little did they know", "in a nutshell"
+    - a line that is ONLY an idiom is marked NOT visualisable (rule id 1010).
+
+- Discourse pivots and script furniture (DISCOURSE_PIVOT_PHRASES).
+    - e.g. "here's the thing", "which brings us to", "in other words",
+           "but wait", "as a result", "plot twist", "fun fact"
+
+- Connective fragments -- any short scrap made only of the above.
+    - e.g. "It's", "that many of", "and then the", "but it's how it",
+           "which meant", "That's"
+
+
+================================================================================
+PART 3 -- THE GREY AREA (known gap, this is what we still need to fix)
+================================================================================
+
+- Abstract nouns currently PASS the test, because spaCy tags them NOUN and the
+  code only checks the tag. They are grammatically nouns but you cannot point
+  a camera at them.
+    - e.g. "monopoly", "inflation", "betrayal", "freedom", "democracy",
+           "justice", "risk", "influence", "progress", "tension"
+  These need resolving into something concrete before we can show them
+  (see abstract_term_resolver.py, and the stub is_abstract_concept()).
+    - e.g. "inflation" -> a shrinking pile of banknotes
+           "betrayal"  -> a handshake behind a knife
+           "monopoly"  -> one hand closing over every ship in a harbour
+
+- A noun that is real but too small/ordinary to be worth its own shot is still
+  visualisable; importance ranking is a separate question from picture-ability.
+
+
+================================================================================
+PART 4 -- QUICK RULES OF THUMB
+================================================================================
+
+- Can I type it into a stock footage site and get back a sensible clip?
+      -> visualisable.
+- Is it a name with a capital letter?            -> visualisable.
+- Is it a number, a date, a price or a percent?  -> visualisable (as a chart).
+- Does it describe what something LOOKS like?    -> visualisable.
+- Is it an action you could film happening?      -> visualisable.
+- Does it only point back at something already said ("it", "that", "which")?
+      -> NOT visualisable.
+- Is it only grammar, hedging or counting words? -> NOT visualisable.
+- Is it a saying whose meaning is not its words? -> NOT visualisable.
+- Nothing matched, but the line is 4+ real words? -> treated as visualisable,
+  so it can stand as a line and hold the previous image.
