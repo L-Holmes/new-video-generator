@@ -79,6 +79,25 @@ visualisables_data = get_visualisable_data(
 #                                                    previous, next,
 #                                                    coref="off")
 #
+# abstract_terms          the whole script's pronouns, already resolved, from
+#                         _abstract_term_resolver. PREFER THIS to `coref`:
+#                         one ~40 s pass for the script instead of ~5 s for
+#                         every segment with an "it" in it, four models
+#                         voting instead of the first one that answered, and
+#                         it also carries the deictics and the possessives.
+#                         Build it ONCE, before the loop, over
+#                         join_segments(all your segments) -- the offsets are
+#                         what the lookup uses, so it has to be the same text.
+#                         e.g.
+#                           from _abstract_term_resolver import resolve_all_abstract_terms
+#                           from _visualisables_pipeline import join_segments, parse_script
+#
+#                           script = join_segments(SCRIPT_SPLIT_INTO_LINE_SEGMENTS)
+#                           terms = resolve_all_abstract_terms(script,
+#                                                              doc=parse_script(script))
+#                           get_visualisable_data(segment, previous, following,
+#                                                 abstract_terms=terms)
+#
 # @output  {template: {slot: {...}}} — one key, this segment with its
 #          visualisables punched out into numbered slots.
 
@@ -106,7 +125,12 @@ visualisables_data = get_visualisable_data(
 #               "action" / "quality" — NOT things to film; they are there so
 #               the thing next to them can borrow them.
 #               "reference" — this slot was a pronoun, and what you see in
-#               `visualisable` is what it was resolved to.
+#               `visualisable` is what it was resolved to. If it still reads
+#               like a pronoun ("It"), nothing confident enough came back —
+#               hold the picture you already have.
+#               "deictic" — "I" / "we" / "you": the narrator or the viewer.
+#               A person, but not one there is any footage of. Only ever
+#               appears when you passed abstract_terms.
 #               "fallback" — no picture in this segment at all; hold whatever
 #               is already on screen.
 #
@@ -115,9 +139,14 @@ visualisables_data = get_visualisable_data(
 #
 # is_setting    put this one in the BACKGROUND. Everything else goes on top.
 #
-# confidence    0..1. On a "reference" slot: 0.75 means a coreference model
-#               answered, 0.10 means it was only a "last thing mentioned"
-#               guess, 0.0 means we could not resolve it at all.
+# confidence    0..1. On a "reference" slot without abstract_terms: 0.75
+#               means a coreference model answered, 0.10 means it was only a
+#               "last thing mentioned" guess, 0.0 means we could not resolve
+#               it at all.
+#               WITH abstract_terms it is the real number — the share of the
+#               models' weight that voted for this answer (0.26 when two of
+#               four agreed, 1.00 for a deictic). Below 0.25 the pronoun is
+#               left in place rather than swapped for a guess.
 
 
 # =============================================================================

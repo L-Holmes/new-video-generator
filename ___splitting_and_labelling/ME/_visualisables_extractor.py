@@ -136,6 +136,11 @@ KIND_SOUND     = "sound"      # SFX_WORDS                   "boom"
 KIND_FALLBACK  = "fallback"   # the mercy rule — no real picture
 KIND_REFERENCE = "reference"  # a pronoun standing in for an earlier slot
                               #                             "They" --> tractor + cat
+KIND_DEICTIC   = "deictic"    # "I" / "we" / "you"          "the narrator"
+                              # Also a pronoun, but one that never points at
+                              # anything IN the script — and there is no stock
+                              # clip of "the narrator", so it is not a thing to
+                              # fetch footage for.
 
 # A "Concrete Visualisable" (myownstuff.py's definition): a thing, not an
 # action or a quality. These are the ones that can own a shot on their own.
@@ -186,6 +191,12 @@ class Visualisable:
     identity: str | None = None
     token_span: tuple[int, int] | None = None
     setting_score: float = 0.0
+
+    # owner         the WHOLE this thing is a part of, when a possessive
+    #               pronoun said so:  "Its windscreen" --> owner = "tractor".
+    #               Only ever filled from the abstract-terms map, and only so
+    #               that a part's damage can describe its whole (step 5).
+    owner: str | None = None
 
     def is_concrete(self) -> bool:
         """A thing, not an action or a quality."""
@@ -1268,14 +1279,21 @@ MOTION_VERB_ROOTS = frozenset({"travel.v.01", "move.v.02", "move.v.03"})
 
 def resolve_visualisable_details(entries: list[VisualisablesEntry],
                                  doc,
-                                 coref: str = COREF_DEFAULT
+                                 coref: str = COREF_DEFAULT,
+                                 abstract_terms: dict | None = None
                                  ) -> list[VisualisablesEntry]:
     """Fill variant / action / location across a WHOLE script.
 
     @input entries = every line's VisualisablesEntry, IN SCRIPT ORDER. Build
         them with keep_pronouns=True if you want "it"/"they" resolved.
     @input doc = the ONE parsed Doc the entries were built against.
-    @input coref = "fast" | "full" | "off"  — see COREF_DEFAULT.
+    @input coref = "fast" | "full" | "off"  — see COREF_DEFAULT. IGNORED
+        when abstract_terms is given: the answers are already in the map.
+    @input abstract_terms = the whole script's pronouns, resolved ONCE up
+        front by _abstract_term_resolver.resolve_all_abstract_terms(). When
+        it is given, step 3 LOOKS THE ANSWER UP and runs no model at all.
+        e.g. {(395, 397): {"surface": "it", "resolved": "valley",
+                           "confidence": 0.26, "source": "models", ...}}
     @output the same entries, mutated in place.
 
     THE STEPS
@@ -1287,7 +1305,7 @@ def resolve_visualisable_details(entries: list[VisualisablesEntry],
     """
     entries = fill_actions(entries, doc)
     entries = assign_identities(entries)
-    entries = resolve_references(entries, doc, coref)
+    entries = resolve_references(entries, doc, coref, abstract_terms)
     entries = fill_locations(entries, doc)
     entries = fill_variants(entries, doc)
     return entries
@@ -1405,7 +1423,9 @@ def _resolver():
 # -----------------------------------------------------------------------------
 
 def resolve_references(entries: list[VisualisablesEntry], doc,
-                       mode: str = COREF_DEFAULT) -> list[VisualisablesEntry]:
+                       mode: str = COREF_DEFAULT,
+                       abstract_terms: dict | None = None
+                       ) -> list[VisualisablesEntry]:
     """Turn each KIND_REFERENCE slot into the thing it points at.
     e.g. "They passed a bee"  -->  [1] = "the tractor and the cat"
          "It then crashed"    -->  [1] = "the tractor"
@@ -1421,9 +1441,29 @@ def resolve_references(entries: list[VisualisablesEntry], doc,
     Nothing at all? Keep the pronoun and set confidence 0 — the renderer's
     cue to hold whatever is already on screen, which is the right answer for
     an unresolvable "it" anyway.
+
+    THE MAP PATH — PREFER IT. Hand over abstract_terms and every answer is
+    already worked out: the caller resolved the WHOLE script once, with all
+    four models voting, before any of this ran. Then this is a dict lookup.
+        faster    one ~40 s pass per script, instead of ~5 s per segment
+                  that happens to contain a pronoun
+        better    a weighted vote of four models with a real confidence,
+                  instead of the first model that answered at a flat 0.75
+        more      the map also carries the deictics ("I" --> the narrator)
+                  and the possessives ("Its" --> "the tractor's"), neither
+                  of which the per-segment path can see
+
+    The model path below stays for callers who never built a map. Only one
+    of the two ever runs.
     """
     refs = [(i, v) for i, e in enumerate(entries)
             for v in e.visualisables.values() if v.kind == KIND_REFERENCE]
+
+    if abstract_terms is not None:
+        _references_from_map(entries, doc, refs, abstract_terms)
+        _apply_possessives(entries, doc, abstract_terms)
+        return entries
+
     if not refs:
         return entries
 
@@ -1448,6 +1488,139 @@ def resolve_references(entries: list[VisualisablesEntry], doc,
             vis.detector += "+recency"
         vis.identity = vis.visualisable.lower()
     return entries
+
+
+# Below this, an answer is a guess and we do NOT swap it in: the slot keeps
+# its pronoun, which is the renderer's cue to hold the picture it already has.
+# A wrong picture is worse than the last right one. This is
+# abstract_term_resolver.CONFIDENCE_THRESHOLD — repeated here only as the
+# fallback for when that module will not import.
+ABSTRACT_CONFIDENCE_THRESHOLD = 0.25
+
+
+def _abstract_threshold() -> float:
+    """The resolver's own threshold, so the two files cannot disagree."""
+    return getattr(_resolver(), "CONFIDENCE_THRESHOLD",
+                   ABSTRACT_CONFIDENCE_THRESHOLD)
+
+
+def _references_from_map(entries: list[VisualisablesEntry], doc, refs,
+                         abstract_terms: dict) -> None:
+    """Fill every KIND_REFERENCE slot from the pre-built map. No model runs.
+
+    e.g. "[1] was once covered"   +  {(395, 397): {"resolved": "valley", ...}}
+             -->  [1] = "valley", confidence 0.26, detector "+abstract:models"
+    """
+    threshold = _abstract_threshold()
+    for _entry_index, vis in refs:
+        token = doc[vis.token_span[0]] if vis.token_span else None
+        row = _abstract_row(abstract_terms, token) if token is not None else None
+
+        if row is None or not row["resolved"]:
+            # Four models had a go and none of them could say. Keep the
+            # pronoun; hold the picture.
+            vis.confidence = 0.0
+            vis.detector += "+abstract:none"
+            continue
+
+        if row["confidence"] < threshold:
+            # A guess, usually the recency fallback at 0.10. Same answer:
+            # keep the pronoun rather than put the wrong thing on screen.
+            vis.confidence = row["confidence"]
+            vis.detector += f"+abstract:{row['source']}-low"
+            continue
+
+        vis.visualisable = row["resolved"]
+        vis.confidence = row["confidence"]
+        vis.detector += "+abstract:" + row["source"]
+        if row["source"] == "deictic":
+            # "I" / "we" / "you" — the narrator or the viewer. A person, but
+            # not one there is any footage of, so it stops being a thing to
+            # film and becomes a note for whatever draws the shot.
+            vis.kind = KIND_DEICTIC
+        vis.identity = vis.visualisable.lower()
+
+
+def _apply_possessives(entries: list[VisualisablesEntry], doc,
+                       abstract_terms: dict) -> None:
+    """ "Its windscreen broke"  -->  the slot reads "the tractor's windscreen".
+
+    A possessive pronoun never gets a slot of its own — it sits INSIDE a noun
+    phrase, as the head noun's determiner — so resolving one is not swapping
+    a slot but RENAMING it.
+        e.g. "Its windscreen"  -->  "the tractor's windscreen"
+             "their sails"     -->  "the ships' sails"
+
+    It also records the whole on the part (vis.owner), which is the missing
+    half of the KNOWN MISS in _variant_descriptions(): once we know whose
+    windscreen it is, fill_variants() can give the TRACTOR a broken one.
+    """
+    threshold = _abstract_threshold()
+    for entry in entries:
+        for vis in entry.visualisables.values():
+            if vis.token_span is None or not vis.is_concrete():
+                continue
+            lo, hi = vis.token_span
+            poss = next((t for t in doc[lo:hi] if t.tag_ == "PRP$"), None)
+            if poss is None:
+                continue
+            row = _abstract_row(abstract_terms, poss)
+            if (row is None or not row["resolved"]
+                    or row["confidence"] < threshold):
+                continue
+            before, after = doc[lo:poss.i].text, doc[poss.i + 1:hi].text
+            owner = row["resolved"]
+            vis.visualisable = " ".join(
+                part for part in (before, _possessive_form(owner), after) if part)
+            vis.identity = vis.visualisable.lower()
+            vis.owner = _owner_identity(entries, owner)
+            vis.detector += "+abstract:poss"
+
+
+def _abstract_row(abstract_terms: dict, token):
+    """The map's row for this pronoun, or None if it has none.
+
+    The map is keyed by (start_char, end_char) into the text it was built
+    over, and join_segments() is what makes that the same text this doc was
+    parsed from — so the exact hit is the normal case. The overlap scan is
+    the safety net for the one place the two can disagree: the map may have
+    been built off a different spaCy model, and "it's" is one token to one
+    tokeniser and two to another.
+    """
+    start, end = token.idx, token.idx + len(token.text)
+    row = abstract_terms.get((start, end))
+    if row is not None:
+        return row
+    for (a, b), row in abstract_terms.items():
+        if a < end and start < b:
+            return row
+    return None
+
+
+def _possessive_form(name: str) -> str:
+    """ "the tractor" --> "the tractor's",  "Locals" --> "Locals'".
+    The resolver's own rule, so the two files cannot drift apart."""
+    resolver = _resolver()
+    if resolver is not None:
+        return resolver.possessive_form(name)
+    return name + ("'" if name.endswith("s") else "'s")
+
+
+def _owner_identity(entries: list[VisualisablesEntry], name: str) -> str:
+    """The resolver calls the whole "the tractor"; the rest of the script
+    already calls it "tractor". Match them up, or the variant would land on
+    an identity nothing else shares.
+
+    Containment, which is how assign_identities() groups names anyway.
+    """
+    want = name.lower()
+    for entry in entries:
+        for vis in entry.visualisables.values():
+            if not vis.identity:
+                continue
+            if vis.identity == want or vis.identity in want or want in vis.identity:
+                return vis.identity
+    return want
 
 
 def _coref_clusters(doc, mode: str):
@@ -1597,6 +1770,15 @@ def fill_variants(entries: list[VisualisablesEntry], doc) -> list[VisualisablesE
             for description in _variant_descriptions(doc, vis):
                 if description not in so_far:
                     so_far.append(description)
+                # ...and a PART's change describes its WHOLE: "Its windscreen
+                # broke" leaves the TRACTOR with a broken windscreen. Only
+                # possible once a possessive resolved to an owner, which is
+                # the abstract-terms map's doing — the KNOWN MISS below.
+                if vis.owner:
+                    whole = history.setdefault(vis.owner, [])
+                    phrase = f"{description} {_head_word(doc, vis)}"
+                    if phrase not in whole:
+                        whole.append(phrase)
             vis.variant = ", ".join(so_far) or None
     return entries
 
@@ -1635,6 +1817,11 @@ def _variant_descriptions(doc, vis) -> list[str]:
       * "ITS windscreen broke" describes the tractor too, not just the
         windscreen. Part-to-whole needs reliable meronymy, which WordNet
         does not give — so the tractor's variant stops at "yellow paint".
+        FIXED for the possessive case only, and only when an abstract-terms
+        map is in play: "Its" resolves to the tractor, so the windscreen
+        knows whose it is (vis.owner) and fill_variants() hands the tractor
+        "broken windscreen". A part named any other way ("the windscreen
+        broke") still needs the meronymy we have not got.
     """
     if vis.token_span is None:
         return []
@@ -1671,6 +1858,12 @@ def _variant_descriptions(doc, vis) -> list[str]:
                                   if g.dep_ in {"amod", "compound"}])
             out.append(doc[lo:child.i + 1].text)
     return out
+
+
+def _head_word(doc, vis) -> str:
+    """The one word a phrase is ABOUT.  e.g. "the tractor's windscreen"
+    --> "windscreen". Used to describe the whole by its part."""
+    return doc[vis.token_span[0]:vis.token_span[1]].root.text.lower()
 
 
 def _adjective_phrase(doc, adj) -> str:

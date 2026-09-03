@@ -58,12 +58,28 @@ Definitions:
         ~~~~
 --------------------------------------------------------------------------------------
 """
-from abstract_term_resolver import resolve_all_abstract_terms
+import sys
+from pathlib import Path
+
+# The visualisables files and the sentence splitter live here and one up.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from _abstract_term_resolver import resolve_all_abstract_terms
+
+# get_visualisable_data is the name of MY main function below, so the
+# pipeline's one comes in under the name of what it actually does: ONE line
+# segment, not the script.
+from _visualisables_pipeline import (
+    get_visualisable_data as get_line_segment_visualisables,
+    join_segments,      # the ONE text the abstract terms map is keyed against
+    parse_script,       # ...and its ONE spaCy parse, shared with the resolver
+)
 
 BUILT_VISUALISABLE_DATA=False
 VISUALISABLE_DATA = None
 
-def get_visualisable_data(sentece_splitter_output):
+def get_visualisable_data(sentence_splitter_output):
     """
     Main function
 
@@ -76,6 +92,18 @@ def get_visualisable_data(sentece_splitter_output):
         Chunk(text='the Tethys Sea.', ids=[])
     ]
 
+    @output one entry per line segment, in script order -- each of them the
+    {template: {slot: what we know about it}} map for that segment.
+    e.g.
+     [
+        {"In [1],": {"1": {"visualisable": "Egypt", "variant": None,
+                           "action": None, "location": None, "kind": "name",
+                           "identity": "egypt", "is_setting": True,
+                           "confidence": 1.0}}},
+        {"[1] was once [2]": {"1": {"visualisable": "valley",     # was "It"
+                                    "kind": "reference", ...},
+                              "2": {"visualisable": "covered", ...}}},
+     ]
     """
     BUILT_VISUALISABLE_DATA=False
     if not BUILT_VISUALISABLE_DATA:
@@ -84,7 +112,7 @@ def get_visualisable_data(sentece_splitter_output):
         BUILT_VISUALISABLE_DATA=True
     return VISUALISABLE_DATA
 
-def _build_visualisable_data():
+def _build_visualisable_data(line_segments):
     """
     @input The text.
     e.g.
@@ -168,20 +196,53 @@ def _build_visualisable_data():
 
     """
     # 0) Split all sentences
-    sentences = split(input_text, <end-of-sentence-regex>)
+    #    ^ NOT this file's job any more: the sentence splitter already cut
+    #      them, and get_visualisable_data() handed us the pieces.
+    #      e.g. ["In Egypt,", "there's a valley filled with", "It was once covered"]
 
-    for sentence, next_sentence in sentences:
+    # 1)i) Resolve all abstract terms -- ONCE, for the WHOLE script.
+    #      This is step 2) below, moved in front of the loop, because:
+    #        - the four coreference models cost ~40 s per RUN, not per pronoun,
+    #          so running them per line segment costs ~5 s a segment
+    #        - they read the whole script, so they see more than a segment can
+    #      What comes back is a MAP, keyed by where each pronoun IS. Never the
+    #      rewritten text: the words on screen have to stay the words the
+    #      viewer hears ("It was once covered", not "the valley was once...").
+    script_text = join_segments(line_segments)     # "In Egypt, there's a valley filled with It was once covered"
+    abstract_terms = resolve_all_abstract_terms(script_text,
+                                                doc=parse_script(script_text))
+    # {(45, 47): {"surface": "It", "resolved": "valley", "confidence": 0.26,
+    #             "source": "models", "possessive": False, "number": "Sing"}}
+
+    # A LIST, one entry per line segment, in script order -- NOT one big
+    # {template: slots} map. Two different segments really do land on the same
+    # template: "Whale skeletons." and "about $2 million." are both "[1].", so
+    # merging them into one dict silently loses a segment (measured: 23 in,
+    # 19 out, on script-whales.txt). Each entry is still the {template: slots}
+    # map for its own segment, exactly as the pipeline handed it over.
+    visualisable_data = []
+    for i, line_segment in enumerate(line_segments):
+        previous_line_segments = line_segments[:i]                 # ["In Egypt,", ...]
+        next_line_segment = (line_segments[i + 1]                  # "by the Tethys Sea."
+                             if i + 1 < len(line_segments) else None)
+
         # 1)ii) 
         #      i.e. Build the cumulative list of visualisables (TODO: only concrete ones?)
         #      e.g. The tractor and the cat, Molly, went down the lane. --> ["tractor", "cat", "lane"] 
         #           They passed a bee                                   --> ["tractor", "cat", "lane", "bee"] 
-        line_to_found_visualisables = # from visualsables extractor...
-
+        line_to_found_visualisables = get_line_segment_visualisables(  line_segment, previous_line_segments, next_line_segment, abstract_terms=abstract_terms)
+        # {"[1] was once [2]": {"1": {"visualisable": "valley", "variant": None,
+        #                             "action": "covered", "location": "Egypt",
+        #                             "kind": "reference", "identity": "valley",
+        #                             "is_setting": False, "confidence": 0.26},
+        #                       "2": {"visualisable": "covered", ...}}}
 
         # 2) Resolve all abstract terms
         # for each unknown, determine which visualisable it points to
         # e.g. " *it* plouged the field"  --> " [the tractor] ploughed the field
-        resolve_all_abstract_terms()
+        # resolve_all_abstract_terms()
+        #    ^ DONE ONCE, ABOVE, in 1)i) -- and handed in as abstract_terms, so
+        #      the line above is a dict lookup and not another 40 s of models.
 
         # ??) 
         #    - match verbs to visualisables?
@@ -192,9 +253,46 @@ def _build_visualisable_data():
         # x) [BONUS] Resolve all wishy washy terms.
         # e.g. "The yellow and black guy flew away." -> "The [bee] flew away"
 
-    return 
+        visualisable_data.append(line_to_found_visualisables)
+
+    return visualisable_data
 
 # ==============================================================================
 
-def _DEBUG_output_resolved_visualisables():
-    pass
+def _DEBUG_output_resolved_visualisables(visualisable_data):
+    """Print what we worked out, one line segment at a time, with the NAMES in
+    the brackets instead of the slot numbers.
+
+        [valley] was once [covered]
+          [1]  valley          reference  variant=None  action=covered  in=the Tethys Sea
+          [2]  covered         action     variant=None  action=None     in=the Tethys Sea
+
+    A "*" after the slot number means it is the SETTING — the thing that goes
+    in the background with everything else on top of it.
+    """
+    for line in visualisable_data:
+        for template, slots in line.items():
+            named = template
+            for slot, v in slots.items():
+                named = named.replace(f"[{slot}]", f"[{v['visualisable']}]")
+            print(f"\n{named}")
+            for slot, v in slots.items():
+                setting = "*" if v["is_setting"] else " "
+                print(f"  [{slot}]{setting} {v['visualisable']:<20} {v['kind']:<10}"
+                      f" variant={str(v['variant']):<14}"
+                      f" action={str(v['action']):<10} in={v['location']}")
+
+
+if __name__ == "__main__":
+    # The whole thing, end to end, on a real script:
+    #     uv run myownstuff.py                  (script-whales.txt)
+    #     uv run myownstuff.py ../script-rome.txt
+    from sentence_splitter import split_text_into_sections
+
+    script = Path(sys.argv[1] if len(sys.argv) > 1
+                  else Path(__file__).resolve().parent.parent / "script-whales.txt")
+
+    print(f"=== {script.name} ===")
+    sentence_splitter_output = split_text_into_sections(script.read_text())
+    _DEBUG_output_resolved_visualisables(
+        get_visualisable_data(sentence_splitter_output))

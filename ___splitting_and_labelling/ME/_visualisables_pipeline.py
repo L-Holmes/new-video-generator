@@ -32,6 +32,19 @@ WHY THE NEIGHBOURS ARE NEEDED
     pronouns. Only the target segment's map is handed back.
 
     No linguistic decisions are made here — they are all in the extractor.
+
+THE PRONOUNS CAN BE ANSWERED BEFORE YOU START
+    Resolve the whole script once, up front, and hand the map in:
+
+        abstract_terms = resolve_all_abstract_terms(join_segments(segments))
+        get_visualisable_data(segment, previous, next,
+                              abstract_terms=abstract_terms)
+
+    Then no coreference model runs in here at all — every "it" is a lookup.
+    One ~40 s pass for the script beats ~5 s for every segment with a pronoun
+    in it, and four models voting beat the first one that answered.
+    join_segments() is what makes the map's character offsets line up with
+    what this file parses; see it for why a prefix is safe.
 """
 import _visualisables_extractor as VE
 
@@ -40,10 +53,54 @@ import _visualisables_extractor as VE
 _CACHE: dict[tuple, dict] = {}
 
 
+def join_segments(segments: list[str]) -> str:
+    """THE ONE TEXT every character offset in this folder is counted in.
+
+    e.g. join_segments(["In Egypt,", "there's  a valley"])
+             -->  "In Egypt, there's a valley"
+
+    The abstract-terms map is keyed by character offsets, so the text the
+    resolver read and the text this file parses have to be the SAME string,
+    down to the space. This is that string: each segment's whitespace
+    squeezed, joined with a single space.
+
+    WHY A PREFIX IS SAFE, which is the thing that makes the whole design
+    work: joining is left to right with one space, so the join of the first
+    n segments IS a prefix of the join of all of them. Every per-segment call
+    therefore sees the same offsets the full-script map was built with, and
+    the map can be built ONCE over the whole script.
+
+        join_segments(segments[:i]) == join_segments(segments)[:that length]
+
+    (Checked over script-whales / script-rome / script-spices, every prefix
+    of every split: it holds.)
+    """
+    return " ".join(normalise_segment(s) for s in segments)
+
+
+def normalise_segment(segment: str) -> str:
+    """One segment with its whitespace squeezed — the half of join_segments()
+    that applies to a single segment.
+    e.g. "there's  a\nvalley"  -->  "there's a valley" """
+    return " ".join(segment.split())
+
+
+def parse_script(text: str) -> object:
+    """The ONE shared en_core_web_sm parse of a whole script.
+
+    Here so the caller can give the SAME parse to the abstract term resolver
+    (resolve_all_abstract_terms(text, doc=parse_script(text))) instead of
+    letting it load a second spaCy model — measured to give identical answers
+    on all 11 pronouns of the three test scripts. See that file's docstring.
+    """
+    return VE.nlp()(text)
+
+
 def get_visualisable_data(line_segment: str,
                           previous_line_segments: list[str] | None = None,
                           next_line_segment: str | None = None,
-                          coref: str = VE.COREF_DEFAULT) -> dict:
+                          coref: str = VE.COREF_DEFAULT,
+                          abstract_terms: dict | None = None) -> dict:
     """Everything we can put on screen for ONE line segment.
 
     @input line_segment = the segment to label.
@@ -58,6 +115,14 @@ def get_visualisable_data(line_segment: str,
         "fast" (default — a real model, ~5 s, and only when this segment
         actually has a pronoun in it), "full" (the 4-model ensemble, ~51 s)
         or "off" (assume the last thing mentioned; instant, ~50-55% right).
+        IGNORED when abstract_terms is given — the answers are already in it.
+    @input abstract_terms = the whole script's pronouns, resolved ONCE before
+        this loop started, by resolve_all_abstract_terms(). PREFER THIS: no
+        model runs per segment, and the answer is four models' weighted vote
+        rather than the first one that spoke. It must have been built over
+        join_segments(all the segments) or its offsets will not line up.
+        e.g. {(395, 397): {"surface": "it", "resolved": "valley",
+                           "confidence": 0.26, "source": "models", ...}}
 
     @output {template: {slot: {...}}} — ONE key: this segment, with its
         visualisables punched out into numbered slots.
@@ -72,9 +137,13 @@ def get_visualisable_data(line_segment: str,
                         "confidence": 0.9}}}
     """
     previous = [s for s in (previous_line_segments or []) if s and s.strip()]
-    key = (tuple(previous), line_segment, next_line_segment, coref)
+    # id() for the map: it is one object built once per script and passed
+    # down the whole loop, and a dict cannot be a dict key.
+    key = (tuple(previous), line_segment, next_line_segment, coref,
+           id(abstract_terms))
     if key not in _CACHE:
-        _CACHE[key] = _build(previous, line_segment, next_line_segment, coref)
+        _CACHE[key] = _build(previous, line_segment, next_line_segment, coref,
+                             abstract_terms)
     return _CACHE[key]
 
 
@@ -83,7 +152,8 @@ def get_visualisable_data(line_segment: str,
 # =============================================================================
 
 def _build(previous: list[str], line_segment: str,
-           next_line_segment: str | None, coref: str) -> dict:
+           next_line_segment: str | None, coref: str,
+           abstract_terms: dict | None = None) -> dict:
     """Three steps.
 
         0  parse everything up to here as ONE doc, one token span per segment
@@ -114,7 +184,8 @@ def _build(previous: list[str], line_segment: str,
     # 2) ACROSS SEGMENTS — this is myownstuff.py's "resolve all abstract
     #    terms" step: "*it* ploughed the field" --> "[the tractor] ploughed
     #    the field", plus what each thing is doing, where, and looking like.
-    entries = VE.resolve_visualisable_details(entries, doc, coref=coref)
+    entries = VE.resolve_visualisable_details(entries, doc, coref=coref,
+                                             abstract_terms=abstract_terms)
     return entries[target].as_map()
 
 
@@ -129,14 +200,15 @@ def _parse_together(segments: list[str]):
     Offsets are accumulated as the text is joined, and never searched for
     afterwards, because a segment can legitimately occur twice ("It was.").
     """
-    parts, offsets, cursor = [], [], 0
+    offsets, cursor = [], 0
     for segment in segments:
-        text = " ".join(segment.split())
-        parts.append(text)
+        text = normalise_segment(segment)
         offsets.append((cursor, cursor + len(text)))
         cursor += len(text) + 1              # the joining space
 
-    doc = VE.nlp()(" ".join(parts))
+    # join_segments(), not a second copy of the same rule: these offsets and
+    # the abstract-terms map's offsets have to be counted in the same string.
+    doc = VE.nlp()(join_segments(segments))
     spans = []
     for start, end in offsets:
         # "expand" because spaCy's tokenisation may not land on our offsets

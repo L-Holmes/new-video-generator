@@ -1,85 +1,38 @@
 
 
 
-(0.5)
-Following the guide at VISUALISABLES_NLP_DEFINITION.txt
-implement the logic to identify visualisables in a given line.
-keep logic straightfoward and step by step. 
-ideally one main orchestration function were we can clearly see each step like a bash function.
-if using algorithms / logic, prefer to use 
- pre-existing things with scientific proof, backing and reigourous benchmarking. (in the same way as how abstract_term_resolver.py, did not implement its own logic, but rather reuse that of existing tools.
-         prioritise using existing reliable tools!)
+claude --resume e76cdc3d-27df-45fd-b30c-2b98a03a0c36
+you last said:
 
-To note:
-- Our sentence splitter (source of the input to our main myownstuff.py file puts additional data 
-  alongside each split line, mentioning why it was split.
-  You may or may not want to use this, depending on if it is useful or not to you. 
+```
 
-so our aim is to identify all visualisables in the given line, and put them in a map.
-- make it so we get it in the correct output method:
-    so it takes as input the target line, all lines before, and rest of that sentence + the sentence after if applicable.
+All six plan steps are wired up and verified. Summary:
 
+Step 1 — resolver is now a library (_abstract_term_resolver.py)
+resolve_all_abstract_terms(text, models=MODELS, doc=None, …, log=None) returns AbstractTerms — a dict {(start_char, end_char): {surface, resolved, confidence, source, possessive, number}}, with .canonical and .models_run alongside. main() is now argv + printing only; the workings print through log=print. Also added rewrite_with_resolutions() (human-readable output only, documented as never for the extractor) and split possessive() into is_possessive() / possessive_form().
+Verified: uv run _abstract_term_resolver.py ../script-whales.txt prints byte-identical output to the pre-change baseline (bar model timings). old_abstract_term_resolver.py deleted (git rm, so it's recoverable).
 
-    e.g. input:
-      visualisables = create_visualisables_entry(input_text:str, rest_of_line_plus_next_sentence:str, all_preceeding_text:str)
-    visualisables = create_visualisables_entry("The tractor and the cat, Molly, went down the lane.", 
-                    "They passed a bee", null)
-        (again, you may want to also pass in the tags from the sentence splitter if they're useful)
-    
-    e.g. output:
+Step 2 — one text, one coordinate system (_visualisables_pipeline.py)
+join_segments() / normalise_segment() lifted out and used by _parse_together(), so there's only one joining rule. Checked the prefix property on the real splitter output for whales/rome/spices — every prefix of every split holds.
 
-    "The [1] and the [2], Molly, went down the lane":{
-        [1]:{
-                "visualisable":tractor
-                "variant":null / base version
-                "action":null / unknown / base action
-                "location"?: null/ base / unknown / presumably farmland.   (or well, in this case we know its 'the lane')
-        },
-        [2]:{
-                ...
-        }
-        (maybe we'd have [3] as 'the lane'.. but lets just see what the code produces!)
-    },
-        
-    maybe we'll want to create a struct to represent the map.
-    to note: for now we just populate the 'visualisable' value. rest are left as null/unknown etc.
+Step 3 — one parse or two: decided and written down (resolver docstring)
+Measured with the coref models held fixed: 11 pronouns across the three scripts, 11 identical answers off en_core_web_sm vs en_core_web_trf (parse 0.02–0.03 s vs 0.10–0.16 s). So doc= is accepted and myownstuff.py passes the shared sm parse; trf stays the CLI default. Only char offsets and strings cross the boundary.
+
+Steps 4 & 5 — the map feeds the pipeline (_visualisables_pipeline.py, _visualisables_extractor.py)
+get_visualisable_data(..., abstract_terms=…) → resolve_visualisable_details → resolve_references, which looks each pronoun up and runs no model. Below CONFIDENCE_THRESHOLD (0.25) the pronoun is left in place as a "hold the picture" cue. Deictics become the new KIND_DEICTIC ("the narrator"/"the viewer"), and possessives rename their slot and record owner. The old model path is untouched for callers with no map (HOW_TO_USE's output is unchanged).
+Verified on the tractor narrative: Its windscreen → "tractor's windscreen" (owner=tractor), and the tractor's variant reaches "yellow paint, broken windscreen" — the KNOWN MISS, fixed for the possessive case. I → "the narrator", kind deictic. Spices: your kitchen cupboard → "the viewer's kitchen cupboard".
+
+Step 6 — myownstuff.py runs end to end (uv run myownstuff.py, all 23 whales segments in order). Your comments and docstrings are all still there; step 2)'s call is kept as a comment pointing at 1)i) where it now runs once for the whole script.
+
+Two things I changed beyond straight wiring, both because a test caught them:
+- Merging into one {template: slots} dict loses segments — "Whale skulls." and "about $2 million." are both "[1]."; 23 in, 19 out. _build_visualisable_data now returns one entry per segment, in order (each still the pipeline's own map). Reason is written in the code.
+- A cluster can hand back a verb, so "the cat didn't like it" resolved to "revved". The old _model_referent guarded against that and the map path had lost it; the noun-only rule now lives in the resolver's vote (MENTION_POS), where the answer is produced. Whales CLI output is unaffected.
+
+Nothing is committed. Your myownstuff-bakcup-incase-ai-messes-up.py is still empty — the pre-change version is in git (git show HEAD:___splitting_and_labelling/ME/myownstuff.py).
+```
 
 
-phase 1)
-*OUTLINE*/plan all the logic and functions in visualisables_extractor.py.
-    (i.e. creating the functions and their docstrings, the main orchestration calling all of them, etc.)
-If there are any research tasks (e.g. searching for existing reliable tools that would help us), save
-that for phase 2.
-
-same the full implementatoin for phase 3
-
-(3) 
-regarding:
-abstract_term_resolver.py
-and related:
-     myownstuff.py
-
-
-- my planned method isolated each sentence to only the current line, next line, and
-  preceeding lines (since we don't want to spoil anything that is coming up later)...
-    is that worth doing?
-    would it increase accuracy etc?
-
-
-
-
-(3)
-- Integrate the abstract value into main code.
-    visualisables = add_abstract_values_to_visualisables_map(input_text:str, rest_of_line_plus_next_sentence:str, all_preceeding_text:str)
-    
-
-
-
-
-
-
-
-
+yeah, create a separate test file to do that. run on those two examples. also create a couple more examples which have lots of abstract things like 'this', 'it', 'her', etc. and run on those two. then make the manual interpretation test put all the results into a single TEST_RESULTS_....txt file that i can look through.
 
 
 
