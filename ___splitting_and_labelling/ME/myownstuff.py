@@ -1,5 +1,9 @@
 """
 TODO
+- integrate the thing that builds the visualisable data.
+    - I thikn visualisables_pipeline.py calls it. so maybe via that.
+
+
 - bulk out this file - think of logic, what goes where etc.
 - continue bulking out, think of exact data structures etc. How we're going to
   return the data...
@@ -98,10 +102,10 @@ def _build_visualisable_data():
     @generates:
     (as a pseudo intermediary step)
 
-    [tractor][v2-with-yellow-paint-splat-and-broken-window][ploughing]
+    [tractor][yellow paint splat, broken window][ploughing]
 
     [tractor]
-    --> [v2-with-yellow-paint-splat-and-broken-window]
+    --> [yellow paint splat, broken window]
         --> [ploughing]
 
     @output
