@@ -63,7 +63,8 @@ from pathlib import Path
 
 # The visualisables files and the sentence splitter live here and one up.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent
+                       / "shared"))
 # ...and the sentence splitter now has a stage folder of its own
 # (0-sentence-splitter). PATHS puts every stage folder on sys.path.
 import PATHS  # noqa: F401,E402

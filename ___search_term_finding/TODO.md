@@ -1,4 +1,10 @@
 
+
+
+
+
+
+
 OVERAHALL THE AUTO WORD-FINDING SYSTEM... MANUALLY!!!!! NO AI!!!
 
 Theme, context, time, place. 

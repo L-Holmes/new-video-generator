@@ -2,7 +2,7 @@
 
 # STAGE 1 - script processing 
 # =============================================
-uv run ___splitting_and_labelling/SPLIT_AND_LABEL.py
+uv run ___splitting_and_labelling/main.py
 # =============================================
 
 - its currently way off..

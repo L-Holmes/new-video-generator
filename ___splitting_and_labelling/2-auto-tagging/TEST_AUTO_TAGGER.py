@@ -19,7 +19,7 @@ WHAT ONE RUN DOES
              untagged copy from test_jsons/untagged/, so every run starts
              from the same place. --keep skips this.
   2. AUTO    Auto_add_mediatypes.py runs over it exactly as it does inside
-             SPLIT_AND_LABEL.py — the full STEP 1 detection table and STEP 2
+             main.py — the full STEP 1 detection table and STEP 2
              flowchart printout.
   3. REVIEW  a compact line-by-line summary of what it decided, then
              MANUAL_TAGGING.py opens on that same file so you can see it as
@@ -29,7 +29,7 @@ WHAT ONE RUN DOES
 WHERE THE FIXTURES COME FROM
   test_jsons/scripts/script-test_json_<n>.txt is a real short-video narration.
   --build runs the REAL sentence splitter over it (same code path as
-  SPLIT_AND_LABEL.py), so every fixture is split on visualisables, list runs,
+  main.py), so every fixture is split on visualisables, list runs,
   reveals and the rest, and carries the splitter's real rule_ids. Nothing in
   here fakes a split. The split meta is cached next to it as
   <fixture>-CACHE/split-and-lable/, which is also what gives MANUAL_TAGGING
@@ -52,7 +52,8 @@ from pathlib import Path
 
 # Unconditional: PATHS is not only the sys.path bootstrap here, it is also
 # where this file looks up 3-manual-tagging to launch the tagger.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent
+                       / "shared"))
 import PATHS  # noqa: E402  — every stage folder on sys.path
 
 HERE = Path(__file__).resolve().parent
@@ -123,7 +124,7 @@ def cache_path(n: int) -> Path:
 # =============================================================================
 
 def build(numbers, force: bool = False) -> None:
-    import SPLIT_AND_LABEL as sl
+    import main as sl                    # the pipeline runner, one up
 
     UNTAGGED.mkdir(parents=True, exist_ok=True)
     for n in numbers:
@@ -137,7 +138,7 @@ def build(numbers, force: bool = False) -> None:
             continue
         text = src.read_text(encoding="utf-8")
         print(f"[build] splitting {src.name} ({len(text)} chars)...")
-        triples = sl._run_splitter(text)          # same call SPLIT_AND_LABEL makes
+        triples = sl._run_splitter(text)          # the same call main.py makes
 
         cache = cache_path(n)
         cache.parent.mkdir(parents=True, exist_ok=True)

@@ -18,7 +18,8 @@ import sys as _sys
 from pathlib import Path as _Path
 # The splitter is the folder above this one; PATHS puts every stage
 # folder on sys.path so this runs from anywhere.
-_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent.parent))
+_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent.parent
+                        / "shared"))
 import PATHS  # noqa: F401,E402  — every stage folder on sys.path
 
 from sentence_splitter import split_text_into_sections

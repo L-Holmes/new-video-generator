@@ -1,38 +1,52 @@
 
 
 
+
+
+
+Check over ___search_term_finding/;
+- check, does any of the files in that mention any logic / steps that have not been done by 
+ ___splitting_and_labelling/1-visualisable-identification/ ???
+ if so, create a TASK_VISUALISABLES_IMPROVEMENTS.txt file, with a plan of different steps
+  of how we can optimise our 1-visualisable-identification, in order to 
+  give absolute best results for visualisable search terms.
+
+
+
+
+---------------------
+
+
+
+
+cleanup this codebase.
+- make functionality put all cache things in .CACHE/
+e.g. .CACHE/stickman-CACHE/...
+    (and move all existing ones to there)
+- TODO (other stuff...)
+        (e.g. wikiepdia nad pexels search under the same subfolder...)
+
+
+
+
+-------
+
+
+are there any existing algorithms for determining how important a given word is?
+e.g.
+the [dog] and the [cat] sat on the [couch]
+
+
+e.g. 
+- If that thing has just been introduced (high)
+- How many times that thing has been mentioned previously in the text
+- How many times mentioned + adjusted for how close to current point.
+
+
+-------
+
+
 claude --resume e76cdc3d-27df-45fd-b30c-2b98a03a0c36
-you last said:
-
-```
-
-All six plan steps are wired up and verified. Summary:
-
-Step 1 — resolver is now a library (_abstract_term_resolver.py)
-resolve_all_abstract_terms(text, models=MODELS, doc=None, …, log=None) returns AbstractTerms — a dict {(start_char, end_char): {surface, resolved, confidence, source, possessive, number}}, with .canonical and .models_run alongside. main() is now argv + printing only; the workings print through log=print. Also added rewrite_with_resolutions() (human-readable output only, documented as never for the extractor) and split possessive() into is_possessive() / possessive_form().
-Verified: uv run _abstract_term_resolver.py ../script-whales.txt prints byte-identical output to the pre-change baseline (bar model timings). old_abstract_term_resolver.py deleted (git rm, so it's recoverable).
-
-Step 2 — one text, one coordinate system (_visualisables_pipeline.py)
-join_segments() / normalise_segment() lifted out and used by _parse_together(), so there's only one joining rule. Checked the prefix property on the real splitter output for whales/rome/spices — every prefix of every split holds.
-
-Step 3 — one parse or two: decided and written down (resolver docstring)
-Measured with the coref models held fixed: 11 pronouns across the three scripts, 11 identical answers off en_core_web_sm vs en_core_web_trf (parse 0.02–0.03 s vs 0.10–0.16 s). So doc= is accepted and myownstuff.py passes the shared sm parse; trf stays the CLI default. Only char offsets and strings cross the boundary.
-
-Steps 4 & 5 — the map feeds the pipeline (_visualisables_pipeline.py, _visualisables_extractor.py)
-get_visualisable_data(..., abstract_terms=…) → resolve_visualisable_details → resolve_references, which looks each pronoun up and runs no model. Below CONFIDENCE_THRESHOLD (0.25) the pronoun is left in place as a "hold the picture" cue. Deictics become the new KIND_DEICTIC ("the narrator"/"the viewer"), and possessives rename their slot and record owner. The old model path is untouched for callers with no map (HOW_TO_USE's output is unchanged).
-Verified on the tractor narrative: Its windscreen → "tractor's windscreen" (owner=tractor), and the tractor's variant reaches "yellow paint, broken windscreen" — the KNOWN MISS, fixed for the possessive case. I → "the narrator", kind deictic. Spices: your kitchen cupboard → "the viewer's kitchen cupboard".
-
-Step 6 — myownstuff.py runs end to end (uv run myownstuff.py, all 23 whales segments in order). Your comments and docstrings are all still there; step 2)'s call is kept as a comment pointing at 1)i) where it now runs once for the whole script.
-
-Two things I changed beyond straight wiring, both because a test caught them:
-- Merging into one {template: slots} dict loses segments — "Whale skulls." and "about $2 million." are both "[1]."; 23 in, 19 out. _build_visualisable_data now returns one entry per segment, in order (each still the pipeline's own map). Reason is written in the code.
-- A cluster can hand back a verb, so "the cat didn't like it" resolved to "revved". The old _model_referent guarded against that and the map path had lost it; the noun-only rule now lives in the resolver's vote (MENTION_POS), where the answer is produced. Whales CLI output is unaffected.
-
-Nothing is committed. Your myownstuff-bakcup-incase-ai-messes-up.py is still empty — the pre-change version is in git (git show HEAD:___splitting_and_labelling/ME/myownstuff.py).
-```
-
-
-yeah, create a separate test file to do that. run on those two examples. also create a couple more examples which have lots of abstract things like 'this', 'it', 'her', etc. and run on those two. then make the manual interpretation test put all the results into a single TEST_RESULTS_....txt file that i can look through.
 
 
 

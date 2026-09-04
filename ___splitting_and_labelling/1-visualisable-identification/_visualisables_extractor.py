@@ -47,12 +47,12 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# The shared word lists live one directory up; _knowledge_base.py is here
-# beside us. PATHS puts every stage folder on sys.path, so both resolve
-# however this file was reached.
+# The shared word lists live in ../shared; _knowledge_base.py is here beside
+# us. PATHS (also in ../shared) puts every folder of this package on
+# sys.path, so both resolve however this file was reached.
 _PARENT = Path(__file__).resolve().parent.parent
-if str(_PARENT) not in sys.path:
-    sys.path.insert(0, str(_PARENT))
+if str(_PARENT / "shared") not in sys.path:
+    sys.path.insert(0, str(_PARENT / "shared"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import PATHS  # noqa: F401,E402
 

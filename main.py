@@ -136,11 +136,12 @@ def verify_environment():
 # ===========================================================================
 # STAGE 0 - split + auto-tag + (if needed) manual tagging
 # ===========================================================================
-# Wires ___splitting_and_labelling's two standalone tools (normally run by
-# hand per MASTER_README.md) into the pipeline so `uv run main.py` alone is
-# enough: split (spaCy, cached) -> emit the shot list at the SAME path
-# CONFIG expects -> auto-tag the easy rows (idempotent) -> if anything is
-# STILL untagged, open the manual tagging GUI and block until it's done.
+# Wires ___splitting_and_labelling (normally run on its own per its
+# documentation/MASTER_README.md) into the pipeline so that `uv run main.py`
+# alone is enough: split (spaCy, cached) -> work out the visualisables
+# (cached) -> emit the shot list at the SAME path CONFIG expects -> auto-tag
+# the easy rows (idempotent) -> if anything is STILL untagged, open the
+# manual tagging GUI and block until it's done.
 _SPLIT_LABEL_DIR = Path(__file__).resolve().parent / "___splitting_and_labelling"
 
 
@@ -153,16 +154,21 @@ def _untagged_lines(json_path: Path) -> list[str]:
 def ensure_script_to_search_term_ready() -> None:
     if str(_SPLIT_LABEL_DIR) not in sys.path:
         sys.path.insert(0, str(_SPLIT_LABEL_DIR))
-    from ___splitting_and_labelling import SPLIT_AND_LABEL
+    # That package's own main.py runs its stages 0-2; its stage 3 (the
+    # tagger) lives in a folder no import statement can name, so the
+    # package __init__ fetches it by name — see its shared/PATHS.py.
+    from ___splitting_and_labelling import main as split_and_label
 
-    # main.py drives the REAL run, not the module's bundled self-test —
-    # keep cache/filenames clean of the TESTING_ prefix that flag adds.
-    SPLIT_AND_LABEL.TESTING_SCRIPT_SEARCH_TERM_GENERATION = False
+    # We drive the REAL run, not that module's bundled examples — keep
+    # cache/filenames clean of the TESTING_ prefix that flag adds, and its
+    # output where CONFIG expects it rather than under TEST_RESULTS/.
+    split_and_label.TESTING_SCRIPT_SEARCH_TERM_GENERATION = False
 
     out_path = Path(LINE_INDEX_TO_SEARCH_TERM_FILE)
     print("====================================================================")
     print(f"Ensuring shot list is ready: {out_path}")
-    SPLIT_AND_LABEL.generate_script_to_search_term(SCRIPT_FILE, out_path=out_path)
+    split_and_label.generate_script_to_search_term(SCRIPT_FILE,
+                                                   out_path=out_path)
 
     unresolved = _untagged_lines(out_path)
     if not unresolved:
@@ -491,7 +497,8 @@ def main() -> None:
             f"scenes already\n  fall back to stock stills, so this means "
             f"neither had anything at all.\n"
             f"\n  FIX — retag the line(s) in the tagger:\n"
-            f"      uv run ___splitting_and_labelling/MANUAL_TAGGING.py "
+            f"      uv run ___splitting_and_labelling/3-manual-tagging/"
+            f"MANUAL_TAGGING.py "
             f"{LINE_INDEX_TO_SEARCH_TERM_FILE}\n"
             f"    A stock term wants something photographable "
             f"('sailing ship', not '1600s').\n"

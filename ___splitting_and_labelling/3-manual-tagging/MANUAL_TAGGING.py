@@ -74,7 +74,8 @@ from typing import Dict, List, Optional
 # This file lives in 3-manual-tagging/; MEDIA_TYPES.py and CONFIG.py are
 # further up, and 1-visualisable-identification/ is a folder no import
 # statement can name. PATHS.py is where all of that is written down.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent
+                       / "shared"))
 import PATHS  # noqa: F401,E402  — every stage folder on sys.path
 
 from MEDIA_TYPES import (COLLAGEABLE_TYPES, GROUPABLE_TYPES, MEDIA_TYPES,
@@ -682,7 +683,8 @@ class _State:
         prefix = m.group(1) if m else json_path.stem
         triples = None
         # cwd, not HERE: standalone use runs from ___splitting_and_labelling
-        # per MASTER_README (this file is a stage folder down from there);
+        # per documentation/MASTER_README (this file is a stage folder
+        # down from there);
         # embedded use (main.py) runs from the repo root, where
         # CONFIG._CACHE_DIR ("<prefix>-CACHE") actually lives.
         hits = sorted(Path.cwd().glob(
@@ -1217,7 +1219,7 @@ def make_server(json_path: Path, port: int = 0) -> ThreadingHTTPServer:
 def _pick_json(arg: Optional[str]) -> Path:
     if arg:
         return Path(arg)
-    # Wherever SPLIT_AND_LABEL was run from: its own directory when it was
+    # Wherever main.py was run from: the package root when it was
     # run by hand, the repo root when main.py drove it. HERE is this stage
     # folder and never holds a shot list, so it is not in the list.
     hits = sorted({p for d in (Path.cwd(), PATHS.HERE, PATHS.REPO_ROOT)
@@ -1225,7 +1227,8 @@ def _pick_json(arg: Optional[str]) -> Path:
                   key=lambda p: p.stat().st_mtime, reverse=True)
     if not hits:
         sys.exit("No *-script_to_search_term.json found. "
-                 "Run SPLIT_AND_LABEL.py first (see MASTER_README.md).")
+                 "Run main.py first "
+                 "(see documentation/MASTER_README.md).")
     return hits[0]
 
 

@@ -21,10 +21,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# This folder (___splitting_and_labelling) sits next to ___visuals in the
-# repo root — put the root on sys.path so the shared config imports whether
-# you run from the repo root or from inside this folder.
-_REPO_ROOT = Path(__file__).resolve().parent.parent
+# This file lives in ___splitting_and_labelling/shared/, and that package
+# sits next to ___visuals in the repo root — put the root on sys.path so the
+# shared config imports whether you run from the repo root or from inside
+# any of the stage folders.
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent   # shared/ -> pkg -> repo
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 

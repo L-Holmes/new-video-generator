@@ -1,10 +1,16 @@
-uv run SPLIT_AND_LABEL.py
-uv run 3-manual-tagging/MANUAL_TAGGING.py
+uv run main.py
 
 
 # MASTER README
 
-Two steps, run in this directory.
+One command, run in this directory:
+
+```
+uv run main.py
+```
+
+That is all four stages in order — split, work out the visualisables,
+auto-tag the easy rows, then open the browser for whatever is left.
 
 ## the folders
 
@@ -17,30 +23,63 @@ One numbered folder per stage of the pipeline, in the order it runs:
 3-manual-tagging/               you, filling in the rest, in a browser
 ```
 
-Anything two or more stages share stays here at the top level:
-`shared_text_logic.py` (the word lists), `MEDIA_TYPES.py` (the catalog),
-`SPLIT_AND_LABEL.py` (which runs 0 and 2), and `PATHS.py` — read that one
-before you add a file, it is why `import sentence_splitter` still works
-from a folder called `0-sentence-splitter`.
-
-## 1. split the script
+And the folders that are not a stage:
 
 ```
-uv run SPLIT_AND_LABEL.py
+shared/             what more than one stage needs: PATHS.py,
+                    shared_text_logic.py (the word lists),
+                    MEDIA_TYPES.py (the catalog)
+documentation/      every .md, including this one
+prompts/            the llm prompt templates
 ```
 
-Splits each script-*.txt into visual-beat lines (spaCy; install the model
-once with: uv run python -m spacy download en_core_web_sm) and writes
-[TESTING_]<prefix>-script_to_search_term.json, then runs 2-auto-tagging
-over it (TURN_ON_AUTO_TAGGING in SPLIT_AND_LABEL.py — turn it off to emit
-fully empty shot lists). It only ever fills rows that are EMPTY, so
-re-running it is always safe. Each line carries the splitter's rule_ids
-for context. Field-by-field docs: FORMAT.md.
+Two files sit loose at the root, and both have to. `main.py` is what you
+run — it is the thing the folders are numbered FOR. `__init__.py` names the
+folder it sits in, so it cannot move without the package moving with it.
 
-## 2. tag everything by hand
+Read `shared/PATHS.py` before you add a file. It is why
+`import sentence_splitter` still works from a folder called
+`0-sentence-splitter`, and it has the three lines a new file needs.
+
+## running it
 
 ```
-uv run 3-manual-tagging/MANUAL_TAGGING.py
+uv run main.py                     the bundled example script
+uv run main.py my-script.txt       your own
+uv run main.py x.txt --no-manual   stop after stage 2, no browser
+```
+
+`run_all()` in main.py is the whole orchestration — four calls, in order:
+
+```python
+split = stage_0_split(prefix, script_path)     # 0-sentence-splitter/
+lines = [line for line, _ids, _meta in split]
+stage_1_visualisables(prefix, lines, out_path) # 1-visualisable-identification/
+stage_2_shot_list(split, out_path)             # 2-auto-tagging/
+stage_3_manual_tagging(out_path)               # 3-manual-tagging/
+```
+
+Every stage runs every time and says so — a cache makes a stage fast, it
+never makes it get skipped. Each is callable on its own if you want to run
+one stage by hand. `RUN_STAGE_1_VISUALISABLES` / `RUN_STAGE_2_AUTO_TAGGING`
+at the top of the file turn 1 and 2 off.
+
+Run directly, EVERYTHING it writes goes under `TEST_RESULTS/` — the shot
+lists and the visualisables json at the top, the caches under
+`TEST_RESULTS/CACHE/`. Nothing is written next to the code. (The repo's own
+main.py imports it as a library instead, and then the defaults are the
+working directory, which is where CONFIG expects them.)
+
+Stage 0 needs the spaCy model — install it once with
+`uv run python -m spacy download en_core_web_sm`. Stage 2 only ever fills
+rows that are EMPTY, so re-running is always safe. Each line carries the
+splitter's rule_ids for context. Field-by-field docs: FORMAT.md, next to
+this file.
+
+Stage 3 can also be opened on its own against a shot list you already have:
+
+```
+uv run 3-manual-tagging/MANUAL_TAGGING.py TEST_RESULTS/TESTING_whales-script_to_search_term.json
 ```
 
 Opens a localhost page: pick one media type per line (grouped NEW / EDIT
@@ -63,9 +102,9 @@ rule lists (BASE_RULES.md and your own MASTER_RULES.md) so an llm can draft
 the search terms for you; paste its json reply over the file and review in
 MANUAL_TAGGING.
 
-Never delete: MEDIA_TYPES.py, PATHS.py, prompts/, BASE_RULES.md,
-MASTER_RULES.md, your scripts and finished jsons. Everything under *-CACHE and TESTING_* is
-regenerable (see other-markdown-guides/RESET_AFTER_TEST.md).
+Never delete: main.py, __init__.py, shared/, prompts/, documentation/,
+your scripts and finished jsons. Everything under *-CACHE and TESTING_* is
+regenerable (see RESET_AFTER_TEST.md, next to this file).
 
 
 # Testing
