@@ -1,0 +1,897 @@
+================================================================================
+PLAN -- what earns a SLOT, and what is only a DESCRIPTION of one
+================================================================================
+Phase 3. Written 2026-09-04, revised the same day after review.
+
+STATUS -- IMPLEMENTED 2026-09-04. Steps 0 to 6 and 7a to 7h are all in
+_visualisables_extractor.py. Where the code had to differ from what is
+written below, the reason is written AT THE CODE, next to the rule it
+belongs to -- not here, where it would rot. The four worth knowing up front:
+
+  STEP 3   spices segment 6 comes out variant "little wrinkled", not
+           "little, wrinkled": spaCy parses "little" as an ADVMOD of
+           "wrinkled", so the two are one description, and _adjective_phrase()
+           is right to keep them together. The plan guessed two.
+           Also needed, and not foreseen: spaCy calls "whale" an ADJ in
+           "whale skeletons". WordNet settles it -- a word with zero
+           adjective senses is a noun doing an adjective's job, so it is a
+           compound and stays. See _trim_leading_descriptions().
+
+  STEP 4   `amount` has to read "three" as 3, and neither spaCy nor WordNet
+           carries a numeral's VALUE. CARDINAL_WORDS is a thirty-entry map
+           of the English cardinals, taken as the same closed-grammatical-
+           class exception this plan already grants determiners and
+           APPROXIMATOR_WORDS. The same exception, and only that one, is
+           used twice more: the two negators spaCy does not tag `neg` ("no",
+           "without") in 7a, and the four irrealis modals in 7c.
+
+  STEP 5b iii  measured on all five scripts and turned ON. It costs no real
+           adjective, and it is what drops "worth".
+
+  STEP 7f  the noun.relation half is ON ("the rest of the fleet" -> fleet).
+           The noun.person half is OFF, behind PROMOTE_ROLE_NOUNS, because
+           the test that finds "the owner OF the tractor" also finds "the
+           King OF Spain" -- and that one is a portrait, not a country. No
+           script in the set has either shape, so there is nothing to
+           measure a discriminator against yet.
+
+Also done: script-whales.txt is the fifth Example, TEST_RESULTS has an
+AMOUNT column and a hypothetical marker, and HOW_TO_USE's pasted output has
+been re-run against the real thing.
+
+Every "already exists" claim below was checked against the files, and every
+number was measured in this session -- the measurements are at the bottom, so
+a rule can be argued with rather than believed.
+
+WHERE THIS CAME FROM
+    TEST_RESULTS_manual_interpretation.txt, mostly the spices example. Seven
+    complaints, read off the slot tables:
+
+      1  "If you open"            -> "open" got its own slot. It is what the
+                                    viewer DOES: it belongs in that thing's
+                                    `action`, not in a slot.
+      2  "your kitchen cupboard"  -> "the viewer's kitchen cupboard". Nobody
+                                    can search stock footage for that.
+      3  "about two dollars"      -> "about" is a hedge, not part of the money.
+      4  "contested", "worth"     -> not pictures. Nor is "nutmeg's weight".
+      5  "Nutmeg only grew"       -> "grew" is an action, same as 1. And "one"
+                                    got a slot: it is a COUNT, not a thing.
+      6  "the Banda Islands"      -> the article is not part of the name.
+         "A tiny, incredibly remote volcanic archipelago"
+                                  -> "volcanic archipelago" is a KIND of
+                                    thing. "tiny" and "remote" are just how
+                                    this one looks.
+      x  for every one of them: fix the CLASS, never the word.
+
+
+--------------------------------------------------------------------------------
+THE RULE THAT GOVERNS THE WHOLE PLAN: NO WORD IS EVER WRITTEN DOWN
+--------------------------------------------------------------------------------
+Not one of the fixes below may name a word. No "contested", no "worth", no
+"about", no "one". A rule that names a word fixes one script and no other.
+
+WHAT MAY BE WRITTEN DOWN INSTEAD -- types, never members:
+
+    WordNet SUPERSENSES        noun.artifact, noun.attribute, verb.change,
+    (lexnames)                 verb.communication ... 26 noun types and 15
+                               verb types, the whole vocabulary sorted for us
+    WordNet TAXONOMY NODES     property.n.02, quality.n.01, attribute.n.02 --
+                               naming a branch, not its leaves
+    WordNet ADJECTIVE CLASSES  adj.pert (relational: "volcanic"),
+                               adj.ppl (participial: "contested")
+    spaCy TAGS AND DEPENDENCIES  VBN, JJR, neg, mark, acomp, nummod
+    BRYSBAERT THRESHOLDS       a number on a 1..5 scale, applied to every
+                               word alike
+
+    All of these are decided ONCE and then work on every word in English,
+    including the ones no one has thought of.
+
+THE ONE EXCEPTION, AND ITS LIMIT
+    shared_text_logic.py already holds word lists -- WEAK_VERB_LEMMAS,
+    WEAK_ADJ_LEMMAS, GENERIC_TOPIC_NOUNS, APPROXIMATOR_WORDS. They stay,
+    because the sentence splitter and the tagger share them and deleting them
+    would change those files' output.
+
+    But NO NEW WORD MAY BE ADDED TO ANY OF THEM BY THIS WORK. Where an
+    earlier draft of this plan said "add worth/worthy/due/aware to
+    WEAK_ADJ_LEMMAS", that was wrong and has been replaced by a computed
+    test (STEP 5b), which catches "worth" and everything shaped like it.
+
+    Two of the existing lists are CLOSED GRAMMATICAL CLASSES -- determiners
+    and APPROXIMATOR_WORDS (about / roughly / nearly / over). English has
+    about a dozen of each and has not gained one in a century, so using them
+    is closer to reading a tag than to writing a lexicon. Everything else --
+    every noun, verb and adjective decision -- is computed.
+
+
+--------------------------------------------------------------------------------
+THE ONE IDEA BEHIND ALL SEVEN COMPLAINTS
+--------------------------------------------------------------------------------
+A SLOT IS A THING TO FILM. Everything else the sentence says about that thing
+-- what it is doing, what it looks like, how many there are, whose it is --
+is an ATTRIBUTE OF THE SLOT, and the Visualisable already has the fields:
+
+        visualisable   the thing            "archipelago"
+        action         what it does         "grew"          <- complaints 1, 5
+        variant        what it looks like   "tiny, remote"  <- complaint 6
+        amount         how many             1               <- complaint 5 (NEW)
+        owner          whose it is          "the viewer"    <- complaint 2
+
+    complaint                       mechanism                               step
+    ------------------------------  --------------------------------------  ----
+    1  "open"                       a verb goes in `action`, never a slot   1
+    5a "grew"                       a verb goes in `action`, never a slot   1
+    5b "one"                        a bare count goes in `amount`           4
+    3  "about two dollars"          trim the edges of a search term         2
+    6a "the Banda Islands"          trim the edges of a search term         2
+    6b "tiny, incredibly remote"    a describing adjective goes in          3
+                                    `variant`; only a KIND-forming one
+                                    stays in the name
+    4  "contested" / "worth"        is this word a picture at all           5
+    4  "nutmeg's weight"            is this word a picture at all           5
+    2  "the viewer's cupboard"      an owner you cannot film                6
+    -  the next seven               negation, similes, comparisons ...      7
+
+So the work is NOT "write better filters". It is: stop putting descriptions in
+the slot list, put them in the fields that already exist, and answer two
+genuinely new questions with WordNet -- "is this word a picture at all" (5)
+and "does this adjective change the KIND of thing or only its LOOK" (3).
+
+
+--------------------------------------------------------------------------------
+0) WHAT ALREADY EXISTS -- read this first, most of the parts are here
+--------------------------------------------------------------------------------
+
+  kb()._wn_has_hypernym(w, targets, n_senses, pos=...)
+        VISUAL_RECOMMENDER.py:786 -- already generic over POS and sense
+        count. Most WordNet tests below are one call to it. The supersense
+        tests need one new sibling of it (synset.lexname()), about six lines.
+
+  kb().kb_concreteness(word)     Brysbaert 1..5, 37k words.
+
+  STL.APPROXIMATOR_WORDS         shared_text_logic.py:636 -- closed class.
+  STL.COMPARATIVE_MARKERS        shared_text_logic.py:627 -- {than, more,
+                                 less, fewer}. STEP 7c needs it.
+  STL.NEGATION_TOKENS            shared_text_logic.py:632 -- STEP 7a.
+  STL.MEASURE_NOUNS              shared_text_logic.py:1090.
+
+  fill_actions()                 _visualisables_extractor.py:1318
+        ALREADY attaches the verb to the thing, off the parse, whether or not
+        the verb has a slot of its own. Proof, from the results file:
+            "If you open"  ->  [1] the viewer  deictic  action=open
+        The slot for "open" is pure duplication. Deleting it loses nothing --
+        the verb is ALREADY in the thing's `action`, which is exactly where
+        it was asked to go.
+
+  find_action_candidates()       _visualisables_extractor.py:789
+        its own docstring already says so:
+            "These are NOT concrete visualisables. They are harvested so the
+             document pass can attach them to the thing doing them."
+        -- the code just never acted on it.
+
+  _variant_descriptions()        _visualisables_extractor.py:1786
+        three ways a variant is read off the parse. STEP 3 adds a fourth
+        (the adjectives trimmed off the front) and STEP 5 gates all four.
+
+  trim_to_searchable_core()      _visualisables_extractor.py:983
+        already trims determiners and weak adjectives -- but SKIPS
+        KIND_NAME / KIND_NUMBER / KIND_DATE outright, which is exactly why
+        "the Banda Islands" and "about two dollars" survive untouched.
+
+  find_blocked_spans()           _visualisables_extractor.py:568
+        idioms and discourse furniture already never become slots. STEP 7's
+        new classes should follow this pattern rather than invent another.
+
+  Candidate.dropped_by / entry.dropped
+        every drop is already recorded. Nothing below may delete silently.
+
+  TEST_MANUAL_INTERPRETATION.py
+        the acceptance harness for every step. Each DONE WHEN below is a line
+        to look for in TEST_RESULTS_manual_interpretation.txt after a re-run
+        (~100 s, four examples; ~125 s once whales is added).
+
+
+--------------------------------------------------------------------------------
+STEP 1 -- A VERB IS NEVER A SLOT. IT IS THE THING'S `action`.
+         complaints 1 ("open") and 5a ("grew")
+--------------------------------------------------------------------------------
+FILES: _visualisables_extractor.py, HOW_TO_USE_visualisables.py
+
+WHAT
+  KIND_ACTION and KIND_QUALITY stop being emitted as slots. They keep being
+  HARVESTED -- the harvesters are what define a strong verb / strong
+  adjective -- but they are dropped before the template is punched, with
+  dropped_by="not-a-slot:action" / "not-a-slot:quality", so the working shows.
+
+  Add next to CONCRETE_KINDS:
+
+      # The kinds that earn a SLOT. Everything else is an attribute OF a
+      # slot: a verb is the thing's `action`, an adjective its `variant`.
+      SLOT_KINDS = CONCRETE_KINDS | {KIND_SOUND, KIND_REFERENCE,
+                                     KIND_DEICTIC, KIND_FALLBACK}
+
+  and a filter run AFTER resolve_overlaps(), so an adjective inside a noun
+  phrase is still absorbed the way it is today, and only the ones that
+  survived on their own are cut.
+
+WHERE THE VERB GOES -- the whole point of the step
+      "If you open your kitchen cupboard"
+          [1] the viewer            deictic   action = "open"
+          [2] kitchen cupboard      thing     action = "open"
+      "Nutmeg only grew in one place"
+          [1] Nutmeg                name      action = "grew"
+  Both already happen today (measured). Step 1 only removes the duplicate.
+
+THE ONE REAL CONSEQUENCE -- SEGMENTS THAT GO EMPTY
+  "swerved after having" and "lifted out" have nothing BUT a verb. Today they
+  get an action slot; afterwards nothing, and the mercy rule will not save
+  them (LENGTH_FALLBACK_MIN_TOKENS is 4 real words).
+  Do NOT lower that dial. In apply_length_fallback(), emit the KIND_FALLBACK
+  when the segment's only survivors were actions/qualities, whatever its
+  length: a segment that says only what is happening, with nothing to film,
+  is exactly the "hold the picture you already have" case the fallback kind
+  was invented for.
+
+OPEN QUESTION FOR YOU -- `action` or `actions`?
+  You wrote "the actions attribute". The field today is `action`, ONE string,
+  and _verb_phrase() returns one verb plus its particle ("flew away").
+  A thing can do two things in a segment: "It swished and swerved".
+  Options: (a) keep one string and let it hold the coordination ("swished and
+  swerved"); (b) make it a list. (a) is one line in _verb_phrase() and breaks
+  no reader; (b) is truer but changes the output shape for everything
+  downstream. RECOMMEND (a) now, (b) only if the renderer asks for it.
+
+RISK
+  HOW_TO_USE_visualisables.py's copied-in output changes and must be re-run
+  and re-pasted -- that file's whole claim is that its output is real:
+      "there's a [valley] [filled] with"  ->  "there's a [valley] filled with"
+      "[valley] was once [covered]"       ->  "[valley] was once covered"
+
+DONE WHEN
+  * spices segment 1 reads "If [the viewer] open" with ONE slot, action=open.
+  * spices segment 11 reads "[Nutmeg] only grew", action=grew.
+  * no KIND_ACTION or KIND_QUALITY row appears in any slot table.
+  * SUMMARY still says 0 segments with nothing to put on screen.
+
+
+--------------------------------------------------------------------------------
+STEP 2 -- THE EDGES OF A SEARCH TERM: articles and hedges
+         complaints 3 ("about two dollars") and 6a ("the Banda Islands")
+--------------------------------------------------------------------------------
+FILE: _visualisables_extractor.py, trim_to_searchable_core()
+
+TODAY
+      if c.kind in {KIND_NAME, KIND_NUMBER, KIND_DATE, KIND_SOUND}:
+          out.append(c)        # "already exactly the thing you would search"
+  That comment is wrong for two of the four, and measurably so:
+      "about two dollars"  came from spaCy's MONEY entity, which INCLUDES
+                           the hedge   (detector number:ent -- measured)
+      "the Banda Islands"  came from the LOC entity, which INCLUDES the
+                           article    (detector name:ent -- measured)
+
+WHAT
+  Replace the blanket skip with an edge trim that runs for EVERY kind. Two
+  closed classes, no lexicon:
+
+      LEADING DETERMINERS    tok.pos_ == "DET" and tok.dep_ == "det"
+            "the Banda Islands" -> "Banda Islands"
+            "the 1600s"         -> "1600s"
+            "a decade"          -> "decade"
+      LEADING APPROXIMATORS   tok.lower_ in STL.APPROXIMATOR_WORDS
+            "about two dollars" -> "two dollars"
+            "about $2 million"  -> "$2 million"     (the whales script)
+            "over 900 ships"    -> "900 ships"
+
+  Trim the SPAN, never the sentence. The template is built by replacing a
+  slot's characters, so a shorter span leaves the trimmed words in the
+  visible line:
+
+      "the Banda Islands."  -->  template "the [1]."   search term
+                                 "Banda Islands"
+
+  The viewer still hears and reads "the Banda Islands"; only what we go
+  looking for changes. This is what already happens to "a jar of nutmeg".
+
+WATCH OUT
+  * "The Hague", "the Netherlands" lose their article too. A stock search for
+    "Hague" still finds the Hague, so accept it rather than start a name
+    exception list -- that would be a word list, which this plan does not do.
+  * identities: abstract_term_resolver hands back "the tractor" while the
+    extractor will now say "tractor". _owner_identity() matches by
+    containment, so this HELPS; check it still does.
+
+DONE WHEN
+  * spices: "[two dollars]", "[Banda Islands]", "[1600s]".
+  * whales: "[$2 million]", "[decade]".
+  * nothing in any slot table starts with "the ", "a ", "an " or an
+    APPROXIMATOR_WORDS member.
+
+
+--------------------------------------------------------------------------------
+STEP 3 -- KIND vs LOOK: which adjective is part of the thing's NAME
+         complaint 6b ("tiny, incredibly remote volcanic archipelago")
+--------------------------------------------------------------------------------
+FILES: _visualisables_extractor.py (trim_to_searchable_core, Candidate,
+       _candidate_to_visualisable, fill_variants)
+
+THE JUDGEMENT, IN YOUR WORDS
+      a VOLCANIC archipelago is a different THING from an archipelago
+      a REMOTE archipelago is the same thing, differently
+
+  So an adjective belongs in the search term only when it forms a KIND. When
+  it only says how this one looks, it belongs in `variant`:
+
+      "A tiny, incredibly remote volcanic archipelago"
+          visualisable  "volcanic archipelago"
+          variant       "tiny, incredibly remote"
+
+WHAT DECIDES IT -- one WordNet class, no word list
+  A RELATIONAL (pertainymic) adjective is one WordNet files as adj.pert: it
+  means "of or pertaining to <noun>", it is derived from that noun, and it
+  therefore names a SUBTYPE. Measured:
+
+      adj.pert      volcanic, royal, solar, medieval    -> forms a kind
+      adj.all       tiny, remote, old, huge, ancient, loud, black, yellow,
+                    wooden, rusted, wrinkled, broken     -> describes a look
+
+  That is the whole rule for adjectives:
+
+      an adjective stays in the name IFF WordNet files any of its senses as
+      adj.pert. Everything else moves to `variant`.
+
+  COMPOUND NOUNS ARE NOT ADJECTIVES and always stay -- dep_ == "compound",
+  "kitchen cupboard", "whale skulls", "spice trade". Two words, one thing.
+
+AND THE FALLBACK YOU ASKED FOR, AS A DIAL
+      KEEP_KIND_FORMING_ADJECTIVES = True
+  Set it False and NO adjective ever stays in the name -- every one of them
+  becomes variant. That is your instruction ("if we can't accurately identify
+  that, just put all adjectives in the variant") made switchable rather than
+  argued about. Measure the adj.pert rule on the five scripts; if it is
+  wrong even once in a way that matters, flip the dial and delete the branch.
+
+NOTHING IS LOST BY MOVING AN ADJECTIVE
+  Say this in the docstring, because it is the reason the split is safe: the
+  search layer can always put the two back together -- "yellow" + "paint" is
+  still "yellow paint" when it wants a picture of one. What the split adds is
+  the knowledge of WHICH half is the thing, so the shot can keep the thing
+  and change the look when a later segment changes it.
+
+CARRYING THE WORDS ACROSS
+  trim_to_searchable_core() currently throws away what it cuts. It must keep
+  it: Candidate.trimmed_description: list[str], copied onto the Visualisable
+  and used by fill_variants() as a FOURTH source alongside the three in
+  _variant_descriptions(). Left-to-right order, deduped by the existing
+  per-identity accumulation.
+
+  GATE IT THROUGH STEP 5, or the trimmings re-introduce exactly the words
+  step 5 exists to keep out: step 5 refuses "contested" a slot, and this
+  step would hand it straight back as a variant.
+
+  Adverbs ride with their adjective ("incredibly remote", already what
+  _adjective_phrase() does), so the variant reads like the script.
+
+DONE WHEN
+  * spices segment 14: "volcanic archipelago", variant "tiny, incredibly
+    remote".
+  * spices segment 6: "seed", variant "little, wrinkled".
+  * tractor segment 8: slot "paint", variant "yellow" -- AND the tractor's
+    own variant still accumulates "yellow paint" from the caused-motion rule,
+    which reads the parse and is untouched. If that second half breaks, the
+    step is wrong.
+  * no visualisable in any slot table has more than one adjective in it.
+
+
+--------------------------------------------------------------------------------
+STEP 4 -- AMOUNT: a count is not a picture
+         complaint 5b ("one")
+--------------------------------------------------------------------------------
+FILES: _visualisables_extractor.py (Visualisable, as_dict, a new
+       fill_amounts() in the document pass), HOW_TO_USE_visualisables.py,
+       TEST_MANUAL_INTERPRETATION.py
+
+THE FIELD
+      amount: int = 1     # how many of `visualisable` are on screen
+  Default 1 ALWAYS -- "a tractor" and "the tractor" are both one tractor. It
+  joins as_dict() next to `owner`, and the test's slot table gets an AMOUNT
+  column.
+
+WHERE IT COMES FROM -- all off the parse, no word list
+  a) A NUMERAL MODIFYING THE THING.  dep_ == "nummod"
+         "three ships"  -> visualisable "ships", amount 3
+         "900 ships"    -> visualisable "ships", amount 900
+  b) A PARTITIVE.  NUM -> "of" -> the thing
+         "One of them"  -> the slot is "them" (-> bees), amount 1
+  c) NOTHING SAID -> 1.
+
+WHAT STOPS BEING A SLOT
+  A bare cardinal with nothing to count. Today "one" survives because it
+  arrives as a CARDINAL entity (detector number:ent, measured) and the
+  generic-noun rule that kills "one place" never sees it. The rule:
+
+      a NUM candidate not glued to a MEASURE_NOUN or a currency is not a
+      picture. Move it onto the thing it counts; if there is no such thing,
+      drop it (dropped_by="count-without-thing").
+
+  MONEY AND MEASURES KEEP THEIR SLOTS -- "two dollars", "15 metres",
+  "$2 million", "30 percent" -- because there the number IS the picture, a
+  counter or a bar on screen, which is what KIND_NUMBER was for. Their
+  `amount` stays 1: one picture of "two dollars". Say that in the field's
+  docstring or someone will read amount as "the number in the text".
+
+OPEN QUESTION FOR YOU (do not guess)
+  A bare plural with no numeral -- "the bees", "whale skulls". amount 1 is
+  literally wrong; amount "many" changes the field's type. RECOMMEND: leave
+  it 1, and add `plural: bool` off spaCy's Number=Plur if the renderer ever
+  needs it. Cheap either way; a wrong guess is not.
+
+DONE WHEN
+  * spices segment 12 has no "one" slot at all.
+  * bees segment 9 "One of them landed" -> one slot, "bees", amount 1.
+  * whales keeps its money slot; the AMOUNT column is 1 everywhere else.
+
+
+--------------------------------------------------------------------------------
+STEP 5 -- IS THIS WORD A PICTURE AT ALL?
+         complaint 4 ("contested", "worth", "nutmeg's weight")
+--------------------------------------------------------------------------------
+FILE: _visualisables_extractor.py (drop_abstract, plus one shared gate)
+
+The only step that needs a new judgement rather than a new home for an old
+answer. Three word classes, three computed tests, ZERO words written down.
+
+--- 5a  NOUNS: WordNet's supersense says what TYPE of thing a word is -------
+  Every noun in WordNet carries a lexname -- one of 26 supersenses -- which
+  is a ready-made answer to "what kind of thing is this". Measured on the
+  scripts' own nouns:
+
+      noun.artifact    cupboard 4.79  windscreen 4.59  tractor 5.00
+      noun.animal      bee 4.88          noun.plant     seed 4.71
+      noun.object      archipelago 3.96  valley 4.72  planet 4.58
+      noun.location    site 4.56  place 3.48        noun.person  viewer 4.13
+      noun.phenomenon  light 4.21  sandstorm 4.63  wind 3.93
+      noun.substance   wax 4.97          noun.group     hive 4.83
+                       ^ all filmable, all already kept today
+
+      noun.attribute   weight 3.94  size 3.13  majority 2.54
+      noun.state       thing 3.17  freedom 2.34  monopoly 2.69
+      noun.cognition   idea 1.61        noun.relation   percentage 2.90
+                       ^ NONE filmable -- and weight 3.94, size 3.13 and
+                         thing 3.17 all pass MIN_CONCRETENESS today, which
+                         is exactly the "nutmeg's weight" bug
+
+  RULE: a KIND_THING whose head noun's first sense is in
+
+      NEVER_FILMABLE_SUPERSENSES = {"noun.attribute", "noun.cognition",
+                                    "noun.feeling", "noun.motive",
+                                    "noun.relation", "noun.state"}
+
+  is dropped WHATEVER Brysbaert says. Everything else keeps today's
+  behaviour (Brysbaert >= 3.0, then the physical/abstract WordNet backstop,
+  then keep).
+
+  WHY ONLY SIX SUPERSENSES ARE DECISIVE -- the rest go both ways, measured:
+      noun.possession   gold 4.81 (film it)   resource 2.55 (do not)
+      noun.quantity     dollar 4.93 (film it) most others (do not)
+      noun.act          battle 4.00, war 3.63 (film them)  journey 2.57 (no)
+      noun.event        accident 3.26         revolution 2.87
+      noun.communication  letter 4.70, postcard 4.93, note 4.61, sign 4.62
+                          (all real objects)  song 4.46, story 3.30 (not)
+      noun.time         spring 3.89 (a coil, when it is not the season)
+                        moment 1.61, history 2.96
+  Brysbaert is the right arbiter for those, and already is. Do NOT make them
+  decisive -- noun.communication would delete the clockmaker's postcards and
+  note, and noun.time would delete a coil spring. Written down here so the
+  next person does not have to rediscover it.
+
+  KNOWN RESIDUAL, stated rather than hacked: "whale song" (4.46) survives.
+  Brysbaert rates it like the letter it is not. Live with it until it hurts.
+
+--- 5b  ADJECTIVES: three tests, in order -----------------------------------
+  Brysbaert MUST NOT be used here. Measured, it does not separate the classes
+  at all -- single 3.27 and famous 2.07 are not pictures, ancient 2.04 and
+  old 2.72 are. There is no threshold. (Put those numbers in the comment at
+  CONCRETENESS_APPLIES_TO, which already says so without evidence.)
+
+  i)  PARTICIPLES -- decided by the verb underneath.
+      An ADJ tagged VBN is a verb wearing an adjective's clothes, so ask what
+      the verb does. Measured:
+          contest -> verb.communication          rust  -> verb.change
+          say     -> verb.communication          break -> verb.change
+                                                 wrinkle -> verb.contact
+      KEEP only if ANY of the verb's first three senses is in
+          PHYSICAL_VERB_SUPERSENSES = {"verb.change", "verb.contact",
+                                       "verb.body", "verb.motion",
+                                       "verb.creation", "verb.weather"}
+      Three senses, not one: "bury" is verb.perception first and verb.contact
+      third, and "the site was buried" is a picture. "contested" has no
+      physical sense at any depth. THIS is what drops "contested", with no
+      word anywhere in the code.
+
+  ii) ATTRIBUTE POINTERS -- what property does this adjective name?
+      A WordNet adjective often points at the attribute it measures, and the
+      TAXONOMY splits the physical ones from the evaluative ones. Measured
+      paths, all under attribute.n.02:
+          little->size, narrow->width, old->age, loud->volume(sound_property),
+          black->value.n.04 (colour), broken->integrity, dead->animation
+              ... all reach property.n.02 or state.n.02       -> A LOOK
+          important->importance, single->individuality, afraid->fear,
+          modern->modernity
+              ... reach quality.n.01, trait.n.01, feeling.n.01 or
+                  temporal_property.n.01                      -> NOT A LOOK
+      RULE: drop when the attribute's path hits
+          NON_VISUAL_ATTRIBUTE_ROOTS = {"quality.n.01", "trait.n.01",
+                                        "feeling.n.01",
+                                        "temporal_property.n.01"}
+      keep when it hits property.n.02 or state.n.02 without one of those.
+      13 of 13 test cases correct. Node names, not words.
+
+  iii) RELATIONAL ADJECTIVES -- the ones that need a complement.
+      "It was worth more than its weight in gold." "worth" states a relation;
+      it does not say how anything looks. It has no attribute pointer and is
+      not a participle, so (i) and (ii) both pass it -- but the PARSE gives
+      it away. Measured:
+          worth   acomp, subtree contains a `prep` ("than ...")   -> drop
+          famous  acomp, no children                              -> keep
+          loud    acomp, only an advmod ("really")                -> keep
+          ancient amod,  no children                              -> keep
+      RULE: an ADJ whose SUBTREE contains a prep / pcomp / ccomp, and which
+      has no physical attribute pointer from (ii), is relational -> drop.
+      Subtree, not children: spaCy hangs the "than" phrase off "more", not
+      off "worth".
+      Measure this one on all five scripts before turning it on. If it costs
+      a real adjective, ship (i) and (ii) alone and leave (iii) written down
+      as the reason they were not enough. Do NOT replace it with a list.
+
+--- 5c  VERBS: the same supersense test, as a backstop ----------------------
+  WEAK_VERB_LEMMAS decides today which verbs are worth attaching as `action`.
+  It is a good list and it is shared with the splitter, so it stays -- but it
+  is a list, so it can only ever know the verbs someone typed into it.
+  Add the computed backstop for the rest:
+
+      a verb whose first three senses are all in
+          NON_PHYSICAL_VERB_SUPERSENSES = {"verb.stative", "verb.cognition",
+                                           "verb.communication",
+                                           "verb.possession", "verb.social",
+                                           "verb.emotion"}
+      is not an action worth attaching, whether or not it is in the list.
+
+  Measured: cost -> verb.stative (in the list already), say -> communication
+  (in the list), open -> verb.contact, grow -> verb.change, pour/sail/fly ->
+  verb.motion (all kept, correctly). The backstop changes nothing on today's
+  scripts -- which is the point: it is there for the script we have not
+  written yet.
+
+--- ONE GATE, THREE CALLERS ------------------------------------------------
+  Steps 3 and 5 must agree, or a word banned from a slot walks back in as a
+  variant. Write it once:
+
+      def is_visual_quality(doc, tok) -> bool:
+          """Does this adjective change what the picture LOOKS like?"""
+
+  called by find_quality_candidates() (so the harvest is honest),
+  _variant_descriptions() and step 3's trimmings (so the variant is too).
+
+DONE WHEN
+  * spices segment 7 has no "contested" anywhere -- not a slot, not a variant.
+  * spices segment 9 has no "worth", and nutmeg's variant is None there.
+  * spices segment 10 drops "nutmeg's weight" and keeps "[gold]".
+  * clockmaker keeps "postcards", "note" and "spring".
+  * tractor is UNCHANGED: "yellow", "broken", "wrinkled"-class words survive.
+    That is the regression that matters.
+
+
+--------------------------------------------------------------------------------
+STEP 6 -- AN OWNER YOU CANNOT FILM NEVER ENTERS THE NAME
+         complaint 2 ("the viewer's kitchen cupboard")
+--------------------------------------------------------------------------------
+FILE: _visualisables_extractor.py, _apply_possessives()
+
+TODAY
+      "your kitchen cupboard"  ->  visualisable "the viewer's kitchen
+                                   cupboard", owner "the viewer's"
+  The possessive machinery is right; it is being applied to an owner that has
+  no footage. "the tractor's windscreen" is a good search term because
+  someone can film a tractor. Nobody can film the viewer.
+
+RULE
+  When the abstract-terms row's source == "deictic", do NOT splice the name
+  in. Drop the possessive determiner from the phrase and record the owner:
+
+      visualisable  "kitchen cupboard"
+      owner         "the viewer"     (still true, and it is how the renderer
+                                      knows to show a cupboard, not a person)
+
+  Generalise past the deictics -- the test is "would we ever fetch footage of
+  this owner":
+
+      an owner whose resolved row is a deictic, or whose own slot came out
+      KIND_DEICTIC, is RECORDED, never SPLICED.
+
+  KIND_DEICTIC already means exactly this ("a person, but not one there is
+  any footage of"). This step is that sentence enforced one layer down.
+
+WATCH OUT
+  * owner is currently stored with the apostrophe-s attached ("the viewer's",
+    visible in the results file). Store the plain label.
+  * narrator possessives ("my hand") get the same treatment.
+
+DONE WHEN
+  * spices segment 2: "[kitchen cupboard] right now", owner "the viewer".
+  * bees keeps "bees' wings" (owner bees) and "beekeeper's glove" (owner
+    beekeeper) -- real owners are unaffected.
+
+
+--------------------------------------------------------------------------------
+STEP 7 -- THE ONES THAT WILL TRIP US UP NEXT
+--------------------------------------------------------------------------------
+You asked what other TYPES of word will catch us out. These are the ones the
+current results file already gets wrong or is one script away from getting
+wrong. Each is a computed test; none needs a lexicon. (a) and (b) are real
+bugs visible in TEST_RESULTS today and should be done with steps 1-6; the
+rest are ordered by how likely they are to bite.
+
+  a) NEGATION -- the picture is the OPPOSITE of the word.
+     REAL BUG, bees segment 12: "it was not afraid of us" gives the slot
+     variant="afraid". The script says it was NOT.
+     TEST: a `neg` child (STL.NEGATION_TOKENS) on the verb or adjective that
+     a variant/action is being read off.
+     DO: drop the description rather than invert it -- "not broken" is not a
+     picture of anything, it is the absence of a change. Also covers "no
+     ships" (det "no") and "without water" (ADP), which are the same fact
+     wearing different grammar.
+
+  b) COMPARISON FRAMES -- the thing named is not on screen.
+     REAL BUG, spices segments 9-10: "It was worth more than its weight in
+     gold" makes GOLD the sentence's setting, so nutmeg and its weight are
+     both filmed "in gold". There is no gold in this video.
+     TEST: the candidate sits inside a `prep` subtree headed by a
+     STL.COMPARATIVE_MARKERS member ("than"), or under a comparative
+     tag (JJR/RBR).
+     DO: keep the slot if you like, but it may never be a SETTING, and it
+     should not carry the sentence's action. Simplest correct thing:
+     classify_settings() refuses any candidate inside a comparison frame.
+
+  c) HYPOTHETICALS, CONDITIONALS AND SIMILES -- it did not happen.
+     whales: "The ground looked as if an ocean had simply dried up around
+     them." There was no ocean.
+     spices: "If you open your kitchen cupboard" -- the cupboard is
+     hypothetical too, though harmless because it is the viewer's own.
+     TEST: the candidate's clause hangs off a `mark` ("if", "as if", "as
+     though", "like"), or its verb carries an irrealis modal aux (would,
+     could, might) or a `neg`.
+     DO: not a drop -- these are usually the most visual sentences in a
+     script. Flag them: a `hypothetical: bool` on the Visualisable, so the
+     renderer can style them (dream/sketch) instead of filming them as fact.
+     RECOMMEND flagging only; deciding what to do with it is the renderer's.
+
+  d) PARTITIVES AND CONTAINER PHRASES -- the head noun is not the thing.
+     "one of them", "a handful of spices", "a lot of ships", "a series of
+     raids". The picture is the OBJECT of "of", not the head.
+     TEST: head noun's supersense is noun.quantity / noun.group / noun.
+     attribute AND it has an `of` prep child with a noun object.
+     DO: the same move as step 4b -- promote the object, keep the count in
+     `amount`. Step 4 does the numeral case; this is the same rule for the
+     non-numeral ones, so write them together.
+
+  e) EVENT AND ACT NOUNS -- a story, not a shot.
+     "journey" 2.57, "revolution" 2.87, "trade" 3.08, "voyage" 3.43. They
+     name spans of time, not framings. Brysbaert already drops the low ones;
+     the risk is the high ones ("battle" 4.00) which really are filmable.
+     TEST: supersense noun.act / noun.event, already measured as ambiguous.
+     DO: nothing yet. Watch it on the whales and rome scripts, which are full
+     of them, and only then decide. Noted so it is not rediscovered.
+
+  f) ROLE AND RELATION NOUNS -- "the owner", "a member", "the rest".
+     They point at somebody without saying what they look like.
+     TEST: supersense noun.relation, plus noun.person whose head is modified
+     by an `of` phrase ("the owner OF the tractor" -> film the tractor).
+     DO: resolve to what they relate to, the same way the possessives
+     resolve. This is the wishy-washy-terms BONUS in myownstuff.py wearing a
+     different hat, and the coreference cluster already contains the answer.
+
+  g) UNITS AND BARE MEASURES -- "metres", "percent", "degrees" alone.
+     Already half-handled: find_number_candidates() glues the measure to its
+     number precisely so the noun-phrase harvester cannot emit it bare.
+     TEST: MEASURE_NOUNS membership with no numeral attached.
+     DO: drop. Cheap, and it is the one place a closed class is the right
+     tool -- units are a finite list by definition.
+
+  h) TIME-OF-DAY AND ERA NOUNS AS THINGS -- "at night", "in the 1600s".
+     Dates already have their own kind and should keep it. The risk is
+     "night" and "morning" arriving as KIND_THING settings.
+     TEST: supersense noun.time on a KIND_THING candidate.
+     DO: not a drop -- a night scene is a real look. Route it to `variant`
+     of the SETTING ("valley" + "at night") rather than to a slot. Half of
+     this already exists in fill_locations(); the other half is a decision
+     nobody has made yet.
+
+
+--------------------------------------------------------------------------------
+THE ORDER TO DO THEM IN
+--------------------------------------------------------------------------------
+  0. FIRST, add script-whales.txt to TEST_MANUAL_INTERPRETATION.py as a fifth
+     Example -- one Example(script="script-whales.txt", ...) entry, nothing
+     else changes. Steps 2, 4 and 7 are about money, counts, dates and
+     similes, and whales is the only script with any: measured today, it
+     produces "about $2 million" (number:ent), "a decade" (date:ent) and
+     "as if an ocean had simply dried up".
+
+  1. STEP 1   verbs and adjectives stop taking slots -- biggest output
+              change, and it makes every later results file easier to read.
+  2. STEP 2   edge trimming -- ten lines, no risk.
+  3. STEP 6   deictic owners -- small, self-contained.
+  4. STEP 5   is it a picture -- BEFORE step 3, so the trimmings step 3 hands
+              to `variant` are already gated.
+  5. STEP 3   kind vs look.
+  6. STEP 4   amount -- new field; touches as_dict, HOW_TO_USE, the test.
+  7. STEP 7a and 7b   the two real bugs in the current results.
+     STEP 7c-h        as their evidence arrives.
+
+  Re-run TEST_MANUAL_INTERPRETATION.py after EACH step, not at the end. It is
+  ~2 minutes and it is the only thing that can tell you a fix cost you
+  something elsewhere. Keep the previous TEST_RESULTS file next to it long
+  enough to diff.
+
+WHAT WILL BREAK, EXPECTED
+  * HOW_TO_USE_visualisables.py's copied-in output (steps 1, 2, 4). Re-run it
+    and paste the real output back.
+  * TEST_MANUAL_INTERPRETATION.py: an AMOUNT column (step 4), and the KIND
+    legend loses action/quality (step 1).
+  * the tractor example's LOOK FOR item 3 stops being about a slot and
+    becomes about the pronoun map only.
+
+
+--------------------------------------------------------------------------------
+MEASUREMENTS -- taken 2026-09-04, so every rule above can be argued with
+--------------------------------------------------------------------------------
+Sources:
+    uv run python -c "... VISUAL_RECOMMENDER.kb_concreteness / nltk WordNet"
+    uv run python -c "... _visualisables_extractor.create_visualisables_entry"
+
+WHAT THE DETECTORS ACTUALLY PRODUCED  (why steps 2 and 4 are where they are)
+    "It costs about two dollars."
+        [2] 'about two dollars'  number  number:ent   <- hedge inside the
+                                                         MONEY entity
+    "in one place on Earth:"
+        [1] 'one'                number  number:ent   <- bare CARDINAL
+         x  'one place'          number  number:tok   dropped: generic-noun
+         x  'one place'          thing   np:chunk     dropped: generic-noun
+    "the Banda Islands."
+        [1] 'the Banda Islands'  name    name:ent     <- article inside the
+                                                         LOC entity
+    "A tiny, incredibly remote volcanic archipelago in"
+        [1] 'tiny, incredibly remote volcanic archipelago'  thing  np:chunk
+         x  three quality:adj candidates, all absorbed-by:np:chunk
+    "Recovering it cost about $2 million."   ->  "[1] [2] cost [3]."
+        [1] 'Recovering'         action  action:verb  <- step 1
+        [3] 'about $2 million'   number  number:ent   <- step 2
+    "buried the site for a decade."          ->  "[1] the [2] for [3]."
+        [3] 'a decade'           date    date:ent     <- step 2
+
+NOUN SUPERSENSES vs BRYSBAERT   (step 5a)
+    decisive, none of them filmable:
+        noun.attribute  weight 3.94  size 3.13  majority 2.54
+        noun.state      thing 3.17   freedom 2.34  monopoly 2.69
+        noun.cognition  idea 1.61    noun.relation  percentage 2.90
+    always filmable, no change needed:
+        noun.artifact cupboard 4.79 windscreen 4.59 tractor 5.00 glove 4.97
+        noun.animal bee 4.88   noun.plant seed 4.71   noun.person viewer 4.13
+        noun.object archipelago 3.96 valley 4.72 planet 4.58
+        noun.location site 4.56 place 3.48 empire 3.00
+        noun.phenomenon light 4.21 sandstorm 4.63 wind 3.93
+        noun.substance wax 4.97   noun.group hive 4.83
+    ambiguous -- leave Brysbaert in charge:
+        noun.possession gold 4.81 / resource 2.55
+        noun.quantity   dollar 4.93
+        noun.act        battle 4.00, war 3.63, voyage 3.43, trade 3.08 /
+                        journey 2.57
+        noun.event      accident 3.26 / revolution 2.87
+        noun.communication letter 4.70, postcard 4.93, note 4.61, sign 4.62,
+                        book 4.90 / song 4.46, story 3.30, question 3.36
+        noun.time       spring 3.89 (a coil) / moment 1.61, history 2.96
+
+BRYSBAERT ON ADJECTIVES -- DOES NOT SEPARATE, do not use it there  (step 5b)
+    pictures      rusted 4.44 wooden 4.61 yellow 4.30 broken 4.11 dead 4.07
+                  volcanic 3.93 loud 3.73 little 3.67 huge 3.54 remote 3.44
+                  royal 3.14 tiny 3.11 narrow 3.04 old 2.72 medieval 2.46
+                  ancient 2.04
+    not pictures  single 3.27 modern 2.31 important 2.14 famous 2.07
+                  worth 1.89  contested (no rating at all)
+    -> single 3.27 outranks ancient 2.04. No threshold exists. QED.
+
+WORDNET ADJECTIVE CLASSES  (steps 3 and 5b)
+    adj.pert -- relational, forms a KIND of thing, stays in the name:
+        volcanic, royal, solar, medieval
+    adj.all -- describes a look, goes to `variant`:
+        tiny remote old huge ancient loud black yellow wooden rusted
+        wrinkled broken little narrow dead famous important worth single
+    adj.ppl / spaCy VBN -- decided by the verb underneath:
+        contest -> verb.communication  -> not a picture
+        rust    -> verb.change         -> a picture
+        wrinkle -> verb.contact        -> a picture
+        break   -> verb.change         -> a picture
+        bury    -> verb.perception, verb.social, verb.contact
+                                       -> a picture, but only if you look
+                                          past the first sense
+
+ADJECTIVE ATTRIBUTE PATHS -- the computed split  (step 5b ii)
+    a look        size.n.01     ... attribute.n.02 > property.n.02
+                  width.n.01    ... attribute.n.02 > property.n.02 > magnitude
+                  age.n.01      ... attribute.n.02 > property.n.02
+                  volume.n.06   ... property.n.02 > sound_property.n.01
+                  value.n.04    ... property.n.02 > visual_property.n.01
+                  integrity.n.01 .. attribute.n.02 > state.n.02
+                  animation.n.01 .. attribute.n.02 > state.n.02 > being.n.01
+    not a look    importance.n.01 . attribute.n.02 > quality.n.01 > worth.n.02
+                  significance.n.01 same path
+                  individuality.n.01 attribute.n.02 > trait.n.01
+                  modernity.n.01  . property.n.02 > temporal_property.n.01
+                  fear.n.01       . state.n.02 > feeling.n.01 > emotion.n.01
+    13 of 13 correct with four node names: quality.n.01, trait.n.01,
+    feeling.n.01, temporal_property.n.01 -- whichever also appears, wins.
+
+THE PARSE ON RELATIONAL ADJECTIVES  (step 5b iii)
+    "It was worth more than its weight in gold."
+        worth  JJ  acomp   children=[('more','advmod')]
+        more   JJR advmod  children=[('than','prep')]      <- in the SUBTREE
+    "The ancient ship was famous."      famous JJ acomp children=[]
+    "The tractor was really loud."      loud   JJ acomp children=[('really',
+                                                                  'advmod')]
+    "the single most contested resource"  contested JJ amod children=[('most',
+                                                                  'advmod')]
+
+VERB SUPERSENSES  (steps 5b i and 5c)
+    physical   verb.change  grow rust break dry
+               verb.contact open wrinkle close
+               verb.motion  pour crawl sail fly land lift crash
+               verb.creation build      verb.body wound
+    not        verb.communication contest say
+               verb.stative cost
+               verb.cognition / verb.perception hear smell catch
+
+
+--------------------------------------------------------------------------------
+WHAT NOT TO DO
+--------------------------------------------------------------------------------
+  * DO NOT HARDCODE A WORD. Not "contested", not "worth", not "about", not
+    "one". If a change names a word, it is the wrong change -- go back and
+    find the TYPE it belongs to (supersense, taxonomy node, adjective class,
+    tag, dependency, concreteness band). No new word may be added to any
+    shared_text_logic list by this work either.
+  * Do not use Brysbaert concreteness on adjectives or verbs. Measured above;
+    it is why CONCRETENESS_APPLIES_TO exists.
+  * Do not make noun.communication, noun.time, noun.act or noun.event
+    decisive supersenses. Measured above: they would delete postcards, a
+    coil spring and a battle.
+  * Do not delete find_action_candidates() / find_quality_candidates() in
+    step 1. They are the definition of "strong verb" / "strong adjective"
+    that fill_actions() and the variant path lean on, and they keep the
+    dropped-trail honest.
+  * Do not rewrite the template text. The words on screen stay the script's
+    words; only the SPAN a slot covers may shrink. (Same rule as the
+    abstract-terms map: what the viewer hears is what goes on screen, and
+    swapping the words would move every offset in the template.)
+  * Do not add a second spaCy model or a network call. Every test above is
+    the shared sm parse, Brysbaert, or a WordNet lookup already imported.
+  * Do not lower LENGTH_FALLBACK_MIN_TOKENS to paper over step 1's empty
+    segments. Emit the fallback for the right reason instead.
+
+
+--------------------------------------------------------------------------------
+AFTER THAT
+--------------------------------------------------------------------------------
+  * The wishy-washy-terms BONUS from myownstuff.py is still unbuilt, and it
+    needs no new model. A coreference cluster holds EVERY mention of an
+    entity, so "the yellow and black guy" and "a bee" are already in the same
+    cluster -- the resolver never asks, because it only targets PRP/PRP$
+    tokens. Widen the target list to definite noun phrases whose head is
+    unfilmable, and the answer is already sitting there.
+    (The phase-2 plan argued this at length. It is no longer in the tree;
+     it is in git, under its old name PLAN_integrate_abstract_term_resolver.)
+    Steps 1 and 3 make it cheaper: with adjectives out of the slot list,
+    that phrase is one slot looking for a name rather than three fragments.
+    STEP 7f is the same job wearing a different hat.
+  * `amount` (step 4) is the first field the renderer could act on directly
+    -- three ships means three sprites. Worth asking what else it wants
+    before adding more fields on spec.

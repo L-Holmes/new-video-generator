@@ -119,9 +119,35 @@ MIN_SETTING_CONCRETENESS = 4.0
 # it is this many real words long.  e.g. "what had to be done"
 LENGTH_FALLBACK_MIN_TOKENS = 4
 
+# How far up the tree to look for a comparison frame ("more ... THAN ..."),
+# which a thing may sit deep inside:  gold <- in <- weight <- than <- more.
+COMPARISON_FRAME_DEPTH = 6
+
 # Longer than this is a sentence, not something you would type into a stock
 # search box.  e.g. "a jar of nutmeg that sat on the shelf" --> "jar of nutmeg"
 MAX_PHRASE_TOKENS = 6
+
+# Does an adjective belong in the thing's NAME, or only in its `variant`?
+#     a VOLCANIC archipelago is a different THING from an archipelago
+#     a REMOTE   archipelago is the same thing, differently
+# True keeps the KIND-forming ones in the name (WordNet's adj.pert class, the
+# relational adjectives — "of or pertaining to <noun>", which is what makes
+# them name a subtype). Set it False and NO adjective ever stays: every one
+# of them becomes variant, which is the safe answer if the adj.pert rule is
+# ever caught being wrong in a way that matters.
+#   e.g. True   "A tiny, incredibly remote volcanic archipelago"
+#                   --> "volcanic archipelago", variant "tiny, incredibly remote"
+#        False  --> "archipelago",  variant "tiny, incredibly remote, volcanic"
+#
+# NOTHING IS LOST BY MOVING AN ADJECTIVE — this is why the split is safe. The
+# search layer can always put the two back together: "yellow" + "paint" is
+# still "yellow paint" when it wants a picture of one. What the split ADDS is
+# the knowledge of WHICH half is the thing, so a later segment can change how
+# it looks without changing what it is.
+#
+# COMPOUND NOUNS ARE NOT ADJECTIVES and always stay, whatever this says:
+# "kitchen cupboard", "whale skulls", "spice trade" — two words, one thing.
+KEEP_KIND_FORMING_ADJECTIVES = True
 
 
 # The kinds of visualisable — one per PART 1 bullet. Plain strings, so the
@@ -145,6 +171,20 @@ KIND_DEICTIC   = "deictic"    # "I" / "we" / "you"          "the narrator"
 # A "Concrete Visualisable" (myownstuff.py's definition): a thing, not an
 # action or a quality. These are the ones that can own a shot on their own.
 CONCRETE_KINDS = {KIND_NAME, KIND_THING, KIND_NUMBER, KIND_DATE}
+
+# The kinds that earn a SLOT. Everything else is an attribute OF a slot: a
+# verb is the thing's `action`, an adjective its `variant`, and neither is a
+# thing to film.
+#   e.g. "If you open your kitchen cupboard"
+#            [1] the viewer        deictic   action="open"
+#            [2] kitchen cupboard  thing     action="open"
+#        — "open" itself is not a third slot; it is already on both of them.
+# KIND_ACTION and KIND_QUALITY are still HARVESTED (they are the definition
+# of a strong verb / a strong adjective that fill_actions() and the variant
+# path lean on) and still absorb into the noun phrase around them. They are
+# only refused a slot of their own, by drop_attribute_kinds().
+SLOT_KINDS = CONCRETE_KINDS | {KIND_SOUND, KIND_REFERENCE,
+                               KIND_DEICTIC, KIND_FALLBACK}
 
 
 # =============================================================================
@@ -198,6 +238,39 @@ class Visualisable:
     #               that a part's damage can describe its whole (step 5).
     owner: str | None = None
 
+    # amount        HOW MANY of `visualisable` are on screen. Read off the
+    #               parse by fill_amounts(); ALWAYS 1 unless the segment
+    #               actually counted them, because "a tractor" and "the
+    #               tractor" are both one tractor.
+    #                   "three ships"  -->  visualisable "ships", amount 3
+    #                   "900 ships"    -->  visualisable "ships", amount 900
+    #               NOT "the number in the text": a money or measure slot is
+    #               ONE picture of a figure, so "two dollars" and "$2 million"
+    #               keep amount 1 and carry their number in the name.
+    #               A bare plural with no numeral ("the bees") is also 1 —
+    #               wrong, but the only alternative is changing the type, and
+    #               `plural` off spaCy's Number=Plur is the cheap fix if the
+    #               renderer ever asks for it.
+    amount: int = 1
+
+    # hypothetical  the segment did not say this HAPPENED — it is inside an
+    #               "if", a simile or a modal.  "The ground looked AS IF an
+    #               ocean had dried up" — there was no ocean.
+    #               NOT a drop: these are usually the most visual sentences in
+    #               a script, and what to do about it is the renderer's
+    #               decision (film it as a dream, a sketch, a ghost), not this
+    #               file's. All this does is say so.
+    hypothetical: bool = False
+
+    # trimmed_description   the adjectives cut off the front of the name
+    #               because they describe the LOOK rather than name the KIND.
+    #               A working, not an answer: fill_variants() turns it into
+    #               `variant` and nothing else should read it.
+    #               e.g. "tiny, incredibly remote volcanic archipelago"
+    #                        visualisable "volcanic archipelago"
+    #                        trimmed_description ["tiny", "incredibly remote"]
+    trimmed_description: list = field(default_factory=list)
+
     def is_concrete(self) -> bool:
         """A thing, not an action or a quality."""
         return self.kind in CONCRETE_KINDS
@@ -207,7 +280,13 @@ class Visualisable:
 
         e.g. {"visualisable": "tractor", "variant": "yellow paint",
               "action": "crashed", "location": "lampost", "kind": "thing",
-              "identity": "tractor", "is_setting": False, "confidence": 0.9}
+              "identity": "tractor", "is_setting": False, "confidence": 0.9,
+              "owner": None, "amount": 1, "hypothetical": False}
+
+        owner is here and not left on the object because it is an ANSWER, not
+        a working: "the tractor's windscreen" is only half the fact, and the
+        other half — that the windscreen belongs to the tractor, so damaging
+        it damages the tractor — is unreachable to anything holding the map.
 
         The full record (surface / detector / char_span / concreteness /
         token_span / setting_score) stays on this object, for anything that
@@ -222,6 +301,9 @@ class Visualisable:
             "identity": self.identity,
             "is_setting": self.is_setting,
             "confidence": round(self.confidence, 3),
+            "owner": self.owner,
+            "amount": self.amount,
+            "hypothetical": self.hypothetical,
         }
 
 
@@ -242,6 +324,10 @@ class VisualisablesEntry:
     visualisables: dict[int, Visualisable] = field(default_factory=dict)
 
     dropped: list = field(default_factory=list)         # candidates the filters killed
+
+    # "at night" — how the SETTING looks in this segment, not a slot of its
+    # own. fill_variants() is what does something with it.
+    time_descriptions: list = field(default_factory=list)
 
     def as_map(self) -> dict:
         """The output shape the TODO asks for, for this one line:
@@ -275,7 +361,12 @@ class Candidate:
     concreteness: float | None = None
     is_setting: bool = False
     setting_score: float = 0.0
+    hypothetical: bool = False          # inside an "if" / a simile / a modal
     dropped_by: str | None = None       # e.g. "abstract(2.69)", "weak-verb"
+    # the describing adjectives trim_to_searchable_core() took OFF the front,
+    # left to right — "tiny", "incredibly remote". They are not thrown away:
+    # they are the thing's `variant`, and fill_variants() is where they land.
+    trimmed_description: list = field(default_factory=list)
 
 
 @dataclass
@@ -298,6 +389,13 @@ class Context:
     line_tokens: tuple[int, int]
     blocked: list = field(default_factory=list)
     keep_pronouns: bool = False       # keep "it"/"they" for the document pass
+    attributes_only: bool = False     # every survivor was an action/quality —
+                                      # set by drop_attribute_kinds(), read by
+                                      # apply_length_fallback()
+    # "at night", "in the morning" — a time of day is how the SETTING looks,
+    # so move_time_to_setting() puts it here and fill_variants() hands it to
+    # whatever this segment is standing in.
+    time_descriptions: list = field(default_factory=list)
 
     def target_tokens(self):
         """The tokens of the TARGET LINE only. Every harvester iterates this,
@@ -401,6 +499,397 @@ def _wordnet_verdict(word: str) -> str | None:
     return None
 
 
+# -----------------------------------------------------------------------------
+# IS THIS WORD A PICTURE AT ALL?
+#
+# Three word classes, three computed tests, and NOT ONE WORD WRITTEN DOWN.
+# Everything below names a TYPE — a WordNet supersense, a taxonomy node, a
+# spaCy tag — so it works on every word in English, including the ones no
+# script has used yet. A rule that named "contested" or "worth" would fix one
+# script and no other.
+#
+# BRYSBAERT IS NOT USED HERE, and must not be: measured on the scripts'
+# adjectives it does not separate the classes at all —
+#     pictures      rusted 4.44  yellow 4.30  broken 4.11  little 3.67
+#                   remote 3.44  old 2.72  ancient 2.04
+#     not pictures  single 3.27  modern 2.31  important 2.14  famous 2.07
+#                   worth 1.89   contested (no rating at all)
+# single 3.27 outranks ancient 2.04, so no threshold exists. That is what
+# CONCRETENESS_APPLIES_TO has always been saying; this is the evidence.
+# -----------------------------------------------------------------------------
+
+# 5a — NOUNS. WordNet's supersense says what TYPE of thing a word is, and six
+# of the 26 are decisive: nothing filed under them is ever filmable.
+#   e.g. noun.attribute weight 3.94  size 3.13     noun.state    thing 3.17
+#        noun.cognition idea 1.61                  noun.relation percentage
+# All of weight / size / thing PASS Brysbaert's 3.0 today — which is exactly
+# the "nutmeg's weight" bug. The supersense overrules the rating.
+#
+# THE OTHER 20 GO BOTH WAYS, so Brysbaert stays in charge of them. Measured,
+# and written down so it is not rediscovered:
+#   noun.possession    gold 4.81 / resource 2.55
+#   noun.act           battle 4.00, war 3.63 / journey 2.57
+#   noun.communication postcard 4.93, note 4.61, letter 4.70 / song, story
+#   noun.time          spring 3.89 (a coil) / moment 1.61
+# Making those decisive would delete the clockmaker's postcards and note, a
+# coil spring, and a battle. Do not.
+#
+# EVENT AND ACT NOUNS are the pair most likely to be argued about next:
+# "journey" 2.57, "revolution" 2.87, "trade" 3.08, "voyage" 3.43 name spans
+# of time rather than framings, and Brysbaert already drops the low ones —
+# but "battle" 4.00 really is filmable, so noun.act / noun.event cannot be
+# made decisive either. Watch it on the whales and rome scripts, which are
+# full of them, and only then decide. Deliberately not acted on.
+NEVER_FILMABLE_SUPERSENSES = frozenset({
+    "noun.attribute", "noun.cognition", "noun.feeling",
+    "noun.motive", "noun.relation", "noun.state"})
+
+# CONTAINER AND PARTITIVE HEADS. "a handful of spices", "a lot of ships", "a
+# series of raids", "the rest of the fleet" — the head noun is a measuring
+# word and the picture is the OBJECT of "of". Same six-supersense vocabulary,
+# used the other way round: these are the types that COUNT things rather than
+# being things. promote_partitives() is the rule.
+CONTAINER_SUPERSENSES = frozenset({
+    "noun.quantity", "noun.group", "noun.attribute", "noun.relation"})
+
+# ROLE NOUNS — "the owner OF the tractor", "a member OF the crew". They point
+# at somebody without saying what they look like, and the thing they relate
+# to is the picture.
+#
+# OFF, and here is the evidence rather than an opinion: the test that finds
+# "owner" (noun.person with an `of` complement) finds "the King OF Spain" and
+# "the Queen OF England" too, and those ARE portraits — promoting them would
+# film the country instead of the monarch. WordNet has no class that
+# separates a role from a title, and none of the five scripts contains either
+# shape, so there is nothing to measure the discriminator against yet. Turn
+# it on when a script produces one. The noun.relation half ("the rest of the
+# fleet") is already live above, because that supersense IS the answer.
+PROMOTE_ROLE_NOUNS = False
+
+# 5b i — PARTICIPLES. An adjective wearing a verb's past participle is a verb
+# in adjective's clothes, so ask what the VERB does.
+#   e.g. rust -> verb.change   wrinkle -> verb.contact   break -> verb.change
+#        contest -> verb.communication   (a picture of nothing)
+# THREE senses, not one: "bury" is verb.perception first and verb.contact
+# only third, and "the site was buried" is a picture.
+PHYSICAL_VERB_SUPERSENSES = frozenset({
+    "verb.change", "verb.contact", "verb.body",
+    "verb.motion", "verb.creation", "verb.weather"})
+
+# 5b ii — ATTRIBUTE POINTERS. A WordNet adjective often names the property it
+# measures, and the NOUN taxonomy splits the properties you can see from the
+# ones you cannot. Measured, 13 of 13 correct on four node names:
+#   A LOOK      little->size  narrow->width  old->age  loud->volume
+#               black->value(colour)  broken->integrity  dead->animation
+#                   ... all reach property.n.02 or state.n.02
+#   NOT A LOOK  important->importance  single->individuality  afraid->fear
+#               modern->modernity
+#                   ... all also reach one of these four
+# "also" is the operative word — "afraid" reaches state.n.02 AND feeling.n.01.
+# Whichever of these four appears, wins.
+NON_VISUAL_ATTRIBUTE_ROOTS = frozenset({
+    "quality.n.01", "trait.n.01", "feeling.n.01", "temporal_property.n.01"})
+VISUAL_ATTRIBUTE_ROOTS = frozenset({"property.n.02", "state.n.02"})
+
+# 5b iii — RELATIONAL ADJECTIVES: the ones that need a complement to mean
+# anything. "It was worth more THAN its weight in gold" states a relation; it
+# does not say how anything LOOKS. It is not a participle and has no
+# attribute pointer, so (i) and (ii) both wave it through — but the PARSE
+# gives it away. Measured:
+#     worth    acomp, subtree contains a `prep` ("than ...")   -> drop
+#     famous   acomp, no children                              -> keep
+#     loud     acomp, only an advmod ("really")                -> keep
+#     ancient  amod,  no children                              -> keep
+# SUBTREE, not children: spaCy hangs the "than" phrase off "more", which
+# hangs off "worth".
+RELATIONAL_ADJ_DEPS = frozenset({"prep", "pcomp", "ccomp"})
+
+# How many of an adjective's senses to read. Adjectives have few, and
+# adj.pert is never buried deep, so this is "all of them" in practice.
+ADJ_SENSE_WINDOW = 10
+
+# 5c — VERBS, the same supersense test as a backstop. WEAK_VERB_LEMMAS is a
+# good list and it is shared with the sentence splitter, so it stays — but it
+# is a list, so it can only ever know the verbs someone typed into it.
+#   e.g. IN THE LIST ALREADY  cost -> verb.stative   say -> communication
+#        CAUGHT BY THIS       swear -> verb.communication at all three senses
+#        UNAFFECTED           open -> contact  grow -> change  sail -> motion
+# ALL of the first three senses must be non-physical, so a verb with one
+# filmable sense anywhere near the top keeps its action.
+NON_PHYSICAL_VERB_SUPERSENSES = frozenset({
+    "verb.stative", "verb.cognition", "verb.communication",
+    "verb.possession", "verb.social", "verb.emotion"})
+
+
+def _supersenses(word: str, n_senses: int, pos=None) -> list:
+    """WordNet's lexnames for a word's first n senses, or [] when WordNet is
+    not installed. [] always means NO OPINION — every caller keeps the word."""
+    knowledge = kb()
+    if knowledge is None:
+        return []
+    return knowledge._wn_supersenses(word, n_senses, pos=pos)
+
+
+def is_never_filmable_noun(head: str) -> bool:
+    """Is this noun's FIRST sense one of the six supersenses that never hold
+    a picture?  e.g. "weight" noun.attribute -> True   "gold" -> False
+
+    First sense only, matching _wordnet_verdict(): widening it starts eating
+    the physical sense of words whose abstract sense happens to come first.
+    """
+    senses = _supersenses(head, 1)
+    return bool(senses) and senses[0] in NEVER_FILMABLE_SUPERSENSES
+
+
+def is_visual_quality(doc, tok) -> bool:
+    """Does this adjective change what the picture LOOKS like?
+
+    THE ONE GATE, THREE CALLERS: find_quality_candidates() (so the harvest is
+    honest), _variant_descriptions() and trim_to_searchable_core()'s cast-off
+    adjectives (so the variant is too). Written once because otherwise a word
+    refused a slot walks straight back in as a variant.
+
+        "rusted"     -> True    a look
+        "contested"  -> False   a verb of COMMUNICATION in adjective's clothes
+        "worth"      -> False   a relation, and it needs a "than" to state it
+        "important"  -> False   points at importance, which is a quality
+        "yellow"     -> True    no pointer, no complement — nothing against it
+
+    Four tests, in order. Anything WordNet has no opinion on is KEPT: a wrong
+    drop blanks the description, a wrong keep costs one adjective.
+    """
+    lemma = tok.lemma_.lower()
+    word = tok.lower_
+
+    # 0. the shared list, so this gate subsumes the old weak-adjective test
+    #    and the three callers can ask one question instead of two.
+    if lemma in STL.WEAK_ADJ_LEMMAS:
+        return False
+
+    # i. a PARTICIPLE is decided by the verb underneath it.
+    adj_classes = _supersenses(word, 3, pos="a")
+    if tok.tag_ == "VBN" or "adj.ppl" in adj_classes:
+        verb_senses = _supersenses(word, 3, pos="v") or _supersenses(lemma, 3,
+                                                                     pos="v")
+        if verb_senses:
+            return any(s in PHYSICAL_VERB_SUPERSENSES for s in verb_senses)
+
+    # ii. the ATTRIBUTE it measures, if WordNet says it measures one.
+    knowledge = kb()
+    roots = knowledge._wn_attribute_roots(word) if knowledge else set()
+    if not roots and lemma != word:
+        roots = knowledge._wn_attribute_roots(lemma) if knowledge else set()
+    if roots & NON_VISUAL_ATTRIBUTE_ROOTS:
+        return False
+    if roots & VISUAL_ATTRIBUTE_ROOTS:
+        return True
+
+    # iii. no pointer and not a participle: does it need a COMPLEMENT to mean
+    #      anything? Then it states a relation, not a look.
+    if any(t.dep_ in RELATIONAL_ADJ_DEPS
+           for t in tok.subtree if t.i != tok.i):
+        return False
+
+    # iv. nothing against it.
+    return True
+
+
+# The CARDINAL NUMERALS, so a count can be read as a number.
+#
+# This is a word list, and the plan that asked for `amount` forbids those —
+# so here is why it is allowed, and where the line is. English's cardinals
+# are a CLOSED GRAMMATICAL CLASS, exactly like the determiners and the
+# hedges in STL.APPROXIMATOR_WORDS that the same plan permits: the language
+# has about thirty of them and has not gained one in a thousand years.
+# Reading it is closer to reading a tag than to writing a lexicon, and there
+# is no computed alternative — spaCy says "three" is a NUM but not that it
+# is 3, and WordNet does not carry values either.
+# It is NOT a licence to write any other list: every noun, verb and
+# adjective decision in this file stays computed.
+CARDINAL_WORDS = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+    "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+    "nineteen": 19, "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+    "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90,
+    "hundred": 100, "thousand": 1000, "million": 1000000,
+    "billion": 1000000000,
+}
+
+
+def _as_count(tok) -> int | None:
+    """A numeral token as an integer, or None when it will not read as one.
+    e.g. "900" -> 900   "3,000" -> 3000   "three" -> 3   "some" -> None"""
+    digits = tok.text.replace(",", "").replace("_", "")
+    if digits.isdigit():
+        return int(digits)
+    return CARDINAL_WORDS.get(tok.lower_)
+
+
+def is_bare_count(doc, start: int, end: int) -> bool:
+    """A number with nothing to count is not a picture.
+
+    KIND_NUMBER exists because a figure goes on screen as a counter or a bar:
+    "two dollars", "15 metres", "$2 million", "30 percent" — there the NUMBER
+    is the picture. A bare cardinal is not:
+        "in ONE place on Earth"        the picture is the place
+        "Every fossil was intact except ONE"   the picture is the fossil
+        "900 ships"                    the picture is the ships, 900 of them
+    In all three the count belongs in the thing's `amount`, which
+    fill_amounts() reads straight off the parse — so nothing is lost by
+    refusing the slot.
+
+    Anything glued to a measure word or a currency keeps its slot.
+    """
+    span = doc[start:end]
+    if any(t.lower_ in STL.MEASURE_NOUNS for t in span):
+        return False
+    if any(t.ent_type_ in {"MONEY", "PERCENT", "QUANTITY"} for t in span):
+        return False
+    if any(t.is_currency for t in span):
+        return False
+    return True
+
+
+# The two negators spaCy does NOT tag `neg`: the determiner "no" ("no
+# ships") and the preposition "without" ("without water"). Both say exactly
+# what the `neg` dependency says, wearing different grammar. Closed-class
+# function words, the same exception STL.APPROXIMATOR_WORDS is — and the only
+# two in English that negate a NOUN PHRASE rather than a clause.
+NEGATING_FUNCTION_WORDS = frozenset({"no", "without"})
+
+
+def is_negated(tok) -> bool:
+    """Is what this word says being DENIED?
+
+        "it was NOT afraid of us"   the script says it was not. There is no
+                                    picture of "not afraid" — the absence of
+                                    a state is not a shot — so the
+                                    description is dropped, never inverted.
+        "It NEVER rusted"           same, on a verb.
+        "NO ships sailed"           same fact, wearing a determiner.
+        "a valley WITHOUT water"    same fact, wearing a preposition.
+
+    THE DEPENDENCY IS THE TEST. spaCy tags "not" / "n't" / "never" as `neg`
+    outright; the other two are the closed-class pair above.
+
+    A PREDICATE ADJECTIVE IS DENIED BY ITS COPULA: in "it was not afraid" the
+    `neg` hangs off "was", not off "afraid", so an acomp/oprd adjective asks
+    its head too. Deliberately ONLY those two deps — climbing from any token
+    to any head would make "he did not say the ship SANK" a negated sinking.
+    """
+    for child in tok.children:
+        if (child.dep_ == "neg"
+                or child.lower_ in STL.NEGATION_TOKENS
+                or (child.dep_ == "det" and child.lower_ in NEGATING_FUNCTION_WORDS)):
+            return True
+    if tok.dep_ == "pobj" and tok.head.lower_ in NEGATING_FUNCTION_WORDS:
+        return True
+    if tok.pos_ == "ADJ" and tok.dep_ in {"acomp", "oprd"}:
+        head = tok.head
+        if head.i != tok.i and any(ch.dep_ == "neg" for ch in head.children):
+            return True
+    return False
+
+
+# IRREALIS — the grammar of things that did not happen.
+#
+# SUBORDINATORS that open a hypothetical clause, as a `mark`:
+#     "IF you open your kitchen cupboard"      it is not open
+#     "as IF an ocean had dried up"            there was no ocean
+#     "as THOUGH the ship were sinking"        it is not sinking
+#     "LIKE a bomb had gone off"               no bomb
+# ("as if" arrives as two tokens and "if" is the one tagged `mark`, so it is
+#  caught either way round.)
+#
+# MODAL AUXILIARIES in their irrealis senses. spaCy tags all nine English
+# modals MD, and "will"/"can"/"must" are not irrealis — so the tag alone is
+# too wide and these four are named. English has had the same nine modals
+# for centuries: another closed grammatical class, like the determiners.
+IRREALIS_MARKERS = frozenset({"if", "though", "unless", "whether", "like"})
+IRREALIS_MODALS = frozenset({"would", "could", "might", "may"})
+
+
+def is_hypothetical(doc, start: int, end: int) -> bool:
+    """Did the segment say this HAPPENED, or only imagine it?
+
+        "The ground looked as if an ocean had simply dried up around them."
+             -> the ocean is hypothetical. There is no ocean in this video.
+        "If you open your kitchen cupboard"
+             -> so is the cupboard, though harmlessly: it is the viewer's own.
+
+    NOT A DROP. These are often the most visual sentences in a script, and
+    the right thing to do with one — film it as a dream, a sketch, a ghost,
+    or just film it — belongs to whatever draws the shot. This only says so.
+
+    THE TEST, climbing from the candidate to the clause it is in:
+        a `mark` child in IRREALIS_MARKERS on any verb above it
+        an irrealis modal `aux` on any verb above it
+    Same climb as _in_comparison_frame(), same depth, and for the same
+    reason: the marker sits on the clause, not on the thing.
+
+    KNOWN OVER-FIRE, stated rather than hacked: "but I COULD smell the wax"
+    is an ability, not a supposition, and it is flagged anyway — English
+    spells the two the same and nothing in the parse separates them. It costs
+    nothing here because this is a FLAG: a renderer that films a flagged
+    segment straight is no worse off than before the flag existed.
+    """
+    node = doc[start:end].root
+    for _ in range(COMPARISON_FRAME_DEPTH):
+        for child in node.children:
+            if child.dep_ == "mark" and child.lower_ in IRREALIS_MARKERS:
+                return True
+            if child.dep_ in {"aux", "auxpass"} and child.lower_ in IRREALIS_MODALS:
+                return True
+        head = node.head
+        if head.i == node.i:
+            return False
+        node = head
+    return False
+
+
+def is_kind_forming_adjective(tok) -> bool:
+    """Does this adjective make a DIFFERENT KIND of thing, or only say how
+    this one looks?
+
+        volcanic archipelago   a different thing from an archipelago  -> True
+        remote archipelago     the same thing, differently            -> False
+
+    WordNet answers it with a class, not a list. A RELATIONAL (pertainymic)
+    adjective is one it files as adj.pert: it means "of or pertaining to
+    <noun>", it is DERIVED from that noun, and it therefore names a subtype.
+    Measured on the scripts' own adjectives:
+        adj.pert   volcanic, royal, solar, medieval        -> forms a kind
+        adj.all    tiny, remote, old, huge, ancient, loud, black, yellow,
+                   wooden, rusted, wrinkled, broken        -> describes a look
+    ANY sense counts: "royal" is adj.pert at senses 1 and 2 and adj.all at 3,
+    and it is still forming a kind.
+    """
+    return "adj.pert" in _supersenses(tok.lower_, ADJ_SENSE_WINDOW, pos="a")
+
+
+def is_filmable_action(tok) -> bool:
+    """Is this verb worth attaching to a thing as its `action`?
+
+    STL.WEAK_VERB_LEMMAS / _FORMS first — the shared list, which the sentence
+    splitter and the tagger also read, so the three cannot disagree about
+    what a weak verb is. Then the computed backstop for every verb nobody
+    ever typed into it: all three of its first senses non-physical means the
+    picture is not in the verb.
+        e.g. KEEP  open (contact)  grow (change)  sail (motion)  sound
+                   (perception — not in the set, and rightly: you can film
+                   something making a noise)
+             DROP  swear (communication x3)
+    """
+    if (tok.lemma_.lower() in STL.WEAK_VERB_LEMMAS
+            or tok.text.lower() in STL.WEAK_VERB_FORMS):
+        return False
+    senses = _supersenses(tok.lemma_.lower(), 3, pos="v")
+    return not (senses and all(s in NON_PHYSICAL_VERB_SUPERSENSES
+                               for s in senses))
+
+
 # =============================================================================
 # SECTION 4 — THE PER-SEGMENT PIPELINE   (read this first)
 #
@@ -444,14 +933,18 @@ def create_visualisables_entry(
         0  parse the segment in context, so spaCy sees whole sentences
         1  mark the spans we may never emit  (idioms, discourse furniture)
         2  harvest every candidate — one detector per PART 1 bullet
-        3  drop the PART 2 non-visualisables (pronouns, weak words, ...)
-        4  drop the PART 3 abstract nouns    (Brysbaert / WordNet)
+       2b  promote the container phrases ("a lot of ships" -> ships)
+        3  drop the PART 2 non-visualisables (pronouns, weak words, bare
+           units, ...)
+        4  drop the PART 3 abstract nouns, and the counts with nothing to
+           count ("one place" -> the place is the picture, not the one)
         5  trim each survivor to its searchable core  ("a jar of" -> "jar")
         6  split "X and Y" into two candidates
         7  resolve overlaps — one picture per piece of text
-        8  order left to right, which fixes the slot numbers [1] [2] [3]
-        9  mercy rule: nothing survived, but it is 4+ real words
-       10  classify settings, then build the template + the map
+        8  refuse a slot to the attributes (a verb, a bare adjective)
+        9  order left to right, which fixes the slot numbers [1] [2] [3]
+       10  mercy rule: nothing survived, but it is 4+ real words
+       11  classify settings, then build the template + the map
     """
     # 0) PARSE
     ctx = build_context(line_segment,
@@ -475,12 +968,20 @@ def create_visualisables_entry(
     candidates += find_sound_candidates(ctx)         # SFX words
     harvest = list(candidates)                       # a handle, so we can show what died
 
+    # 2b) PROMOTE — "a lot of ships" is a picture of ships. Before the
+    #     filters, or "lot" is judged and the ships go down with it.
+    candidates = promote_partitives(candidates, ctx)
+
     # 3) FILTER — PART 2. Nothing that only POINTS at a picture.
     candidates = drop_blocked(candidates, blocked)
+    candidates = drop_bare_measures(candidates, ctx)
+    candidates = move_time_to_setting(candidates, ctx)
     candidates = drop_non_visualisable(candidates, ctx)
 
     # 4) FILTER — PART 3. Nothing you cannot point a camera at.
     candidates = drop_abstract(candidates, ctx)
+    candidates = drop_bare_counts(candidates, ctx)
+    candidates = drop_negated(candidates, ctx)
 
     # 5) TIDY — cut each down to what you would type into a search box.
     candidates = trim_to_searchable_core(candidates, ctx)
@@ -491,14 +992,22 @@ def create_visualisables_entry(
     # 7) DEDUPE — the harvesters overlap by design; pick one per span.
     candidates = resolve_overlaps(candidates, ctx)
 
-    # 8) ORDER — left to right.
+    # 8) ATTRIBUTES — a verb is the thing's `action`, an adjective its
+    #    `variant`. Neither is a slot. AFTER the dedupe, so an adjective
+    #    inside a noun phrase is still absorbed the way it always was and
+    #    only the ones that survived on their own are cut.
+    candidates = drop_attribute_kinds(candidates, ctx)
+
+    # 9) ORDER — left to right.
     candidates = order_candidates(candidates)
 
-    # 9) FALLBACK — the mercy rule, so a real segment is never left empty.
+    # 10) FALLBACK — the mercy rule, so a real segment is never left empty.
     candidates = apply_length_fallback(candidates, ctx)
 
-    # 10) BUILD — mark settings, punch out the template, number the slots.
+    # 11) BUILD — mark settings and hypotheticals, punch out the template,
+    #     number the slots.
     candidates = classify_settings(candidates, ctx)
+    candidates = flag_hypotheticals(candidates, ctx)
     entry = build_entry(ctx, candidates)
     entry.dropped = [c for c in harvest if c.dropped_by]
     return entry
@@ -768,18 +1277,24 @@ def find_quality_candidates(ctx: Context) -> list[Candidate]:
     e.g. "red", "rusted", "ancient", "microscopic" — they change what the
     picture LOOKS like.
 
-    Test is ADJ, and not in STL.WEAK_ADJ_LEMMAS (which is where "many",
-    "several", "possible" get thrown out).
+    Test is ADJ and is_visual_quality() — the shared gate, which starts with
+    STL.WEAK_ADJ_LEMMAS (where "many", "several", "possible" get thrown out)
+    and then asks WordNet whether the word describes a LOOK at all. That is
+    what keeps "contested" and "worth" out of here, and out of `variant`,
+    which reads the same gate.
 
     An adjective INSIDE a noun chunk we already harvested ("the OLD wooden
     ship") must not become its own slot — emit it anyway, resolve_overlaps()
-    absorbs it. It only stands alone as a predicate ("the sky turned red").
+    absorbs it. Since STEP 1 it never stands alone either: what survives here
+    is dropped by drop_attribute_kinds() and lives on as the thing's
+    `variant`. It is harvested because THIS function is the definition of a
+    strong adjective that the variant path leans on.
     """
     out = []
     for tok in ctx.target_tokens():
         if tok.pos_ != "ADJ":
             continue
-        if tok.lemma_.lower() in STL.WEAK_ADJ_LEMMAS:
+        if not is_visual_quality(ctx.doc, tok):
             continue
         out.append(Candidate(tok.i, tok.i + 1, KIND_QUALITY,
                              "quality:adj", confidence=0.6))
@@ -790,9 +1305,10 @@ def find_action_candidates(ctx: Context) -> list[Candidate]:
     """PART 1 bullet 8 — strong, filmable verbs. KIND_ACTION.
     e.g. "jumped", "sailed", "exploded", "sank"
 
-    Test: VERB, and not in WEAK_VERB_LEMMAS / WEAK_VERB_FORMS — that pair
-    removes be/have/do/get/make/know/seem, the verbs whose picture always
-    lives in the noun next to them.
+    Test: VERB and is_filmable_action() — WEAK_VERB_LEMMAS / WEAK_VERB_FORMS
+    (which remove be/have/do/get/make/know/seem, the verbs whose picture
+    always lives in the noun next to them), and then the supersense backstop
+    for every verb that list has never heard of.
 
     The particle comes too: "flew AWAY", "dried UP" — it is what makes the
     action filmable, and "flew" and "flew away" are different shots.
@@ -805,8 +1321,7 @@ def find_action_candidates(ctx: Context) -> list[Candidate]:
     for tok in ctx.target_tokens():
         if tok.pos_ != "VERB":
             continue
-        if (tok.lemma_.lower() in STL.WEAK_VERB_LEMMAS
-                or tok.text.lower() in STL.WEAK_VERB_FORMS):
+        if not is_filmable_action(tok):
             continue
         end = tok.i + 1
         for child in tok.children:
@@ -842,6 +1357,133 @@ def find_sound_candidates(ctx: Context) -> list[Candidate]:
 # Every filter is list[Candidate] -> list[Candidate], and sets `dropped_by`
 # rather than deleting, so entry.dropped can show its working.
 # =============================================================================
+
+
+def promote_partitives(candidates: list[Candidate],
+                       ctx: Context) -> list[Candidate]:
+    """THE HEAD NOUN IS NOT ALWAYS THE THING.
+
+        "a handful of spices"     film the spices, not a handful
+        "a lot of ships"          film the ships
+        "a series of raids"       film the raids
+        "the rest of the fleet"   film the fleet
+        "the owner of the tractor"  film the tractor    (PROMOTE_ROLE_NOUNS)
+
+    A container word measures or groups; it is not itself a picture. So when
+    the head's supersense is one that COUNTS things (CONTAINER_SUPERSENSES)
+    and it has an "of" complement with a noun in it, the candidate becomes
+    that noun. The count is not lost — fill_amounts() reads it off the same
+    parse and puts it in `amount`, which is step 4's partitive rule doing
+    exactly this job for the numeral case ("One of them"). The two are the
+    same rule and are written next to each other on purpose.
+
+    RUNS BEFORE THE FILTERS, and that is the whole trick: "a lot of ships"
+    would otherwise be dropped for "lot" being abstract, taking the ships
+    with it. Promote first, judge the thing you actually meant second.
+    """
+    doc, out = ctx.doc, []
+    for c in candidates:
+        if c.kind != KIND_THING:
+            out.append(c)
+            continue
+        root = doc[c.start:c.end].root
+        senses = _supersenses(root.lemma_.lower(), 1)
+        first = senses[0] if senses else None
+        promotable = (first in CONTAINER_SUPERSENSES
+                      or (PROMOTE_ROLE_NOUNS and first == "noun.person"))
+        if not promotable:
+            out.append(c)
+            continue
+        prep = next((ch for ch in root.children
+                     if ch.dep_ == "prep" and ch.lower_ == "of"), None)
+        obj = next((ch for ch in prep.children if ch.dep_ == "pobj"),
+                   None) if prep is not None else None
+        if obj is None or obj.pos_ not in {"NOUN", "PROPN", "PRON"}:
+            out.append(c)
+            continue
+        indices = [t.i for t in obj.subtree if c.start <= t.i < c.end]
+        if not indices:
+            out.append(c)
+            continue
+        c.start, c.end = min(indices), max(indices) + 1
+        c.detector += "+partitive"
+        out.append(c)
+    return out
+
+
+def move_time_to_setting(candidates: list[Candidate],
+                        ctx: Context) -> list[Candidate]:
+    """"AT NIGHT" IS NOT A THING, IT IS HOW THE PLACE LOOKS.
+
+        "the wind sounds like whale song AT NIGHT"
+             -> not a slot. The valley, at night.
+        "IN THE MORNING she wound it"
+             -> the workshop, in the morning.
+
+    So the phrase is dropped from the slots and handed to fill_variants(),
+    which adds it to the variant of whatever this segment is standing in — a
+    night scene being a real look, and one the renderer can actually draw.
+
+    NARROW ON PURPOSE, because noun.time is the supersense the plan that
+    asked for this warned twice about: WordNet's FIRST sense of "spring" is
+    the season, and the clockmaker's spring is a coil. So this fires only on
+    a TEMPORAL ADJUNCT — the object of a preposition hanging off a VERB,
+    which is what "at night" is and what "He sent back a spring" (a dobj) is
+    not. Dates keep their own kind and never reach here.
+    """
+    doc, kept = ctx.doc, []
+    for c in candidates:
+        if c.kind != KIND_THING:
+            kept.append(c)
+            continue
+        root = doc[c.start:c.end].root
+        senses = _supersenses(root.lemma_.lower(), 1)
+        adjunct = (root.dep_ == "pobj" and root.head.pos_ == "ADP"
+                   and root.head.head.pos_ in {"VERB", "AUX"})
+        if not (senses and senses[0] == "noun.time" and adjunct):
+            kept.append(c)
+            continue
+        c.dropped_by = "time-as-variant"
+        # ...unless a DATE candidate already covers it. Dates keep their own
+        # kind (spec PART 1 bullet 5), and recording "at night" as the
+        # setting's look as WELL as a date slot would say it twice.
+        if any(o.kind == KIND_DATE and o.dropped_by is None
+               and o.start < c.end and o.end > c.start for o in candidates):
+            continue
+        ctx.time_descriptions.append(
+            " ".join(doc[root.head.i:c.end].text.split()).strip(" ,.;:!?"))
+    return kept
+
+
+def drop_bare_measures(candidates: list[Candidate],
+                       ctx: Context) -> list[Candidate]:
+    """A UNIT WITH NO NUMBER IS NOT A PICTURE. "metres", "percent",
+    "degrees", "decades" on their own measure nothing and show nothing.
+
+    Half of this already exists: find_number_candidates() glues a measure
+    word to its numeral precisely so "900 SHIPS" cannot come apart. This is
+    the other half — the ones that arrive with no numeral anywhere near them,
+    as ordinary noun phrases.
+
+    STL.MEASURE_NOUNS is the test, and it is the one place in this file where
+    a word list is exactly the right tool: units are a finite list BY
+    DEFINITION. A candidate with a numeral in it or on it keeps its slot, and
+    dates never reach here — they are their own kind.
+    """
+    doc, kept = ctx.doc, []
+    for c in candidates:
+        if c.kind != KIND_THING:
+            kept.append(c)
+            continue
+        span = doc[c.start:c.end]
+        root = span.root
+        counted = (any(t.pos_ == "NUM" or t.like_num for t in span)
+                   or any(ch.dep_ == "nummod" for ch in root.children))
+        if root.lemma_.lower() in STL.MEASURE_NOUNS and not counted:
+            c.dropped_by = "bare-measure"
+        else:
+            kept.append(c)
+    return kept
 
 
 def drop_blocked(candidates: list[Candidate],
@@ -895,7 +1537,9 @@ def drop_non_visualisable(candidates: list[Candidate],
         elif root.pos_ == "VERB" and (lemma in STL.WEAK_VERB_LEMMAS
                                       or root.text.lower() in STL.WEAK_VERB_FORMS):
             why = "weak-verb"
-        elif root.pos_ == "ADJ" and lemma in STL.WEAK_ADJ_LEMMAS:
+        elif root.pos_ == "ADJ" and not is_visual_quality(doc, root):
+            # the shared gate: the weak-adjective list, then "is this word a
+            # description of a LOOK at all" (contested / worth / important).
             why = "weak-adj"
         elif (c.kind != KIND_NAME
                 and root.pos_ in {"NOUN", "PROPN"}
@@ -923,6 +1567,14 @@ def drop_abstract(candidates: list[Candidate],
     something you can point a camera at.
 
     We do not write a word list for this. Three steps, in order:
+
+      0. WORDNET'S SUPERSENSE, which overrules Brysbaert when it fires.
+         Six of the 26 noun types never hold a picture whatever anyone rated
+         them (NEVER_FILMABLE_SUPERSENSES): "nutmeg's weight" is
+         noun.attribute and scores 3.94, "thing" is noun.state and scores
+         3.17, and both sail through step 1. This is the step that stops
+         them. It is deliberately narrow — the other 20 supersenses go both
+         ways, so Brysbaert keeps them.
 
       1. BRYSBAERT (2014) concreteness — 37k words, human-rated 1..5.
          Score >= MIN_CONCRETENESS keeps it, below drops it.
@@ -955,6 +1607,11 @@ def drop_abstract(candidates: list[Candidate],
             continue
         head = doc[c.start:c.end].root.lemma_.lower()
 
+        # 0. WordNet's supersense — the one answer Brysbaert cannot overrule.
+        if is_never_filmable_noun(head):
+            c.dropped_by = f"not-a-picture({_supersenses(head, 1)[0]})"
+            continue
+
         # 1. Brysbaert, the published answer.
         score = knowledge.kb_concreteness(head) if knowledge else None
         c.concreteness = score
@@ -975,9 +1632,198 @@ def drop_abstract(candidates: list[Candidate],
     return kept
 
 
+def drop_bare_counts(candidates: list[Candidate],
+                     ctx: Context) -> list[Candidate]:
+    """A COUNT IS NOT A PICTURE. It is the counted thing's `amount`.
+
+        "Nutmeg only grew in ONE place on Earth"   the place is the picture
+        "Every fossil was intact except ONE"       the fossil is
+        "900 ships"                                the ships are, 900 of them
+
+    "one" survives everything else in this file because spaCy hands it over
+    as a CARDINAL entity, so the generic-noun rule that kills "one place"
+    never sees it. This is the rule that sees it.
+
+    RUN BEFORE resolve_overlaps(), on purpose: "900 ships" arrives twice, as
+    a KIND_NUMBER (which outranks a thing) and as a KIND_THING noun chunk.
+    Cutting the number here is what lets the SHIPS win the span — and
+    fill_amounts() then reads the 900 off the parse and puts it on them. Cut
+    it later and the segment would lose the picture along with the count.
+
+    MONEY AND MEASURES KEEP THEIR SLOTS (is_bare_count) — there the number IS
+    the picture.
+
+    Nothing left? Say so, the same way drop_attribute_kinds() does: a
+    segment whose only content was a count is a segment with nothing to film,
+    and the mercy rule should hold the picture rather than leave it blank.
+    """
+    doc, kept = ctx.doc, []
+    for c in candidates:
+        if c.kind == KIND_NUMBER and is_bare_count(doc, c.start, c.end):
+            c.dropped_by = "count-without-thing"
+        else:
+            kept.append(c)
+    if candidates and not kept:
+        ctx.attributes_only = True
+    return kept
+
+
+def drop_negated(candidates: list[Candidate],
+                 ctx: Context) -> list[Candidate]:
+    """A thing the segment says is NOT there is not a thing to film.
+    e.g. "NO ships sailed"        -> no picture of ships
+         "a valley WITHOUT water" -> no picture of water
+
+    The same fact 7a drops off a variant and an action, one layer up: the
+    absence of something cannot be photographed, and photographing it anyway
+    puts exactly the wrong thing on screen.
+    """
+    doc, kept = ctx.doc, []
+    for c in candidates:
+        if c.kind in {KIND_THING, KIND_NAME} and is_negated(doc[c.start:c.end].root):
+            c.dropped_by = "negated"
+        else:
+            kept.append(c)
+    return kept
+
+
 # =============================================================================
 # SECTION 7 — STEPS 6 TO 10: TIDY, SPLIT, DEDUPE, ORDER, FALLBACK
 # =============================================================================
+
+
+def _trim_edges(doc, start: int, end: int) -> tuple[int, int]:
+    """The edges NO kind of candidate ever wants, cut off every one of them.
+
+        LEADING DETERMINER    DET tagged `det`
+              "the Banda Islands" --> "Banda Islands"
+              "the 1600s"         --> "1600s"
+              "a decade"          --> "decade"
+        LEADING APPROXIMATOR  STL.APPROXIMATOR_WORDS
+              "about two dollars" --> "two dollars"
+              "about $2 million"  --> "$2 million"
+              "over 900 ships"    --> "900 ships"
+        PUNCTUATION at either end.
+
+    Both are CLOSED GRAMMATICAL CLASSES: English has about a dozen
+    determiners and a dozen hedges, and has not gained one in a century. So
+    reading STL.APPROXIMATOR_WORDS is closer to reading a tag than to writing
+    a lexicon — which is why this is allowed to name words at all.
+
+    WHY IT MUST RUN ON NAMES, NUMBERS AND DATES TOO — the kinds this function
+    used to wave through as "already exactly the thing you would search".
+    Measured: they are not, because spaCy's ENTITY spans swallow the edges.
+        "about two dollars"  is one MONEY entity, hedge included
+        "the Banda Islands"  is one LOC entity, article included
+
+    Only the SPAN shrinks. The template is built by replacing a slot's
+    characters, so the trimmed words stay in the line the viewer reads:
+        "the Banda Islands."  -->  "the [1]."  +  search term "Banda Islands"
+    The viewer still hears "the Banda Islands"; only what we go looking for
+    changes. (A stock search for "Hague" still finds the Hague, so "The
+    Hague" losing its article is accepted rather than excepted — an exception
+    list would be a lexicon.)
+    """
+    while start < end:
+        tok = doc[start]
+        if (tok.is_punct
+                or (tok.pos_ == "DET" and tok.dep_ == "det")
+                or tok.lower_ in STL.APPROXIMATOR_WORDS):
+            start += 1
+            continue
+        break
+    while end > start and doc[end - 1].is_punct:
+        end -= 1
+    return start, end
+
+
+def _hyphenated_to_next(doc, tok) -> bool:
+    """Is this token the first half of a hyphenated word? "modern-day" -> True
+    for "modern". Glued (no trailing whitespace) AND followed by a hyphen —
+    "tiny," is glued to its comma too, and that is a different thing."""
+    nxt = tok.i + 1
+    return (tok.whitespace_ == "" and nxt < len(doc)
+            and doc[nxt].text in {"-", "\u2013", "\u2014"})
+
+
+def _trim_leading_descriptions(doc, start: int, end: int,
+                               cand: Candidate) -> int:
+    """Take the adjectives that only DESCRIBE off the front of the name, and
+    hand them to the candidate's `trimmed_description` instead of binning
+    them. Returns the new start.
+
+        "A tiny, incredibly remote volcanic archipelago"
+             name                 "volcanic archipelago"
+             trimmed_description  ["tiny", "incredibly remote"]
+
+    WHAT STAYS
+        a COMPOUND NOUN            "kitchen cupboard", "whale skulls"
+                                   two words, one thing — never touched here,
+                                   because this only walks over ADJ tokens
+        a KIND-FORMING ADJECTIVE   is_kind_forming_adjective(), while
+                                   KEEP_KIND_FORMING_ADJECTIVES is on. It
+                                   names a subtype, so it is part of what the
+                                   thing IS, and the walk stops at it.
+
+    WHAT MOVES
+        every other amod — but only if is_visual_quality() agrees it is worth
+        describing anything with. THAT GATE IS THE POINT: step 5 refuses
+        "contested" a slot, and without asking the same question here this
+        step would hand it straight back as a variant.
+
+    Adverbs ride with their adjective ("incredibly remote"), so the variant
+    reads the way the script does. `pending` is what makes that safe in the
+    other direction: an adverb read before an adjective that turns out to
+    STAY has to be given back, or "extremely volcanic archipelago" would lose
+    its "extremely".
+
+    A HYPHENATED WORD IS ONE WORD. spaCy splits "modern-day" into three
+    tokens and calls "modern" an amod, but trimming it leaves "day
+    Indonesia", which is not a thing. A token glued to a following hyphen is
+    half of one word, so the walk stops there.
+
+    AND A NOUN USED ATTRIBUTIVELY IS STILL A NOUN. spaCy calls "whale" an ADJ
+    in "whale skeletons" and "kitchen" an ADJ in "kitchen cupboard" often
+    enough that the dep label alone would take the front off both. WordNet
+    settles it without a list: measured, "whale", "kitchen", "spice",
+    "glass", "police", "sports" have ZERO adjective senses — they are nouns
+    doing an adjective's job, which is a compound — while every real
+    adjective in the five scripts has at least one. So an ADJ WordNet has
+    never heard of as an adjective stays in the name.
+    (Only ADJ is tested this way. A participle arrives tagged VERB/VBN —
+    "little WRINKLED seed" — and is decided by the verb underneath it.)
+    """
+    pending = None            # first adverb of a run we have not decided yet
+    while start < end:
+        tok = doc[start]
+        # nothing left after it to describe? then it IS the candidate — a
+        # bare KIND_QUALITY adjective, "The yellow and". Trimming it would
+        # leave an empty span, and drop it without anyone recording why.
+        if tok.i + 1 >= end:
+            break
+        if tok.is_punct:
+            start, pending = start + 1, None
+            continue
+        # an adverb modifying a LATER word in the phrase rides with it
+        if tok.dep_ == "advmod" and start < tok.head.i < end:
+            pending = start if pending is None else pending
+            start += 1
+            continue
+        # A PARTICIPLE COUNTS. "little wrinkled seed" has "wrinkled" tagged
+        # VERB/VBN, not ADJ, and it is still describing the seed.
+        if (tok.dep_ != "amod"
+                or tok.pos_ not in {"ADJ", "VERB"}
+                or _hyphenated_to_next(doc, tok)
+                or (tok.pos_ == "ADJ" and not _supersenses(tok.lower_,
+                                                           ADJ_SENSE_WINDOW,
+                                                           pos="a"))
+                or (KEEP_KIND_FORMING_ADJECTIVES
+                    and is_kind_forming_adjective(tok))):
+            return start if pending is None else pending
+        if is_visual_quality(doc, tok) and not is_negated(tok):
+            cand.trimmed_description.append(_adjective_phrase(doc, tok))
+        start, pending = tok.i + 1, None
+    return start
 
 
 def trim_to_searchable_core(candidates: list[Candidate],
@@ -985,31 +1831,50 @@ def trim_to_searchable_core(candidates: list[Candidate],
     """Cut each candidate down to what you would type into a search box.
     e.g. "a jar of nutmeg sat on the shelf" --> "jar of nutmeg"
          "several rusted anchors"           --> "rusted anchors"
+         "about two dollars"                --> "two dollars"
 
-    From the front: determiners and weak/quantifier adjectives.
-    From the back:  punctuation and dangling prepositions.
-    Strong adjectives, compounds and nummods STAY — they are what the picture
-    looks like.  Still too long? Keep the head plus its amod/compound/nummod
-    children, which is what abstract_term_resolver.mention_name() does too.
+    Every candidate gets its EDGES trimmed (_trim_edges: articles, hedges,
+    punctuation). Names, numbers, dates and sounds get nothing else done to
+    them — inside those edges they really are the thing you would search for.
+
+    The rest also lose, from the front: weak/quantifier adjectives, and then
+    the DESCRIBING adjectives (_trim_leading_descriptions — the step that
+    separates what the thing IS from how it LOOKS); from the back: dangling
+    prepositions.
+    Compounds stay — "kitchen cupboard" is two words for one thing. So do
+    kind-forming adjectives, while KEEP_KIND_FORMING_ADJECTIVES says so.
+    A NUMMOD goes, because a count is the thing's `amount` and fill_amounts()
+    reads it off the parse: "900 ships" --> "ships", amount 900. (A money or
+    measure figure is a KIND_NUMBER and never reaches this branch, so "two
+    dollars" keeps its number, which is the whole picture there.)
+    Still too long? Keep the head plus its amod/compound/nummod children,
+    which is what abstract_term_resolver.mention_name() does too.
     """
     doc, out = ctx.doc, []
     for c in candidates:
-        if c.kind in {KIND_NAME, KIND_NUMBER, KIND_DATE, KIND_SOUND}:
-            out.append(c)        # already exactly the thing you would search
-            continue
-        start, end = c.start, c.end
-        while start < end and (
-                doc[start].pos_ in {"DET", "PUNCT", "PART", "CCONJ"}
-                or (doc[start].pos_ == "ADJ"
-                    and doc[start].lemma_.lower() in STL.WEAK_ADJ_LEMMAS)):
-            start += 1
-        while end > start and (doc[end - 1].is_punct
-                               or doc[end - 1].pos_ in {"ADP", "PART", "CCONJ"}):
-            end -= 1
+        start, end = _trim_edges(doc, c.start, c.end)
+        # Inside its edges, one of these IS the search term. Nothing more.
+        already_searchable = c.kind in {KIND_NAME, KIND_NUMBER,
+                                        KIND_DATE, KIND_SOUND}
+        if not already_searchable:
+            while start < end and (
+                    doc[start].pos_ in {"DET", "PUNCT", "PART", "CCONJ"}
+                    or (doc[start].pos_ == "ADJ"
+                        and doc[start].lemma_.lower() in STL.WEAK_ADJ_LEMMAS)
+                    # a count is the thing's `amount`, not part of its name:
+                    # "900 ships" is a picture of ships, 900 of them.
+                    or (doc[start].pos_ == "NUM"
+                        and doc[start].dep_ == "nummod")):
+                start += 1
+            start = _trim_leading_descriptions(doc, start, end, c)
+            while end > start and (doc[end - 1].is_punct
+                                   or doc[end - 1].pos_ in {"ADP", "PART",
+                                                            "CCONJ"}):
+                end -= 1
         if start >= end:
             c.dropped_by = "trimmed-to-nothing"
             continue
-        if end - start > MAX_PHRASE_TOKENS:
+        if not already_searchable and end - start > MAX_PHRASE_TOKENS:
             root = doc[start:end].root
             keep = {root.i} | {ch.i for ch in root.children
                                if ch.dep_ in {"amod", "compound", "nummod"}
@@ -1050,13 +1915,19 @@ def split_coordinated_candidates(candidates: list[Candidate],
             cut = edge
         pieces.append((cut, c.end))
         for a, b in pieces:
+            first = (a == c.start)
             while a < b and doc[a].pos_ in {"CCONJ", "DET", "PUNCT"}:
                 a += 1
             while b > a and doc[b - 1].is_punct:
                 b -= 1
             if a < b:
                 out.append(Candidate(a, b, c.kind, c.detector + "+conj",
-                                     confidence=c.confidence * 0.95))
+                                     confidence=c.confidence * 0.95,
+                                     # the adjectives were trimmed off the
+                                     # FRONT, so they describe the first piece
+                                     trimmed_description=(
+                                         list(c.trimmed_description)
+                                         if first else [])))
     return out
 
 
@@ -1092,6 +1963,45 @@ def resolve_overlaps(candidates: list[Candidate],
     return kept
 
 
+def drop_attribute_kinds(candidates: list[Candidate],
+                         ctx: Context) -> list[Candidate]:
+    """A SLOT IS A THING TO FILM. Everything else the segment says about that
+    thing is an ATTRIBUTE OF a slot, and the Visualisable already has a field
+    for each one:
+
+        a verb        -->  the thing's `action`     "open", "grew"
+        an adjective  -->  the thing's `variant`    "tiny, remote"
+
+    So KIND_ACTION and KIND_QUALITY never earn a slot of their own. They are
+    still harvested (find_action_candidates / find_quality_candidates are the
+    definition of a strong verb and a strong adjective, which fill_actions()
+    and _variant_descriptions() both lean on) and they still get absorbed by
+    the noun phrase around them in resolve_overlaps(). This runs AFTER that,
+    so all it cuts is the ones that survived alone.
+
+    e.g. "If you open your kitchen cupboard"
+             before   [1] the viewer  [2] open  [3] the viewer's cupboard
+             after    [1] the viewer  [2] kitchen cupboard   — both with
+                      action="open", which fill_actions() already put there.
+
+    Nothing is deleted silently: dropped_by says "not-a-slot:action" /
+    "not-a-slot:quality", and entry.dropped still shows the working.
+
+    SETS ctx.attributes_only when the cut emptied the segment. A segment that
+    says only what is HAPPENING, with nothing to film, is exactly the case
+    KIND_FALLBACK was invented for — see apply_length_fallback().
+    """
+    kept = []
+    for c in candidates:
+        if c.kind in SLOT_KINDS:
+            kept.append(c)
+        else:
+            c.dropped_by = f"not-a-slot:{c.kind}"
+    if candidates and not kept:
+        ctx.attributes_only = True
+    return kept
+
+
 def order_candidates(candidates: list[Candidate]) -> list[Candidate]:
     """Sort left to right. THIS is what fixes the slot numbers: afterwards
     index 0 is [1], index 1 is [2], and template matches visualisables."""
@@ -1110,6 +2020,15 @@ def apply_length_fallback(candidates: list[Candidate],
     NO fallback when the segment is nothing but a blocked phrase — e.g. "and
     the rest is history", where the grammar glue around the idiom does not
     rescue it.
+
+    THE LENGTH IS WAIVED when drop_attribute_kinds() is what emptied the
+    segment (ctx.attributes_only). "swerved after having" and "lifted out"
+    have nothing in them BUT a verb, and they are too short for the mercy
+    rule — but a segment that says only what is happening, with nothing to
+    film, is precisely the "hold the picture you already have" case this kind
+    exists for. Waiving the length here is the right fix; lowering
+    LENGTH_FALLBACK_MIN_TOKENS would let every other short segment through
+    too.
     """
     if candidates:
         return candidates
@@ -1123,7 +2042,7 @@ def apply_length_fallback(candidates: list[Candidate],
     # shared_text_logic's own test, so the two can't drift apart
     if not STL.has_visualisable_content(ctx.doc, lo, hi):
         return candidates
-    if len(content) < LENGTH_FALLBACK_MIN_TOKENS:
+    if len(content) < LENGTH_FALLBACK_MIN_TOKENS and not ctx.attributes_only:
         return candidates
     return [Candidate(lo, hi, KIND_FALLBACK, "fallback:length",
                       confidence=0.2)]
@@ -1160,12 +2079,20 @@ def classify_settings(candidates: list[Candidate],
     ON the shelf", so instead the document pass takes the STRONGEST signal in
     a sentence, and a real place always beats it.
 
+    A COMPARISON FRAME IS NEVER A SETTING. "It was worth more THAN its weight
+    in gold" hangs "gold" off a locative preposition like any other place —
+    and there is no gold in this video, so everything else in the sentence
+    ended up standing in some. A thing named only to measure another thing
+    against is not where anything is; see _in_comparison_frame().
+
     Does not remove anything — a setting is still a visualisable with a slot.
     """
     knowledge, doc = kb(), ctx.doc
     spatial_preps = STL.SPATIAL_LOCATIVE_PREPS | STL.SPATIAL_DIRECTIONAL_PREPS
     for c in candidates:
         if c.kind not in {KIND_THING, KIND_NAME}:
+            continue
+        if _in_comparison_frame(doc, c.start, c.end):
             continue
         span = doc[c.start:c.end]
         root = span.root
@@ -1192,9 +2119,43 @@ def classify_settings(candidates: list[Candidate],
     return candidates
 
 
+def flag_hypotheticals(candidates: list[Candidate],
+                       ctx: Context) -> list[Candidate]:
+    """Mark the candidates the segment only IMAGINED. Removes nothing —
+    see is_hypothetical() for why flagging is the whole job."""
+    for c in candidates:
+        c.hypothetical = is_hypothetical(ctx.doc, c.start, c.end)
+    return candidates
+
+
 # =============================================================================
 # SECTION 9 — STEP 11b: BUILDING THE ANSWER
 # =============================================================================
+
+
+def _in_comparison_frame(doc, start: int, end: int) -> bool:
+    """Is this candidate inside a "more X THAN Y" measuring stick?
+
+    "It was worth more than its weight in gold." The gold is not a place, and
+    nothing in the video is standing in it — it is the ruler being held up
+    against the nutmeg. Left alone, the locative "in" made it the sentence's
+    setting and every other slot inherited it, which is the bug this fixes.
+
+    THE TEST, both off the parse and neither of them a word this file chose:
+        an ancestor in STL.COMPARATIVE_MARKERS  ("than", "more", "less")
+        an ancestor tagged JJR / RBR            (any comparative at all)
+    Ancestors, not the head: spaCy hangs "than its weight in gold" off "more",
+    which hangs off "worth" — so the walk has to climb.
+    """
+    node = doc[start:end].root
+    for _ in range(COMPARISON_FRAME_DEPTH):
+        head = node.head
+        if head.i == node.i:
+            return False
+        if head.lower_ in STL.COMPARATIVE_MARKERS or head.tag_ in {"JJR", "RBR"}:
+            return True
+        node = head
+    return False
 
 
 def build_entry(ctx: Context,
@@ -1219,7 +2180,8 @@ def build_entry(ctx: Context,
             template = template[:a] + f"[{n}]" + template[b:]
 
     return VisualisablesEntry(line=ctx.line, template=template,
-                              visualisables=vis)
+                              visualisables=vis,
+                              time_descriptions=list(ctx.time_descriptions))
 
 
 def _candidate_to_visualisable(cand: Candidate, ctx: Context) -> Visualisable:
@@ -1236,8 +2198,10 @@ def _candidate_to_visualisable(cand: Candidate, ctx: Context) -> Visualisable:
         concreteness=cand.concreteness,
         is_setting=cand.is_setting,
         setting_score=cand.setting_score,
+        hypothetical=cand.hypothetical,
         confidence=cand.confidence,
         token_span=(cand.start, cand.end),
+        trimmed_description=list(cand.trimmed_description),
     )
 
 
@@ -1298,12 +2262,14 @@ def resolve_visualisable_details(entries: list[VisualisablesEntry],
 
     THE STEPS
         1  action    what each thing is doing, from the dependency parse
-        2  identity  collapse mentions, so one thing has one history
-        3  coref     turn "it"/"they" into the thing they point at
-        4  location  the line's setting, carried forward
-        5  variant   what each thing looks like by now, described
+        2  amount    how many of it are on screen
+        3  identity  collapse mentions, so one thing has one history
+        4  coref     turn "it"/"they" into the thing they point at
+        5  location  the line's setting, carried forward
+        6  variant   what each thing looks like by now, described
     """
     entries = fill_actions(entries, doc)
+    entries = fill_amounts(entries, doc)
     entries = assign_identities(entries)
     entries = resolve_references(entries, doc, coref, abstract_terms)
     entries = fill_locations(entries, doc)
@@ -1321,8 +2287,10 @@ def fill_actions(entries: list[VisualisablesEntry], doc) -> list[VisualisablesEn
          "The bee flew away"              --> bee.action     = "flew away"
 
     A weak verb never becomes an action: the picture in "the cat WAS on the
-    mat" is the mat, not the being. A KIND_ACTION slot is skipped — it does
-    not HAVE an action, it IS one.
+    mat" is the mat, not the being. Nor does a verb whose senses are all
+    non-physical (is_filmable_action), nor a NEGATED one — "the cat didn't
+    like it" is not a shot of liking, and inverting it is not a shot either.
+    A KIND_ACTION slot is skipped — it does not HAVE an action, it IS one.
     """
     for entry in entries:
         for vis in entry.visualisables.values():
@@ -1331,13 +2299,71 @@ def fill_actions(entries: list[VisualisablesEntry], doc) -> list[VisualisablesEn
             if vis.kind in {KIND_ACTION, KIND_FALLBACK}:
                 continue
             verb = _governing_verb(doc, *vis.token_span)
-            if verb is None:
+            if verb is None or not is_filmable_action(verb):
                 continue
-            if (verb.lemma_.lower() in STL.WEAK_VERB_LEMMAS
-                    or verb.text.lower() in STL.WEAK_VERB_FORMS):
+            if is_negated(verb):
+                # "The cat didn't like it" — the thing is not doing this. An
+                # action that did not happen is not a shot; hold the picture.
                 continue
             vis.action = _verb_phrase(doc, verb)
     return entries
+
+
+# -----------------------------------------------------------------------------
+# step 2 — amount
+# -----------------------------------------------------------------------------
+
+def fill_amounts(entries: list[VisualisablesEntry], doc) -> list[VisualisablesEntry]:
+    """`amount` = how many of this thing are on screen. Off the parse; the
+    default is 1, and it is only ever raised by a segment that COUNTED.
+
+      a) A NUMERAL MODIFYING THE THING — dep_ == "nummod".
+             "three ships"  -->  ships, amount 3
+             "900 ships"    -->  ships, amount 900
+         The numeral is no longer part of the name (trim_to_searchable_core
+         cuts it), so this is where it goes instead of being lost.
+
+      b) A PARTITIVE — NUM -> "of" -> the thing.
+             "One of them landed"  -->  the slot is "them" (-> bees), amount 1
+         The head noun of a partitive is not the picture; the object of "of"
+         is. STEP 7d generalises this to the non-numeral containers ("a
+         handful of spices"), which is the same rule again.
+
+      c) NOTHING SAID  -->  1.  "a tractor" and "the tractor" are both one
+         tractor, and a bare plural ("the bees") stays 1 too — see the
+         field's own note for why that is deliberate rather than forgotten.
+
+    NUMBERS AND DATES ARE SKIPPED. A money or measure slot is ONE picture of
+    a figure: "two dollars" is a single shot of two dollars, not two shots.
+    """
+    for entry in entries:
+        for vis in entry.visualisables.values():
+            if vis.token_span is None or vis.kind in {KIND_NUMBER, KIND_DATE}:
+                continue
+            vis.amount = _amount_of(doc, vis)
+    return entries
+
+
+def _amount_of(doc, vis) -> int:
+    """How many of this thing the segment says there are. 1 unless it counted."""
+    root = doc[vis.token_span[0]:vis.token_span[1]].root
+
+    # a) "three ships" — the numeral hangs off the thing
+    for child in root.children:
+        if child.dep_ == "nummod":
+            count = _as_count(child)
+            if count is not None:
+                return count
+
+    # b) "One of them" — the numeral is the HEAD and the thing is the object
+    prep = root.head
+    if (root.dep_ == "pobj" and prep.lower_ == "of"
+            and (prep.head.pos_ == "NUM" or prep.head.like_num)):
+        count = _as_count(prep.head)
+        if count is not None:
+            return count
+
+    return 1
 
 
 def _governing_verb(doc, start: int, end: int):
@@ -1368,7 +2394,7 @@ def _verb_phrase(doc, verb) -> str:
 
 
 # -----------------------------------------------------------------------------
-# step 2 — identity
+# step 3 — identity
 # -----------------------------------------------------------------------------
 
 def assign_identities(entries: list[VisualisablesEntry]) -> list[VisualisablesEntry]:
@@ -1419,7 +2445,7 @@ def _resolver():
 
 
 # -----------------------------------------------------------------------------
-# step 3 — coreference
+# step 4 — coreference
 # -----------------------------------------------------------------------------
 
 def resolve_references(entries: list[VisualisablesEntry], doc,
@@ -1554,6 +2580,21 @@ def _apply_possessives(entries: list[VisualisablesEntry], doc,
     It also records the whole on the part (vis.owner), which is the missing
     half of the KNOWN MISS in _variant_descriptions(): once we know whose
     windscreen it is, fill_variants() can give the TRACTOR a broken one.
+
+    AN OWNER YOU CANNOT FILM IS RECORDED, NEVER SPLICED.
+        "the tractor's windscreen"  is a good search term — someone can film
+                                    a tractor, so the whole names the part
+        "the viewer's cupboard"     is not — nobody can film the viewer, and
+                                    no stock library has the shot
+    So when the owner is a deictic ("you", "I", "we") the possessive is
+    dropped from the NAME and kept as the FACT:
+        "your kitchen cupboard"  -->  visualisable "kitchen cupboard"
+                                      owner        "the viewer"
+    Both halves are still true, and that pair is what tells the renderer to
+    show a cupboard rather than a person. KIND_DEICTIC already means "a
+    person, but not one there is any footage of"; this is that sentence
+    enforced one layer down. Only the name changes — the slot still covers
+    the same characters, so the viewer still reads "your kitchen cupboard".
     """
     threshold = _abstract_threshold()
     for entry in entries:
@@ -1570,11 +2611,40 @@ def _apply_possessives(entries: list[VisualisablesEntry], doc,
                 continue
             before, after = doc[lo:poss.i].text, doc[poss.i + 1:hi].text
             owner = row["resolved"]
-            vis.visualisable = " ".join(
-                part for part in (before, _possessive_form(owner), after) if part)
+            if _is_unfilmable_owner(entries, row):
+                vis.visualisable = " ".join(p for p in (before, after) if p)
+                # the PLAIN label, not the possessive form: "the viewer",
+                # never "the viewer's".
+                vis.owner = owner
+            else:
+                vis.visualisable = " ".join(
+                    part for part in (before, _possessive_form(owner), after)
+                    if part)
+                vis.owner = _owner_identity(entries, owner)
             vis.identity = vis.visualisable.lower()
-            vis.owner = _owner_identity(entries, owner)
             vis.detector += "+abstract:poss"
+
+
+def _is_unfilmable_owner(entries: list[VisualisablesEntry], row) -> bool:
+    """Would we ever go and fetch footage of this owner? False = no.
+
+    Two ways of being nobody, and they are the same fact seen from either
+    end of the pipeline:
+        the abstract-terms row came back source="deictic"   ("you", "I", "we")
+        that same name already took a slot as KIND_DEICTIC somewhere
+
+    The second is what generalises it past the deictic sources: whatever
+    route a name took to KIND_DEICTIC, that kind is the file's own statement
+    that there is no footage of it.
+    """
+    if row.get("source") == "deictic":
+        return True
+    want = (row.get("resolved") or "").lower()
+    if not want:
+        return False
+    return any(v.kind == KIND_DEICTIC
+               and (v.visualisable or "").lower() == want
+               for entry in entries for v in entry.visualisables.values())
 
 
 def _abstract_row(abstract_terms: dict, token):
@@ -1681,7 +2751,7 @@ def _recency_referent(entries, entry_index: int, token):
 
 
 # -----------------------------------------------------------------------------
-# step 4 — location
+# step 5 — location
 # -----------------------------------------------------------------------------
 
 def fill_locations(entries: list[VisualisablesEntry], doc) -> list[VisualisablesEntry]:
@@ -1735,7 +2805,7 @@ def fill_locations(entries: list[VisualisablesEntry], doc) -> list[Visualisables
 
 
 # -----------------------------------------------------------------------------
-# step 5 — variant
+# step 6 — variant
 # -----------------------------------------------------------------------------
 
 def fill_variants(entries: list[VisualisablesEntry], doc) -> list[VisualisablesEntry]:
@@ -1759,15 +2829,34 @@ def fill_variants(entries: list[VisualisablesEntry], doc) -> list[VisualisablesE
 
     Stamped with the state AS OF that segment, this segment's own changes
     included — the shot shows the result.
+
+    FOUR SOURCES, left to right:
+      0  the describing adjectives trim_to_searchable_core() took off the
+         front of the NAME (vis.trimmed_description) — "tiny", "incredibly
+         remote". They were always part of this segment's description of the
+         thing; the only change is that they are no longer mistaken for part
+         of what it IS.
+      1-3  _variant_descriptions(), which reads them off the parse.
     """
     history: dict[str, list[str]] = {}
     for entry in entries:
+        # "at night" — how the PLACE looks in this segment (STEP 7h). It goes
+        # on the setting's history before this segment's own slots are
+        # stamped, so a setting named here carries it straight away.
+        for description in entry.time_descriptions:
+            target = _setting_identity(entries, entry)
+            if not target:
+                continue
+            bucket = history.setdefault(target, [])
+            if description not in bucket:
+                bucket.append(description)
         for _n, vis in sorted(entry.visualisables.items()):
             if not vis.identity or vis.kind in {KIND_ACTION, KIND_QUALITY,
                                                 KIND_FALLBACK}:
                 continue
             so_far = history.setdefault(vis.identity, [])
-            for description in _variant_descriptions(doc, vis):
+            for description in (list(vis.trimmed_description)
+                                + _variant_descriptions(doc, vis)):
                 if description not in so_far:
                     so_far.append(description)
                 # ...and a PART's change describes its WHOLE: "Its windscreen
@@ -1792,6 +2881,9 @@ def _variant_descriptions(doc, vis) -> list[str]:
               "the sky turned red"           --> "red"
          An adjective INSIDE the phrase is already part of `visualisable`
          ("yellow paint"), so it is not repeated here.
+         Gated by is_visual_quality(), the SAME test find_quality_candidates()
+         uses — otherwise a word refused a slot for not being a picture
+         ("It was WORTH more than...") walks straight back in as a variant.
 
       b) IT IS THE PATIENT OF A CHANGE-OF-STATE VERB, written as the PAST
          PARTICIPLE, because a variant is a description and not an event.
@@ -1833,11 +2925,15 @@ def _variant_descriptions(doc, vis) -> list[str]:
     if root.dep_ in {"nsubj", "nsubjpass"}:
         for sibling in root.head.children:
             if (sibling.dep_ in {"acomp", "oprd"} and sibling.pos_ == "ADJ"
-                    and sibling.lemma_.lower() not in STL.WEAK_ADJ_LEMMAS):
+                    and is_visual_quality(doc, sibling)
+                    and not is_negated(sibling)):
                 out.append(_adjective_phrase(doc, sibling))
 
     verb = _governing_verb(doc, *vis.token_span)
-    if verb is None:
+    if verb is None or is_negated(verb):
+        # "It never rusted", "the paint did not splatter" — the absence of a
+        # change is not a picture of anything, so neither (b) nor (c) has
+        # anything to say. Drop it rather than invert it.
         return out
 
     # (b) patient of a change-of-state verb
@@ -1858,6 +2954,20 @@ def _variant_descriptions(doc, vis) -> list[str]:
                                   if g.dep_ in {"amod", "compound"}])
             out.append(doc[lo:child.i + 1].text)
     return out
+
+
+def _setting_identity(entries: list[VisualisablesEntry],
+                      entry: VisualisablesEntry) -> str | None:
+    """The identity of whatever this segment is standing in — its own setting
+    slot if it has one, otherwise the location fill_locations() carried in.
+    None when nothing has named a place yet, in which case a time of day has
+    nowhere to go and is simply not recorded."""
+    own = next((v for v in entry.visualisables.values() if v.is_setting), None)
+    if own is not None and own.identity:
+        return own.identity
+    location = next((v.location for v in entry.visualisables.values()
+                     if v.location), None)
+    return _owner_identity(entries, location) if location else None
 
 
 def _head_word(doc, vis) -> str:

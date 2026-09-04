@@ -99,11 +99,14 @@ def get_visualisable_data(sentence_splitter_output):
         {"In [1],": {"1": {"visualisable": "Egypt", "variant": None,
                            "action": None, "location": None, "kind": "name",
                            "identity": "egypt", "is_setting": True,
-                           "confidence": 1.0}}},
-        {"[1] was once [2]": {"1": {"visualisable": "valley",     # was "It"
-                                    "kind": "reference", ...},
-                              "2": {"visualisable": "covered", ...}}},
+                           "amount": 1, "confidence": 1.0}}},
+        {"[1] was once covered": {"1": {"visualisable": "valley",  # was "It"
+                                        "kind": "reference",
+                                        "action": "covered", ...}}},
      ]
+    NOTE only THINGS get slots. "covered" is a verb, so it is the valley's
+    `action`, not a slot of its own; an adjective is its `variant` the same
+    way. See _visualisables_extractor.SLOT_KINDS.
     """
     BUILT_VISUALISABLE_DATA=False
     if not BUILT_VISUALISABLE_DATA:
@@ -231,11 +234,12 @@ def _build_visualisable_data(line_segments):
         #      e.g. The tractor and the cat, Molly, went down the lane. --> ["tractor", "cat", "lane"] 
         #           They passed a bee                                   --> ["tractor", "cat", "lane", "bee"] 
         line_to_found_visualisables = get_line_segment_visualisables(  line_segment, previous_line_segments, next_line_segment, abstract_terms=abstract_terms)
-        # {"[1] was once [2]": {"1": {"visualisable": "valley", "variant": None,
+        # {"[1] was once covered": {"1": {"visualisable": "valley",
+        #                             "variant": None,
         #                             "action": "covered", "location": "Egypt",
         #                             "kind": "reference", "identity": "valley",
-        #                             "is_setting": False, "confidence": 0.26},
-        #                       "2": {"visualisable": "covered", ...}}}
+        #                             "is_setting": False, "amount": 1,
+        #                             "confidence": 0.26}}}
 
         # 2) Resolve all abstract terms
         # for each unknown, determine which visualisable it points to

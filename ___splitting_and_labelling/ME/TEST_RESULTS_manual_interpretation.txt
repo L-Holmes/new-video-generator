@@ -1,0 +1,1239 @@
+===============================================================================
+TEST RESULTS -- visualisables + abstract term resolution
+===============================================================================
+run  2026-09-04 10:46
+by   TEST_MANUAL_INTERPRETATION.py
+on   tractor, spices, clockmaker, bees, whales
+
+READ THIS FIRST
+  Nothing below is pass or fail -- there is no expected output to
+  compare against yet. Every example starts with a LOOK FOR list
+  saying what it was written to exercise; the sections after it
+  are what actually happened. The judging is yours.
+
+  Each example has six parts:
+    THE SCRIPT              what went in
+    LINE SEGMENTS           how the splitter cut it -- one shot each
+    ABSTRACT TERMS          every pronoun and what it resolved to
+    NOT COVERED             pronoun-ish words nothing was asked about
+    WHAT EACH SEGMENT GOT   the slots, which is the real output
+    SUMMARY                 the counts
+
+===============================================================================
+ALL EXAMPLES AT A GLANCE
+===============================================================================
+
+  EXAMPLE      SEGS   PRONOUNS  USED   HELD   NONE   DEICTIC  OWNED  TIME
+  tractor      15     8         8      0      0      0        2      29s
+  spices       15     6         6      0      0      3        1      26s
+  clockmaker   22     12        12     0      0      0        1      27s
+  bees         14     16        16     0      0      6        2      27s
+  whales       23     2         2      0      0      0        0      27s
+
+===============================================================================
+EXAMPLE: tractor
+===============================================================================
+
+  WHY THIS ONE IS HERE: The narrative myownstuff.py's own docstring is written
+  around. It is the example every design decision in this folder was argued
+  over, so it is the one to run first.
+
+LOOK FOR
+  1) "Its windscreen broke." -- the slot should read "the tractor's
+     windscreen", not "Its windscreen", and carry owner=tractor.
+  2) That owner is the half that was missing from the KNOWN MISS in
+     _variant_descriptions(): a part's damage can only reach the whole once we
+     know whose part it is. Note the script stops on the break, so no later
+     segment mentions the tractor for the broken windscreen to show up in --
+     the OWNER column is where to check it landed.
+  3) "The cat didn't like it." -- "it" is the TRACTOR (or its revving). It is
+     NOT "revved": a verb is not a thing to film. Read it in the ABSTRACT TERMS
+     map now rather than the slot table -- "revved" no longer takes a slot
+     anywhere, so the only place this can still go wrong is what the pronoun
+     resolved to.
+  4) "So she poured yellow paint onto the tractor." -- "she" is the cat, Molly.
+     Then the tractor's variant should pick the paint up, and keep it for the
+     rest of the script.
+  5) "The yellow and black guy flew away." -- the bee. Nothing resolves this
+     yet (it is the wishy-washy-terms BONUS, not built), so expect to see "guy"
+     or nothing. Here to show what is still missing.
+
+-------------------------------------------------------------------------------
+THE SCRIPT
+-------------------------------------------------------------------------------
+  The tractor and the cat, Molly, went down the lane.
+  They passed a bee.
+  It revved really loud. The cat didn't like it.
+  So she poured yellow paint onto the tractor. It swished and swerved after
+    having the paint splatter its windscreen.
+  It then crashed into the lampost by accident.
+  The yellow and black guy flew away.
+  Its windscreen broke.
+
+-------------------------------------------------------------------------------
+SPLIT INTO 15 LINE SEGMENTS
+-------------------------------------------------------------------------------
+  (by sentence_splitter.split_text_into_sections -- one segment is
+   one shot on screen, so this is what has to be picture-able)
+
+    1  The tractor and
+    2  the cat,
+    3  Molly,
+    4  went down the lane.
+    5  They passed a bee.
+    6  It revved really loud.
+    7  The cat didn't like it.
+    8  So she poured yellow paint onto the tractor.
+    9  It swished and
+   10  swerved after having
+   11  the paint splatter its windscreen.
+   12  It then crashed into the lampost by accident.
+   13  The yellow and
+   14  black guy flew away.
+   15  Its windscreen broke.
+
+
+-------------------------------------------------------------------------------
+ABSTRACT TERMS -- every pronoun, and what the models voted for
+-------------------------------------------------------------------------------
+  Four coreference models read the whole script and vote; CONF is
+  the share of their weight behind this answer. Below 0.25 the answer
+  is NOT used -- the segment keeps its pronoun, which tells the
+  renderer to hold the picture it already has. A wrong picture is
+  worse than the last right one.
+
+  SOURCE  models  = the four voted        deictic = I/we/you
+          recency = last thing mentioned  none    = nobody knew
+
+  WHERE      SURFACE    RESOLVED                 CONF   SOURCE   USED?
+  52-56      They       Molly                    0.76   models   used   [Plur]
+             ...olly, went down the lane. [They] passed a bee. It revved r...
+  71-73      It         bee                      0.76   models   used   [Sing]
+             ... lane. They passed a bee. [It] revved really loud. The c...
+  114-116    it         bee                      0.25   models   used   [Sing]
+             ...loud. The cat didn't like [it]. So she poured yellow pai...
+  121-124    she        cat                      0.51   models   used   [Sing]
+             ...he cat didn't like it. So [she] poured yellow paint onto ...
+  163-165    It         tractor                  1.00   models   used   [Sing]
+             ...w paint onto the tractor. [It] swished and swerved after...
+  218-221    its        tractor                  1.00   models   used   [possessive, Sing]
+             ...having the paint splatter [its] windscreen. It then crash...
+  234-236    It         tractor                  1.00   models   used   [Sing]
+             ... splatter its windscreen. [It] then crashed into the lam...
+  316-319    Its        tractor                  0.75   models   used   [possessive, Sing]
+             ... and black guy flew away. [Its] windscreen broke.
+
+  models that answered: maverick-ontonotes, maverick-preco, lingmess, maverick-litbank
+
+
+-------------------------------------------------------------------------------
+PRONOUN-ISH WORDS THE MAP DOES NOT COVER
+-------------------------------------------------------------------------------
+  (none -- every pronoun in this script got a row above)
+
+
+-------------------------------------------------------------------------------
+WHAT EACH LINE SEGMENT GOT
+-------------------------------------------------------------------------------
+  The line is printed with the NAMES in the brackets instead of
+  the slot numbers, so a wrong answer reads as a wrong sentence.
+  A * on the slot number means it is the SETTING: the background
+  everything else stands on.
+
+  KIND    thing/name/number/date  = film it. These are the only
+                                    kinds that earn a slot: a verb
+                                    is the thing's ACTION and an
+                                    adjective its VARIANT, so
+                                    neither gets one of its own.
+          reference               = was a pronoun. Still reads as
+                                    one? nothing confident came
+                                    back -- hold the picture.
+          deictic                 = the narrator / the viewer
+          fallback                = no picture here at all
+  AMT     how many of it are on screen. 1 unless the segment
+          counted them ("900 ships" -> ships, 900). A money or
+          measure slot is ONE picture of a figure, so "two
+          dollars" is 1.
+  CONF    on a reference slot this is the models' vote. Still
+          reading as a pronoun at 0.00 means nobody answered; at
+          0.10 it was a recency guess, refused by the 0.25
+          threshold.
+  << hypothetical  the segment only imagined this -- an "if", a
+          simile, a modal. NOT a drop: these are often the most
+          visual lines in a script. What to do about it is the
+          renderer's call.
+  OWNER   the whole this thing is a part of, when a possessive
+          said so:  "Its windscreen"  -->  owner=tractor
+  A ~ on the end of a cell means it was cut to fit the column.
+
+  SLOT  VISUALISABLE             KIND       CONF  AMT  VARIANT            ACTION        LOCATION           OWNER
+
+    1  The tractor and
+       The [tractor] and
+  [1]  tractor                  thing      0.90  1    -                  -             -                  -
+
+    2  the cat,
+       the [cat],
+  [1]  cat                      thing      0.90  1    -                  -             -                  -
+
+    3  Molly,
+       [Molly],
+  [1]  Molly                    name       1.00  1    -                  -             lane               -
+
+    4  went down the lane.
+       went down the [lane].
+  [1]* lane                     thing      0.90  1    -                  -             -                  -
+
+    5  They passed a bee.
+       [Molly] passed a [bee].
+  [1]  Molly                    reference  0.76  1    -                  passed        lane               -
+  [2]  bee                      thing      0.90  1    -                  passed        lane               -
+
+    6  It revved really loud.
+       [bee] revved really loud.
+  [1]  bee                      reference  0.76  1    -                  revved        lane               -
+
+    7  The cat didn't like it.
+       The [cat] didn't like [bee].
+  [1]  cat                      thing      0.90  1    -                  -             lane               -
+  [2]  bee                      reference  0.25  1    -                  -             lane               -
+
+    8  So she poured yellow paint onto the tractor.
+       So [cat] poured yellow [paint] onto the [tractor].
+  [1]  cat                      reference  0.51  1    -                  poured        tractor            -
+  [2]  paint                    thing      0.90  1    yellow             poured        tractor            -
+  [3]* tractor                  thing      0.90  1    yellow paint       poured        -                  -
+
+    9  It swished and
+       [tractor] swished and
+  [1]  tractor                  reference  1.00  1    yellow paint       swished       tractor            -
+
+   10  swerved after having
+       [swerved after having]
+  [1]  swerved after having     fallback   0.20  1    -                  -             tractor            -
+
+   11  the paint splatter its windscreen.
+       the [paint] splatter [tractor's windscreen].
+  [1]  paint                    thing      0.90  1    yellow             splatter      tractor            -
+  [2]  tractor's windscreen     thing      0.90  1    -                  splatter      tractor            tractor
+
+   12  It then crashed into the lampost by accident.
+       [tractor] then crashed into the [lampost] by [accident].
+  [1]  tractor                  reference  1.00  1    yellow paint       crashed       lampost            -
+  [2]* lampost                  thing      0.90  1    -                  crashed       -                  -
+  [3]  accident                 thing      0.90  1    -                  crashed       lampost            -
+
+   13  The yellow and
+       [The yellow and]
+  [1]  The yellow and           fallback   0.20  1    -                  -             lampost            -
+
+   14  black guy flew away.
+       [black guy flew away]
+  [1]  black guy flew away      fallback   0.20  1    -                  -             lampost            -
+
+   15  Its windscreen broke.
+       [tractor's windscreen] broke.
+  [1]  tractor's windscreen     thing      0.90  1    broken             broke         lampost            tractor
+
+
+-------------------------------------------------------------------------------
+SUMMARY
+-------------------------------------------------------------------------------
+  8 pronouns in the map
+    8 used -- the segment shows the thing, not the word
+    0 held back (confidence below 0.25) -- pronoun kept on purpose
+    0 nobody could answer
+    0 narrator / viewer
+    2 possessive ("its windscreen")
+  0 pronoun-ish words not in the map at all
+
+  15 line segments, 22 slots
+    6 slots came from a pronoun
+    0 of those still read as a pronoun
+    0 are the narrator or the viewer
+    2 know what they are part of (owner=)
+    0 segments got nothing to put on screen
+
+  took 29s
+
+===============================================================================
+EXAMPLE: spices
+===============================================================================
+
+  WHY THIS ONE IS HERE: A real script, in the voice these videos are actually
+  written in -- which means it talks TO the viewer. The narrator's 'you' is the
+  thing to watch.
+
+LOOK FOR
+  1) "your kitchen cupboard" -- should read "the viewer's kitchen cupboard".
+     "you" is nobody in the script; it is whoever is watching, so it must never
+     resolve to a noun from the text.
+  2) "It costs about two dollars." -- the jar of nutmeg.
+  3) "It was worth more than its weight in gold." -- BOTH the "It" and the
+     "its" are the nutmeg (the seed, by now, not the jar).
+  4) Nothing here should come out as a deictic except the "you"/"your".
+
+-------------------------------------------------------------------------------
+THE SCRIPT
+-------------------------------------------------------------------------------
+  If you open your kitchen cupboard right now, you probably have a jar of
+    nutmeg. It costs about two dollars. But in the 1600s, this little wrinkled
+    seed was the single most contested resource on the planet. It was worth
+    more than its weight in gold. Nutmeg only grew in one place on Earth: the
+    Banda Islands. A tiny, incredibly remote volcanic archipelago in modern-day
+    Indonesia.
+
+-------------------------------------------------------------------------------
+SPLIT INTO 15 LINE SEGMENTS
+-------------------------------------------------------------------------------
+  (by sentence_splitter.split_text_into_sections -- one segment is
+   one shot on screen, so this is what has to be picture-able)
+
+    1  If you open
+    2  your kitchen cupboard right now, you probably have
+    3  a jar of nutmeg.
+    4  It costs about two dollars.
+    5  But in the 1600s,
+    6  this little wrinkled seed was
+    7  the single most contested resource on
+    8  the planet.
+    9  It was worth more than
+   10  its weight in gold.
+   11  Nutmeg only grew
+   12  in one place on Earth:
+   13  the Banda Islands.
+   14  A tiny, incredibly remote volcanic archipelago in
+   15  modern-day Indonesia.
+
+
+-------------------------------------------------------------------------------
+ABSTRACT TERMS -- every pronoun, and what the models voted for
+-------------------------------------------------------------------------------
+  Four coreference models read the whole script and vote; CONF is
+  the share of their weight behind this answer. Below 0.25 the answer
+  is NOT used -- the segment keeps its pronoun, which tells the
+  renderer to hold the picture it already has. A wrong picture is
+  worse than the last right one.
+
+  SOURCE  models  = the four voted        deictic = I/we/you
+          recency = last thing mentioned  none    = nobody knew
+
+  WHERE      SURFACE    RESOLVED                 CONF   SOURCE   USED?
+  3-6        you        the viewer               1.00   deictic  used
+             If [you] open your kitchen cupboar...
+  12-16      your       the viewer               1.00   deictic  used   [possessive]
+             If you open [your] kitchen cupboard right no...
+  45-48      you        the viewer               1.00   deictic  used
+             ...tchen cupboard right now, [you] probably have a jar of nu...
+  80-82      It         jar                      0.50   models   used   [Sing]
+             ...bly have a jar of nutmeg. [It] costs about two dollars. ...
+  206-208    It         nutmeg                   0.76   models   used   [Sing]
+             ...d resource on the planet. [It] was worth more than its w...
+  229-232    its        nutmeg                   0.76   models   used   [possessive, Sing]
+             ...t. It was worth more than [its] weight in gold. Nutmeg on...
+
+  models that answered: maverick-ontonotes, maverick-preco, lingmess, maverick-litbank
+
+
+-------------------------------------------------------------------------------
+PRONOUN-ISH WORDS THE MAP DOES NOT COVER
+-------------------------------------------------------------------------------
+  (none -- every pronoun in this script got a row above)
+
+
+-------------------------------------------------------------------------------
+WHAT EACH LINE SEGMENT GOT
+-------------------------------------------------------------------------------
+  The line is printed with the NAMES in the brackets instead of
+  the slot numbers, so a wrong answer reads as a wrong sentence.
+  A * on the slot number means it is the SETTING: the background
+  everything else stands on.
+
+  KIND    thing/name/number/date  = film it. These are the only
+                                    kinds that earn a slot: a verb
+                                    is the thing's ACTION and an
+                                    adjective its VARIANT, so
+                                    neither gets one of its own.
+          reference               = was a pronoun. Still reads as
+                                    one? nothing confident came
+                                    back -- hold the picture.
+          deictic                 = the narrator / the viewer
+          fallback                = no picture here at all
+  AMT     how many of it are on screen. 1 unless the segment
+          counted them ("900 ships" -> ships, 900). A money or
+          measure slot is ONE picture of a figure, so "two
+          dollars" is 1.
+  CONF    on a reference slot this is the models' vote. Still
+          reading as a pronoun at 0.00 means nobody answered; at
+          0.10 it was a recency guess, refused by the 0.25
+          threshold.
+  << hypothetical  the segment only imagined this -- an "if", a
+          simile, a modal. NOT a drop: these are often the most
+          visual lines in a script. What to do about it is the
+          renderer's call.
+  OWNER   the whole this thing is a part of, when a possessive
+          said so:  "Its windscreen"  -->  owner=tractor
+  A ~ on the end of a cell means it was cut to fit the column.
+
+  SLOT  VISUALISABLE             KIND       CONF  AMT  VARIANT            ACTION        LOCATION           OWNER
+
+    1  If you open
+       If [the viewer] open   << hypothetical -- it did not happen
+  [1]  the viewer               deictic    1.00  1    -                  open          -                  -
+
+    2  your kitchen cupboard right now, you probably have
+       [kitchen cupboard] right now, [the viewer] probably have   << hypothetical -- it did not happen
+  [1]  kitchen cupboard         thing      0.90  1    -                  open          -                  the viewer
+  [2]  the viewer               deictic    1.00  1    -                  -             -                  -
+
+    3  a jar of nutmeg.
+       a [jar of nutmeg].
+  [1]  jar of nutmeg            thing      0.90  1    -                  -             -                  -
+
+    4  It costs about two dollars.
+       [jar] costs about [two dollars].
+  [1]  jar                      reference  0.50  1    -                  -             -                  -
+  [2]  two dollars              number     1.00  1    -                  -             -                  -
+
+    5  But in the 1600s,
+       But in the [1600s],
+  [1]  1600s                    date       1.00  1    -                  -             -                  -
+
+    6  this little wrinkled seed was
+       this little wrinkled [seed] was
+  [1]  seed                     thing      0.90  1    little wrinkled    -             -                  -
+
+    7  the single most contested resource on
+       [the single most contested resource on]
+  [1]  the single most contest~ fallback   0.20  1    -                  -             planet             -
+
+    8  the planet.
+       the [planet].
+  [1]* planet                   thing      0.90  1    -                  -             -                  -
+
+    9  It was worth more than
+       [nutmeg] was worth more than
+  [1]  nutmeg                   reference  0.76  1    -                  -             planet             -
+
+   10  its weight in gold.
+       its weight in [gold].
+  [1]  gold                     thing      0.90  1    -                  -             planet             -
+
+   11  Nutmeg only grew
+       [Nutmeg] only grew
+  [1]  Nutmeg                   name       1.00  1    grown              grew          Earth              -
+
+   12  in one place on Earth:
+       in one place on [Earth]:
+  [1]* Earth                    name       1.00  1    -                  -             -                  -
+
+   13  the Banda Islands.
+       the [Banda Islands].
+  [1]* Banda Islands            name       1.00  1    -                  grew          Earth              -
+
+   14  A tiny, incredibly remote volcanic archipelago in
+       A tiny, incredibly remote [volcanic archipelago] in
+  [1]  volcanic archipelago     thing      0.90  1    tiny, incredibly ~ -             modern-day Indone~ -
+
+   15  modern-day Indonesia.
+       [modern-day Indonesia].
+  [1]* modern-day Indonesia     thing      0.90  1    -                  -             -                  -
+
+
+-------------------------------------------------------------------------------
+SUMMARY
+-------------------------------------------------------------------------------
+  6 pronouns in the map
+    6 used -- the segment shows the thing, not the word
+    0 held back (confidence below 0.25) -- pronoun kept on purpose
+    0 nobody could answer
+    3 narrator / viewer
+    2 possessive ("its windscreen")
+  0 pronoun-ish words not in the map at all
+
+  15 line segments, 17 slots
+    2 slots came from a pronoun
+    0 of those still read as a pronoun
+    2 are the narrator or the viewer
+    1 know what they are part of (owner=)
+    0 segments got nothing to put on screen
+
+  took 26s
+
+===============================================================================
+EXAMPLE: clockmaker
+===============================================================================
+
+  WHY THIS ONE IS HERE: Written for this file. One woman, one object, and a
+  pile of pronouns pointing at both of them from every direction -- she / her /
+  herself / he / it / this / that.
+
+LOOK FOR
+  1) Every "she"/"her" should be Elena, and every "it" the clock. They
+     alternate deliberately, so a model that just takes the nearest noun will
+     visibly swap them.
+  2) "This was not sentimental" and "She could not fix that herself" -- "this"
+     and "that" point at a whole SITUATION, not a thing. They are tagged DT,
+     not PRP, so they are not even in the map; check they show up in the NOT
+     COVERED section rather than silently resolving to something wrong.
+  3) "Her father had built the clock" -- possessive: the slot should read
+     "Elena's father".
+  4) "He sent back a spring" -- the man in Bern, and he is mentioned exactly
+     once before. A recency guess would say "Bern".
+  5) The last two "It"s ("It said:", "It held for thirty") are the NOTE and the
+     SPRING, in adjacent sentences. If both come back the same, that is the
+     interesting failure.
+
+-------------------------------------------------------------------------------
+THE SCRIPT
+-------------------------------------------------------------------------------
+  Elena kept a workshop above the bakery.
+  Her father had built the clock in the window, and she wound it every morning.
+  This was not sentimental. The thing paid the rent.
+  Tourists came for it, and they left with postcards of it.
+  One winter the pendulum cracked.
+  She could not fix that herself, so she wrote to a man in Bern.
+  He sent back a spring, wrapped in newspaper, and a note.
+  It said the spring would hold for a year.
+  It held for thirty.
+
+-------------------------------------------------------------------------------
+SPLIT INTO 22 LINE SEGMENTS
+-------------------------------------------------------------------------------
+  (by sentence_splitter.split_text_into_sections -- one segment is
+   one shot on screen, so this is what has to be picture-able)
+
+    1  Elena kept a workshop above the bakery.
+    2  Her father had built
+    3  the clock in
+    4  the window,
+    5  and she wound it every morning.
+    6  This was not sentimental.
+    7  The thing paid the rent.
+    8  Tourists came for it,
+    9  and they left
+   10  with postcards of it.
+   11  One winter
+   12  the pendulum cracked.
+   13  She could not fix that herself,
+   14  so she wrote
+   15  to a man in
+   16  Bern.
+   17  He sent back a spring,
+   18  wrapped in
+   19  newspaper,
+   20  and a note.
+   21  It said the spring would hold for a year.
+   22  It held for thirty.
+
+
+-------------------------------------------------------------------------------
+ABSTRACT TERMS -- every pronoun, and what the models voted for
+-------------------------------------------------------------------------------
+  Four coreference models read the whole script and vote; CONF is
+  the share of their weight behind this answer. Below 0.25 the answer
+  is NOT used -- the segment keeps its pronoun, which tells the
+  renderer to hold the picture it already has. A wrong picture is
+  worse than the last right one.
+
+  SOURCE  models  = the four voted        deictic = I/we/you
+          recency = last thing mentioned  none    = nobody knew
+
+  WHERE      SURFACE    RESOLVED                 CONF   SOURCE   USED?
+  40-43      Her        Elena                    0.76   models   used   [possessive, Sing]
+             ...orkshop above the bakery. [Her] father had built the cloc...
+  90-93      she        Elena                    0.76   models   used   [Sing]
+             ... clock in the window, and [she] wound it every morning. T...
+  100-102    it         clock                    0.76   models   used   [Sing]
+             ...the window, and she wound [it] every morning. This was n...
+  187-189    it         thing                    0.51   models   used   [Sing]
+             ...e rent. Tourists came for [it], and they left with postc...
+  195-199    they       Tourists                 1.00   models   used   [Plur]
+             ...Tourists came for it, and [they] left with postcards of it...
+  223-225    it         thing                    0.51   models   used   [Sing]
+             ...ey left with postcards of [it]. One winter the pendulum ...
+  260-263    She        Elena                    0.76   models   used   [Sing]
+             ...ter the pendulum cracked. [She] could not fix that hersel...
+  283-290    herself    Elena                    0.76   models   used   [Sing]
+             ...d. She could not fix that [herself], so she wrote to a man in...
+  295-298    she        Elena                    0.76   models   used   [Sing]
+             ... not fix that herself, so [she] wrote to a man in Bern. H...
+  323-325    He         man                      0.76   models   used   [Sing]
+             ...e wrote to a man in Bern. [He] sent back a spring, wrapp...
+  380-382    It         note                     0.76   models   used   [Sing]
+             ...in newspaper, and a note. [It] said the spring would hol...
+  422-424    It         spring                   0.76   models   used   [Sing]
+             ...ng would hold for a year. [It] held for thirty.
+
+  models that answered: maverick-ontonotes, maverick-preco, lingmess, maverick-litbank
+
+
+-------------------------------------------------------------------------------
+PRONOUN-ISH WORDS THE MAP DOES NOT COVER
+-------------------------------------------------------------------------------
+  These read like pronouns but were never asked about, because
+  the resolver targets PRP/PRP$ and these are tagged something
+  else. Listed so the miss is visible rather than silent.
+
+  Most are nothing to chase: an indefinite ("anything") stands
+  for no particular thing, and a wh-word ("what") points forward
+  rather than back. The ones worth an argument are the bare
+  demonstratives -- "This was not sentimental" -- and they
+  usually point at a whole situation rather than at anything you
+  could film. That is a judgement, and this is where you make it.
+
+  118-122    This       tag=DT    pos=PRON   dep=nsubj
+             ...e wound it every morning. [This] was not sentimental. The ...
+  278-282    that       tag=IN    pos=SCONJ  dep=dobj
+             ...racked. She could not fix [that] herself, so she wrote to ...
+
+
+-------------------------------------------------------------------------------
+WHAT EACH LINE SEGMENT GOT
+-------------------------------------------------------------------------------
+  The line is printed with the NAMES in the brackets instead of
+  the slot numbers, so a wrong answer reads as a wrong sentence.
+  A * on the slot number means it is the SETTING: the background
+  everything else stands on.
+
+  KIND    thing/name/number/date  = film it. These are the only
+                                    kinds that earn a slot: a verb
+                                    is the thing's ACTION and an
+                                    adjective its VARIANT, so
+                                    neither gets one of its own.
+          reference               = was a pronoun. Still reads as
+                                    one? nothing confident came
+                                    back -- hold the picture.
+          deictic                 = the narrator / the viewer
+          fallback                = no picture here at all
+  AMT     how many of it are on screen. 1 unless the segment
+          counted them ("900 ships" -> ships, 900). A money or
+          measure slot is ONE picture of a figure, so "two
+          dollars" is 1.
+  CONF    on a reference slot this is the models' vote. Still
+          reading as a pronoun at 0.00 means nobody answered; at
+          0.10 it was a recency guess, refused by the 0.25
+          threshold.
+  << hypothetical  the segment only imagined this -- an "if", a
+          simile, a modal. NOT a drop: these are often the most
+          visual lines in a script. What to do about it is the
+          renderer's call.
+  OWNER   the whole this thing is a part of, when a possessive
+          said so:  "Its windscreen"  -->  owner=tractor
+  A ~ on the end of a cell means it was cut to fit the column.
+
+  SLOT  VISUALISABLE             KIND       CONF  AMT  VARIANT            ACTION        LOCATION           OWNER
+
+    1  Elena kept a workshop above the bakery.
+       [Elena] kept a [workshop] above the [bakery].
+  [1]  Elena                    name       1.00  1    -                  -             bakery             -
+  [2]  workshop                 thing      0.90  1    -                  -             bakery             -
+  [3]* bakery                   thing      0.90  1    -                  -             -                  -
+
+    2  Her father had built
+       [Elena's father] had built
+  [1]  Elena's father           thing      0.90  1    -                  built         bakery             elena
+
+    3  the clock in
+       the [clock] in
+  [1]  clock                    thing      0.90  1    built              built         window             -
+
+    4  the window,
+       the [window],
+  [1]* window                   thing      0.90  1    -                  built         -                  -
+
+    5  and she wound it every morning.
+       and [Elena] wound [clock] every morning.
+  [1]  Elena                    reference  0.76  1    -                  wound         window             -
+  [2]  clock                    reference  0.76  1    built              wound         window             -
+
+    6  This was not sentimental.
+       [This] was not sentimental.
+  [1]  This                     reference  0.00  1    -                  -             window             -
+
+    7  The thing paid the rent.
+       The thing paid the [rent].
+  [1]  rent                     thing      0.90  1    -                  -             window             -
+
+    8  Tourists came for it,
+       [Tourists] came for [thing],
+  [1]  Tourists                 thing      0.90  1    -                  -             window             -
+  [2]  thing                    reference  0.51  1    -                  -             window             -
+
+    9  and they left
+       and [Tourists] left
+  [1]  Tourists                 reference  1.00  1    -                  left          window             -
+
+   10  with postcards of it.
+       with [postcards of it].
+  [1]  postcards of it          thing      0.90  1    -                  left          window             -
+
+   11  One winter
+       [One winter]
+  [1]  One winter               fallback   0.20  1    -                  -             window             -
+
+   12  the pendulum cracked.
+       the [pendulum] cracked.
+  [1]  pendulum                 thing      0.90  1    cracked            cracked       window             -
+
+   13  She could not fix that herself,
+       [Elena] could not fix that [Elena],   << hypothetical -- it did not happen
+  [1]  Elena                    reference  0.76  1    -                  -             window             -
+  [2]  Elena                    reference  0.76  1    -                  -             window             -
+
+   14  so she wrote
+       so [Elena] wrote
+  [1]  Elena                    reference  0.76  1    -                  wrote         window             -
+
+   15  to a man in
+       [to a man in]
+  [1]  to a man in              fallback   0.20  1    -                  -             Bern               -
+
+   16  Bern.
+       [Bern].
+  [1]* Bern                     name       1.00  1    -                  -             -                  -
+
+   17  He sent back a spring,
+       [man] sent back a [spring],
+  [1]  man                      reference  0.76  1    -                  sent          Bern               -
+  [2]  spring                   thing      0.90  1    -                  sent          Bern               -
+
+   18  wrapped in
+       [wrapped in]
+  [1]  wrapped in               fallback   0.20  1    -                  -             newspaper          -
+
+   19  newspaper,
+       [newspaper],
+  [1]* newspaper                thing      0.90  1    -                  wrapped       -                  -
+
+   20  and a note.
+       and a note.
+       (no slots -- nothing to put on screen)
+
+   21  It said the spring would hold for a year.
+       [note] said the [spring] would hold for a year.   << hypothetical -- it did not happen
+  [1]  note                     reference  0.76  1    -                  -             newspaper          -
+  [2]  spring                   thing      0.90  1    -                  -             newspaper          -
+
+   22  It held for thirty.
+       [spring] held for thirty.
+  [1]  spring                   reference  0.76  1    -                  -             newspaper          -
+
+
+-------------------------------------------------------------------------------
+SUMMARY
+-------------------------------------------------------------------------------
+  12 pronouns in the map
+    12 used -- the segment shows the thing, not the word
+    0 held back (confidence below 0.25) -- pronoun kept on purpose
+    0 nobody could answer
+    0 narrator / viewer
+    1 possessive ("its windscreen")
+  2 pronoun-ish words not in the map at all
+
+  22 line segments, 28 slots
+    11 slots came from a pronoun
+    1 of those still read as a pronoun
+    0 are the narrator or the viewer
+    1 know what they are part of (owner=)
+    1 segments got nothing to put on screen
+
+  took 27s
+
+===============================================================================
+EXAMPLE: bees
+===============================================================================
+
+  WHY THIS ONE IS HERE: Written for this file. The plural and the deictic
+  cases, which the tractor script barely touches: they / them / their, and a
+  narrator who is IN the scene saying I / you / we / us.
+
+LOOK FOR
+  1) "I", "we" and "us" should all become "the narrator", kind=deictic,
+     confidence 1.00 -- never a noun out of the script. Same for "you" and "the
+     viewer". This is the case that used to resolve "I" to whatever noun
+     happened to be nearest.
+  2) "their wings caught the light" -- possessive, plural: the slot should read
+     "the bees' wings" (apostrophe AFTER the s).
+  3) "her glove" -- the beekeeper's, and she is only ever called "the
+     beekeeper" and "She". Check the owner lands on the same identity the rest
+     of the script uses for her, not on a second one.
+  4) "it" runs through the whole thing meaning the FRAME (and once, at the end,
+     a bee). Watch where it switches.
+  5) "This is what she wanted me to see" -- another situational "this",
+     expected in NOT COVERED.
+
+-------------------------------------------------------------------------------
+THE SCRIPT
+-------------------------------------------------------------------------------
+  The beekeeper opened the hive and lifted out a frame.
+  The bees crawled over it, and their wings caught the light.
+  She said you can hear them thinking.
+  I could not hear anything, but I could smell the wax.
+  One of them landed on her glove and stayed there.
+  This is what she wanted me to see: it was not afraid of us.
+  We put the frame back, and they closed over it again.
+
+-------------------------------------------------------------------------------
+SPLIT INTO 14 LINE SEGMENTS
+-------------------------------------------------------------------------------
+  (by sentence_splitter.split_text_into_sections -- one segment is
+   one shot on screen, so this is what has to be picture-able)
+
+    1  The beekeeper opened the hive and
+    2  lifted out
+    3  a frame.
+    4  The bees crawled over it, and
+    5  their wings caught the light.
+    6  She said you can hear them thinking.
+    7  I could not hear anything,
+    8  but I could smell the wax.
+    9  One of them landed
+   10  on her glove and stayed there.
+   11  This is what she wanted me to see:
+   12  it was not afraid of us.
+   13  We put the frame back,
+   14  and they closed over it again.
+
+
+-------------------------------------------------------------------------------
+ABSTRACT TERMS -- every pronoun, and what the models voted for
+-------------------------------------------------------------------------------
+  Four coreference models read the whole script and vote; CONF is
+  the share of their weight behind this answer. Below 0.25 the answer
+  is NOT used -- the segment keeps its pronoun, which tells the
+  renderer to hold the picture it already has. A wrong picture is
+  worse than the last right one.
+
+  SOURCE  models  = the four voted        deictic = I/we/you
+          recency = last thing mentioned  none    = nobody knew
+
+  WHERE      SURFACE    RESOLVED                 CONF   SOURCE   USED?
+  76-78      it         frame                    0.76   models   used   [Sing]
+             ...me. The bees crawled over [it], and their wings caught t...
+  84-89      their      bees                     0.76   models   used   [possessive, Plur]
+             ...bees crawled over it, and [their] wings caught the light. S...
+  114-117    She        beekeeper                1.00   models   used   [Sing]
+             ...r wings caught the light. [She] said you can hear them th...
+  123-126    you        the viewer               1.00   deictic  used
+             ...aught the light. She said [you] can hear them thinking. I...
+  136-140    them       bees                     0.76   models   used   [Plur]
+             ...ht. She said you can hear [them] thinking. I could not hea...
+  151-152    I          the narrator             1.00   deictic  used   [Sing]
+             ...u can hear them thinking. [I] could not hear anything, ...
+  182-183    I          the narrator             1.00   deictic  used   [Sing]
+             ...ld not hear anything, but [I] could smell the wax. One ...
+  212-216    them       bees                     0.76   models   used   [Plur]
+             ...uld smell the wax. One of [them] landed on her glove and s...
+  227-230    her        beekeeper                1.00   models   used   [possessive, Sing]
+             ...ax. One of them landed on [her] glove and stayed there. T...
+  268-271    she        beekeeper                1.00   models   used   [Sing]
+             ...tayed there. This is what [she] wanted me to see: it was ...
+  279-281    me         the narrator             1.00   deictic  used   [Sing]
+             .... This is what she wanted [me] to see: it was not afraid...
+  290-292    it         One                      0.76   models   used   [Sing]
+             ...hat she wanted me to see: [it] was not afraid of us. We ...
+  311-313    us         the narrator             1.00   deictic  used   [Plur]
+             ...see: it was not afraid of [us]. We put the frame back, a...
+  315-317    We         the narrator             1.00   deictic  used   [Plur]
+             ... it was not afraid of us. [We] put the frame back, and t...
+  342-346    they       bees                     0.76   models   used   [Plur]
+             ...e put the frame back, and [they] closed over it again.
+  359-361    it         frame                    0.76   models   used   [Sing]
+             ...ack, and they closed over [it] again.
+
+  models that answered: maverick-ontonotes, maverick-preco, lingmess, maverick-litbank
+
+
+-------------------------------------------------------------------------------
+PRONOUN-ISH WORDS THE MAP DOES NOT COVER
+-------------------------------------------------------------------------------
+  These read like pronouns but were never asked about, because
+  the resolver targets PRP/PRP$ and these are tagged something
+  else. Listed so the miss is visible rather than silent.
+
+  Most are nothing to chase: an indefinite ("anything") stands
+  for no particular thing, and a wh-word ("what") points forward
+  rather than back. The ones worth an argument are the bare
+  demonstratives -- "This was not sentimental" -- and they
+  usually point at a whole situation rather than at anything you
+  could film. That is a judgement, and this is where you make it.
+
+  168-176    anything   tag=NN    pos=PRON   dep=dobj
+             ...hinking. I could not hear [anything], but I could smell the wa...
+  255-259    This       tag=DT    pos=PRON   dep=nsubj
+             ...r glove and stayed there. [This] is what she wanted me to ...
+  263-267    what       tag=WP    pos=PRON   dep=dobj
+             ...and stayed there. This is [what] she wanted me to see: it ...
+
+
+-------------------------------------------------------------------------------
+WHAT EACH LINE SEGMENT GOT
+-------------------------------------------------------------------------------
+  The line is printed with the NAMES in the brackets instead of
+  the slot numbers, so a wrong answer reads as a wrong sentence.
+  A * on the slot number means it is the SETTING: the background
+  everything else stands on.
+
+  KIND    thing/name/number/date  = film it. These are the only
+                                    kinds that earn a slot: a verb
+                                    is the thing's ACTION and an
+                                    adjective its VARIANT, so
+                                    neither gets one of its own.
+          reference               = was a pronoun. Still reads as
+                                    one? nothing confident came
+                                    back -- hold the picture.
+          deictic                 = the narrator / the viewer
+          fallback                = no picture here at all
+  AMT     how many of it are on screen. 1 unless the segment
+          counted them ("900 ships" -> ships, 900). A money or
+          measure slot is ONE picture of a figure, so "two
+          dollars" is 1.
+  CONF    on a reference slot this is the models' vote. Still
+          reading as a pronoun at 0.00 means nobody answered; at
+          0.10 it was a recency guess, refused by the 0.25
+          threshold.
+  << hypothetical  the segment only imagined this -- an "if", a
+          simile, a modal. NOT a drop: these are often the most
+          visual lines in a script. What to do about it is the
+          renderer's call.
+  OWNER   the whole this thing is a part of, when a possessive
+          said so:  "Its windscreen"  -->  owner=tractor
+  A ~ on the end of a cell means it was cut to fit the column.
+
+  SLOT  VISUALISABLE             KIND       CONF  AMT  VARIANT            ACTION        LOCATION           OWNER
+
+    1  The beekeeper opened the hive and
+       The [beekeeper] opened the [hive] and
+  [1]  beekeeper                thing      0.90  1    -                  opened        -                  -
+  [2]  hive                     thing      0.90  1    -                  opened        -                  -
+
+    2  lifted out
+       [lifted out]
+  [1]  lifted out               fallback   0.20  1    -                  -             -                  -
+
+    3  a frame.
+       a [frame].
+  [1]  frame                    thing      0.90  1    -                  lifted out    -                  -
+
+    4  The bees crawled over it, and
+       The [bees] crawled over [frame], and
+  [1]  bees                     thing      0.90  1    -                  crawled       -                  -
+  [2]  frame                    reference  0.76  1    -                  crawled       -                  -
+
+    5  their wings caught the light.
+       [bees' wings] caught the [light].
+  [1]  bees' wings              thing      0.90  1    -                  caught        -                  bees
+  [2]  light                    thing      0.90  1    -                  caught        -                  -
+
+    6  She said you can hear them thinking.
+       [beekeeper] said [the viewer] can hear [bees] thinking.
+  [1]  beekeeper                reference  1.00  1    -                  -             -                  -
+  [2]  the viewer               deictic    1.00  1    -                  -             -                  -
+  [3]  bees                     reference  0.76  1    -                  -             -                  -
+
+    7  I could not hear anything,
+       [the narrator] could not hear [anything],   << hypothetical -- it did not happen
+  [1]  the narrator             deictic    1.00  1    -                  -             -                  -
+  [2]  anything                 reference  0.00  1    -                  -             -                  -
+
+    8  but I could smell the wax.
+       but [the narrator] could smell the [wax].   << hypothetical -- it did not happen
+  [1]  the narrator             deictic    1.00  1    -                  smell         -                  -
+  [2]  wax                      thing      0.90  1    -                  smell         -                  -
+
+    9  One of them landed
+       One of [bees] landed
+  [1]  bees                     reference  0.76  1    -                  landed        beekeeper's glove  -
+
+   10  on her glove and stayed there.
+       on [beekeeper's glove] and stayed there.
+  [1]* beekeeper's glove        thing      0.90  1    -                  landed        -                  beekeeper
+
+   11  This is what she wanted me to see:
+       [This] is what [beekeeper] wanted [the narrator] to see:
+  [1]  This                     reference  0.00  1    -                  -             beekeeper's glove  -
+  [2]  beekeeper                reference  1.00  1    -                  -             beekeeper's glove  -
+  [3]  the narrator             deictic    1.00  1    -                  -             beekeeper's glove  -
+
+   12  it was not afraid of us.
+       [One] was not afraid of [the narrator].
+  [1]  One                      reference  0.76  1    -                  -             beekeeper's glove  -
+  [2]  the narrator             deictic    1.00  1    -                  -             beekeeper's glove  -
+
+   13  We put the frame back,
+       [the narrator] put the [frame] back,
+  [1]  the narrator             deictic    1.00  1    -                  put           beekeeper's glove  -
+  [2]  frame                    thing      0.90  1    -                  put           beekeeper's glove  -
+
+   14  and they closed over it again.
+       and [bees] closed over [frame] again.
+  [1]  bees                     reference  0.76  1    closed             closed        beekeeper's glove  -
+  [2]  frame                    reference  0.76  1    -                  closed        beekeeper's glove  -
+
+
+-------------------------------------------------------------------------------
+SUMMARY
+-------------------------------------------------------------------------------
+  16 pronouns in the map
+    16 used -- the segment shows the thing, not the word
+    0 held back (confidence below 0.25) -- pronoun kept on purpose
+    0 nobody could answer
+    6 narrator / viewer
+    2 possessive ("its windscreen")
+  3 pronoun-ish words not in the map at all
+
+  14 line segments, 26 slots
+    10 slots came from a pronoun
+    2 of those still read as a pronoun
+    6 are the narrator or the viewer
+    2 know what they are part of (owner=)
+    0 segments got nothing to put on screen
+
+  took 27s
+
+===============================================================================
+EXAMPLE: whales
+===============================================================================
+
+  WHY THIS ONE IS HERE: A real script, and the ONLY one with money, a bare
+  count, a date and a simile in it -- so it is the only place the edge
+  trimming, the amount field and the hypothetical flag have anything to bite
+  on.
+
+LOOK FOR
+  1) "Recovering it cost about $2 million." -- the money slot should read "$2
+     million", not "about $2 million": the hedge is a hedge, not part of the
+     figure. Same for "a decade" -> "decade".
+  2) "The ground looked as if an ocean had simply dried up around them." --
+     there IS no ocean. The slot may stay, but it is a hypothetical, and
+     nothing in this segment should become the setting the other segments stand
+     in.
+  3) "Every fossil was intact except one." -- "one" is a COUNT with nothing to
+     count. It should not get a slot of its own.
+  4) "Locals swear the wind sounds like whale song at night." -- "whale song"
+     is the known residual: Brysbaert rates it 4.46, like the letter it is not,
+     so expect it to survive. "at night" is a look, not a thing.
+  5) "Here's the thing." -- discourse furniture, already blocked. It should get
+     nothing, or the length fallback, and never a slot for "thing".
+
+-------------------------------------------------------------------------------
+THE SCRIPT
+-------------------------------------------------------------------------------
+  Here's the thing. In the middle of the Sahara sits a valley called Wadi Al-
+    Hitan. Scientists digging there found ribs, vertebrae, teeth, and entire
+    skulls. Whale skulls. The ground looked as if an ocean had simply dried up
+    around them. Every fossil was intact except one. Locals swear the wind
+    sounds like whale song at night. And then boom, a sandstorm buried the site
+    for a decade. Recovering it cost about $2 million.
+
+-------------------------------------------------------------------------------
+SPLIT INTO 23 LINE SEGMENTS
+-------------------------------------------------------------------------------
+  (by sentence_splitter.split_text_into_sections -- one segment is
+   one shot on screen, so this is what has to be picture-able)
+
+    1  Here's the thing.
+    2  In the middle of the Sahara sits
+    3  a valley called
+    4  Wadi Al-Hitan.
+    5  Scientists digging there found
+    6  ribs,
+    7  vertebrae,
+    8  teeth, and
+    9  entire skulls.
+   10  Whale skulls.
+   11  The ground looked as if
+   12  an ocean had simply dried up around them.
+   13  Every fossil was intact except
+   14  one.
+   15  Locals swear
+   16  the wind sounds like
+   17  whale song at
+   18  night.
+   19  And then
+   20  boom,
+   21  a sandstorm buried the site for a decade.
+   22  Recovering it cost
+   23  about $2 million.
+
+
+-------------------------------------------------------------------------------
+ABSTRACT TERMS -- every pronoun, and what the models voted for
+-------------------------------------------------------------------------------
+  Four coreference models read the whole script and vote; CONF is
+  the share of their weight behind this answer. Below 0.25 the answer
+  is NOT used -- the segment keeps its pronoun, which tells the
+  renderer to hold the picture it already has. A wrong picture is
+  worse than the last right one.
+
+  SOURCE  models  = the four voted        deictic = I/we/you
+          recency = last thing mentioned  none    = nobody knew
+
+  WHERE      SURFACE    RESOLVED                 CONF   SOURCE   USED?
+  230-234    them       Whale skulls             0.26   models   used   [Plur]
+             ...ad simply dried up around [them]. Every fossil was intact ...
+  395-397    it         valley                   0.26   models   used   [Sing]
+             ... for a decade. Recovering [it] cost about $2 million.
+
+  models that answered: maverick-ontonotes, maverick-preco, lingmess, maverick-litbank
+
+
+-------------------------------------------------------------------------------
+PRONOUN-ISH WORDS THE MAP DOES NOT COVER
+-------------------------------------------------------------------------------
+  (none -- every pronoun in this script got a row above)
+
+
+-------------------------------------------------------------------------------
+WHAT EACH LINE SEGMENT GOT
+-------------------------------------------------------------------------------
+  The line is printed with the NAMES in the brackets instead of
+  the slot numbers, so a wrong answer reads as a wrong sentence.
+  A * on the slot number means it is the SETTING: the background
+  everything else stands on.
+
+  KIND    thing/name/number/date  = film it. These are the only
+                                    kinds that earn a slot: a verb
+                                    is the thing's ACTION and an
+                                    adjective its VARIANT, so
+                                    neither gets one of its own.
+          reference               = was a pronoun. Still reads as
+                                    one? nothing confident came
+                                    back -- hold the picture.
+          deictic                 = the narrator / the viewer
+          fallback                = no picture here at all
+  AMT     how many of it are on screen. 1 unless the segment
+          counted them ("900 ships" -> ships, 900). A money or
+          measure slot is ONE picture of a figure, so "two
+          dollars" is 1.
+  CONF    on a reference slot this is the models' vote. Still
+          reading as a pronoun at 0.00 means nobody answered; at
+          0.10 it was a recency guess, refused by the 0.25
+          threshold.
+  << hypothetical  the segment only imagined this -- an "if", a
+          simile, a modal. NOT a drop: these are often the most
+          visual lines in a script. What to do about it is the
+          renderer's call.
+  OWNER   the whole this thing is a part of, when a possessive
+          said so:  "Its windscreen"  -->  owner=tractor
+  A ~ on the end of a cell means it was cut to fit the column.
+
+  SLOT  VISUALISABLE             KIND       CONF  AMT  VARIANT            ACTION        LOCATION           OWNER
+
+    1  Here's the thing.
+       Here's the thing.
+       (no slots -- nothing to put on screen)
+
+    2  In the middle of the Sahara sits
+       In the [middle of the Sahara] sits
+  [1]* middle of the Sahara     thing      0.90  1    -                  sits          -                  -
+
+    3  a valley called
+       a [valley] called
+  [1]  valley                   thing      0.90  1    -                  sits          middle of the Sah~ -
+
+    4  Wadi Al-Hitan.
+       [Wadi Al-Hitan].
+  [1]* Wadi Al-Hitan            name       1.00  1    -                  -             middle of the Sah~ -
+
+    5  Scientists digging there found
+       [Scientists] digging there found
+  [1]  Scientists               thing      0.90  1    -                  -             middle of the Sah~ -
+
+    6  ribs,
+       [ribs],
+  [1]  ribs                     thing      0.90  1    -                  -             middle of the Sah~ -
+
+    7  vertebrae,
+       [vertebrae],
+  [1]  vertebrae                thing      0.90  1    -                  -             middle of the Sah~ -
+
+    8  teeth, and
+       [teeth], and
+  [1]  teeth                    thing      0.90  1    -                  -             middle of the Sah~ -
+
+    9  entire skulls.
+       entire [skulls].
+  [1]  skulls                   thing      0.90  1    -                  -             middle of the Sah~ -
+
+   10  Whale skulls.
+       [Whale skulls].
+  [1]  Whale skulls             thing      0.90  1    -                  -             middle of the Sah~ -
+
+   11  The ground looked as if
+       The [ground] looked as if
+  [1]  ground                   thing      0.90  1    -                  -             middle of the Sah~ -
+
+   12  an ocean had simply dried up around them.
+       an [ocean] had simply dried up around [Whale skulls].   << hypothetical -- it did not happen
+  [1]  ocean                    thing      0.90  1    dried              dried up      middle of the Sah~ -
+  [2]  Whale skulls             reference  0.26  1    -                  dried up      middle of the Sah~ -
+
+   13  Every fossil was intact except
+       Every [fossil] was intact except
+  [1]  fossil                   thing      0.90  1    -                  -             middle of the Sah~ -
+
+   14  one.
+       [one]
+  [1]  one                      fallback   0.20  1    -                  -             middle of the Sah~ -
+
+   15  Locals swear
+       [Locals] swear
+  [1]  Locals                   thing      0.90  1    -                  -             middle of the Sah~ -
+
+   16  the wind sounds like
+       the [wind] sounds like
+  [1]  wind                     thing      0.90  1    -                  sounds        middle of the Sah~ -
+
+   17  whale song at
+       [whale song] at
+  [1]  whale song               thing      0.90  1    -                  sounds        middle of the Sah~ -
+
+   18  night.
+       [night].
+  [1]  night                    date       1.00  1    -                  sounds        middle of the Sah~ -
+
+   19  And then
+       And then
+       (no slots -- nothing to put on screen)
+
+   20  boom,
+       [boom],
+  [1]  boom                     thing      0.90  1    -                  buried        site               -
+
+   21  a sandstorm buried the site for a decade.
+       a [sandstorm] buried the [site] for a [decade].
+  [1]  sandstorm                thing      0.90  1    -                  buried        site               -
+  [2]* site                     thing      0.90  1    -                  buried        -                  -
+  [3]  decade                   date       1.00  1    -                  buried        site               -
+
+   22  Recovering it cost
+       Recovering [valley] cost
+  [1]  valley                   reference  0.26  1    -                  -             site               -
+
+   23  about $2 million.
+       about [$2 million].
+  [1]  $2 million               number     1.00  1    -                  -             site               -
+
+
+-------------------------------------------------------------------------------
+SUMMARY
+-------------------------------------------------------------------------------
+  2 pronouns in the map
+    2 used -- the segment shows the thing, not the word
+    0 held back (confidence below 0.25) -- pronoun kept on purpose
+    0 nobody could answer
+    0 narrator / viewer
+    0 possessive ("its windscreen")
+  0 pronoun-ish words not in the map at all
+
+  23 line segments, 24 slots
+    2 slots came from a pronoun
+    0 of those still read as a pronoun
+    0 are the narrator or the viewer
+    0 know what they are part of (owner=)
+    2 segments got nothing to put on screen
+
+  took 27s
+

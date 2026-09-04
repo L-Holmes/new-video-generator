@@ -38,11 +38,12 @@ visualisables_data = get_visualisable_data(
 #   "[1].": {
 #       "1": {"visualisable": "whale skeletons",
 #             "variant": None,             # nothing has changed how it looks
-#             "action": "filled",
+#             "action": "filled",          # a verb is a field, not a slot
 #             "location": "Egypt",         # from 3 segments back
 #             "kind": "thing",
 #             "identity": "whale skeletons",
 #             "is_setting": False,
+#             "amount": 1,
 #             "confidence": 0.9}}
 # }
 
@@ -118,12 +119,20 @@ visualisables_data = get_visualisable_data(
 #
 # action        what it is doing in this segment.  e.g. "flew away"
 #
+# amount        how many of it are on screen. 1 unless the segment actually
+#               counted them:  "900 ships" --> visualisable "ships", amount
+#               900. NOT "the number in the text" — a money or measure slot
+#               is ONE picture of a figure, so "two dollars" is amount 1 and
+#               carries its number in the name.
+#
 # location      the setting it is standing in, carried forward from whichever
 #               segment named it.  e.g. "Egypt"
 #
 # kind          "thing" / "name" / "number" / "date" — something to film.
-#               "action" / "quality" — NOT things to film; they are there so
-#               the thing next to them can borrow them.
+#               These are the only kinds that earn a SLOT. A verb and an
+#               adjective do not: a verb is the thing's `action` and an
+#               adjective its `variant`, so they arrive as fields ON a slot
+#               rather than as slots of their own.
 #               "reference" — this slot was a pronoun, and what you see in
 #               `visualisable` is what it was resolved to. If it still reads
 #               like a pronoun ("It"), nothing confident enough came back —
@@ -138,6 +147,12 @@ visualisables_data = get_visualisable_data(
 #               tractor", "the tractor" and "it" share one variant history.
 #
 # is_setting    put this one in the BACKGROUND. Everything else goes on top.
+#
+# owner         the WHOLE this thing is a part of, when a possessive pronoun
+#               said so:  "Its windscreen broke."  -->  visualisable is "the
+#               tractor's windscreen", owner is "tractor". None otherwise.
+#               So whatever happens to the part can be shown on the whole.
+#               Only ever filled when you passed abstract_terms.
 #
 # confidence    0..1. On a "reference" slot without abstract_terms: 0.75
 #               means a coreference model answered, 0.10 means it was only a
@@ -162,7 +177,7 @@ def show(template, slots):
     for slot, v in slots.items():
         setting = "*" if v["is_setting"] else " "
         print(f"  [{slot}]{setting} {v['visualisable']:<18} {v['kind']:<10}"
-              f" variant={str(v['variant']):<12}"
+              f" x{v['amount']:<3} variant={str(v['variant']):<12}"
               f" action={str(v['action']):<8} in={v['location']}")
 
 
@@ -177,18 +192,21 @@ for i, line_segment in enumerate(SCRIPT_SPLIT_INTO_LINE_SEGMENTS):
         show(template, slots)
 
 # In [Egypt],
-#   [1]* Egypt              name       variant=None         action=None     in=None
+#   [1]* Egypt              name       x1   variant=None         action=None     in=None
 #
-# there's a [valley] [filled] with
-#   [1]  valley             thing      variant=None         action=None     in=Egypt
-#   [2]  filled             action     variant=None         action=None     in=Egypt
+# there's a [valley] filled with
+#   [1]  valley             thing      x1   variant=None         action=None     in=Egypt
 #
 # [whale skeletons].
-#   [1]  whale skeletons    thing      variant=None         action=filled   in=Egypt
+#   [1]  whale skeletons    thing      x1   variant=None         action=filled   in=Egypt
 #
-# [valley] was once [covered]
-#   [1]  valley             reference  variant=None         action=covered  in=the Tethys Sea
-#   [2]  covered            action     variant=None         action=None     in=the Tethys Sea
+# [valley] was once covered
+#   [1]  valley             reference  x1   variant=None         action=covered  in=Tethys Sea
 #
-# by [the Tethys Sea].
-#   [1]* the Tethys Sea     name       variant=None         action=covered  in=None
+# by the [Tethys Sea].
+#   [1]* Tethys Sea         name       x1   variant=None         action=covered  in=None
+#
+# NOTE "filled" and "covered" have no slots of their own -- a verb is the
+# thing's `action`, which is where you can see both of them. And the search
+# terms are "Tethys Sea" and "Egypt", not "the Tethys Sea": the article stays
+# in the line the viewer reads and comes off the thing we go looking for.
