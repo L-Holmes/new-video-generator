@@ -1,4 +1,4 @@
-uv run MANUAL_TAGGING.py
+uv run 3-manual-tagging/MANUAL_TAGGING.py
 
 
 

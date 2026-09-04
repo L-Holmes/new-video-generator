@@ -9,7 +9,8 @@ shot. Plain english, field by field:
 * group_id - lines sharing the same number render as one group (rule of n). null when the line is not in a group. MANUAL_TAGGING sets this when you toggle group.
 * position - which cell this line is inside its group (1, 2, 3...). always "1" for ungrouped lines. recomputed automatically, don't edit.
 * sfx, sfx_timing, music, music_trim_seconds, music_fade_out - audio defaults the renderer reads as-is.
-* rule_ids - the sentence splitter's tags: which rules cut this line. useful context for you and the ai prompts. meanings live in RULE_DESCRIPTIONS inside sentence_splitter.py.
+* rule_ids - the sentence splitter's tags: which rules cut this line. useful context for you and the ai prompts. meanings live in RULE_DESCRIPTIONS inside
+  0-sentence-splitter/sentence_splitter.py.
 
 There is no search_type column any more - the old derived string is gone,
 and old files convert once with: uv run UPGRADE_OLD_JSON.py <file>

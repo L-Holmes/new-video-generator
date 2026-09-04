@@ -1,10 +1,27 @@
 uv run SPLIT_AND_LABEL.py
-uv run MANUAL_TAGGING.py
+uv run 3-manual-tagging/MANUAL_TAGGING.py
 
 
 # MASTER README
 
 Two steps, run in this directory.
+
+## the folders
+
+One numbered folder per stage of the pipeline, in the order it runs:
+
+```
+0-sentence-splitter/            script            -> line segments
+1-visualisable-identification/  line segments     -> what to put on screen
+2-auto-tagging/                 the easy rows, filled in automatically
+3-manual-tagging/               you, filling in the rest, in a browser
+```
+
+Anything two or more stages share stays here at the top level:
+`shared_text_logic.py` (the word lists), `MEDIA_TYPES.py` (the catalog),
+`SPLIT_AND_LABEL.py` (which runs 0 and 2), and `PATHS.py` — read that one
+before you add a file, it is why `import sentence_splitter` still works
+from a folder called `0-sentence-splitter`.
 
 ## 1. split the script
 
@@ -14,31 +31,40 @@ uv run SPLIT_AND_LABEL.py
 
 Splits each script-*.txt into visual-beat lines (spaCy; install the model
 once with: uv run python -m spacy download en_core_web_sm) and writes
-[TESTING_]<prefix>-script_to_search_term.json. Every line's media_type and
-search_term start EMPTY — there is no automatic tagging. Each line carries
-the splitter's rule_ids for context. Field-by-field docs: FORMAT.md.
+[TESTING_]<prefix>-script_to_search_term.json, then runs 2-auto-tagging
+over it (TURN_ON_AUTO_TAGGING in SPLIT_AND_LABEL.py — turn it off to emit
+fully empty shot lists). It only ever fills rows that are EMPTY, so
+re-running it is always safe. Each line carries the splitter's rule_ids
+for context. Field-by-field docs: FORMAT.md.
 
 ## 2. tag everything by hand
 
 ```
-uv run MANUAL_TAGGING.py
+uv run 3-manual-tagging/MANUAL_TAGGING.py
 ```
 
 Opens a localhost page: pick one media type per line (grouped NEW / EDIT
 PREVIOUS, ai family in red, info icons and a key explaining everything),
 stack decorate / caption / group on top, write the search term (ghost
-suggestion with tab-to-accept, tap-to-append noun and place chips), split a
+suggestion with tab-to-accept, tap-to-append chips), split a
 line at any character with the golden cursor, join a line to the one above,
 undo anything. Groups show as a shared coloured stripe. Works on phones.
 Saves instantly.
+
+The chips — what is in this line, what was on screen before it, the
+combos, and what this line's "it" turned out to mean — all come from
+`1-visualisable-identification`, so they say the same thing the rest of
+the pipeline will act on. The first load runs the coreference models over
+the whole script (tens of seconds, with a countdown on the page); after
+that it is cached until the lines themselves change.
 
 Optional ai help: the prompt templates in prompts/ take the json plus the
 rule lists (BASE_RULES.md and your own MASTER_RULES.md) so an llm can draft
 the search terms for you; paste its json reply over the file and review in
 MANUAL_TAGGING.
 
-Never delete: MEDIA_TYPES.py, prompts/, BASE_RULES.md, MASTER_RULES.md,
-your scripts and finished jsons. Everything under *-CACHE and TESTING_* is
+Never delete: MEDIA_TYPES.py, PATHS.py, prompts/, BASE_RULES.md,
+MASTER_RULES.md, your scripts and finished jsons. Everything under *-CACHE and TESTING_* is
 regenerable (see other-markdown-guides/RESET_AFTER_TEST.md).
 
 
@@ -47,8 +73,9 @@ regenerable (see other-markdown-guides/RESET_AFTER_TEST.md).
 ## trying the auto tagger on the ten fixture scripts
 
 ```
-uv run TEST_AUTO_TAGGER.py --list        what the ten fixtures are
-uv run TEST_AUTO_TAGGER.py --test 1      fixture 1: auto-tag it, then open it
+uv run 2-auto-tagging/TEST_AUTO_TAGGER.py --list     the ten fixtures
+uv run 2-auto-tagging/TEST_AUTO_TAGGER.py --test 1   fixture 1: auto-tag
+                                                     it, then open it
 ```
 
 One fixture at a time. `--test <n>` resets test_jsons/test_json_<n>.json to
@@ -66,6 +93,7 @@ arrive with real rule_ids, list runs and reveals, exactly like step 1's
 output.
 
 ```
+cd 2-auto-tagging
 uv run TEST_AUTO_TAGGER.py --test 4 --no-manual   printout only, no browser
 uv run TEST_AUTO_TAGGER.py --test 4 --keep        carry on, don't reset
 uv run TEST_AUTO_TAGGER.py --all                  all ten + a scoreboard,

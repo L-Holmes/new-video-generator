@@ -65,14 +65,17 @@ from spacy.tokens import Doc, Span, Token
 
 # =============================================================================
 # SHARED TEXT LOGIC  —  every word list, regex, threshold and text-check that
-# this file and Auto_add_mediatypes.py both rely on now lives in ONE place:
+# this file and 2-auto-tagging both rely on now lives in ONE place:
 #     ___splitting_and_labelling/shared_text_logic.py
 # Nothing lexical is defined in this file any more.  The names below are
 # imported verbatim, so the rules read exactly as they always did.
 # =============================================================================
+# This file lives in 0-sentence-splitter/ and shared_text_logic.py one level
+# up, so PATHS.py (which knows where every stage folder is) goes on first.
 import sys as _sys
 from pathlib import Path as _Path
-_sys.path.insert(0, str(_Path(__file__).resolve().parent))
+_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+import PATHS  # noqa: F401,E402  — every stage folder on sys.path
 
 from shared_text_logic import (  # noqa: E402
     # --- rule ids (SECTION 1) ---

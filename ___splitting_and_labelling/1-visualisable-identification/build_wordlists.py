@@ -1,6 +1,6 @@
 """
 build_wordlists.py — fetch big, well-maintained open resources and cache
-them into recommender_data.json for VISUAL_RECOMMENDER.py.
+them into knowledge_base_data.json for _knowledge_base.py.
 
 Run once (needs internet):    python build_wordlists.py
 
@@ -32,7 +32,7 @@ import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE / "recommender_data.json"
+OUT = HERE / "knowledge_base_data.json"
 
 CONCRETENESS_URL = ("https://raw.githubusercontent.com/ArtsEngine/"
                     "concreteness/master/"

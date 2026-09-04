@@ -54,6 +54,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent))
+import PATHS  # noqa: F401,E402  — the sentence splitter is 0-'s stage folder
 
 import myownstuff
 from _abstract_term_resolver import CONFIDENCE_THRESHOLD

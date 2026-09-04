@@ -29,8 +29,8 @@ from pathlib import Path
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
-    _sys.path.insert(0, str(_Path(__file__).resolve().parent))
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    import PATHS  # noqa: F401  — every stage folder on sys.path
 
 import shared_text_logic as stl
 from MEDIA_TYPES import MEDIA_TYPES, MODIFIERS

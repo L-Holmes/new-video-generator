@@ -71,6 +71,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Dict, List, Optional
 
+# This file lives in 3-manual-tagging/; MEDIA_TYPES.py and CONFIG.py are
+# further up, and 1-visualisable-identification/ is a folder no import
+# statement can name. PATHS.py is where all of that is written down.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import PATHS  # noqa: F401,E402  — every stage folder on sys.path
+
 from MEDIA_TYPES import (COLLAGEABLE_TYPES, GROUPABLE_TYPES, MEDIA_TYPES,
                          MODIFIERS, Tag)
 
@@ -118,14 +124,25 @@ except Exception:
         return max(0, _MIN_NEW_WORDS - len(re.findall(r"[\w']+", text or "")))
 
 
-# Keyword recommendation engine (memory + "jar of nutmeg" pairing + the
-# pronoun panel). Optional in the same spirit as the CONFIG import above:
-# if VISUAL_RECOMMENDER.py is missing the tagger still runs, the chips
-# simply fall back to the plain per-line suggestions.
+# The chips — what is in this line, what was on screen before it, the
+# combos and the pronoun panel — all come from stage 1, which is the ONE
+# place that works out what a line has in it. See
+# 1-visualisable-identification/VISUALISABLE_SUGGESTIONS.py.
+#
+# (This used to be VISUAL_RECOMMENDER.py, which found its own nouns with its
+# own mini POS tagger. That is deleted: two different answers to "what is in
+# this line" is one too many, and the chips now say the same thing the rest
+# of the pipeline will act on.)
+#
+# Optional in the same spirit as the CONFIG import above: if stage 1 cannot
+# be imported the tagger still runs, and the chips fall back to the plain
+# per-line suggestions.
 try:
-    from VISUAL_RECOMMENDER import suggestions_for_all_lines
+    from VISUALISABLE_SUGGESTIONS import suggestions_for_all_lines
     _HAS_RECOMMENDER = True
-except Exception:
+except Exception as _exc:
+    print(f"[tagger] visualisable suggestions unavailable ({_exc}) — "
+          f"the chips fall back to the plain per-line words")
     _HAS_RECOMMENDER = False
 
     def suggestions_for_all_lines(lines, confirmed_terms=None):
@@ -133,11 +150,11 @@ except Exception:
                 for _ in (lines or [])]
 
 
-# ---- recommendation timing estimates ---------------------------------------
+# ---- suggestion timing estimates -------------------------------------------
 # Past full-recompute timings, persisted so the loading screen can show an
-# honest countdown: recommender_timings.json = [{"words": N, "seconds": S}].
-_TIMINGS_PATH = Path(__file__).resolve().parent / "recommender_timings.json"
-_DEFAULT_BASE_S = 8.0          # cold start (WordNet corpus load etc.)
+# honest countdown: suggestion_timings.json = [{"words": N, "seconds": S}].
+_TIMINGS_PATH = Path(__file__).resolve().parent / "suggestion_timings.json"
+_DEFAULT_BASE_S = 8.0          # cold start (spaCy + WordNet + coreference)
 _DEFAULT_PER_WORD_S = 0.015
 
 
@@ -173,7 +190,7 @@ HERE = Path(__file__).resolve().parent
 # every EXPLAINED change (split, join, media type, extras, search term, data
 # form, stamp) lands here, whichever json is being tagged — one shared,
 # append-only, human-readable report. No reason given, nothing written.
-REPORT_PATH = HERE.parent / "manual_tagging_changes_report.txt"
+REPORT_PATH = PATHS.REPO_ROOT / "manual_tagging_changes_report.txt"
 # how many un-explained changes keep their "why?" offer alive at once. The
 # overlay works through them newest-first; beyond this the oldest are dropped
 # (never written), because an offer from 40 changes ago is noise, not a prompt.
@@ -664,9 +681,10 @@ class _State:
                      json_path.stem)
         prefix = m.group(1) if m else json_path.stem
         triples = None
-        # cwd, not HERE: standalone use runs from this directory (cwd==HERE)
-        # per MASTER_README; embedded use (main.py) runs from the repo root,
-        # where CONFIG._CACHE_DIR ("<prefix>-CACHE") actually lives.
+        # cwd, not HERE: standalone use runs from ___splitting_and_labelling
+        # per MASTER_README (this file is a stage folder down from there);
+        # embedded use (main.py) runs from the repo root, where
+        # CONFIG._CACHE_DIR ("<prefix>-CACHE") actually lives.
         hits = sorted(Path.cwd().glob(
             f"{prefix}-CACHE/split-and-lable/*SPLITMETA*-{prefix}.json"))
         if hits:
@@ -1199,7 +1217,11 @@ def make_server(json_path: Path, port: int = 0) -> ThreadingHTTPServer:
 def _pick_json(arg: Optional[str]) -> Path:
     if arg:
         return Path(arg)
-    hits = sorted(HERE.glob("*-script_to_search_term.json"),
+    # Wherever SPLIT_AND_LABEL was run from: its own directory when it was
+    # run by hand, the repo root when main.py drove it. HERE is this stage
+    # folder and never holds a shot list, so it is not in the list.
+    hits = sorted({p for d in (Path.cwd(), PATHS.HERE, PATHS.REPO_ROOT)
+                   for p in d.glob("*-script_to_search_term.json")},
                   key=lambda p: p.stat().st_mtime, reverse=True)
     if not hits:
         sys.exit("No *-script_to_search_term.json found. "
@@ -2070,9 +2092,10 @@ function renderChips(){
  const s=L.suggest; let chips='';
  const add=(lbl,arr,cls)=>{if(arr&&arr.length){chips+=`<span class="chiplbl">${lbl}:</span>`+
    arr.map(w=>`<button tabindex="-1" class="${cls}" onclick="chip('${esc(w).replace(/'/g,"\\'")}')">${esc(w)}</button>`).join('');}};
- // memory-based recommendations (VISUAL_RECOMMENDER): combos first — a
- // current word paired with something remembered ("Jar of Nutmeg") — then
- // high-scoring words from previous entries, each with its score.
+ // memory-based recommendations (1-visualisable-identification): combos
+ // first — a thing in this line plus what the script has since said about
+ // how it looks / where it is — then high-scoring things from earlier
+ // lines, each with its score.
  const R=L.recommend||{};
  if(R.pairs&&R.pairs.length){chips+='<span class="chiplbl">combos:</span>'+
    R.pairs.map(p=>`<button tabindex="-1" class="pair" title="${esc(p.why||'')}"
@@ -2423,7 +2446,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.info,#pop'))$('#pop
 // ---- boot with a loading screen ------------------------------------------
 // /data itself is instant; recommend_status says whether the background
 // suggestion worker has finished its first pass.  Until then: overlay +
-// countdown (server estimates from recommender_timings.json history).
+// countdown (server estimates from suggestion_timings.json history).
 let etaLeft=0, etaTick=null;
 function showEta(){
  const el=$('#leta');

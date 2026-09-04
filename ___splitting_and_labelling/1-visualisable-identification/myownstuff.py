@@ -64,6 +64,9 @@ from pathlib import Path
 # The visualisables files and the sentence splitter live here and one up.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# ...and the sentence splitter now has a stage folder of its own
+# (0-sentence-splitter). PATHS puts every stage folder on sys.path.
+import PATHS  # noqa: F401,E402
 
 from _abstract_term_resolver import resolve_all_abstract_terms
 
@@ -260,6 +263,37 @@ def _build_visualisable_data(line_segments):
         visualisable_data.append(line_to_found_visualisables)
 
     return visualisable_data
+
+# ==============================================================================
+
+_CACHED_VISUALISABLE_DATA = {}
+
+def get_visualisable_data_for_line_segments(line_segments):
+    """
+    The same thing as get_visualisable_data(), for callers that are already
+    holding the line segments as plain strings.
+
+    @input line_segments = the split sentences, as text.
+    e.g.
+     ["In Egypt,", "there's a valley filled with whale skeletons.",
+      "It was once covered by", "the Tethys Sea."]
+
+    @output exactly what get_visualisable_data() returns -- one entry per
+    line segment, in script order.
+
+    Two callers want it this way round:
+      - 3-manual-tagging, which is showing the split lines on a page and
+        never had Chunks in the first place
+      - anything re-reading a saved split out of a json
+
+    Cached on the segments themselves, because the manual tagger recomputes
+    on every save and 1)i)'s coreference models cost ~40 s a run. Same
+    segments, same answer, no models.
+    """
+    key = tuple(line_segments)
+    if key not in _CACHED_VISUALISABLE_DATA:
+        _CACHED_VISUALISABLE_DATA[key] = _build_visualisable_data(list(line_segments))
+    return _CACHED_VISUALISABLE_DATA[key]
 
 # ==============================================================================
 

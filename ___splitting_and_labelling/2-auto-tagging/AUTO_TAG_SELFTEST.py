@@ -6,7 +6,7 @@ Kept out of Auto_add_mediatypes.py so that file stays a readable flowchart.
 Every example here is a real line from a real script; each assert is the
 behaviour that keeps it right.
 
-    uv run ___splitting_and_labelling/Auto_add_mediatypes.py --selftest
+    uv run ___splitting_and_labelling/2-auto-tagging/Auto_add_mediatypes.py --selftest
 """
 
 from __future__ import annotations
@@ -14,8 +14,8 @@ from __future__ import annotations
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
-    _sys.path.insert(0, str(_Path(__file__).resolve().parent))
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    import PATHS  # noqa: F401  — every stage folder on sys.path
 
 import shared_text_logic as stl
 from auto_tag_engine import (apply_flowchart, check_flowchart, coverage_report,

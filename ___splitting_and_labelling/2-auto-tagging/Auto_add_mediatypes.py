@@ -1,9 +1,9 @@
 """
 Auto_add_mediatypes.py — FIRST-PASS automatic media-type tagging.
 
-    uv run ___splitting_and_labelling/Auto_add_mediatypes.py script_to_search_term.json
-    uv run ___splitting_and_labelling/Auto_add_mediatypes.py script_to_search_term.json --dry-run
-    uv run ___splitting_and_labelling/Auto_add_mediatypes.py --selftest
+    uv run ___splitting_and_labelling/2-auto-tagging/Auto_add_mediatypes.py script_to_search_term.json
+    uv run ___splitting_and_labelling/2-auto-tagging/Auto_add_mediatypes.py script_to_search_term.json --dry-run
+    uv run ___splitting_and_labelling/2-auto-tagging/Auto_add_mediatypes.py --selftest
 
 THIS FILE IS ONLY TWO LISTS OF `if` STATEMENTS. Read it top to bottom:
 
@@ -52,8 +52,8 @@ from __future__ import annotations
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
-    _sys.path.insert(0, str(_Path(__file__).resolve().parent))
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    import PATHS  # noqa: F401  — every stage folder on sys.path
 
 from enum import Enum
 

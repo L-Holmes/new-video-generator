@@ -50,9 +50,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Unconditional: PATHS is not only the sys.path bootstrap here, it is also
+# where this file looks up 3-manual-tagging to launch the tagger.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import PATHS  # noqa: E402  — every stage folder on sys.path
 
 HERE = Path(__file__).resolve().parent
 TESTS = HERE / "test_jsons"
@@ -234,7 +235,8 @@ def run_one(n: int, *, manual: bool = True, keep: bool = False) -> None:
     if manual:
         print(f"\nopening MANUAL_TAGGING on {live.name} — "
               f"Ctrl-C there when you are done with this one.")
-        subprocess.run([sys.executable, str(HERE / "MANUAL_TAGGING.py"),
+        subprocess.run([sys.executable,
+                        str(PATHS.MANUAL_TAGGING_DIR / "MANUAL_TAGGING.py"),
                         live.name], cwd=TESTS)
     else:
         print(f"\n(--no-manual) the tagged file is {live}")

@@ -24,7 +24,8 @@ NO LINGUISTICS ARE INVENTED HERE. Every judgement is delegated:
     spaCy                    POS / dependencies / NER / noun_chunks
     shared_text_logic.py     the shared word lists  (weak verbs, idioms,
                              SFX words, measure nouns, ...)
-    Brysbaert (2014)         concreteness 1..5, via kb().kb_concreteness()
+    _knowledge_base.py       Brysbaert (2014) concreteness 1..5, and the
+                             WordNet lookups, via kb()
     WordNet                  is it a place? a change-of-state verb?
     abstract_term_resolver   coreference:  "it" --> "the tractor"
 
@@ -46,10 +47,14 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# The shared word lists and the knowledge base live one directory up.
+# The shared word lists live one directory up; _knowledge_base.py is here
+# beside us. PATHS puts every stage folder on sys.path, so both resolve
+# however this file was reached.
 _PARENT = Path(__file__).resolve().parent.parent
 if str(_PARENT) not in sys.path:
     sys.path.insert(0, str(_PARENT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import PATHS  # noqa: F401,E402
 
 # Safe to import eagerly: its spaCy load is lazy, its body is just word lists.
 import shared_text_logic as STL          # noqa: E402
@@ -63,25 +68,25 @@ import shared_text_logic as STL          # noqa: E402
 # has any text to work on.
 # =============================================================================
 
-_KB = None                                # VISUAL_RECOMMENDER: None=untried, False=absent
+_KB = None                                # _knowledge_base: None=untried, False=absent
 _IDIOM_MEMO: tuple = (None, None, None)   # (id(doc), doc, spans) — see _idiom_spans()
 
 
 def kb():
-    """VISUAL_RECOMMENDER — concreteness + the WordNet lookups — or None.
+    """_knowledge_base — concreteness + the WordNet lookups — or None.
 
-    Lazy: it reads ~740 KB of recommender_data.json at import time.
+    Lazy: it reads ~740 KB of knowledge_base_data.json at import time.
     None means those checks are OFF and we degrade to spaCy alone.
     """
     global _KB
     if _KB is None:
         try:
-            import VISUAL_RECOMMENDER as _vr
-            _vr.kb_concreteness("test")          # force the data file to load
-            _KB = _vr
+            import _knowledge_base as _kb
+            _kb.kb_concreteness("test")          # force the data file to load
+            _KB = _kb
         except Exception as exc:
             _KB = False
-            print(f"[visualisables] note: VISUAL_RECOMMENDER unavailable "
+            print(f"[visualisables] note: _knowledge_base unavailable "
                   f"({exc}) — abstract nouns will NOT be filtered.")
     return _KB or None
 
@@ -288,12 +293,19 @@ class Visualisable:
         other half — that the windscreen belongs to the tractor, so damaging
         it damages the tractor — is unreachable to anything holding the map.
 
-        The full record (surface / detector / char_span / concreteness /
+        surface is here for the same reason: on a KIND_REFERENCE slot the
+        answer is what the pronoun RESOLVED to, and "which word was that?"
+        is unanswerable from the map without it ("[1] was once covered" does
+        not say whether [1] read "It" or "They"). 3-manual-tagging shows the
+        viewer both halves.
+
+        The rest of the record (detector / char_span / concreteness /
         token_span / setting_score) stays on this object, for anything that
         holds the Visualisable rather than the map.
         """
         return {
             "visualisable": self.visualisable,
+            "surface": self.surface,
             "variant": self.variant,
             "action": self.action,
             "location": self.location,

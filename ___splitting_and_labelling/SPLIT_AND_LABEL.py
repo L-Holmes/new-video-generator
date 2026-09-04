@@ -5,18 +5,19 @@ visual-beat lines and write the empty shot list.
     uv run SPLIT_AND_LABEL.py            (runs the bundled sample scripts)
 
 What it does:
-  1. SPLIT   the script with sentence_splitter (spaCy) into phrase-lines,
+  1. SPLIT   the script with 0-sentence-splitter (spaCy) into phrase-lines,
              each tagged with the rule ids that cut it. Cached per script
              (the spaCy parse is the only expensive part).
   2. EMIT    [TESTING_]<prefix>-script_to_search_term.json — one row per
              line with media_type / search_term EMPTY.
-  3. AUTO-TAG (if TURN_ON_AUTO_TAGGING) — Auto_add_mediatypes.py fills the
+  3. AUTO-TAG (if TURN_ON_AUTO_TAGGING) — 2-auto-tagging fills the
              EASY rows (noun lists → collage, places → map, names →
              wikipedia, dates/numbers/quotes/questions → hold + caption)
              and, per its per-rule switches, their search_term. It only
              ever touches EMPTY entries, so re-running is always safe.
              Everything it leaves is yours in step 4.
-  4. MANUAL  `uv run MANUAL_TAGGING.py` (point and click) for the rest,
+  4. MANUAL  `uv run 3-manual-tagging/MANUAL_TAGGING.py` (point and
+             click) for the rest,
              optionally helped by the AI prompts in prompts/.
 
 The output format is documented field-by-field in FORMAT.md.
@@ -31,7 +32,12 @@ import sys
 from pathlib import Path
 from typing import List, Tuple
 
-from sentence_splitter import split_text_into_sections_with_meta
+# The stages are folders that no import statement can name
+# ("0-sentence-splitter"), so PATHS puts each of them on sys.path.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import PATHS  # noqa: F401,E402  — every stage folder on sys.path
+
+from sentence_splitter import split_text_into_sections_with_meta   # 0-
 
 # When True, every file this script WRITES is prefixed with "TESTING_".
 TESTING_SCRIPT_SEARCH_TERM_GENERATION = True
@@ -163,9 +169,9 @@ def _auto_tag(out_path: Path) -> None:
     break the split/emit itself. For the full True/False detection table,
     run it standalone:  uv run Auto_add_mediatypes.py <json> --dry-run"""
     try:
-        import Auto_add_mediatypes as auto
+        import Auto_add_mediatypes as auto            # 2-auto-tagging/
     except ImportError:
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        sys.path.insert(0, str(PATHS.AUTO_TAGGING_DIR))
         try:
             import Auto_add_mediatypes as auto
         except Exception as exc:
@@ -210,7 +216,7 @@ def generate_script_to_search_term(
     print(f"[emit]    {len(triples)} rows -> {out_path}")
     if TURN_ON_AUTO_TAGGING:
         _auto_tag(out_path)
-    print(f"[emit]    now run: uv run MANUAL_TAGGING.py")
+    print(f"[emit]    now run: uv run 3-manual-tagging/MANUAL_TAGGING.py")
     return out_path
 
 
