@@ -267,6 +267,40 @@ class Visualisable:
     #               file's. All this does is say so.
     hypothetical: bool = False
 
+    # abstract_concepts   the heads this LINE lost for being unfilmable —
+    #               "monopoly", "weight", "thing". Read straight off
+    #               entry.dropped, where drop_abstract() already wrote
+    #               "abstract(2.69)" / "not-a-picture(noun.state)": nothing
+    #               new is computed, this is only the half of that working
+    #               that reaches the map.
+    #               A LINE-LEVEL fact, on every slot for the same reason the
+    #               theme is. Empty is the normal answer.
+    #               WHY IT IS REPORTED AT ALL: a line whose only content was
+    #               an abstraction is not a line with nothing in it — it is a
+    #               line about something you cannot photograph, and
+    #               2-auto-tagging has an attribute waiting for exactly that
+    #               (Attr.IS_ABSTRACT_CONCEPT). Deleting the evidence left it
+    #               permanently False.
+    abstract_concepts: tuple = ()
+
+    # theme_kind / theme_text   what the SCRIPT is about here, and what sort
+    #               of thing that is — "place" / "Egypt". Two plain strings,
+    #               not an object: the map is read by three other files and
+    #               its flatness is the point. Filled by apply_theme() from
+    #               _theme_engine, which is the only thing that decides them.
+    #               None on both when the script is not about anything by
+    #               here, which is a normal answer.
+    theme_kind: str | None = None
+    theme_text: str | None = None
+
+    # setting_echo  this slot was a bare time of day ("night."). Its NAME is
+    #               the setting it happened in, written in by
+    #               resolve_setting_echoes() once fill_locations() knows what
+    #               that is, and the time itself is the setting's variant.
+    #               A working, like trimmed_description: it never reaches the
+    #               map, because by then the slot simply IS the setting.
+    setting_echo: bool = False
+
     # trimmed_description   the adjectives cut off the front of the name
     #               because they describe the LOOK rather than name the KIND.
     #               A working, not an answer: fill_variants() turns it into
@@ -316,6 +350,9 @@ class Visualisable:
             "owner": self.owner,
             "amount": self.amount,
             "hypothetical": self.hypothetical,
+            "theme_kind": self.theme_kind,
+            "theme_text": self.theme_text,
+            "abstract_concepts": list(self.abstract_concepts),
         }
 
 
@@ -375,6 +412,10 @@ class Candidate:
     setting_score: float = 0.0
     hypothetical: bool = False          # inside an "if" / a simile / a modal
     dropped_by: str | None = None       # e.g. "abstract(2.69)", "weak-verb"
+    # "night." — a segment whose ONLY content was a time of day. The picture
+    # is the PLACE at that time, so this slot is a stand-in for the setting
+    # and the document pass writes the setting's name into it.
+    setting_echo: bool = False
     # the describing adjectives trim_to_searchable_core() took OFF the front,
     # left to right — "tiny", "incredibly remote". They are not thrown away:
     # they are the thing's `variant`, and fill_variants() is where they land.
@@ -408,6 +449,10 @@ class Context:
     # so move_time_to_setting() puts it here and fill_variants() hands it to
     # whatever this segment is standing in.
     time_descriptions: list = field(default_factory=list)
+    # ...and WHERE each of those was, as a token span, so that a segment left
+    # with nothing else can still put the setting on screen — see
+    # apply_time_setting_fallback().
+    time_spans: list = field(default_factory=list)
 
     def target_tokens(self):
         """The tokens of the TARGET LINE only. Every harvester iterates this,
@@ -568,15 +613,20 @@ CONTAINER_SUPERSENSES = frozenset({
 # at somebody without saying what they look like, and the thing they relate
 # to is the picture.
 #
-# OFF, and here is the evidence rather than an opinion: the test that finds
-# "owner" (noun.person with an `of` complement) finds "the King OF Spain" and
-# "the Queen OF England" too, and those ARE portraits — promoting them would
-# film the country instead of the monarch. WordNet has no class that
-# separates a role from a title, and none of the five scripts contains either
-# shape, so there is nothing to measure the discriminator against yet. Turn
-# it on when a script produces one. The noun.relation half ("the rest of the
-# fleet") is already live above, because that supersense IS the answer.
-PROMOTE_ROLE_NOUNS = False
+# ON, with a discriminator, which is what it was waiting for. The objection
+# was real: the test that finds "owner" (noun.person with an `of` complement)
+# finds "the King OF Spain" and "the Queen OF England" too, and those ARE
+# portraits — promoting them would film the country instead of the monarch.
+# What separates the two is WHAT THE COMPLEMENT IS, and that is a tag:
+#     A NAME       "the King of SPAIN"        PROPN / a named entity
+#                  -> the ROLE is the picture; keep it
+#     A THING      "the owner of THE TRACTOR" a common noun
+#                  -> the thing is the picture; promote
+# Read off the parse, not off a list of titles, and it is the same fact the
+# coreference clusters carry (a cluster with a name in it versus one with a
+# thing in it) without needing a cluster to be in scope here — the per-segment
+# pass has none, and rule 7 says it is not getting one.
+PROMOTE_ROLE_NOUNS = True
 
 # 5b i — PARTICIPLES. An adjective wearing a verb's past participle is a verb
 # in adjective's clothes, so ask what the VERB does.
@@ -619,6 +669,32 @@ RELATIONAL_ADJ_DEPS = frozenset({"prep", "pcomp", "ccomp"})
 # How many of an adjective's senses to read. Adjectives have few, and
 # adj.pert is never buried deep, so this is "all of them" in practice.
 ADJ_SENSE_WINDOW = 10
+
+# 5d — HOW USEFUL AN ACCUMULATED DETAIL IS IN A SEARCH BOX. fill_variants()
+# collects every visual detail the script gives a thing, and a search term
+# cannot hold all of them — so they are ORDERED, best first, and the
+# assembler takes as many as fit. WordNet does the ordering; no word is
+# named. Lower is better:
+#   0 A KIND        is_kind_forming_adjective — "volcanic archipelago" is a
+#                   different thing from an archipelago, so this is half of
+#                   what the thing IS and is never the one dropped
+#   1 A COLOUR      the single most useful thing to add to a stock search
+#   2 A LOOK        size, integrity — "broken", "huge"
+#   3 EVERYTHING ELSE — first to go when the term will not fit
+VARIANT_RANK_KIND = 0
+VARIANT_RANK_COLOUR = 1
+VARIANT_RANK_LOOK = 2
+VARIANT_RANK_OTHER = 3
+
+# The two nodes a colour word sits under, reached from EITHER side, because
+# WordNet is inconsistent about which side it puts the pointer on:
+#   as the property an adjective measures   "black" -> value.n.04
+#   as the noun the word itself IS          "yellow" -> chromatic_color
+#                                              -> visual_property.n.01
+# "black" has the adjective pointer and "yellow" has none at all, so asking
+# only one way round finds half the colours in English.
+COLOUR_ATTRIBUTE_ROOTS = frozenset({"value.n.04", "visual_property.n.01"})
+COLOUR_NOUN_SENSES = 2
 
 # 5c — VERBS, the same supersense test as a backstop. WEAK_VERB_LEMMAS is a
 # good list and it is shared with the sentence splitter, so it stays — but it
@@ -878,7 +954,51 @@ def is_kind_forming_adjective(tok) -> bool:
     ANY sense counts: "royal" is adj.pert at senses 1 and 2 and adj.all at 3,
     and it is still forming a kind.
     """
-    return "adj.pert" in _supersenses(tok.lower_, ADJ_SENSE_WINDOW, pos="a")
+    return forms_a_kind(tok.lower_)
+
+
+def forms_a_kind(word: str) -> bool:
+    """is_kind_forming_adjective() for a WORD instead of a token. By the time
+    a detail is RANKED it is a string — the parse it came off is two steps
+    behind — so the same question has to be askable of one."""
+    return "adj.pert" in _supersenses(word, ADJ_SENSE_WINDOW, pos="a")
+
+
+def detail_rank(detail: str) -> int:
+    """How useful this accumulated detail is in a search box. Lower is better;
+    the values are the VARIANT_RANK_* dials and the reasoning is up there.
+
+        "volcanic"          0   a kind
+        "yellow paint"      1   a colour
+        "broken windscreen" 2   integrity
+        "at night"          3   nothing WordNet files as a look
+
+    A detail is a PHRASE ("really remote", "yellow paint"), so every word in
+    it is asked and the BEST answer wins — the colour in "yellow paint" is
+    the useful half, and "paint" on its own would say nothing.
+
+    Deep attribute roots (follow_similar) on purpose: this is only choosing
+    between two details that both already passed is_visual_quality(), so the
+    looser lookup can only change their ORDER, never let one in.
+    """
+    knowledge = kb()
+    best = VARIANT_RANK_OTHER
+    for raw in detail.split():
+        word = raw.strip(""" '",.;:!?()[]""").lower()
+        if not word:
+            continue
+        if forms_a_kind(word):
+            return VARIANT_RANK_KIND
+        if knowledge is None:
+            continue
+        roots = knowledge._wn_attribute_roots(word, follow_similar=True)
+        if (roots & COLOUR_ATTRIBUTE_ROOTS
+                or knowledge._wn_has_hypernym(word, COLOUR_ATTRIBUTE_ROOTS,
+                                              COLOUR_NOUN_SENSES)):
+            best = min(best, VARIANT_RANK_COLOUR)
+        elif roots & VISUAL_ATTRIBUTE_ROOTS:
+            best = min(best, VARIANT_RANK_LOOK)
+    return best
 
 
 def is_filmable_action(tok) -> bool:
@@ -955,7 +1075,8 @@ def create_visualisables_entry(
         7  resolve overlaps — one picture per piece of text
         8  refuse a slot to the attributes (a verb, a bare adjective)
         9  order left to right, which fixes the slot numbers [1] [2] [3]
-       10  mercy rule: nothing survived, but it is 4+ real words
+       10  fallbacks: the setting at a bare time of day, then the mercy
+           rule — nothing survived, but it is 4+ real words
        11  classify settings, then build the template + the map
     """
     # 0) PARSE
@@ -1014,6 +1135,9 @@ def create_visualisables_entry(
     candidates = order_candidates(candidates)
 
     # 10) FALLBACK — the mercy rule, so a real segment is never left empty.
+    #     The time-of-day one first: "night." has a picture (the place, at
+    #     night) and must not be handed to the mercy rule as if it had none.
+    candidates = apply_time_setting_fallback(candidates, ctx)
     candidates = apply_length_fallback(candidates, ctx)
 
     # 11) BUILD — mark settings and hypotheticals, punch out the template,
@@ -1022,7 +1146,46 @@ def create_visualisables_entry(
     candidates = flag_hypotheticals(candidates, ctx)
     entry = build_entry(ctx, candidates)
     entry.dropped = [c for c in harvest if c.dropped_by]
+    _stamp_abstract_concepts(entry, ctx)
     return entry
+
+
+# The two things drop_abstract() writes into dropped_by. Prefixes, because
+# both carry their evidence in brackets after them — "abstract(2.69)",
+# "not-a-picture(noun.state)".
+ABSTRACT_DROP_REASONS = ("abstract(", "not-a-picture(")
+
+
+def _stamp_abstract_concepts(entry: VisualisablesEntry, ctx: Context) -> None:
+    """Put the heads this line lost as UNFILMABLE onto its slots.
+
+    e.g. "The company held a monopoly on the spice trade."
+             -> ("monopoly",)   and two slots that survived
+         "It was worth more than its weight in gold."
+             -> ("weight",)
+
+    Pure plumbing: drop_abstract() worked all of this out and wrote it on the
+    candidate; all this does is carry the head words as far as the map, which
+    is the only thing that leaves this folder.
+
+    A LINE WITH NO SLOTS AT ALL CAN CARRY NOTHING, and that is a shape
+    problem rather than a decision: as_map() is {template: {slot: ...}}, so
+    with no slots there is nowhere to hang a line-level fact. It is why
+    drop_abstract() sets ctx.attributes_only when IT is what emptied the
+    segment — the mercy rule then gives "leverage." a KIND_FALLBACK slot,
+    which is both the honest answer (nothing to film here) and the ride out.
+    """
+    doc, heads = ctx.doc, []
+    for cand in entry.dropped:
+        if not (cand.dropped_by or "").startswith(ABSTRACT_DROP_REASONS):
+            continue
+        head = doc[cand.start:cand.end].root.lemma_.lower()
+        if head and head not in heads:
+            heads.append(head)
+    if not heads:
+        return
+    for vis in entry.visualisables.values():
+        vis.abstract_concepts = tuple(heads)
 
 
 # =============================================================================
@@ -1380,6 +1543,8 @@ def promote_partitives(candidates: list[Candidate],
         "a series of raids"       film the raids
         "the rest of the fleet"   film the fleet
         "the owner of the tractor"  film the tractor    (PROMOTE_ROLE_NOUNS)
+        "the King of Spain"       film the KING — a role whose complement is
+                                  a NAME is a portrait, so it is not promoted
 
     A container word measures or groups; it is not itself a picture. So when
     the head's supersense is one that COUNTS things (CONTAINER_SUPERSENSES)
@@ -1413,6 +1578,14 @@ def promote_partitives(candidates: list[Candidate],
         if obj is None or obj.pos_ not in {"NOUN", "PROPN", "PRON"}:
             out.append(c)
             continue
+        # A ROLE WHOSE COMPLEMENT IS A NAME IS A PORTRAIT. "the King of
+        # Spain" is a picture of the king; "the owner of the tractor" is a
+        # picture of the tractor. See PROMOTE_ROLE_NOUNS for why this is the
+        # discriminator and why it is a tag rather than a list.
+        if first == "noun.person" and (obj.pos_ == "PROPN" or obj.ent_type_):
+            c.detector += "+role-is-a-portrait"
+            out.append(c)
+            continue
         indices = [t.i for t in obj.subtree if c.start <= t.i < c.end]
         if not indices:
             out.append(c)
@@ -1441,11 +1614,27 @@ def move_time_to_setting(candidates: list[Candidate],
     the season, and the clockmaker's spring is a coil. So this fires only on
     a TEMPORAL ADJUNCT — the object of a preposition hanging off a VERB,
     which is what "at night" is and what "He sent back a spring" (a dobj) is
-    not. Dates keep their own kind and never reach here.
+    not.
+
+    A DATE CANDIDATE IS THE SAME PHRASE WEARING THE OTHER KIND. "night" is
+    harvested twice — once as a noun chunk and once as an entity — and while
+    only the noun chunk was tested here the entity half survived and took the
+    slot: whales segment 18 searched stock for "night". Both kinds are tested
+    now, and the phrase is still only RECORDED once however many candidates
+    covered it.
+
+    BUT A DATE HAS TO BE A TIME OF DAY, AND spaCy'S OWN LABEL IS WHAT SAYS SO.
+    noun.time alone is not enough: "a decade" is noun.time too, and it hangs
+    off "buried" as an adjunct exactly like "at night" does — and a decade is
+    a caption, not a look. The NER label separates them without a word list:
+        TIME  "night"                     a time of DAY  -> the setting's look
+        DATE  "a decade", "64 AD",        a point or a span on the calendar
+              "thirty years"              -> keeps its slot, as it always did
     """
     doc, kept = ctx.doc, []
     for c in candidates:
-        if c.kind != KIND_THING:
+        time_of_day = any(t.ent_type_ == "TIME" for t in doc[c.start:c.end])
+        if c.kind != KIND_THING and not (c.kind == KIND_DATE and time_of_day):
             kept.append(c)
             continue
         root = doc[c.start:c.end].root
@@ -1456,12 +1645,9 @@ def move_time_to_setting(candidates: list[Candidate],
             kept.append(c)
             continue
         c.dropped_by = "time-as-variant"
-        # ...unless a DATE candidate already covers it. Dates keep their own
-        # kind (spec PART 1 bullet 5), and recording "at night" as the
-        # setting's look as WELL as a date slot would say it twice.
-        if any(o.kind == KIND_DATE and o.dropped_by is None
-               and o.start < c.end and o.end > c.start for o in candidates):
-            continue
+        if any(a < c.end and b > c.start for a, b in ctx.time_spans):
+            continue                     # the other kind of the same phrase
+        ctx.time_spans.append((c.start, c.end))
         ctx.time_descriptions.append(
             " ".join(doc[root.head.i:c.end].text.split()).strip(" ,.;:!?"))
     return kept
@@ -1607,10 +1793,22 @@ def drop_abstract(candidates: list[Candidate],
     numbers and dates are concrete by construction; adjectives, verbs and SFX
     would be wrongly killed by a noun-calibrated scale.
 
-    NOTE the abstract term is DROPPED, not flagged. The spec's idea of
-    resolving it into a concrete stand-in ("inflation" -> a shrinking pile of
-    banknotes) has nothing to work from later. Revisit here if that gets
-    built: keep the candidate and add a flag.
+    THE DROP IS RECORDED, AND THE RECORD NOW LEAVES THIS FILE.
+    dropped_by has always said "abstract(2.69)" / "not-a-picture(noun.state)";
+    _stamp_abstract_concepts() carries those heads onto the line's slots and
+    LineFacts.abstract_concepts hands them to 2-auto-tagging, which is what
+    lets shared_text_logic.is_abstract_concept() finally answer True.
+    Resolving one into a concrete stand-in ("inflation" -> a shrinking pile
+    of banknotes) is still NOT done, and is a creative call rather than a
+    lookup — see the plan.
+
+    NOTHING LEFT? SAY SO, the same way drop_attribute_kinds() and
+    drop_bare_counts() do. A segment whose only content was an abstraction
+    ("leverage.") is a segment with nothing to film, which is precisely what
+    KIND_FALLBACK exists for — and the fallback slot is also the only place a
+    line-level fact can ride out of a segment that would otherwise have no
+    slots at all, so without this "leverage." could never be REPORTED as the
+    abstract concept it is.
     """
     knowledge, doc, kept = kb(), ctx.doc, []
     for c in candidates:
@@ -1641,6 +1839,8 @@ def drop_abstract(candidates: list[Candidate],
 
         # 3. Silence means KEEP.
         kept.append(c)
+    if candidates and not kept:
+        ctx.attributes_only = True
     return kept
 
 
@@ -2020,6 +2220,33 @@ def order_candidates(candidates: list[Candidate]) -> list[Candidate]:
     return sorted(candidates, key=lambda c: (c.start, c.end))
 
 
+def apply_time_setting_fallback(candidates: list[Candidate],
+                                ctx: Context) -> list[Candidate]:
+    """NIGHT IS A SETTING, NOT A SHOT — and a segment that is ONLY a time of
+    day still has to put something on screen.
+
+        "...the wind sounds like whale song at" | "night."
+             move_time_to_setting() takes "at night" off the second segment
+             and gives it to the setting as a look. That leaves the segment
+             with no slots at all, and the answer is not "no picture": it is
+             the PLACE, at night.
+
+    So this puts the slot back, over the same words, flagged setting_echo.
+    Its NAME is written in later by resolve_setting_echoes(), because what
+    the segment is standing in is not known until fill_locations() has run.
+
+    ONLY WHEN NOTHING ELSE SURVIVED. A segment that has a thing in it as well
+    ("the wind sounds like whale song at night" undivided) already has its
+    picture, and the time is only that picture's setting's variant — which is
+    what move_time_to_setting() recorded. This is the empty case alone.
+    """
+    if candidates or not ctx.time_spans:
+        return candidates
+    start, end = ctx.time_spans[-1]
+    return [Candidate(start, end, KIND_THING, "time-as-setting",
+                      confidence=0.9, setting_echo=True)]
+
+
 def apply_length_fallback(candidates: list[Candidate],
                           ctx: Context) -> list[Candidate]:
     """Spec PART 1, last bullet — the mercy rule.
@@ -2103,6 +2330,13 @@ def classify_settings(candidates: list[Candidate],
     spatial_preps = STL.SPATIAL_LOCATIVE_PREPS | STL.SPATIAL_DIRECTIONAL_PREPS
     for c in candidates:
         if c.kind not in {KIND_THING, KIND_NAME}:
+            continue
+        # A SETTING ECHO IS ALREADY A SETTING, and not this one. "night." is
+        # a stand-in for the place the segment is standing IN, which is not
+        # known until fill_locations() has run — so scoring it here would
+        # make the segment its own setting and the write-back would have
+        # nothing to write. resolve_setting_echoes() marks it instead.
+        if c.setting_echo:
             continue
         if _in_comparison_frame(doc, c.start, c.end):
             continue
@@ -2214,6 +2448,7 @@ def _candidate_to_visualisable(cand: Candidate, ctx: Context) -> Visualisable:
         confidence=cand.confidence,
         token_span=(cand.start, cand.end),
         trimmed_description=list(cand.trimmed_description),
+        setting_echo=cand.setting_echo,
     )
 
 
@@ -2278,6 +2513,7 @@ def resolve_visualisable_details(entries: list[VisualisablesEntry],
         3  identity  collapse mentions, so one thing has one history
         4  coref     turn "it"/"they" into the thing they point at
         5  location  the line's setting, carried forward
+       5b  echo      "night." is that setting, at night
         6  variant   what each thing looks like by now, described
     """
     entries = fill_actions(entries, doc)
@@ -2285,6 +2521,7 @@ def resolve_visualisable_details(entries: list[VisualisablesEntry],
     entries = assign_identities(entries)
     entries = resolve_references(entries, doc, coref, abstract_terms)
     entries = fill_locations(entries, doc)
+    entries = resolve_setting_echoes(entries)
     entries = fill_variants(entries, doc)
     return entries
 
@@ -2499,6 +2736,7 @@ def resolve_references(entries: list[VisualisablesEntry], doc,
 
     if abstract_terms is not None:
         _references_from_map(entries, doc, refs, abstract_terms)
+        _generic_nps_from_map(entries, doc, abstract_terms)
         _apply_possessives(entries, doc, abstract_terms)
         return entries
 
@@ -2577,6 +2815,65 @@ def _references_from_map(entries: list[VisualisablesEntry], doc, refs,
             # film and becomes a note for whatever draws the shot.
             vis.kind = KIND_DEICTIC
         vis.identity = vis.visualisable.lower()
+
+
+def _generic_nps_from_map(entries: list[VisualisablesEntry], doc,
+                          abstract_terms: dict) -> None:
+    """"The insect" --> the BEE. A generic re-mention, resolved like a pronoun.
+
+    A definite noun phrase points backwards exactly as "it" does, and it is
+    the more dangerous of the two: "the insect" LOOKS filmable, takes an
+    ordinary KIND_THING slot, and buys stock footage of some insect instead
+    of the bee the script is about.
+
+    The answers are already in the map -- _abstract_term_resolver widened its
+    target set to definite noun phrases and stamped those rows
+    GENERIC_NP_SOURCE ("cluster-np"), keeping only the ones where the thing
+    the models point at is a KIND OF the phrase, or the phrase's head is not
+    a picture at all. So this is the read side and nothing more: no model,
+    no extra pass, no second opinion.
+
+    The slot becomes a KIND_REFERENCE, because that is what it now is -- a
+    mention standing in for something named earlier -- and everything
+    downstream that already knows how to treat a resolved pronoun treats it
+    the same way.
+
+    THE THRESHOLD APPLIES HERE TOO. Below it the phrase keeps its own words:
+    the one wrong link the measurement found ("The yellow and black guy" ->
+    the windscreen, one model of four, ~0.2) is refused by exactly the rule
+    that refuses a weak pronoun answer.
+    """
+    rows = [(span, row) for span, row in abstract_terms.items()
+            if row.get("source") == _generic_np_source() and row.get("resolved")]
+    if not rows:
+        return
+    threshold = _abstract_threshold()
+    for entry in entries:
+        for vis in entry.visualisables.values():
+            if vis.kind != KIND_THING or vis.token_span is None:
+                continue
+            span = doc[vis.token_span[0]:vis.token_span[1]]
+            # containment, not equality: the slot was trimmed to its
+            # searchable core ("The insect" -> "insect") and the map's key is
+            # the whole noun phrase.
+            hit = next((row for (a, b), row in rows
+                        if a <= span.start_char and span.end_char <= b), None)
+            if hit is None:
+                continue
+            if hit["confidence"] < threshold:
+                vis.detector += "+cluster-np-low"
+                continue
+            vis.visualisable = hit["resolved"]
+            vis.kind = KIND_REFERENCE
+            vis.confidence = hit["confidence"]
+            vis.detector += "+cluster-np"
+            vis.identity = vis.visualisable.lower()
+
+
+def _generic_np_source() -> str:
+    """The resolver's own label for a noun-phrase row, so the two files
+    cannot disagree about what one is called."""
+    return getattr(_resolver(), "GENERIC_NP_SOURCE", "cluster-np")
 
 
 def _apply_possessives(entries: list[VisualisablesEntry], doc,
@@ -2673,8 +2970,13 @@ def _abstract_row(abstract_terms: dict, token):
     row = abstract_terms.get((start, end))
     if row is not None:
         return row
+    # ...and never a NOUN PHRASE's row. The map also holds definite noun
+    # phrases now (_generic_nps_from_map), whose spans are several tokens
+    # wide, so an overlap scan looking for a one-token pronoun would happily
+    # return the phrase that contains it and answer the wrong question.
+    generic = _generic_np_source()
     for (a, b), row in abstract_terms.items():
-        if a < end and start < b:
+        if a < end and start < b and row.get("source") != generic:
             return row
     return None
 
@@ -2780,6 +3082,15 @@ def fill_locations(entries: list[VisualisablesEntry], doc) -> list[Visualisables
       3. A setting is not in itself — the lane's own location stays whatever
          was current before it.
 
+    AND THIS ONE LOOKS AHEAD ON PURPOSE — do not "fix" it. Rule 1 gives a
+    thing the setting named anywhere in its SENTENCE, which is often a LATER
+    segment ("It was once covered" | "by the Tethys Sea."), so a location
+    really can come from something the viewer has not heard yet. That is the
+    opposite of fill_variants(), which dates every detail so it cannot. The
+    closing comment of VISUALISABLE_SEARCH_TERMS.py is the measurement:
+    comparing settings between lines reports the move one segment early
+    precisely because of this, and it broke "It was once covered".
+
     Several settings in one sentence? Highest setting_score wins, so a real
     place (1.0) beats a merely prepositional one (0.5). Ties go LEFTMOST.
     """
@@ -2816,6 +3127,59 @@ def fill_locations(entries: list[VisualisablesEntry], doc) -> list[Visualisables
     return entries
 
 
+def apply_theme(entry: VisualisablesEntry, theme) -> VisualisablesEntry:
+    """Stamp ONE segment's slots with what the script is about there.
+
+    @input theme = a _theme_engine.Theme, or None. None leaves both fields
+        None, which every consumer reads as "no theme here".
+
+    The theme belongs to the LINE, not to any one thing in it, so every slot
+    of the line carries the same pair. That is on purpose: the map is what
+    leaves this folder, and a consumer holding one slot must not have to go
+    and find its siblings to learn where it is standing.
+    """
+    for vis in entry.visualisables.values():
+        vis.theme_kind = getattr(theme, "kind", None)
+        vis.theme_text = getattr(theme, "text", None)
+    return entry
+
+
+# -----------------------------------------------------------------------------
+# step 5b — the setting at a time of day
+# -----------------------------------------------------------------------------
+
+def resolve_setting_echoes(entries: list[VisualisablesEntry]
+                           ) -> list[VisualisablesEntry]:
+    """"night." puts the PLACE on screen, at night. Write the place in.
+
+    apply_time_setting_fallback() left a slot over the word "night" with
+    setting_echo set and nothing but the word in it, because at that point
+    nothing knew what the segment was standing in. fill_locations() has now
+    said, so this is the write-back:
+
+        visualisable  the setting                    "middle of the Sahara"
+        identity      the setting's identity, so fill_variants() stamps this
+                      slot out of the SETTING's history — which is where
+                      move_time_to_setting() put "at night"
+        is_setting    it is the setting; it is not standing in one
+
+    NO PLACE NAMED YET? Leave the word alone. The segment then searches for
+    the time of day, which is what it did before this existed, and which is
+    still better than a blank.
+    """
+    for entry in entries:
+        for vis in entry.visualisables.values():
+            if not vis.setting_echo or not vis.location:
+                continue
+            place = vis.location
+            vis.visualisable = place
+            vis.identity = _owner_identity(entries, place)
+            vis.is_setting = True
+            vis.setting_score = 1.0
+            vis.location = None          # a setting is not in itself
+    return entries
+
+
 # -----------------------------------------------------------------------------
 # step 6 — variant
 # -----------------------------------------------------------------------------
@@ -2849,39 +3213,75 @@ def fill_variants(entries: list[VisualisablesEntry], doc) -> list[VisualisablesE
          thing; the only change is that they are no longer mistaken for part
          of what it IS.
       1-3  _variant_descriptions(), which reads them off the parse.
+
+    EVERY DETAIL IS DATED with the entry it was learned at, and line i can
+    only use the ones learned at line i or earlier. main.py asks for this in
+    those words: "if we've just said 'car' so far, we don't want the full red
+    toyota". The footage must not spoil a reveal the narration has not made
+    yet — and the accumulation cannot be trusted to do it by arriving in
+    order, because the caller hands this function the segment AFTER the one
+    it is labelling (that is how a setting named late reaches the thing
+    standing in it), so a look-ahead segment's details were reachable.
+
+    AND THEY ARE ORDERED BY USEFULNESS, not by position — detail_rank(), which
+    is WordNet, so a colour goes in front of a size and both go in front of
+    something WordNet cannot classify. The term assembler takes as many as
+    fit, so what falls off the end is now the LEAST useful detail rather than
+    the last one the script happened to say.
+
+    NOTHING IS THROWN AWAY HERE. `variant` keeps every revealed detail, in
+    rank order; only the search term is capped, and it is capped by the
+    assembler that builds it.
     """
-    history: dict[str, list[str]] = {}
-    for entry in entries:
+    history: dict[str, list[tuple[int, str]]] = {}
+
+    def learn(identity: str, description: str, index: int) -> None:
+        """Record a detail against the line it was LEARNED at. First mention
+        wins: a detail repeated later was still revealed the first time."""
+        bucket = history.setdefault(identity, [])
+        if all(known != description for _at, known in bucket):
+            bucket.append((index, description))
+
+    for index, entry in enumerate(entries):
         # "at night" — how the PLACE looks in this segment (STEP 7h). It goes
         # on the setting's history before this segment's own slots are
         # stamped, so a setting named here carries it straight away.
         for description in entry.time_descriptions:
             target = _setting_identity(entries, entry)
-            if not target:
-                continue
-            bucket = history.setdefault(target, [])
-            if description not in bucket:
-                bucket.append(description)
+            if target:
+                learn(target, description, index)
         for _n, vis in sorted(entry.visualisables.items()):
             if not vis.identity or vis.kind in {KIND_ACTION, KIND_QUALITY,
                                                 KIND_FALLBACK}:
                 continue
-            so_far = history.setdefault(vis.identity, [])
             for description in (list(vis.trimmed_description)
                                 + _variant_descriptions(doc, vis)):
-                if description not in so_far:
-                    so_far.append(description)
+                learn(vis.identity, description, index)
                 # ...and a PART's change describes its WHOLE: "Its windscreen
                 # broke" leaves the TRACTOR with a broken windscreen. Only
                 # possible once a possessive resolved to an owner, which is
                 # the abstract-terms map's doing — the KNOWN MISS below.
                 if vis.owner:
-                    whole = history.setdefault(vis.owner, [])
-                    phrase = f"{description} {_head_word(doc, vis)}"
-                    if phrase not in whole:
-                        whole.append(phrase)
-            vis.variant = ", ".join(so_far) or None
+                    learn(vis.owner,
+                          f"{description} {_head_word(doc, vis)}", index)
+            vis.variant = _variant_text(history.get(vis.identity, ()), index)
     return entries
+
+
+def _variant_text(learned, index: int) -> str | None:
+    """The details this thing had shown BY line `index`, most useful first.
+
+    e.g. learned = [(2, "yellow paint"), (7, "broken windscreen")]
+             index 4  -->  "yellow paint"
+             index 9  -->  "yellow paint, broken windscreen"
+
+    sorted() is stable, so two details of the same rank keep the order the
+    script revealed them in.
+    """
+    revealed = [description for learned_at, description in learned
+                if learned_at <= index]
+    revealed.sort(key=detail_rank)
+    return ", ".join(revealed) or None
 
 
 def _variant_descriptions(doc, vis) -> list[str]:

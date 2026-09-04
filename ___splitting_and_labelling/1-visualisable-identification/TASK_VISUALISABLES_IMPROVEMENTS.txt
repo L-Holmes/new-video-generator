@@ -1,0 +1,318 @@
+================================================================================
+TASK -- FINISH THE SEARCH TERM
+================================================================================
+Written 2026-09-04. Eight tasks, in order. Each says WHAT, WHAT WITH, WIRE IN,
+WON'T BREAK, DONE WHEN.
+
+
+--------------------------------------------------------------------------------
+THE RULES. READ THESE FIRST. THEY OVERRULE EVERY TASK BELOW.
+--------------------------------------------------------------------------------
+1) NO WORD IS EVER WRITTEN DOWN.
+   Not one rule below may name a word. A rule that names a word fixes one
+   script and no other. Name a TYPE instead, and it works on every word in
+   English including the ones no script has used yet:
+       WordNet supersenses      noun.artifact, noun.attribute, verb.motion
+       WordNet taxonomy nodes   property.n.02, quality.n.01
+       WordNet adjective classes  adj.pert (relational), adj.ppl
+       spaCy tags / deps / NER  VBN, JJR, neg, nummod, acomp, GPE, NORP
+       Brysbaert thresholds     a number on 1..5, applied to every word alike
+   THE ONE EXISTING EXCEPTION, AND ITS LIMIT: shared_text_logic.py already
+   holds word lists (WEAK_VERB_LEMMAS, GENERIC_TOPIC_NOUNS, APPROXIMATOR_WORDS)
+   and they stay, because the sentence splitter shares them. NO NEW WORD MAY BE
+   ADDED TO ANY OF THEM BY THIS WORK. Closed grammatical classes -- determiners,
+   negators, cardinals, modals -- are the only thing that counts as reading a
+   tag rather than writing a lexicon.
+
+2) NO AI DECIDES WHAT IS VISUAL.  (TODO.md, in shouting.)
+   ALLOWED  a local model with a pinned checkpoint, run offline, whose answer
+            is a score or a vote that THIS code then judges by its own written
+            rules -- the coreference ensemble already is one.
+   BANNED   a network call; a chat model; anything handed a prompt whose PROSE
+            is taken as the answer.
+
+3) LICENCE: MIT / Apache-2.0 / BSD only. This ships in paid software. Check
+   before installing anything -- see task 2, where the obvious choice is AGPL.
+
+4) THE TEMPLATE TEXT NEVER CHANGES. The words on screen are the words the
+   viewer hears. Only the SEARCH TERM may be rewritten, and no character offset
+   may move -- the abstract-terms map is keyed by offsets into
+   join_segments(), and moving one desyncs the whole file.
+
+5) NOTHING RAISES. A missing model, corpus or data file degrades the term and
+   never stops the run. facts_for_lines() is wrapped per row for this reason,
+   and every lookup in _knowledge_base.py answers "no opinion" rather than
+   throwing. Keep that property.
+
+6) NOTHING DISAPPEARS SILENTLY. Candidate.dropped_by / entry.dropped record
+   every drop. Every new drop or rewrite records why, so the working shows.
+
+7) NO THIRD PARSE. Two parses (sm for the extractor, trf for the resolver) is
+   the current, measured, justified state. Three is not.
+
+
+--------------------------------------------------------------------------------
+1) SHOW THE SEARCH TERM IN THE TEST OUTPUT
+--------------------------------------------------------------------------------
+WHAT   The test file prints slot tables and stops one field short of the actual
+       answer, so "did that change make the terms better?" cannot be answered
+       today. Add a SEARCH TERM column per segment, and two counts in SUMMARY:
+       lines with a term, lines held as same-scene.
+WIRE   TEST_MANUAL_INTERPRETATION.py. Build rows the way
+       ___splitting_and_labelling/main.py (~line 250) already does, then call
+       VISUALISABLE_SEARCH_TERMS.facts_for_lines(). Copy that loop; do not
+       write a second one.
+DONE   TEST_RESULTS_manual_interpretation.txt shows a term for every line of
+       all five scripts and diffs cleanly against itself after a change.
+       Do this FIRST -- every task below says "re-run it".
+
+
+--------------------------------------------------------------------------------
+2) THEME EXTRACTION -- what the script is ABOUT, typed
+--------------------------------------------------------------------------------
+WHAT   Work out, per script, what it is about, and give each theme a KIND.
+       Compute internally over three scopes so a theme that has ENDED is not
+       applied later: whole script, text-so-far (segments[:i+1]), and a window
+       of N segments around i.
+
+DATA SHAPE -- keep it flat, no Theme class
+       An enum for the kinds, and TWO PLAIN FIELDS on the slot map:
+
+           class ThemeKind(str, Enum):     # str, so it serialises as "place"
+               PLACE   = "place"           # and the map stays plain JSON
+               ERA     = "era"
+               CULTURE = "culture"
+               SUBJECT = "subject"
+
+           ... "theme_kind": "place", "theme_text": "Egypt", ...
+
+       ONE theme per slot, chosen by the engine. The scopes are working, not
+       output. Do not add a Theme object, a list of themes, or a nested dict --
+       the map is read by three other files and its simplicity is the point.
+
+WHAT WITH -- researched 2026-09-04
+   KeyBERT      MIT. v0.9.0, Feb 2025, actively maintained. The accuracy winner
+                in the published keyword-extraction benchmarks, and it works on
+                ONE document, which is what a script is.
+   Model2Vec    MIT, maintained, numpy-only inference. Use it as KeyBERT's
+                backend so we add NO torch and NO sentence-transformers:
+                    uv pip install keybert --no-deps scikit-learn model2vec
+                    from model2vec import StaticModel
+                    kw = KeyBERT(StaticModel.from_pretrained(
+                                     "minishlab/potion-base-8M"))
+                ~8M params, CPU, offline once cached.
+   spaCy NER    Already installed, and it supplies the KIND, so no word list:
+                    GPE / LOC / FAC -> PLACE      DATE / TIME -> ERA
+                    NORP            -> CULTURE    anything else -> SUBJECT
+                NORP is how "Roman" is found: the script's own adjective, read
+                off a tag. NEVER derive an adjective from a place name. If the
+                script only ever says "Rome", CULTURE stays empty -- that is
+                correct and much better than guessing.
+
+   REJECTED, so nobody re-shops:
+     YAKE      AGPL-3.0, commercial licence sold separately. Fails rule 3
+               outright. TODO.md shortlists it; it cannot be used.
+     BERTopic  clusters a CORPUS into topics. We have one script. Wrong shape.
+     textacy   Apache-2.0 but last release Apr 2023, one maintainer. Stale.
+     Stanza    Apache-2.0 and healthy, but a second full NLP stack beside
+               spaCy for no measured gain.
+
+WIRE   New file _theme_engine.py.
+       myownstuff._build_visualisable_data() ALREADY builds
+       `script_text = join_segments(line_segments)` and already parses it for
+       the coreference pass. Compute themes there, beside that call, and hand
+       the result down the loop exactly as `abstract_terms` is handed down.
+       No new parse, no new pass (rule 7).
+       Pass KeyBERT `candidates=` built from that doc's noun_chunks, so a theme
+       is always a noun phrase.
+
+WON'T BREAK  Nothing consumes themes yet; task 3 is the only consumer.
+DONE   script-rome gives a PLACE and an ERA with the right kinds. whales' themes
+       differ between its start and its end.
+
+
+--------------------------------------------------------------------------------
+3) THEME APPLICATION -- deliberately timid
+--------------------------------------------------------------------------------
+WHAT   Append ONE theme to a term, and only when all three hold:
+         i)   the term is a single common noun -- no name in it, no variant.
+              A term that is already specific is left alone.
+         ii)  the theme is live here (in text-so-far AND in the window).
+         iii) theme_kind is PLACE.
+       "valley" -> "valley Egypt".
+
+WHY ONLY PLACE   Adding a word the script did not say to THIS line is the only
+       change in this file that can make a working term worthless: "Roman
+       waterfall" returns nothing where "waterfall" returned a waterfall. ERA
+       and CULTURE stay behind the dial until measured.
+
+WIRE   VISUALISABLE_SEARCH_TERMS.py, at the end of assembly (task 6).
+       APPLY_THEMES = False. Ship it OFF.
+DONE   With the dial off, every term is byte-identical to task 6's output --
+       that is the proof this cannot hurt anything. With PLACE on, bare "valley"
+       gains "Egypt" and "$2 million" does not.
+
+
+--------------------------------------------------------------------------------
+4) GENERIC RE-MENTIONS -- "the insect" -> bee, "the vehicle" -> tractor
+--------------------------------------------------------------------------------
+MEASURED 2026-09-04, on the tractor narrative, running the four checkpoints in
+_abstract_term_resolver.MODELS and dumping every cluster. This decides the scope
+of the task, so it is written down rather than believed:
+
+    WORKS -- hypernym re-mentions, unanimous or near it
+        "a bee"              -> "The insect"    3 of 3 models
+        "The tractor"        -> "The vehicle"   2 of 3
+        "the cat, Molly"     -> "The animal"    2 of 3
+    DOES NOT WORK -- descriptive / metaphorical re-mentions
+        "The yellow and black guy" -> bee       0 of 3 models.
+        lingmess instead linked it to "Its" (the windscreen) -- a WRONG answer,
+        and the only model that said anything at all.
+
+SO: DO THE HYPERNYM CASE, WHICH IS THE COMMON ONE. Do NOT chase myownstuff.py's
+"yellow and black guy" example -- the models cannot do it, and the one link on
+offer is wrong. Delete that BONUS comment rather than leave it looking pending.
+
+WHAT   Resolve a definite noun phrase whose head cannot be filmed, the same way
+       a pronoun is resolved.
+WHAT WITH   Nothing new. fastcoref/LingMess and maverick-coref are still the two
+       best maintained coreference packages in Python and the resolver already
+       runs both, four checkpoints, weighted. The clusters above ALREADY hold
+       the answer; the resolver just never asks, because it only targets pronoun
+       tokens.
+WIRE   _abstract_term_resolver.resolve_all_abstract_terms() -- widen the target
+       set. A mention qualifies when it is
+         definite    a `det` child that is a definite determiner, or a
+                     possessive   (closed grammatical class, not a word list)
+         unfilmable  is_never_filmable_noun(head), or Brysbaert below
+                     MIN_CONCRETENESS   (the tests drop_abstract already runs)
+       Answer via the existing pick_antecedent(), excluding the phrase's own
+       span. Same map, same offset keys, source="cluster-np".
+       Then turn PROMOTE_ROLE_NOUNS on: the discriminator it was waiting for is
+       here -- cluster contains a NAME, the name wins ("the King of Spain" is a
+       portrait); cluster contains a THING, the thing wins ("the owner of the
+       tractor" -> tractor).
+
+WON'T BREAK  The wrong link above is exactly what the ensemble is for: 1 model
+       of 4 gives a weighted vote near 0.2, under MIN_REFERENCE_CONFIDENCE 0.25,
+       so it is held back already. CHECK THAT IT IS -- it is the regression that
+       matters. Also check "the rusted tractor" is untouched: its head is
+       filmable, so the unfilmable test already refuses it.
+DONE   "They passed a bee. The insect flew away." -> slot "bee", kind reference,
+       source cluster-np. No script gains a reference slot with confidence
+       below the threshold.
+
+
+--------------------------------------------------------------------------------
+5) VARIANT -- date every detail, and rank them
+--------------------------------------------------------------------------------
+WHAT   Two fixes to the accumulated description of a thing.
+  a) PROGRESSIVE REVEAL -- a real bug. Tag each accumulated detail with the
+     entry index it was learned at, and let line i use only details from lines
+     <= i. The accumulation currently runs the whole list, so a thing can be
+     filmed with a detail the script has not said yet: the footage spoils the
+     reveal. This is main.py's "if we've just said 'car' so far, we don't want
+     the full red toyota".
+     KEEP THE ONE EXCEPTION: `location` looks AHEAD on purpose -- the closing
+     comment in VISUALISABLE_SEARCH_TERMS.py says why. Note it at the code or
+     someone will "fix" it.
+  b) RANK, DON'T TRUNCATE. Order details by WordNet, not by position:
+         is_kind_forming_adjective()        a KIND -- always keep ("volcanic")
+         value.n.04 / visual_property.n.01  colour -- the single most useful
+                                            thing to add to a stock search
+         property.n.02 / state.n.02         size, integrity ("broken", "huge")
+         everything else                    drop first
+     Every lookup already exists (_wn_attribute_roots,
+     is_kind_forming_adjective). MAX_TERM_WORDS becomes a backstop that rarely
+     fires, instead of the thing doing the choosing.
+
+WHAT WITH   spaCy's DependencyMatcher (MIT, installed) for any new description
+       pattern, plus the WordNet helpers in _knowledge_base.py. Researched
+       2026-09-04: there is NO maintained library that accumulates an entity's
+       visual description across a narrative -- textacy's SVO triples are the
+       nearest thing and it is stale. Do not add a dependency; the parse and the
+       clusters already hold it.
+WIRE   _visualisables_extractor.py -- fill_variants() and the `variant` field.
+WON'T BREAK  Non-appearance details ("a microscopic dot on the engine") are
+       excluded automatically: a detail only ranks if WordNet files it as a
+       visual property. That is the computed answer to main.py's "where do I
+       draw the line for additional details".
+DONE   No term contains a detail from a later line than the one it is on.
+
+
+--------------------------------------------------------------------------------
+6) TERM ASSEMBLY -- name first, variant after, and only when it earns it
+--------------------------------------------------------------------------------
+WHAT   No grammar engine. Assemble in this order:
+           <name>   [<variant>]   [<theme_text>]
+       The NAME COMES FIRST, always. Append the variant ONLY when
+         - it survived task 5's ranking (it is a visual property),
+         - the script had revealed it by this line, and
+         - the whole term stays within MAX_TERM_WORDS.
+       Otherwise ship the bare name. A bare correct name beats a padded one.
+WIRE   ONE assembler function, called by BOTH
+       VISUALISABLE_SEARCH_TERMS._term_for() and
+       VISUALISABLE_SUGGESTIONS._pairs(). They build terms separately today and
+       can therefore disagree; one function is the fix.
+
+NOT DOING -- decided, do not reopen without evidence:
+   * a grammar engine ("Jar Nutmeg" -> "Jar of Nutmeg", "Nero Emporar" ->
+     "Emperor Nero"). Spans leave the extractor with their prepositions intact,
+     and stock search is word-order insensitive at this length.
+   * an english->english / synonym translation layer.
+   * pairing-relevance logic (does "AD" belong with "cup").
+   * ranking which thing in a line matters most.
+DONE   Suggestions and search terms produce the same string for the same slot.
+
+
+--------------------------------------------------------------------------------
+7) ABSTRACT CONCEPTS -- report them instead of deleting them
+--------------------------------------------------------------------------------
+WHAT   LineFacts gains `abstract_concepts: tuple` -- the heads dropped as
+       abstract, read off entry.dropped (drop_abstract already records
+       "abstract(2.69)" / "not-a-picture(noun.state)"). Nothing new is computed;
+       this is plumbing.
+       Then shared_text_logic.is_abstract_concept() stops returning False: true
+       when the line has an abstract-dropped head AND no filmable slot survived.
+       2-auto-tagging calls it on every line and gets False today.
+WIRE   shared_text_logic MUST NOT import stage 1 -- the sentence splitter shares
+       that file and a cycle breaks stage 0. So stage 2 reads
+       LineFacts.abstract_concepts via _stage_1_facts(), the way it already
+       reads search_term. DECIDE THIS BEFORE WRITING CODE.
+NOT DOING  the metaphor map ("inflation" -> a shrinking pile of banknotes).
+       That is a creative call, rule 2 forbids the obvious way to get it, and
+       2-auto-tagging already has the attribute waiting for it.
+DONE   Attr.IS_ABSTRACT_CONCEPT fires for the first time, and "The company held
+       a monopoly on the spice trade" does NOT fire it (two filmable slots
+       survive there).
+
+
+--------------------------------------------------------------------------------
+8) TWO SMALL ONES
+--------------------------------------------------------------------------------
+a) NIGHT IS A SETTING, NOT A SHOT. A noun.time head on a KIND_THING /
+   KIND_DATE candidate becomes the setting's variant, not a slot of its own.
+   Fixes a term visible in today's results: whales line 18 searches for
+   "night"; it should search for "Sahara at night". Half-built already in
+   fill_locations().
+
+b) CHECK THE PARSE, EARLY. Run task 1's output twice -- en_core_web_sm vs
+   en_core_web_trf -- and diff the terms. KIND_NAME is the highest-value kind
+   and comes almost entirely from NER, which is sm's weakest part. If trf
+   changes nothing, write that down beside the resolver's existing sm-vs-trf
+   measurement and stop wondering. If it finds names sm missed, make the model
+   a dial: default sm (trf is ~10 s to load and 3-manual-tagging recomputes on
+   every save), trf for a final run. Everything else is otherwise being
+   measured on a weaker parse than it needs.
+
+
+--------------------------------------------------------------------------------
+ORDER
+--------------------------------------------------------------------------------
+  1 show the term  ->  8b parse check  ->  8a night  ->  5 variant
+  ->  6 assembly  ->  4 generic re-mentions  ->  2 themes
+  ->  3 theme application (dial off)
+  ->  7 abstract concepts (independent; pull forward if stage 2 wants it)
+
+Re-run the test after EACH task, not at the end. Keep the previous
+TEST_RESULTS beside it long enough to diff.

@@ -100,7 +100,8 @@ def get_visualisable_data(line_segment: str,
                           previous_line_segments: list[str] | None = None,
                           next_line_segment: str | None = None,
                           coref: str = VE.COREF_DEFAULT,
-                          abstract_terms: dict | None = None) -> dict:
+                          abstract_terms: dict | None = None,
+                          themes: list | None = None) -> dict:
     """Everything we can put on screen for ONE line segment.
 
     @input line_segment = the segment to label.
@@ -123,6 +124,12 @@ def get_visualisable_data(line_segment: str,
         join_segments(all the segments) or its offsets will not line up.
         e.g. {(395, 397): {"surface": "it", "resolved": "valley",
                            "confidence": 0.26, "source": "models", ...}}
+    @input themes = what the script is ABOUT, one entry per segment, worked
+        out ONCE before this loop started by
+        _theme_engine.themes_for_segments(). Handed down exactly like
+        abstract_terms, and read by index: this segment is number
+        len(previous_line_segments).
+        e.g. [Theme(kind="place", text="Egypt"), None, ...]
 
     @output {template: {slot: {...}}} — ONE key: this segment, with its
         visualisables punched out into numbered slots.
@@ -140,10 +147,10 @@ def get_visualisable_data(line_segment: str,
     # id() for the map: it is one object built once per script and passed
     # down the whole loop, and a dict cannot be a dict key.
     key = (tuple(previous), line_segment, next_line_segment, coref,
-           id(abstract_terms))
+           id(abstract_terms), id(themes))
     if key not in _CACHE:
         _CACHE[key] = _build(previous, line_segment, next_line_segment, coref,
-                             abstract_terms)
+                             abstract_terms, themes)
     return _CACHE[key]
 
 
@@ -153,7 +160,8 @@ def get_visualisable_data(line_segment: str,
 
 def _build(previous: list[str], line_segment: str,
            next_line_segment: str | None, coref: str,
-           abstract_terms: dict | None = None) -> dict:
+           abstract_terms: dict | None = None,
+           themes: list | None = None) -> dict:
     """Three steps.
 
         0  parse everything up to here as ONE doc, one token span per segment
@@ -186,6 +194,12 @@ def _build(previous: list[str], line_segment: str,
     #    the field", plus what each thing is doing, where, and looking like.
     entries = VE.resolve_visualisable_details(entries, doc, coref=coref,
                                              abstract_terms=abstract_terms)
+
+    # 3) THE THEME — what the script is about here. Worked out once for the
+    #    whole script and looked up, the same way the pronouns are.
+    if themes:
+        VE.apply_theme(entries[target],
+                       themes[target] if target < len(themes) else None)
     return entries[target].as_map()
 
 

@@ -23,6 +23,30 @@ One numbered folder per stage of the pipeline, in the order it runs:
 3-manual-tagging/               you, filling in the rest, in a browser
 ```
 
+### how stage 1 feeds 2 and 3
+
+Stage 1 reads the WHOLE script with coreference models, so it knows what
+every "it" points at and how a thing looks by now. Both tagging stages get
+that instead of guessing from one line at a time:
+
+* **search terms.** The flowchart goes first, because where it fires it
+  knows something stage 1 does not (a quote is the caption text, a figure is
+  chart data), and its term is never overwritten. Stage 1 then fills every
+  term still empty. Most rows reach the browser needing a media-type CLICK
+  and nothing else.
+* **"is this the same scene?"** When every thing in a line was already on
+  screen, stage 1 says so and the flowchart edits the picture that is there
+  (`hold_previous` + `decorate`) instead of paying for a second stock clip
+  of the same subject. See `SAME_SCENE_AS_PREVIOUS` in
+  `2-auto-tagging/Auto_add_mediatypes.py`.
+* **the chips** in the browser are the same answers, ranked.
+
+The translation lives in
+`1-visualisable-identification/VISUALISABLE_SEARCH_TERMS.py`. Run the
+auto-tagger standalone on a json and stage 1 is simply absent: both
+attributes read False and the flowchart decides from its own single-line
+detectors, exactly as it did before stage 1 existed.
+
 And the folders that are not a stage:
 
 ```

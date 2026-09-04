@@ -2795,11 +2795,70 @@ def continues_the_previous_line(line: LineContext) -> bool:
     return False
 
 
+def stage_1_visualisable(line: LineContext) -> bool:
+    """What 1-visualisable-identification found to put on screen for this
+    line — "whale skeletons", "yellow paint splat tractor".
+
+    NOT a detector like the others: it reads no text and applies no rule. It
+    looks up an answer stage 1 already worked out over the WHOLE script, with
+    coreference models, and that main.py put on line.shared. So it knows what
+    "it" refers to and how a thing looks BY NOW, which nothing that can only
+    see one line ever will.
+
+    False whenever stage 1 has not been run — the tagger standalone on a json
+    — and the flowchart then falls back to the single-line detectors exactly
+    as it did before stage 1 existed.
+    """
+    facts = (line.shared.get("visualisables") or {}).get(line.fragment)
+    term = getattr(facts, "search_term", "")
+    return bool(term) and line.note("stage_1_visualisable", term, fill=term)
+
+
+def same_scene_as_previous(line: LineContext) -> bool:
+    """Stage 1 says every thing in this line was ALREADY on screen — no new
+    subject is introduced here.
+
+    --> "It was once covered" after "there's a valley filled with" = True
+        (the "It" resolved to the valley, and the valley is already up)
+
+    The flowchart uses this to edit the picture that is there rather than
+    fetch a second one of the same subject. Same source and same caveat as
+    stage_1_visualisable(): False when stage 1 has not been run.
+    """
+    facts = (line.shared.get("visualisables") or {}).get(line.fragment)
+    if not getattr(facts, "same_scene_as_previous", False):
+        return False
+    return line.note("same_scene_as_previous", facts.why)
+
+
 def is_abstract_concept(line: LineContext) -> bool:
-    """Unfilmable abstractions — 'monopoly', 'inflation', 'betrayal'.
-    TO DO: search_term noun with no physical hypernym (has_visualisable_
-    content in SECTION 5 is the start of this)."""
-    return False
+    """The line IS an unfilmable abstraction — 'monopoly', 'inflation'.
+
+    --> "But its real power was leverage."   -> True
+        "The company held a monopoly on the spice trade." -> False, because
+        the company and the spice trade are both there to be filmed. A line
+        with a picture in it is not an abstract concept, whatever else it
+        also says.
+
+    TWO HALVES, BOTH OF THEM STAGE 1'S ANSWER:
+        it dropped a head for being unfilmable   ("monopoly", 2.69 on
+            Brysbaert; "weight", noun.attribute)
+        and nothing filmable survived            no identity, no search term
+
+    Read off line.shared["visualisables"] with getattr(), exactly the way
+    stage_1_visualisable() and same_scene_as_previous() do — THIS FILE MUST
+    NOT IMPORT STAGE 1. The sentence splitter shares it, so an import of
+    1-visualisable-identification here would be a cycle through stage 0 and
+    nothing would run at all.
+
+    False whenever stage 1 has not been run, which is the tagger standalone
+    on a json.
+    """
+    facts = (line.shared.get("visualisables") or {}).get(line.fragment)
+    heads = tuple(getattr(facts, "abstract_concepts", ()) or ())
+    if not heads or getattr(facts, "identities", ()):
+        return False
+    return line.note("is_abstract_concept", ", ".join(heads))
 
 
 def suits_the_board_composite(line: LineContext) -> bool:

@@ -51,6 +51,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import myownstuff                                          # noqa: E402
+# THE assembler. A term is written in one place and read in two, so the chip
+# the human is offered and the term the auto-tagger writes cannot disagree.
+from VISUALISABLE_SEARCH_TERMS import assemble_term        # noqa: E402
 
 
 # =============================================================================
@@ -328,8 +331,9 @@ def _pairs(showable: list[dict], current: list[str]) -> list[dict]:
     for fields in showable:
         name = fields["visualisable"]
         if fields.get("variant"):
-            # "yellow paint splat, broken window" + "tractor"
-            add(f"{fields['variant']} {name}", "how it looks by now")
+            # "tractor" + "yellow paint splat, broken window", capped and
+            # ordered by the one assembler — see VISUALISABLE_SEARCH_TERMS.
+            add(assemble_term(name, fields["variant"]), "how it looks by now")
         if fields.get("amount") and fields["amount"] > 1:
             add(f"{fields['amount']} {name}", "the script counted them")
         if fields.get("location"):

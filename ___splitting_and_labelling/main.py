@@ -94,8 +94,8 @@ def run_all(script_name: str, out_path: Path | None = None,
 
     split = stage_0_split(prefix, script_path)          # (line, rule ids, meta)
     lines = [line for line, _ids, _meta in split]
-    stage_1_visualisables(prefix, lines, out_path)
-    stage_2_shot_list(split, out_path)
+    visualisables = stage_1_visualisables(prefix, lines, out_path)
+    stage_2_shot_list(split, out_path, visualisables)
     if manual:
         stage_3_manual_tagging(out_path)
     else:
@@ -264,10 +264,16 @@ def _as_rows(lines: List[str], per_line: list) -> list:
 # =============================================================================
 
 def stage_2_shot_list(split: List[Tuple[str, List[int], dict]],
-                      out_path: Path) -> Path:
+                      out_path: Path, visualisables: list | None = None
+                      ) -> Path:
     """Write the shot list from stage 0's lines, then auto-tag what it can.
 
     @input split = exactly what stage_0_split returned.
+    @input visualisables = exactly what stage_1_visualisables returned, or
+        None. When it is there the auto-tagger can see, for every line, what
+        stage 1 found in it and whether anything in it is NEW — see
+        VISUALISABLE_SEARCH_TERMS.py. When it is not, the tagger decides
+        from its own detectors exactly as it did before stage 1 existed.
 
     An existing file is never overwritten — your tagging survives a re-run.
     The auto-tagger only ever touches EMPTY rows, so it is safe to run over
@@ -281,11 +287,59 @@ def stage_2_shot_list(split: List[Tuple[str, List[int], dict]],
         _save_json(out_path, build_rows(split))
         print(f"  {len(split)} row(s) -> {out_path}")
 
+    facts = _stage_1_facts(visualisables)
     if not RUN_STAGE_2_AUTO_TAGGING:
         print("  auto-tagging skipped (RUN_STAGE_2_AUTO_TAGGING is off)")
-        return out_path
-    _auto_tag(out_path)
+    else:
+        _auto_tag(out_path, facts)
+    _fill_remaining_search_terms(out_path, facts)
     return out_path
+
+
+def _stage_1_facts(visualisables: list | None) -> dict:
+    """Stage 1's rows as {line: LineFacts} — the shape stage 2 asks in."""
+    if not visualisables:
+        return {}
+    try:
+        from VISUALISABLE_SEARCH_TERMS import facts_by_line
+        facts = facts_by_line(visualisables)
+        same = sum(1 for f in facts.values() if f.same_scene_as_previous)
+        terms = sum(1 for f in facts.values() if f.search_term)
+        print(f"  stage 1 offers {terms} search term(s), and says {same} "
+              f"line(s) are the same scene as the line above")
+        return facts
+    except Exception as exc:
+        print(f"  stage 1's answers unusable ({exc}) — deciding without them")
+        return {}
+
+
+def _fill_remaining_search_terms(out_path: Path, facts: dict) -> None:
+    """Give every still-empty search_term stage 1's answer.
+
+    The flowchart went first on purpose: where it fired it knows something
+    stage 1 does not — that a quote is the caption text, that a figure is
+    chart data — so its term is the better one and is never overwritten. This
+    is the rest, and it is most of what a human used to have to type: the
+    row arrives in 3-manual-tagging needing a media type CLICK and nothing
+    else. A chart row is skipped: it reads row["data"], not a term.
+    """
+    if not facts:
+        return
+    data = _load_json(out_path)
+    filled = 0
+    for line, row in data.items():
+        if (row.get("search_term") or "").strip() or row.get("data"):
+            continue
+        term = getattr(facts.get(line), "search_term", "")
+        if term:
+            row["search_term"] = term
+            filled += 1
+    if filled:
+        _save_json(out_path, data)
+    still = sum(1 for r in data.values()
+                if not (r.get("search_term") or "").strip())
+    print(f"  stage 1 filled {filled} more search term(s) — "
+          f"{len(data) - still}/{len(data)} rows now have one")
 
 
 def build_rows(triples: List[Tuple[str, List[int], dict]]) -> dict:
@@ -307,7 +361,7 @@ def build_rows(triples: List[Tuple[str, List[int], dict]]) -> dict:
     return out
 
 
-def _auto_tag(out_path: Path) -> None:
+def _auto_tag(out_path: Path, facts: dict | None = None) -> None:
     """EMPTY rows only, so this is idempotent. A failure here must never
     break the emit. For the full detection table, run it standalone:
         uv run 2-auto-tagging/Auto_add_mediatypes.py <json> --dry-run"""
@@ -319,7 +373,10 @@ def _auto_tag(out_path: Path) -> None:
         return
     try:
         data = _load_json(out_path)
-        attrs, lines = detect_attributes(data, auto.collect_attributes)
+        # shared["visualisables"] is how stage 1 reaches the detectors —
+        # see auto_tag_engine.detect_attributes.
+        attrs, lines = detect_attributes(data, auto.collect_attributes,
+                                         shared={"visualisables": facts or {}})
         print(f"  flowchart over {len(data)} row(s) (EMPTY only):")
         changed = apply_flowchart(data, attrs, lines, auto.decide)
         if changed:

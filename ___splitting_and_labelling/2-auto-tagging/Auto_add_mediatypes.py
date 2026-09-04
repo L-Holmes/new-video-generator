@@ -98,6 +98,13 @@ class Attr(Enum):
     STARTS_A_NEW_SENTENCE = "starts_a_new_sentence"      # a new thought begins
     REFERS_BACK_TO_A_NAME = "refers_back_to_something_named"  # "He" = Nero
 
+    # ---- what STAGE 1 worked out (1-visualisable-identification) ----------
+    # Only ever True when main.py ran stage 1 before us. Run the tagger on a
+    # json by hand and both stay False, and the flowchart falls back to the
+    # detectors below exactly as it always did.
+    STAGE_1_FOUND_A_VISUALISABLE = "stage_1_visualisable"   # "whale skeletons"
+    SAME_SCENE_AS_PREVIOUS = "same_scene_as_previous"       # nothing new here
+
     # ---- planned: the detector exists but always says False --------------
     IS_SINGLE_OBJECT_FOCUS = "is_single_object_focus"    # one dollar coin
     ADDS_TO_SCENE = "adds_something_to_the_scene"        # add a jar into the cupboard
@@ -183,6 +190,13 @@ def collect_attributes(line: stl.LineContext) -> set[Attr]:
 
     if stl.refers_back_to_something_named(line):
         has.add(Attr.REFERS_BACK_TO_A_NAME)
+
+    # ---- what stage 1 worked out about this line -------------------------
+    if stl.stage_1_visualisable(line):
+        has.add(Attr.STAGE_1_FOUND_A_VISUALISABLE)
+
+    if stl.same_scene_as_previous(line):
+        has.add(Attr.SAME_SCENE_AS_PREVIOUS)
 
     # ---- the planned questions (all still answer False) -------------------
     if stl.is_single_object_focus(line):
@@ -439,6 +453,14 @@ def decide(has: set[Attr], neighbours: Neighbours) -> Decision | None:
         # --> "…and a jar of nutmeg" = hold + decorate, "jar of nutmeg"
         if Attr.HAS_SOMETHING_WE_COULD_FILM in has:
             return tag(Attr.HAS_SOMETHING_WE_COULD_FILM, "hold_previous",
+                       ["decorate"], search_term=_best_term(has, neighbours),
+                       fill_search_term=True, needs_a_previous_line=True)
+
+        # mid-sentence, nothing our own detectors could see, but stage 1
+        # worked out what is here → stamp that on instead of a bare hold
+        # --> "was once covered" = hold + decorate, "valley"
+        if Attr.STAGE_1_FOUND_A_VISUALISABLE in has:
+            return tag(Attr.STAGE_1_FOUND_A_VISUALISABLE, "hold_previous",
                        ["decorate"], fill_search_term=True,
                        needs_a_previous_line=True)
 
@@ -449,16 +471,53 @@ def decide(has: set[Attr], neighbours: Neighbours) -> Decision | None:
 
     # =========================================================================
     # PART G — A NEW SENTENCE STARTS, SO DO SOMETHING NEW
+    #          ...unless stage 1 says there is nothing new IN it
     # =========================================================================
+
+    # a new sentence, but every thing in it was already on screen — so this
+    # is the same scene still, and a second stock clip of the same subject
+    # is money spent to show what is already showing. Edit it instead.
+    # --> "Whale skulls." after "…entire skulls." = hold + decorate
+    if Attr.SAME_SCENE_AS_PREVIOUS in has:
+        return tag(Attr.STAGE_1_FOUND_A_VISUALISABLE, "hold_previous",
+                   ["decorate"], fill_search_term=True,
+                   needs_a_previous_line=True)
 
     # a new thought that names something filmable → go and get new footage
     # --> "A merchant loaded the crates." = stock, "merchant"
     if Attr.HAS_SOMETHING_WE_COULD_FILM in has:
         return tag(Attr.HAS_SOMETHING_WE_COULD_FILM, "stock",
+                   search_term=_best_term(has, neighbours),
+                   fill_search_term=True)
+
+    # our own detectors saw nothing filmable, but stage 1 did → new footage
+    # of what IT found. This is the branch that turns "nothing fired, leave
+    # it for the human" into a tagged row.
+    # --> "Locals swear" = stock, "Locals"
+    if Attr.STAGE_1_FOUND_A_VISUALISABLE in has:
+        return tag(Attr.STAGE_1_FOUND_A_VISUALISABLE, "stock",
                    fill_search_term=True)
 
     # nothing fired — leave it empty for MANUAL_TAGGING. That is fine.
     return None
+
+
+def _best_term(has: set[Attr], neighbours: Neighbours) -> str:
+    """The best search term for a line we have decided to put a PICTURE on.
+
+    Stage 1 wins when it has an answer: it read the whole script with
+    coreference models, so it knows "it" is the valley and that the tractor
+    has yellow paint on it by now, and it trims to what you would actually
+    type ("jar of nutmeg", not "a jar of nutmeg that sat on the shelf").
+    Our own detector only ever saw this one line.
+
+    Empty string means "no opinion" — tag() then falls back to whatever the
+    driving attribute's detector matched, which is what happened before
+    stage 1 existed and is still what happens when it has not been run.
+    """
+    if Attr.STAGE_1_FOUND_A_VISUALISABLE in has:
+        return neighbours.what_matched(Attr.STAGE_1_FOUND_A_VISUALISABLE)
+    return ""
 
 
 # =============================================================================

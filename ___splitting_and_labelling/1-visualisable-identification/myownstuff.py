@@ -70,6 +70,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent
 import PATHS  # noqa: F401,E402
 
 from _abstract_term_resolver import resolve_all_abstract_terms
+from _theme_engine import themes_for_segments
 
 # get_visualisable_data is the name of MY main function below, so the
 # pipeline's one comes in under the name of what it actually does: ONE line
@@ -216,10 +217,18 @@ def _build_visualisable_data(line_segments):
     #      rewritten text: the words on screen have to stay the words the
     #      viewer hears ("It was once covered", not "the valley was once...").
     script_text = join_segments(line_segments)     # "In Egypt, there's a valley filled with It was once covered"
-    abstract_terms = resolve_all_abstract_terms(script_text,
-                                                doc=parse_script(script_text))
+    script_doc = parse_script(script_text)         # THE one parse. Shared.
+    abstract_terms = resolve_all_abstract_terms(script_text, doc=script_doc)
     # {(45, 47): {"surface": "It", "resolved": "valley", "confidence": 0.26,
     #             "source": "models", "possessive": False, "number": "Sing"}}
+
+    # 1)i-b) ...and WHAT THE SCRIPT IS ABOUT, once, off the SAME doc.
+    #      One entry per line segment, handed down the loop exactly as the
+    #      abstract terms are. No new parse and no new pass (rule 7): the
+    #      candidate noun phrases and their NER kinds are read off the parse
+    #      that is already in hand.
+    themes = themes_for_segments(line_segments, script_doc)
+    # [Theme(kind="place", text="Egypt"), None, Theme(kind="era", ...), ...]
 
     # A LIST, one entry per line segment, in script order -- NOT one big
     # {template: slots} map. Two different segments really do land on the same
@@ -237,7 +246,7 @@ def _build_visualisable_data(line_segments):
         #      i.e. Build the cumulative list of visualisables (TODO: only concrete ones?)
         #      e.g. The tractor and the cat, Molly, went down the lane. --> ["tractor", "cat", "lane"] 
         #           They passed a bee                                   --> ["tractor", "cat", "lane", "bee"] 
-        line_to_found_visualisables = get_line_segment_visualisables(  line_segment, previous_line_segments, next_line_segment, abstract_terms=abstract_terms)
+        line_to_found_visualisables = get_line_segment_visualisables(  line_segment, previous_line_segments, next_line_segment, abstract_terms=abstract_terms, themes=themes)
         # {"[1] was once covered": {"1": {"visualisable": "valley",
         #                             "variant": None,
         #                             "action": "covered", "location": "Egypt",
@@ -255,11 +264,21 @@ def _build_visualisable_data(line_segments):
         # ??) 
         #    - match verbs to visualisables?
 
-        # x) [BONUS] Find all wishy washy terms.
-        # e.g. "The yellow and black guy flew away." 
-
-        # x) [BONUS] Resolve all wishy washy terms.
-        # e.g. "The yellow and black guy flew away." -> "The [bee] flew away"
+        # x) GENERIC RE-MENTIONS -- "The insect flew away." -> the BEE.
+        #    DONE, in the resolver: a definite noun phrase is asked about
+        #    exactly like a pronoun, and kept only when the answer is a KIND
+        #    OF it (WordNet) or its head is not filmable at all. The slot
+        #    comes back kind="reference", source "cluster-np".
+        #
+        #    The DESCRIPTIVE re-mention this file used to have as a BONUS --
+        #    "The yellow and black guy flew away." -> the bee -- is NOT
+        #    coming, and this is the measurement rather than an opinion
+        #    (2026-09-04, four checkpoints, every cluster dumped):
+        #        "a bee" -> "The insect"              3 of 3 models
+        #        "The yellow and black guy" -> bee    0 of 3 models
+        #    The only model that said anything at all linked the guy to
+        #    "Its" -- the windscreen -- so the one answer on offer is wrong,
+        #    and the ensemble's 0.25 threshold refuses it. Nothing to build.
 
         visualisable_data.append(line_to_found_visualisables)
 

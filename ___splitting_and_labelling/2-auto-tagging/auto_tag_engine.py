@@ -159,14 +159,22 @@ def _neighbours_for(index: int, fragments: list, data: dict, attrs: dict,
 # STEP 1 PLUMBING — run the tagger's collect_attributes over every line
 # =============================================================================
 
-def detect_attributes(data: dict, collect_attributes):
+def detect_attributes(data: dict, collect_attributes, shared: dict = None):
     """Walk every line of the script and ask the tagger which attributes it
     has. Returns (attrs, lines):
         attrs[fragment] = the set of attributes that line has
-        lines[fragment] = its LineContext (holding the evidence + fills)"""
+        lines[fragment] = its LineContext (holding the evidence + fills)
+
+    shared is the ONE dict every LineContext of this run sees, and is how
+    facts worked out BEFORE the tagger reach the detectors. main.py puts
+    stage 1's answers in as shared["visualisables"] — {line: LineFacts} —
+    and collect_attributes reads them from there. Leave it out and every
+    detector that consults it simply finds nothing, which is exactly what
+    happens when the tagger is run standalone on a json.
+    """
     fragments = list(data.keys())
     attrs, lines = {}, {}
-    shared: dict = {}
+    shared = dict(shared or {})
     for i, (fragment, row) in enumerate(data.items()):
         line = stl.LineContext(fragment, row, i, fragments, shared=shared)
         attrs[fragment] = collect_attributes(line)

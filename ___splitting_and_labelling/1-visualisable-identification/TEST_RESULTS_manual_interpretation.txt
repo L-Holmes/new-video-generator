@@ -1,7 +1,7 @@
 ===============================================================================
 TEST RESULTS -- visualisables + abstract term resolution
 ===============================================================================
-run  2026-09-04 10:46
+run  2026-09-04 19:46
 by   TEST_MANUAL_INTERPRETATION.py
 on   tractor, spices, clockmaker, bees, whales
 
@@ -16,19 +16,21 @@ READ THIS FIRST
     LINE SEGMENTS           how the splitter cut it -- one shot each
     ABSTRACT TERMS          every pronoun and what it resolved to
     NOT COVERED             pronoun-ish words nothing was asked about
-    WHAT EACH SEGMENT GOT   the slots, which is the real output
+    WHAT EACH SEGMENT GOT   the slots, the SEARCH TERM they
+                            produce, and whether the line is a
+                            new scene -- the real output
     SUMMARY                 the counts
 
 ===============================================================================
 ALL EXAMPLES AT A GLANCE
 ===============================================================================
 
-  EXAMPLE      SEGS   PRONOUNS  USED   HELD   NONE   DEICTIC  OWNED  TIME
-  tractor      15     8         8      0      0      0        2      29s
-  spices       15     6         6      0      0      3        1      26s
-  clockmaker   22     12        12     0      0      0        1      27s
+  EXAMPLE      SEGS   MENTIONS  USED   HELD   NONE   DEICTIC  OWNED  TIME
+  tractor      15     8         8      0      0      0        2      30s
+  spices       15     7         7      0      0      3        1      27s
+  clockmaker   22     13        13     0      0      0        1      28s
   bees         14     16        16     0      0      6        2      27s
-  whales       23     2         2      0      0      0        0      27s
+  whales       23     2         2      0      0      0        0      28s
 
 ===============================================================================
 EXAMPLE: tractor
@@ -54,9 +56,13 @@ LOOK FOR
   4) "So she poured yellow paint onto the tractor." -- "she" is the cat, Molly.
      Then the tractor's variant should pick the paint up, and keep it for the
      rest of the script.
-  5) "The yellow and black guy flew away." -- the bee. Nothing resolves this
-     yet (it is the wishy-washy-terms BONUS, not built), so expect to see "guy"
-     or nothing. Here to show what is still missing.
+  5) "The yellow and black guy flew away." -- the bee, and it should STAY
+     "guy". A DESCRIPTIVE re-mention is the case the coreference models cannot
+     do: measured, 0 of 3 gave the bee, and the one link on offer was to the
+     windscreen. The generic re-mention IS built ("The insect" -> bee, source
+     cluster-np), and the test that keeps it out of here is the same one --
+     "guy" is not a WordNet hypernym of "bee". A resolved slot on this line is
+     the regression.
 
 -------------------------------------------------------------------------------
 THE SCRIPT
@@ -94,7 +100,8 @@ SPLIT INTO 15 LINE SEGMENTS
 
 
 -------------------------------------------------------------------------------
-ABSTRACT TERMS -- every pronoun, and what the models voted for
+ABSTRACT TERMS -- every pronoun and generic noun phrase, and what
+                  the models voted for
 -------------------------------------------------------------------------------
   Four coreference models read the whole script and vote; CONF is
   the share of their weight behind this answer. Below 0.25 the answer
@@ -104,6 +111,9 @@ ABSTRACT TERMS -- every pronoun, and what the models voted for
 
   SOURCE  models  = the four voted        deictic = I/we/you
           recency = last thing mentioned  none    = nobody knew
+          cluster-np = NOT a pronoun. A definite noun phrase
+                    ("The insect") the models put in the same
+                    cluster as something more specific (the bee).
 
   WHERE      SURFACE    RESOLVED                 CONF   SOURCE   USED?
   52-56      They       Molly                    0.76   models   used   [Plur]
@@ -165,81 +175,144 @@ WHAT EACH LINE SEGMENT GOT
   OWNER   the whole this thing is a part of, when a possessive
           said so:  "Its windscreen"  -->  owner=tractor
   A ~ on the end of a cell means it was cut to fit the column.
+  TERM    THE ANSWER -- what VISUALISABLE_SEARCH_TERMS would go
+          and find footage of for this segment, read off the
+          slots under it. (none) means nothing here is worth
+          filming.
+  SCENE   new  = something in this segment was not on screen
+                 before, so fetch a picture
+          same = every thing here was already up; hold the one
+                 that is there. The reason follows it.
+  THEME   what the SCRIPT is about here, and what sort of thing
+          that is (_theme_engine). place/era/culture/subject. It
+          is NOT in the term above unless APPLY_THEMES is on, and
+          it ships off -- see VISUALISABLE_SEARCH_TERMS.
+  ABSTRACT  the heads this line LOST for not being a picture
+          ("monopoly", "weight"). Printed only when there are
+          any. When a line has these AND no filmable slot, it IS
+          an abstract concept -- shared_text_logic says so and
+          2-auto-tagging tags it.
 
   SLOT  VISUALISABLE             KIND       CONF  AMT  VARIANT            ACTION        LOCATION           OWNER
 
     1  The tractor and
        The [tractor] and
+       TERM   "tractor"
+       SCENE  new -- the first line — there is nothing to hold
+       THEME  subject -- tractor
   [1]  tractor                  thing      0.90  1    -                  -             -                  -
 
     2  the cat,
        the [cat],
+       TERM   "cat"
+       SCENE  new -- introduces cat
+       THEME  subject -- tractor
   [1]  cat                      thing      0.90  1    -                  -             -                  -
 
     3  Molly,
        [Molly],
+       TERM   "Molly"
+       SCENE  new -- introduces molly
+       THEME  subject -- tractor
   [1]  Molly                    name       1.00  1    -                  -             lane               -
 
     4  went down the lane.
        went down the [lane].
+       TERM   "lane"
+       SCENE  new -- introduces lane
+       THEME  subject -- tractor
   [1]* lane                     thing      0.90  1    -                  -             -                  -
 
     5  They passed a bee.
        [Molly] passed a [bee].
+       TERM   "bee"
+       SCENE  new -- introduces bee
+       THEME  subject -- tractor
   [1]  Molly                    reference  0.76  1    -                  passed        lane               -
   [2]  bee                      thing      0.90  1    -                  passed        lane               -
 
     6  It revved really loud.
        [bee] revved really loud.
+       TERM   "bee"
+       SCENE  same -- everything here was already on screen: bee
+       THEME  subject -- tractor
   [1]  bee                      reference  0.76  1    -                  revved        lane               -
 
     7  The cat didn't like it.
        The [cat] didn't like [bee].
+       TERM   "cat"
+       SCENE  same -- everything here was already on screen: cat, bee
+       THEME  subject -- tractor
   [1]  cat                      thing      0.90  1    -                  -             lane               -
   [2]  bee                      reference  0.25  1    -                  -             lane               -
 
     8  So she poured yellow paint onto the tractor.
        So [cat] poured yellow [paint] onto the [tractor].
+       TERM   "paint yellow"
+       SCENE  new -- introduces paint
+       THEME  subject -- yellow paint
   [1]  cat                      reference  0.51  1    -                  poured        tractor            -
   [2]  paint                    thing      0.90  1    yellow             poured        tractor            -
   [3]* tractor                  thing      0.90  1    yellow paint       poured        -                  -
 
     9  It swished and
        [tractor] swished and
+       TERM   "tractor yellow paint"
+       SCENE  same -- everything here was already on screen: tractor
+       THEME  subject -- yellow paint
   [1]  tractor                  reference  1.00  1    yellow paint       swished       tractor            -
 
    10  swerved after having
        [swerved after having]
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- yellow paint
   [1]  swerved after having     fallback   0.20  1    -                  -             tractor            -
 
    11  the paint splatter its windscreen.
        the [paint] splatter [tractor's windscreen].
+       TERM   "paint yellow"
+       SCENE  new -- introduces tractor's windscreen
+       THEME  subject -- windscreen
   [1]  paint                    thing      0.90  1    yellow             splatter      tractor            -
   [2]  tractor's windscreen     thing      0.90  1    -                  splatter      tractor            tractor
 
    12  It then crashed into the lampost by accident.
        [tractor] then crashed into the [lampost] by [accident].
+       TERM   "lampost"
+       SCENE  new -- introduces lampost, accident
+       THEME  subject -- windscreen
   [1]  tractor                  reference  1.00  1    yellow paint       crashed       lampost            -
   [2]* lampost                  thing      0.90  1    -                  crashed       -                  -
   [3]  accident                 thing      0.90  1    -                  crashed       lampost            -
 
    13  The yellow and
        [The yellow and]
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- windscreen
   [1]  The yellow and           fallback   0.20  1    -                  -             lampost            -
 
    14  black guy flew away.
        [black guy flew away]
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- windscreen
   [1]  black guy flew away      fallback   0.20  1    -                  -             lampost            -
 
    15  Its windscreen broke.
        [tractor's windscreen] broke.
+       TERM   "tractor's windscreen broken"
+       SCENE  same -- everything here was already on screen: tractor's windscreen
+       THEME  subject -- windscreen
   [1]  tractor's windscreen     thing      0.90  1    broken             broke         lampost            tractor
 
 
 -------------------------------------------------------------------------------
 SUMMARY
 -------------------------------------------------------------------------------
-  8 pronouns in the map
+  8 mentions in the map -- pronouns, plus the
+    definite noun phrases that turned out to be generic
     8 used -- the segment shows the thing, not the word
     0 held back (confidence below 0.25) -- pronoun kept on purpose
     0 nobody could answer
@@ -254,7 +327,10 @@ SUMMARY
     2 know what they are part of (owner=)
     0 segments got nothing to put on screen
 
-  took 29s
+  12 lines have a search term
+  4 lines held as the same scene as the line above
+
+  took 30s
 
 ===============================================================================
 EXAMPLE: spices
@@ -307,7 +383,8 @@ SPLIT INTO 15 LINE SEGMENTS
 
 
 -------------------------------------------------------------------------------
-ABSTRACT TERMS -- every pronoun, and what the models voted for
+ABSTRACT TERMS -- every pronoun and generic noun phrase, and what
+                  the models voted for
 -------------------------------------------------------------------------------
   Four coreference models read the whole script and vote; CONF is
   the share of their weight behind this answer. Below 0.25 the answer
@@ -317,6 +394,9 @@ ABSTRACT TERMS -- every pronoun, and what the models voted for
 
   SOURCE  models  = the four voted        deictic = I/we/you
           recency = last thing mentioned  none    = nobody knew
+          cluster-np = NOT a pronoun. A definite noun phrase
+                    ("The insect") the models put in the same
+                    cluster as something more specific (the bee).
 
   WHERE      SURFACE    RESOLVED                 CONF   SOURCE   USED?
   3-6        you        the viewer               1.00   deictic  used
@@ -327,6 +407,8 @@ ABSTRACT TERMS -- every pronoun, and what the models voted for
              ...tchen cupboard right now, [you] probably have a jar of nu...
   80-82      It         jar                      0.50   models   used   [Sing]
              ...bly have a jar of nutmeg. [It] costs about two dollars. ...
+  194-204    the planet Earth                    0.51   cluster-np used   [Sing]
+             ...ost contested resource on [the planet]. It was worth more than i...
   206-208    It         nutmeg                   0.76   models   used   [Sing]
              ...d resource on the planet. [It] was worth more than its w...
   229-232    its        nutmeg                   0.76   models   used   [possessive, Sing]
@@ -374,77 +456,142 @@ WHAT EACH LINE SEGMENT GOT
   OWNER   the whole this thing is a part of, when a possessive
           said so:  "Its windscreen"  -->  owner=tractor
   A ~ on the end of a cell means it was cut to fit the column.
+  TERM    THE ANSWER -- what VISUALISABLE_SEARCH_TERMS would go
+          and find footage of for this segment, read off the
+          slots under it. (none) means nothing here is worth
+          filming.
+  SCENE   new  = something in this segment was not on screen
+                 before, so fetch a picture
+          same = every thing here was already up; hold the one
+                 that is there. The reason follows it.
+  THEME   what the SCRIPT is about here, and what sort of thing
+          that is (_theme_engine). place/era/culture/subject. It
+          is NOT in the term above unless APPLY_THEMES is on, and
+          it ships off -- see VISUALISABLE_SEARCH_TERMS.
+  ABSTRACT  the heads this line LOST for not being a picture
+          ("monopoly", "weight"). Printed only when there are
+          any. When a line has these AND no filmable slot, it IS
+          an abstract concept -- shared_text_logic says so and
+          2-auto-tagging tags it.
 
   SLOT  VISUALISABLE             KIND       CONF  AMT  VARIANT            ACTION        LOCATION           OWNER
 
     1  If you open
        If [the viewer] open   << hypothetical -- it did not happen
+       TERM   (none)
+       SCENE  new -- the first line — there is nothing to hold
+       THEME  (none)
   [1]  the viewer               deictic    1.00  1    -                  open          -                  -
 
     2  your kitchen cupboard right now, you probably have
        [kitchen cupboard] right now, [the viewer] probably have   << hypothetical -- it did not happen
+       TERM   "kitchen cupboard"
+       SCENE  new -- introduces kitchen cupboard
+       THEME  subject -- kitchen cupboard
   [1]  kitchen cupboard         thing      0.90  1    -                  open          -                  the viewer
   [2]  the viewer               deictic    1.00  1    -                  -             -                  -
 
     3  a jar of nutmeg.
        a [jar of nutmeg].
+       TERM   "jar of nutmeg"
+       SCENE  new -- introduces jar of nutmeg
+       THEME  subject -- nutmeg
   [1]  jar of nutmeg            thing      0.90  1    -                  -             -                  -
 
     4  It costs about two dollars.
        [jar] costs about [two dollars].
+       TERM   "jar"
+       SCENE  new -- introduces jar, two dollars
+       THEME  subject -- nutmeg
   [1]  jar                      reference  0.50  1    -                  -             -                  -
   [2]  two dollars              number     1.00  1    -                  -             -                  -
 
     5  But in the 1600s,
        But in the [1600s],
+       TERM   "1600s"
+       SCENE  new -- introduces 1600s
+       THEME  subject -- nutmeg
   [1]  1600s                    date       1.00  1    -                  -             -                  -
 
     6  this little wrinkled seed was
        this little wrinkled [seed] was
+       TERM   "seed little wrinkled"
+       SCENE  new -- introduces seed
+       THEME  subject -- nutmeg
   [1]  seed                     thing      0.90  1    little wrinkled    -             -                  -
 
     7  the single most contested resource on
        [the single most contested resource on]
-  [1]  the single most contest~ fallback   0.20  1    -                  -             planet             -
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- nutmeg
+       ABSTRACT  resource   << and nothing filmable survived -- this line IS an abstract concept
+  [1]  the single most contest~ fallback   0.20  1    -                  -             Earth              -
 
     8  the planet.
-       the [planet].
-  [1]* planet                   thing      0.90  1    -                  -             -                  -
+       the [Earth].
+       TERM   "Earth"
+       SCENE  new -- introduces earth
+       THEME  subject -- nutmeg
+  [1]* Earth                    reference  0.51  1    -                  -             -                  -
 
     9  It was worth more than
        [nutmeg] was worth more than
-  [1]  nutmeg                   reference  0.76  1    -                  -             planet             -
+       TERM   "nutmeg"
+       SCENE  new -- introduces nutmeg
+       THEME  subject -- nutmeg
+  [1]  nutmeg                   reference  0.76  1    -                  -             Earth              -
 
    10  its weight in gold.
        its weight in [gold].
-  [1]  gold                     thing      0.90  1    -                  -             planet             -
+       TERM   "gold"
+       SCENE  new -- introduces gold
+       THEME  subject -- about two dollars
+       ABSTRACT  weight
+  [1]  gold                     thing      0.90  1    -                  -             Earth              -
 
    11  Nutmeg only grew
        [Nutmeg] only grew
+       TERM   "Nutmeg grown"
+       SCENE  same -- everything here was already on screen: jar of nutmeg
+       THEME  subject -- nutmeg
   [1]  Nutmeg                   name       1.00  1    grown              grew          Earth              -
 
    12  in one place on Earth:
        in one place on [Earth]:
+       TERM   "Earth"
+       SCENE  same -- everything here was already on screen: earth
+       THEME  subject -- nutmeg
   [1]* Earth                    name       1.00  1    -                  -             -                  -
 
    13  the Banda Islands.
        the [Banda Islands].
+       TERM   "Banda Islands"
+       SCENE  new -- introduces banda islands
+       THEME  subject -- nutmeg
   [1]* Banda Islands            name       1.00  1    -                  grew          Earth              -
 
    14  A tiny, incredibly remote volcanic archipelago in
        A tiny, incredibly remote [volcanic archipelago] in
+       TERM   "volcanic archipelago tiny"
+       SCENE  new -- introduces volcanic archipelago
+       THEME  subject -- nutmeg
   [1]  volcanic archipelago     thing      0.90  1    tiny, incredibly ~ -             modern-day Indone~ -
 
    15  modern-day Indonesia.
        [modern-day Indonesia].
+       TERM   "modern-day Indonesia"
+       SCENE  new -- introduces modern-day indonesia
+       THEME  subject -- nutmeg
   [1]* modern-day Indonesia     thing      0.90  1    -                  -             -                  -
 
 
 -------------------------------------------------------------------------------
 SUMMARY
 -------------------------------------------------------------------------------
-  6 pronouns in the map
-    6 used -- the segment shows the thing, not the word
+  7 mentions in the map -- pronouns, plus the
+    definite noun phrases that turned out to be generic
+    7 used -- the segment shows the thing, not the word
     0 held back (confidence below 0.25) -- pronoun kept on purpose
     0 nobody could answer
     3 narrator / viewer
@@ -452,13 +599,16 @@ SUMMARY
   0 pronoun-ish words not in the map at all
 
   15 line segments, 17 slots
-    2 slots came from a pronoun
+    3 slots came from a pronoun
     0 of those still read as a pronoun
     2 are the narrator or the viewer
     1 know what they are part of (owner=)
     0 segments got nothing to put on screen
 
-  took 26s
+  13 lines have a search term
+  2 lines held as the same scene as the line above
+
+  took 27s
 
 ===============================================================================
 EXAMPLE: clockmaker
@@ -528,7 +678,8 @@ SPLIT INTO 22 LINE SEGMENTS
 
 
 -------------------------------------------------------------------------------
-ABSTRACT TERMS -- every pronoun, and what the models voted for
+ABSTRACT TERMS -- every pronoun and generic noun phrase, and what
+                  the models voted for
 -------------------------------------------------------------------------------
   Four coreference models read the whole script and vote; CONF is
   the share of their weight behind this answer. Below 0.25 the answer
@@ -538,6 +689,9 @@ ABSTRACT TERMS -- every pronoun, and what the models voted for
 
   SOURCE  models  = the four voted        deictic = I/we/you
           recency = last thing mentioned  none    = nobody knew
+          cluster-np = NOT a pronoun. A definite noun phrase
+                    ("The insect") the models put in the same
+                    cluster as something more specific (the bee).
 
   WHERE      SURFACE    RESOLVED                 CONF   SOURCE   USED?
   40-43      Her        Elena                    0.76   models   used   [possessive, Sing]
@@ -546,6 +700,8 @@ ABSTRACT TERMS -- every pronoun, and what the models voted for
              ... clock in the window, and [she] wound it every morning. T...
   100-102    it         clock                    0.76   models   used   [Sing]
              ...the window, and she wound [it] every morning. This was n...
+  144-153    The thing  clock                    0.76   cluster-np used   [Sing]
+             ...This was not sentimental. [The thing] paid the rent. Tourists c...
   187-189    it         thing                    0.51   models   used   [Sing]
              ...e rent. Tourists came for [it], and they left with postc...
   195-199    they       Tourists                 1.00   models   used   [Plur]
@@ -621,110 +777,194 @@ WHAT EACH LINE SEGMENT GOT
   OWNER   the whole this thing is a part of, when a possessive
           said so:  "Its windscreen"  -->  owner=tractor
   A ~ on the end of a cell means it was cut to fit the column.
+  TERM    THE ANSWER -- what VISUALISABLE_SEARCH_TERMS would go
+          and find footage of for this segment, read off the
+          slots under it. (none) means nothing here is worth
+          filming.
+  SCENE   new  = something in this segment was not on screen
+                 before, so fetch a picture
+          same = every thing here was already up; hold the one
+                 that is there. The reason follows it.
+  THEME   what the SCRIPT is about here, and what sort of thing
+          that is (_theme_engine). place/era/culture/subject. It
+          is NOT in the term above unless APPLY_THEMES is on, and
+          it ships off -- see VISUALISABLE_SEARCH_TERMS.
+  ABSTRACT  the heads this line LOST for not being a picture
+          ("monopoly", "weight"). Printed only when there are
+          any. When a line has these AND no filmable slot, it IS
+          an abstract concept -- shared_text_logic says so and
+          2-auto-tagging tags it.
 
   SLOT  VISUALISABLE             KIND       CONF  AMT  VARIANT            ACTION        LOCATION           OWNER
 
     1  Elena kept a workshop above the bakery.
        [Elena] kept a [workshop] above the [bakery].
+       TERM   "Elena"
+       SCENE  new -- the first line — there is nothing to hold
+       THEME  subject -- Elena
   [1]  Elena                    name       1.00  1    -                  -             bakery             -
   [2]  workshop                 thing      0.90  1    -                  -             bakery             -
   [3]* bakery                   thing      0.90  1    -                  -             -                  -
 
     2  Her father had built
        [Elena's father] had built
+       TERM   "Elena's father"
+       SCENE  new -- introduces elena's father
+       THEME  subject -- Elena
   [1]  Elena's father           thing      0.90  1    -                  built         bakery             elena
 
     3  the clock in
        the [clock] in
+       TERM   "clock built"
+       SCENE  new -- introduces clock
+       THEME  subject -- clock
   [1]  clock                    thing      0.90  1    built              built         window             -
 
     4  the window,
        the [window],
+       TERM   "window"
+       SCENE  new -- introduces window
+       THEME  subject -- clock
   [1]* window                   thing      0.90  1    -                  built         -                  -
 
     5  and she wound it every morning.
        and [Elena] wound [clock] every morning.
+       TERM   "Elena"
+       SCENE  same -- everything here was already on screen: elena, clock
+       THEME  subject -- clock
   [1]  Elena                    reference  0.76  1    -                  wound         window             -
   [2]  clock                    reference  0.76  1    built              wound         window             -
 
     6  This was not sentimental.
        [This] was not sentimental.
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- clock
   [1]  This                     reference  0.00  1    -                  -             window             -
 
     7  The thing paid the rent.
        The thing paid the [rent].
+       TERM   "rent"
+       SCENE  new -- introduces rent
+       THEME  subject -- clock
   [1]  rent                     thing      0.90  1    -                  -             window             -
 
     8  Tourists came for it,
        [Tourists] came for [thing],
+       TERM   "Tourists"
+       SCENE  new -- introduces tourists, thing
+       THEME  subject -- clock
   [1]  Tourists                 thing      0.90  1    -                  -             window             -
   [2]  thing                    reference  0.51  1    -                  -             window             -
 
     9  and they left
        and [Tourists] left
+       TERM   "Tourists"
+       SCENE  same -- everything here was already on screen: tourists
+       THEME  subject -- clock
   [1]  Tourists                 reference  1.00  1    -                  left          window             -
 
    10  with postcards of it.
        with [postcards of it].
+       TERM   "postcards of it"
+       SCENE  new -- introduces postcards of it
+       THEME  subject -- window
   [1]  postcards of it          thing      0.90  1    -                  left          window             -
 
    11  One winter
        [One winter]
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- rent
   [1]  One winter               fallback   0.20  1    -                  -             window             -
 
    12  the pendulum cracked.
        the [pendulum] cracked.
+       TERM   "pendulum cracked"
+       SCENE  new -- introduces pendulum
+       THEME  subject -- pendulum
   [1]  pendulum                 thing      0.90  1    cracked            cracked       window             -
 
    13  She could not fix that herself,
        [Elena] could not fix that [Elena],   << hypothetical -- it did not happen
+       TERM   "Elena"
+       SCENE  same -- everything here was already on screen: elena, elena
+       THEME  subject -- pendulum
   [1]  Elena                    reference  0.76  1    -                  -             window             -
   [2]  Elena                    reference  0.76  1    -                  -             window             -
 
    14  so she wrote
        so [Elena] wrote
+       TERM   "Elena"
+       SCENE  same -- everything here was already on screen: elena
+       THEME  subject -- pendulum
   [1]  Elena                    reference  0.76  1    -                  wrote         window             -
 
    15  to a man in
        [to a man in]
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- pendulum
   [1]  to a man in              fallback   0.20  1    -                  -             Bern               -
 
    16  Bern.
        [Bern].
+       TERM   "Bern"
+       SCENE  new -- introduces bern
+       THEME  subject -- pendulum
   [1]* Bern                     name       1.00  1    -                  -             -                  -
 
    17  He sent back a spring,
        [man] sent back a [spring],
+       TERM   "spring"
+       SCENE  new -- introduces man, spring
+       THEME  subject -- pendulum
   [1]  man                      reference  0.76  1    -                  sent          Bern               -
   [2]  spring                   thing      0.90  1    -                  sent          Bern               -
 
    18  wrapped in
        [wrapped in]
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- pendulum
   [1]  wrapped in               fallback   0.20  1    -                  -             newspaper          -
 
    19  newspaper,
        [newspaper],
+       TERM   "newspaper"
+       SCENE  new -- introduces newspaper
+       THEME  subject -- newspaper
   [1]* newspaper                thing      0.90  1    -                  wrapped       -                  -
 
    20  and a note.
        and a note.
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  (none)
        (no slots -- nothing to put on screen)
 
    21  It said the spring would hold for a year.
        [note] said the [spring] would hold for a year.   << hypothetical -- it did not happen
+       TERM   "spring"
+       SCENE  new -- introduces note
+       THEME  subject -- spring
   [1]  note                     reference  0.76  1    -                  -             newspaper          -
   [2]  spring                   thing      0.90  1    -                  -             newspaper          -
 
    22  It held for thirty.
        [spring] held for thirty.
+       TERM   "spring"
+       SCENE  same -- everything here was already on screen: spring
+       THEME  subject -- spring
   [1]  spring                   reference  0.76  1    -                  -             newspaper          -
 
 
 -------------------------------------------------------------------------------
 SUMMARY
 -------------------------------------------------------------------------------
-  12 pronouns in the map
-    12 used -- the segment shows the thing, not the word
+  13 mentions in the map -- pronouns, plus the
+    definite noun phrases that turned out to be generic
+    13 used -- the segment shows the thing, not the word
     0 held back (confidence below 0.25) -- pronoun kept on purpose
     0 nobody could answer
     0 narrator / viewer
@@ -738,7 +978,10 @@ SUMMARY
     1 know what they are part of (owner=)
     1 segments got nothing to put on screen
 
-  took 27s
+  17 lines have a search term
+  5 lines held as the same scene as the line above
+
+  took 28s
 
 ===============================================================================
 EXAMPLE: bees
@@ -797,7 +1040,8 @@ SPLIT INTO 14 LINE SEGMENTS
 
 
 -------------------------------------------------------------------------------
-ABSTRACT TERMS -- every pronoun, and what the models voted for
+ABSTRACT TERMS -- every pronoun and generic noun phrase, and what
+                  the models voted for
 -------------------------------------------------------------------------------
   Four coreference models read the whole script and vote; CONF is
   the share of their weight behind this answer. Below 0.25 the answer
@@ -807,6 +1051,9 @@ ABSTRACT TERMS -- every pronoun, and what the models voted for
 
   SOURCE  models  = the four voted        deictic = I/we/you
           recency = last thing mentioned  none    = nobody knew
+          cluster-np = NOT a pronoun. A definite noun phrase
+                    ("The insect") the models put in the same
+                    cluster as something more specific (the bee).
 
   WHERE      SURFACE    RESOLVED                 CONF   SOURCE   USED?
   76-78      it         frame                    0.76   models   used   [Sing]
@@ -900,74 +1147,133 @@ WHAT EACH LINE SEGMENT GOT
   OWNER   the whole this thing is a part of, when a possessive
           said so:  "Its windscreen"  -->  owner=tractor
   A ~ on the end of a cell means it was cut to fit the column.
+  TERM    THE ANSWER -- what VISUALISABLE_SEARCH_TERMS would go
+          and find footage of for this segment, read off the
+          slots under it. (none) means nothing here is worth
+          filming.
+  SCENE   new  = something in this segment was not on screen
+                 before, so fetch a picture
+          same = every thing here was already up; hold the one
+                 that is there. The reason follows it.
+  THEME   what the SCRIPT is about here, and what sort of thing
+          that is (_theme_engine). place/era/culture/subject. It
+          is NOT in the term above unless APPLY_THEMES is on, and
+          it ships off -- see VISUALISABLE_SEARCH_TERMS.
+  ABSTRACT  the heads this line LOST for not being a picture
+          ("monopoly", "weight"). Printed only when there are
+          any. When a line has these AND no filmable slot, it IS
+          an abstract concept -- shared_text_logic says so and
+          2-auto-tagging tags it.
 
   SLOT  VISUALISABLE             KIND       CONF  AMT  VARIANT            ACTION        LOCATION           OWNER
 
     1  The beekeeper opened the hive and
        The [beekeeper] opened the [hive] and
+       TERM   "beekeeper"
+       SCENE  new -- the first line — there is nothing to hold
+       THEME  subject -- beekeeper
   [1]  beekeeper                thing      0.90  1    -                  opened        -                  -
   [2]  hive                     thing      0.90  1    -                  opened        -                  -
 
     2  lifted out
        [lifted out]
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- beekeeper
   [1]  lifted out               fallback   0.20  1    -                  -             -                  -
 
     3  a frame.
        a [frame].
+       TERM   "frame"
+       SCENE  new -- introduces frame
+       THEME  subject -- beekeeper
   [1]  frame                    thing      0.90  1    -                  lifted out    -                  -
 
     4  The bees crawled over it, and
        The [bees] crawled over [frame], and
+       TERM   "bees"
+       SCENE  new -- introduces bees
+       THEME  subject -- bees
   [1]  bees                     thing      0.90  1    -                  crawled       -                  -
   [2]  frame                    reference  0.76  1    -                  crawled       -                  -
 
     5  their wings caught the light.
        [bees' wings] caught the [light].
+       TERM   "bees' wings"
+       SCENE  new -- introduces bees' wings, light
+       THEME  subject -- bees
   [1]  bees' wings              thing      0.90  1    -                  caught        -                  bees
   [2]  light                    thing      0.90  1    -                  caught        -                  -
 
     6  She said you can hear them thinking.
        [beekeeper] said [the viewer] can hear [bees] thinking.
+       TERM   "beekeeper"
+       SCENE  same -- everything here was already on screen: beekeeper, bees
+       THEME  subject -- bees
   [1]  beekeeper                reference  1.00  1    -                  -             -                  -
   [2]  the viewer               deictic    1.00  1    -                  -             -                  -
   [3]  bees                     reference  0.76  1    -                  -             -                  -
 
     7  I could not hear anything,
        [the narrator] could not hear [anything],   << hypothetical -- it did not happen
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- bees
   [1]  the narrator             deictic    1.00  1    -                  -             -                  -
   [2]  anything                 reference  0.00  1    -                  -             -                  -
 
     8  but I could smell the wax.
        but [the narrator] could smell the [wax].   << hypothetical -- it did not happen
+       TERM   "wax"
+       SCENE  new -- introduces wax
+       THEME  subject -- bees
   [1]  the narrator             deictic    1.00  1    -                  smell         -                  -
   [2]  wax                      thing      0.90  1    -                  smell         -                  -
 
     9  One of them landed
        One of [bees] landed
+       TERM   "bees"
+       SCENE  same -- everything here was already on screen: bees
+       THEME  subject -- bees
   [1]  bees                     reference  0.76  1    -                  landed        beekeeper's glove  -
 
    10  on her glove and stayed there.
        on [beekeeper's glove] and stayed there.
+       TERM   "beekeeper's glove"
+       SCENE  new -- introduces beekeeper's glove
+       THEME  subject -- bees
   [1]* beekeeper's glove        thing      0.90  1    -                  landed        -                  beekeeper
 
    11  This is what she wanted me to see:
        [This] is what [beekeeper] wanted [the narrator] to see:
+       TERM   "beekeeper"
+       SCENE  same -- everything here was already on screen: beekeeper
+       THEME  subject -- wax
   [1]  This                     reference  0.00  1    -                  -             beekeeper's glove  -
   [2]  beekeeper                reference  1.00  1    -                  -             beekeeper's glove  -
   [3]  the narrator             deictic    1.00  1    -                  -             beekeeper's glove  -
 
    12  it was not afraid of us.
        [One] was not afraid of [the narrator].
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- wax
   [1]  One                      reference  0.76  1    -                  -             beekeeper's glove  -
   [2]  the narrator             deictic    1.00  1    -                  -             beekeeper's glove  -
 
    13  We put the frame back,
        [the narrator] put the [frame] back,
+       TERM   "frame"
+       SCENE  same -- everything here was already on screen: frame
+       THEME  subject -- wax
   [1]  the narrator             deictic    1.00  1    -                  put           beekeeper's glove  -
   [2]  frame                    thing      0.90  1    -                  put           beekeeper's glove  -
 
    14  and they closed over it again.
        and [bees] closed over [frame] again.
+       TERM   "bees closed"
+       SCENE  same -- everything here was already on screen: bees, frame
+       THEME  subject -- wax
   [1]  bees                     reference  0.76  1    closed             closed        beekeeper's glove  -
   [2]  frame                    reference  0.76  1    -                  closed        beekeeper's glove  -
 
@@ -975,7 +1281,8 @@ WHAT EACH LINE SEGMENT GOT
 -------------------------------------------------------------------------------
 SUMMARY
 -------------------------------------------------------------------------------
-  16 pronouns in the map
+  16 mentions in the map -- pronouns, plus the
+    definite noun phrases that turned out to be generic
     16 used -- the segment shows the thing, not the word
     0 held back (confidence below 0.25) -- pronoun kept on purpose
     0 nobody could answer
@@ -989,6 +1296,9 @@ SUMMARY
     6 are the narrator or the viewer
     2 know what they are part of (owner=)
     0 segments got nothing to put on screen
+
+  11 lines have a search term
+  5 lines held as the same scene as the line above
 
   took 27s
 
@@ -1059,7 +1369,8 @@ SPLIT INTO 23 LINE SEGMENTS
 
 
 -------------------------------------------------------------------------------
-ABSTRACT TERMS -- every pronoun, and what the models voted for
+ABSTRACT TERMS -- every pronoun and generic noun phrase, and what
+                  the models voted for
 -------------------------------------------------------------------------------
   Four coreference models read the whole script and vote; CONF is
   the share of their weight behind this answer. Below 0.25 the answer
@@ -1069,6 +1380,9 @@ ABSTRACT TERMS -- every pronoun, and what the models voted for
 
   SOURCE  models  = the four voted        deictic = I/we/you
           recency = last thing mentioned  none    = nobody knew
+          cluster-np = NOT a pronoun. A definite noun phrase
+                    ("The insect") the models put in the same
+                    cluster as something more specific (the bee).
 
   WHERE      SURFACE    RESOLVED                 CONF   SOURCE   USED?
   230-234    them       Whale skulls             0.26   models   used   [Plur]
@@ -1118,109 +1432,196 @@ WHAT EACH LINE SEGMENT GOT
   OWNER   the whole this thing is a part of, when a possessive
           said so:  "Its windscreen"  -->  owner=tractor
   A ~ on the end of a cell means it was cut to fit the column.
+  TERM    THE ANSWER -- what VISUALISABLE_SEARCH_TERMS would go
+          and find footage of for this segment, read off the
+          slots under it. (none) means nothing here is worth
+          filming.
+  SCENE   new  = something in this segment was not on screen
+                 before, so fetch a picture
+          same = every thing here was already up; hold the one
+                 that is there. The reason follows it.
+  THEME   what the SCRIPT is about here, and what sort of thing
+          that is (_theme_engine). place/era/culture/subject. It
+          is NOT in the term above unless APPLY_THEMES is on, and
+          it ships off -- see VISUALISABLE_SEARCH_TERMS.
+  ABSTRACT  the heads this line LOST for not being a picture
+          ("monopoly", "weight"). Printed only when there are
+          any. When a line has these AND no filmable slot, it IS
+          an abstract concept -- shared_text_logic says so and
+          2-auto-tagging tags it.
 
   SLOT  VISUALISABLE             KIND       CONF  AMT  VARIANT            ACTION        LOCATION           OWNER
 
     1  Here's the thing.
        Here's the thing.
+       TERM   (none)
+       SCENE  new -- the first line — there is nothing to hold
+       THEME  (none)
        (no slots -- nothing to put on screen)
 
     2  In the middle of the Sahara sits
        In the [middle of the Sahara] sits
+       TERM   "middle of the Sahara"
+       SCENE  new -- introduces middle of the sahara
+       THEME  place -- Sahara
   [1]* middle of the Sahara     thing      0.90  1    -                  sits          -                  -
 
     3  a valley called
        a [valley] called
+       TERM   "valley"
+       SCENE  new -- introduces valley
+       THEME  place -- Sahara
   [1]  valley                   thing      0.90  1    -                  sits          middle of the Sah~ -
 
     4  Wadi Al-Hitan.
        [Wadi Al-Hitan].
+       TERM   "Wadi Al-Hitan"
+       SCENE  new -- introduces wadi al-hitan
+       THEME  (none)
   [1]* Wadi Al-Hitan            name       1.00  1    -                  -             middle of the Sah~ -
 
     5  Scientists digging there found
        [Scientists] digging there found
+       TERM   "Scientists"
+       SCENE  new -- introduces scientists
+       THEME  (none)
   [1]  Scientists               thing      0.90  1    -                  -             middle of the Sah~ -
 
     6  ribs,
        [ribs],
+       TERM   "ribs"
+       SCENE  new -- introduces ribs
+       THEME  subject -- ribs
   [1]  ribs                     thing      0.90  1    -                  -             middle of the Sah~ -
 
     7  vertebrae,
        [vertebrae],
+       TERM   "vertebrae"
+       SCENE  new -- introduces vertebrae
+       THEME  subject -- vertebrae
   [1]  vertebrae                thing      0.90  1    -                  -             middle of the Sah~ -
 
     8  teeth, and
        [teeth], and
+       TERM   "teeth"
+       SCENE  new -- introduces teeth
+       THEME  subject -- vertebrae
   [1]  teeth                    thing      0.90  1    -                  -             middle of the Sah~ -
 
     9  entire skulls.
        entire [skulls].
+       TERM   "skulls"
+       SCENE  new -- introduces whale skulls
+       THEME  subject -- entire skulls
   [1]  skulls                   thing      0.90  1    -                  -             middle of the Sah~ -
 
    10  Whale skulls.
        [Whale skulls].
+       TERM   "Whale skulls"
+       SCENE  same -- everything here was already on screen: whale skulls
+       THEME  subject -- Whale skulls
   [1]  Whale skulls             thing      0.90  1    -                  -             middle of the Sah~ -
 
    11  The ground looked as if
        The [ground] looked as if
+       TERM   "ground"
+       SCENE  new -- introduces ground
+       THEME  subject -- Whale skulls
   [1]  ground                   thing      0.90  1    -                  -             middle of the Sah~ -
 
    12  an ocean had simply dried up around them.
        an [ocean] had simply dried up around [Whale skulls].   << hypothetical -- it did not happen
+       TERM   "ocean dried"
+       SCENE  new -- introduces ocean
+       THEME  subject -- Whale skulls
   [1]  ocean                    thing      0.90  1    dried              dried up      middle of the Sah~ -
   [2]  Whale skulls             reference  0.26  1    -                  dried up      middle of the Sah~ -
 
    13  Every fossil was intact except
        Every [fossil] was intact except
+       TERM   "fossil"
+       SCENE  new -- introduces fossil
+       THEME  subject -- Whale skulls
   [1]  fossil                   thing      0.90  1    -                  -             middle of the Sah~ -
 
    14  one.
        [one]
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  subject -- Whale skulls
   [1]  one                      fallback   0.20  1    -                  -             middle of the Sah~ -
 
    15  Locals swear
        [Locals] swear
+       TERM   "Locals"
+       SCENE  new -- introduces locals
+       THEME  subject -- Whale skulls
   [1]  Locals                   thing      0.90  1    -                  -             middle of the Sah~ -
 
    16  the wind sounds like
        the [wind] sounds like
+       TERM   "wind"
+       SCENE  new -- introduces wind
+       THEME  subject -- Whale skulls
   [1]  wind                     thing      0.90  1    -                  sounds        middle of the Sah~ -
 
    17  whale song at
        [whale song] at
+       TERM   "whale song"
+       SCENE  new -- introduces whale song
+       THEME  subject -- fossil
   [1]  whale song               thing      0.90  1    -                  sounds        middle of the Sah~ -
 
    18  night.
-       [night].
-  [1]  night                    date       1.00  1    -                  sounds        middle of the Sah~ -
+       [middle of the Sahara].
+       TERM   "middle of the Sahara"
+       SCENE  same -- everything here was already on screen: middle of the sahara
+       THEME  subject -- fossil
+  [1]* middle of the Sahara     thing      0.90  1    at night           sounds        -                  -
 
    19  And then
        And then
+       TERM   (none)
+       SCENE  new -- nothing filmable here
+       THEME  (none)
        (no slots -- nothing to put on screen)
 
    20  boom,
        [boom],
+       TERM   "boom"
+       SCENE  new -- introduces boom
+       THEME  subject -- whale song
   [1]  boom                     thing      0.90  1    -                  buried        site               -
 
    21  a sandstorm buried the site for a decade.
        a [sandstorm] buried the [site] for a [decade].
+       TERM   "sandstorm"
+       SCENE  new -- introduces sandstorm, site, decade
+       THEME  subject -- whale song
   [1]  sandstorm                thing      0.90  1    -                  buried        site               -
   [2]* site                     thing      0.90  1    -                  buried        -                  -
   [3]  decade                   date       1.00  1    -                  buried        site               -
 
    22  Recovering it cost
        Recovering [valley] cost
+       TERM   "valley"
+       SCENE  same -- everything here was already on screen: valley
+       THEME  subject -- whale song
   [1]  valley                   reference  0.26  1    -                  -             site               -
 
    23  about $2 million.
        about [$2 million].
+       TERM   "$2 million"
+       SCENE  new -- introduces $2 million
+       THEME  subject -- whale song
   [1]  $2 million               number     1.00  1    -                  -             site               -
 
 
 -------------------------------------------------------------------------------
 SUMMARY
 -------------------------------------------------------------------------------
-  2 pronouns in the map
+  2 mentions in the map -- pronouns, plus the
+    definite noun phrases that turned out to be generic
     2 used -- the segment shows the thing, not the word
     0 held back (confidence below 0.25) -- pronoun kept on purpose
     0 nobody could answer
@@ -1235,5 +1636,8 @@ SUMMARY
     0 know what they are part of (owner=)
     2 segments got nothing to put on screen
 
-  took 27s
+  20 lines have a search term
+  3 lines held as the same scene as the line above
+
+  took 28s
 

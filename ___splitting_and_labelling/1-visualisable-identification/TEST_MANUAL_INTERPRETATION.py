@@ -21,12 +21,16 @@ WHAT IT RUNS
 
 WHAT IT WRITES, PER EXAMPLE
     1  the script, and the line segments the splitter cut it into
-    2  THE ABSTRACT TERMS MAP -- every pronoun, what the four coreference
-       models voted for, the confidence, and whether that beat the 0.25
-       threshold (below it the pronoun is deliberately LEFT IN PLACE)
+    2  THE ABSTRACT TERMS MAP -- every pronoun (and every definite noun
+       phrase that turned out to be a GENERIC re-mention: "The insect" ->
+       the bee), what the four coreference models voted for, the
+       confidence, and whether that beat the 0.25 threshold (below it the
+       word is deliberately LEFT IN PLACE)
     3  the pronoun-ish words the map does not cover, and why
-    4  every line segment with its slots filled in
-    5  a count of what got resolved, held and missed
+    4  every line segment with its slots filled in, the SEARCH TERM those
+       slots come out as, and whether the line is a new scene or a hold
+    5  a count of what got resolved, held and missed, and how many lines
+       ended up with a term at all
 
 WHY THE EXAMPLES ARE THESE FOUR
     tractor + spices    the two that were used to check the wiring by hand
@@ -60,6 +64,11 @@ import myownstuff
 from _abstract_term_resolver import CONFIDENCE_THRESHOLD
 from _visualisables_pipeline import join_segments, parse_script
 from sentence_splitter import split_text_into_sections
+from VISUALISABLE_SEARCH_TERMS import facts_for_lines
+# main.py's own flattener. Imported rather than copied: the rows
+# facts_for_lines() is fed here have to be the rows the pipeline feeds it,
+# or this file grades something the video never sees.
+from main import _as_rows
 
 RESULTS_FILE = HERE / "TEST_RESULTS_manual_interpretation.txt"
 
@@ -82,13 +91,21 @@ class Example:
     text: str | None = None
     script: str | None = None
 
+    # Where the real scripts live. They sit at the repo root beside main.py;
+    # the stage folder is tried first because that is where they used to be,
+    # and a copy left behind there is still the one someone is editing.
+    SCRIPT_DIRS = (HERE.parent, HERE.parent.parent)
+
     def load(self) -> str:
         if self.text is not None:
             return self.text.strip()
-        path = HERE.parent / self.script
-        if not path.exists():
-            raise FileNotFoundError(f"{path} -- move it back or edit EXAMPLES")
-        return path.read_text().strip()
+        for folder in self.SCRIPT_DIRS:
+            path = folder / self.script
+            if path.exists():
+                return path.read_text().strip()
+        raise FileNotFoundError(
+            f"{self.script} -- looked in "
+            + ", ".join(str(d) for d in self.SCRIPT_DIRS))
 
 
 EXAMPLES = [
@@ -115,9 +132,13 @@ EXAMPLES = [
             '"So she poured yellow paint onto the tractor." -- "she" is the cat, '
             'Molly. Then the tractor\'s variant should pick the paint up, and '
             'keep it for the rest of the script.',
-            '"The yellow and black guy flew away." -- the bee. Nothing resolves '
-            'this yet (it is the wishy-washy-terms BONUS, not built), so expect '
-            'to see "guy" or nothing. Here to show what is still missing.',
+            '"The yellow and black guy flew away." -- the bee, and it should '
+            'STAY "guy". A DESCRIPTIVE re-mention is the case the coreference '
+            'models cannot do: measured, 0 of 3 gave the bee, and the one link '
+            'on offer was to the windscreen. The generic re-mention IS built '
+            '("The insect" -> bee, source cluster-np), and the test that keeps '
+            'it out of here is the same one -- "guy" is not a WordNet hypernym '
+            'of "bee". A resolved slot on this line is the regression.',
         ],
         text="""
 The tractor and the cat, Molly, went down the lane.
@@ -262,6 +283,7 @@ class Run:
     doc: object                           # ...and its parse, for the PRON scan
     data: list                            # one {template: slots} per segment
     seconds: float
+    facts: list = field(default_factory=list)   # one LineFacts per segment
     error: str | None = None
 
 
@@ -318,6 +340,10 @@ def run_example(example: Example) -> Run:
     _KEEP_ALIVE.append(terms)
     script_text = captured.get("text") or join_segments(segments)
 
+    # The ANSWER, off the same rows main.py hands to stage 2 -- so what is
+    # printed below is the search term the video pipeline would really use.
+    facts = facts_for_lines(_as_rows(segments, data))
+
     return Run(example=example,
                text=text,
                segments=segments,
@@ -325,6 +351,7 @@ def run_example(example: Example) -> Run:
                script_text=script_text,
                doc=parse_script(script_text),
                data=data,
+               facts=facts,
                seconds=time.perf_counter() - started)
 
 
@@ -390,7 +417,8 @@ def _report_terms(run: Run) -> list:
            MISSED = nobody had an answer at all
     """
     out = ["", THIN,
-           "ABSTRACT TERMS -- every pronoun, and what the models voted for",
+           "ABSTRACT TERMS -- every pronoun and generic noun phrase, and what",
+           "                  the models voted for",
            THIN,
            "  Four coreference models read the whole script and vote; CONF is",
            f"  the share of their weight behind this answer. Below "
@@ -401,6 +429,9 @@ def _report_terms(run: Run) -> list:
            "",
            "  SOURCE  models  = the four voted        deictic = I/we/you",
            "          recency = last thing mentioned  none    = nobody knew",
+           "          cluster-np = NOT a pronoun. A definite noun phrase",
+           "                    (\"The insect\") the models put in the same",
+           "                    cluster as something more specific (the bee).",
            ""]
 
     if not run.terms:
@@ -549,11 +580,29 @@ def _report_segments(run: Run) -> list:
            "  OWNER   the whole this thing is a part of, when a possessive",
            '          said so:  "Its windscreen"  -->  owner=tractor',
            "  A ~ on the end of a cell means it was cut to fit the column.",
+           "  TERM    THE ANSWER -- what VISUALISABLE_SEARCH_TERMS would go",
+           "          and find footage of for this segment, read off the",
+           "          slots under it. (none) means nothing here is worth",
+           "          filming.",
+           "  SCENE   new  = something in this segment was not on screen",
+           "                 before, so fetch a picture",
+           "          same = every thing here was already up; hold the one",
+           "                 that is there. The reason follows it.",
+           "  THEME   what the SCRIPT is about here, and what sort of thing",
+           "          that is (_theme_engine). place/era/culture/subject. It",
+           "          is NOT in the term above unless APPLY_THEMES is on, and",
+           "          it ships off -- see VISUALISABLE_SEARCH_TERMS.",
+           "  ABSTRACT  the heads this line LOST for not being a picture",
+           "          (\"monopoly\", \"weight\"). Printed only when there are",
+           "          any. When a line has these AND no filmable slot, it IS",
+           "          an abstract concept -- shared_text_logic says so and",
+           "          2-auto-tagging tags it.",
            "",
            SLOT_HEADER,
            ""]
 
     for i, (segment, line) in enumerate(zip(run.segments, run.data), 1):
+        facts = run.facts[i - 1] if i - 1 < len(run.facts) else None
         for template, slots in line.items():
             named = template
             for slot, v in slots.items():
@@ -563,6 +612,7 @@ def _report_segments(run: Run) -> list:
             out.append(f"       {named}"
                        + ("   << hypothetical -- it did not happen"
                           if imagined else ""))
+            out += _term_lines(facts)
             if not slots:
                 out.append("       (no slots -- nothing to put on screen)")
             for slot, v in slots.items():
@@ -577,11 +627,42 @@ def _report_segments(run: Run) -> list:
     return out
 
 
+def _term_lines(facts) -> list:
+    """The two lines under a segment that say what would actually be fetched.
+
+        TERM   "middle of the Sahara"
+        SCENE  new -- introduces middle of the sahara
+        THEME  place -- Sahara
+    """
+    if facts is None:
+        return ["       TERM   (no answer -- facts_for_lines gave this "
+                "segment no row)"]
+    term = f'"{facts.search_term}"' if facts.search_term else "(none)"
+    return [f"       TERM   {term}",
+            f"       SCENE  {'same' if facts.same_scene_as_previous else 'new'}"
+            f" -- {facts.why}",
+            f"       THEME  {_theme_of(facts)}"] + (
+        [f"       ABSTRACT  {', '.join(facts.abstract_concepts)}"
+         + ("   << and nothing filmable survived -- this line IS an "
+            "abstract concept" if not facts.identities else "")]
+        if facts.abstract_concepts else [])
+
+
+def _theme_of(facts) -> str:
+    """The line's theme, off any one of its slots -- apply_theme() stamps the
+    same pair on all of them, because a theme belongs to the line."""
+    for slot in (facts.slots or {}).values():
+        if slot.get("theme_text"):
+            return f"{slot['theme_kind']} -- {slot['theme_text']}"
+    return "(none)"
+
+
 def _report_summary(run: Run) -> list:
     """The counts, so a run can be compared with the last one at a glance."""
     counts = tally(run)
     out = ["", THIN, "SUMMARY", THIN,
-           f"  {counts['pronouns']} pronouns in the map",
+           f"  {counts['pronouns']} mentions in the map -- pronouns, plus the",
+           "    definite noun phrases that turned out to be generic",
            f"    {counts['used']} used -- the segment shows the thing, not the word",
            f"    {counts['held']} held back (confidence below "
            f"{CONFIDENCE_THRESHOLD}) -- pronoun kept on purpose",
@@ -596,6 +677,10 @@ def _report_summary(run: Run) -> list:
            f"    {counts['deictic_slots']} are the narrator or the viewer",
            f"    {counts['owned']} know what they are part of (owner=)",
            f"    {counts['empty']} segments got nothing to put on screen",
+           "",
+           f"  {counts['with_term']} lines have a search term",
+           f"  {counts['same_scene']} lines held as the same scene as the "
+           f"line above",
            "",
            f"  took {run.seconds:.0f}s",
            ""]
@@ -635,12 +720,16 @@ def tally(run: Run) -> dict:
                 if v.get("owner"):
                     owned += 1
 
+    with_term = sum(1 for f in run.facts if f.search_term)
+    same_scene = sum(1 for f in run.facts if f.same_scene_as_previous)
+
     return {"pronouns": len(run.terms), "used": used, "held": held,
             "none": nothing, "deictic": deictic, "possessive": possessive,
             "uncovered": uncovered, "segments": len(run.segments),
             "slots": slots, "reference_slots": reference_slots,
             "still_pronoun": still_pronoun, "deictic_slots": deictic_slots,
-            "owned": owned, "empty": empty}
+            "owned": owned, "empty": empty,
+            "with_term": with_term, "same_scene": same_scene}
 
 
 def _cut(value, width: int) -> str:
@@ -682,7 +771,9 @@ def header(chosen: list) -> list:
             "    LINE SEGMENTS           how the splitter cut it -- one shot each",
             "    ABSTRACT TERMS          every pronoun and what it resolved to",
             "    NOT COVERED             pronoun-ish words nothing was asked about",
-            "    WHAT EACH SEGMENT GOT   the slots, which is the real output",
+            "    WHAT EACH SEGMENT GOT   the slots, the SEARCH TERM they",
+            "                            produce, and whether the line is a",
+            "                            new scene -- the real output",
             "    SUMMARY                 the counts",
             ""]
 
@@ -690,7 +781,7 @@ def header(chosen: list) -> list:
 def rollup(runs: list) -> list:
     """The one screen at the top: every example, side by side."""
     out = [RULE, "ALL EXAMPLES AT A GLANCE", RULE, "",
-           f"  {'EXAMPLE':<12} {'SEGS':<6} {'PRONOUNS':<9} {'USED':<6}"
+           f"  {'EXAMPLE':<12} {'SEGS':<6} {'MENTIONS':<9} {'USED':<6}"
            f" {'HELD':<6} {'NONE':<6} {'DEICTIC':<8} {'OWNED':<6} {'TIME':<6}"]
     for run in runs:
         if run.error:
@@ -723,7 +814,7 @@ def main():
             print(f"  FAILED\n{traceback.format_exc()}")
             failed = Run(example=example, text="", segments=[], terms={},
                          script_text="", doc=None, data=[], seconds=0.0,
-                         error=traceback.format_exc())
+                         facts=[], error=traceback.format_exc())
             runs.append(failed)
             sections += [RULE, f"EXAMPLE: {example.name}", RULE, "",
                          "  THIS ONE BLEW UP. The traceback, verbatim:", "",

@@ -157,6 +157,28 @@ visualisables_data = get_visualisable_data(
 #               So whatever happens to the part can be shown on the whole.
 #               Only ever filled when you passed abstract_terms.
 #
+# theme_kind    what the SCRIPT is about at this segment, and what sort of
+# theme_text    thing that is — "place"/"Egypt", "era"/"64 AD",
+#               "culture"/"Roman", "subject"/"the spice trade". Worked out
+#               once per script by _theme_engine.py; the KIND comes off
+#               spaCy's own entity labels. Both None when nothing is live
+#               here, which is a normal answer.
+#               A LINE-level fact: every slot of a segment carries the same
+#               pair, so a consumer holding one slot need not go and find its
+#               siblings. It is NOT in the search term unless
+#               VISUALISABLE_SEARCH_TERMS.APPLY_THEMES is on, and it ships
+#               off — adding a word the script did not say is the one change
+#               that can make a working term worthless.
+#
+# abstract_concepts   the heads this segment LOST for not being a picture:
+#               ["monopoly"], ["weight"]. Also a line-level fact. Stage 1
+#               found them, judged them unfilmable and dropped them, and this
+#               is the record — "The company held a monopoly" is a line about
+#               something, it just is not a line with a monopoly in it.
+#               When a segment has these AND nothing filmable survived, the
+#               segment IS an abstract concept, which is what
+#               shared_text_logic.is_abstract_concept() now answers.
+#
 # confidence    0..1. On a "reference" slot without abstract_terms: 0.75
 #               means a coreference model answered, 0.10 means it was only a
 #               "last thing mentioned" guess, 0.0 means we could not resolve

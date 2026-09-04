@@ -51,6 +51,36 @@ ONE PARSE OR TWO?  (measured 2026-09-03, and this is the whole answer)
     What must NEVER cross between the two: a Doc, a Token, a token index.
     sm and trf tokenise differently. Only CHARACTER OFFSETS and STRINGS go in
     the map, which is exactly what makes the two parses interchangeable.
+
+AND THE SAME QUESTION FOR THE VISUALISABLES  (measured 2026-09-04, and this
+is the whole answer too, so nobody re-shops it)
+    The worry was that the search terms are being measured on a weaker parse
+    than they deserve: KIND_NAME is the most valuable kind there is and it
+    comes almost entirely from NER, which is sm's weakest part. So the whole
+    of TEST_MANUAL_INTERPRETATION.py was run twice over the five scripts --
+    once on the shared en_core_web_sm, once with en_core_web_trf pre-loaded
+    into shared_text_logic._NLP so that every parse in the folder used it --
+    and the 89 SEARCH TERMs diffed.
+
+        9 of 89 terms differ, and trf is WORSE on the case it was hired for
+
+        NAMES        sm  "Wadi Al-Hitan"   one name, one slot
+                     trf "Wadi Al" + "Hitan"   the hyphen splits the entity
+                     -- the highest-value slot in the five scripts, broken.
+        THE SPLIT    trf changes stage 0 as well, because the SENTENCE
+                     SPLITTER reads the same shared model: the tractor
+                     narrative comes out as 14 segments instead of 15,
+                     clockmaker as 23 instead of 22. A "final run" on trf
+                     would therefore move the SHOT BOUNDARIES, not just
+                     improve the terms inside them.
+        THE REST     six small wins and losses that cancel out (trf gains
+                     "note" and "man", loses "boom" and "Molly", spells
+                     "little, wrinkled seed" with the comma in).
+
+    So: NO MODEL DIAL. en_core_web_sm stays, everywhere, and rule 7's two
+    parses stay two. Revisit only if spaCy's trf pipeline stops splitting
+    hyphenated place names -- and remember that swapping it changes the
+    split, so stage 0's cache has to be thrown away with it.
 """
 
 import logging
@@ -155,6 +185,37 @@ NAME_ENTS = {"PERSON", "GPE", "LOC", "FAC", "ORG", "NORP", "EVENT", "WORK_OF_ART
 # resolves to "revved" -- a real answer on the tractor narrative. A thing a
 # pronoun stands for is a noun.
 MENTION_POS = {"NOUN", "PROPN", "NUM"}
+
+# --- GENERIC RE-MENTIONS ----------------------------------------------------
+# "They passed a bee." ... "The insect flew away."
+#
+# A pronoun is not the only way a script points back at something. A DEFINITE
+# NOUN PHRASE does it too, and it is worse than a pronoun for us, because it
+# looks like a perfectly good thing to film: "the insect" gets a slot and buys
+# stock footage of some insect, not of the bee.
+#
+# MEASURED 2026-09-04 on the tractor narrative, all four checkpoints, every
+# cluster dumped. This is what decided the scope:
+#     WORKS -- hypernym re-mentions
+#         "a bee"       -> "The insect"   3 of 3 models
+#         "The tractor" -> "The vehicle"  2 of 3
+#         "the cat, Molly" -> "The animal" 2 of 3
+#     DOES NOT WORK -- descriptive / metaphorical re-mentions
+#         "The yellow and black guy" -> bee   0 of 3, and the one model that
+#         said anything (lingmess) linked it to "Its", the windscreen.
+# So the clusters ALREADY hold the hypernym answers; nothing new is run. The
+# only thing that was missing is that this file never asked about anything
+# but a pronoun token.
+RESOLVE_GENERIC_NOUN_PHRASES = True
+
+# The source stamped on those rows, so a consumer can tell them from a
+# pronoun's answer without guessing.
+GENERIC_NP_SOURCE = "cluster-np"
+
+# How many noun senses to read when asking "is A a KIND OF B". Two, the same
+# window kb_is_place() uses: sense 1 alone does not reach "vehicle" from
+# "tractor", and the tail of a noun's sense list is where the metaphors are.
+GENERIC_NP_SENSES = 2
 
 
 # ---------------------------------------------------------------------------
@@ -358,6 +419,126 @@ def merge_votes(votes, display):
     return {k: (w, display[k]) for k, w in merged.items()}
 
 
+_KB = None                # _knowledge_base: None = untried, False = absent
+
+
+def knowledge():
+    """_knowledge_base -- Brysbaert + the WordNet lookups -- or None.
+
+    Lazy and never fatal: a missing corpus turns the generic-re-mention test
+    off and leaves every pronoun answer exactly as it was.
+    """
+    global _KB
+    if _KB is None:
+        try:
+            import _knowledge_base as kb
+            kb.kb_concreteness("test")               # force the data file
+            _KB = kb
+        except Exception:                            # pragma: no cover
+            _KB = False
+    return _KB or None
+
+
+def is_definite_mention(head):
+    """Does this noun phrase point at a thing the script has already named?
+
+    THE TEST IS A CLOSED GRAMMATICAL CLASS, read off spaCy's morphology --
+    not a list of words:
+        a `det` child carrying Definite=Def      "THE insect"
+        a `poss` child                           "ITS windscreen", "Elena's"
+    An indefinite ("a bee") INTRODUCES something and has nothing to point
+    back at, and a demonstrative ("this seed") is PronType=Dem, not Def.
+    """
+    for child in head.children:
+        if child.dep_ == "det" and "Def" in child.morph.get("Definite"):
+            return True
+        if child.dep_ == "poss":
+            return True
+    return False
+
+
+def is_unfilmable_head(word):
+    """Is this the head of a phrase you could NOT point a camera at?
+
+    The visualisables extractor's own two tests, borrowed rather than copied
+    so the two files cannot drift:
+        WordNet's supersense    "weight" is noun.attribute -- never a picture
+        Brysbaert concreteness  below MIN_CONCRETENESS, human-rated
+    False whenever the corpora are missing, which is the "no opinion" answer
+    every lookup in this folder gives.
+    """
+    kb = knowledge()
+    if kb is None:
+        return False
+    try:
+        import _visualisables_extractor as VE
+        if VE.is_never_filmable_noun(word):
+            return True
+        score = kb.kb_concreteness(word)
+        return score is not None and score < VE.MIN_CONCRETENESS
+    except Exception:                                # pragma: no cover
+        return False
+
+
+def is_kind_of(specific, general):
+    """Does WordNet file `specific` as a KIND OF `general`?
+    e.g. is_kind_of("bee", "insect") -> True     ("tractor", "vehicle") -> True
+         is_kind_of("bee", "guy")    -> False    ("bee", "thing")       -> False
+
+    THIS IS THE TEST THAT MAKES THE HYPERNYM CASE WORK, and it is here rather
+    than in the qualification above because the plan's own two tests cannot
+    reach it: "insect" is Brysbaert 5.00 and noun.animal, so it is neither
+    abstract nor unfilmable -- it is merely GENERIC, and generic is only
+    definable against the thing it was generic ABOUT. A taxonomy node, not a
+    word list, and it is what refuses "guy" as well as accepting "insect".
+    """
+    kb = knowledge()
+    if kb is None or not specific or not general:
+        return False
+    if specific.lower() == general.lower():
+        return False              # a re-mention by the SAME word says nothing
+    wn = kb._wn()
+    if not wn:
+        return False
+    try:
+        targets = frozenset(sense.name() for sense in
+                            wn.synsets(general, pos=wn.NOUN)[:GENERIC_NP_SENSES])
+    except Exception:                                # pragma: no cover
+        return False
+    return bool(targets) and kb._wn_has_hypernym(specific, targets,
+                                                 GENERIC_NP_SENSES)
+
+
+def head_word(name):
+    """The one word a mention is ABOUT -- its last, which is where English
+    puts the head of a noun phrase.  "the yellow paint" -> "paint" """
+    words = (name or "").replace("'s", " ").split()
+    return words[-1].strip(""" '",.;:!?()[]""").lower() if words else ""
+
+
+def generic_np_targets(doc, taken):
+    """Every DEFINITE noun phrase worth asking the clusters about.
+
+    @input taken = the character spans already claimed by pronoun targets, so
+        "ITS windscreen" is left to the pronoun inside it -- one mention, one
+        row, and the possessive path already handles that shape.
+
+    Proper nouns are skipped: a name is as specific as a mention gets, and
+    there is nothing to improve by replacing it.
+    """
+    out = []
+    for chunk in doc.noun_chunks:
+        head = chunk.root
+        if head.pos_ != "NOUN" or head.ent_type_:
+            continue
+        if not is_definite_mention(head):
+            continue
+        if any(a < chunk.end_char and chunk.start_char < b for a, b in taken):
+            continue
+        out.append((chunk.start_char, chunk.end_char, chunk.text, head))
+    return out
+
+
 def deictic_label(token):
     """Narrator / viewer, from spaCy's Person morphology."""
     person = token.morph.get("Person")
@@ -517,11 +698,25 @@ def resolve_all_abstract_terms(text,
     # 1) TARGETS -- the pronouns worth asking about.
     toks = ([t for t in doc if t.pos_ == "PRON"] if all_pron
             else [t for t in doc if t.tag_ in ("PRP", "PRP$")])
-    targets = [(t.idx, t.idx + len(t.text), t.text, t) for t in toks]
+    targets = [(t.idx, t.idx + len(t.text), t.text, t, "pronoun")
+               for t in toks]
 
     skipped = sum(1 for t in doc if t.pos_ == "PRON") - len(targets)
     say(f"{len(targets)} referential pronouns to resolve"
-        f"{f' ({skipped} non-referential skipped)' if skipped else ''}\n")
+        f"{f' ({skipped} non-referential skipped)' if skipped else ''}")
+
+    # 1b) ...and the DEFINITE NOUN PHRASES, which point backwards too.
+    #     "The insect flew away" is a re-mention of the bee, and unlike a
+    #     pronoun it looks filmable, so nothing downstream would ever
+    #     question it. Only the ones that turn out to be GENERIC keep a row
+    #     -- see the acceptance test at the bottom of the loop.
+    if RESOLVE_GENERIC_NOUN_PHRASES:
+        taken = [(a, b) for a, b, _t, _tok, _k in targets]
+        phrases = generic_np_targets(doc, taken)
+        targets += [(a, b, text, head, "np") for a, b, text, head in phrases]
+        targets.sort(key=lambda t: (t[0], t[1]))
+        say(f"{len(phrases)} definite noun phrase(s) to ask about as well")
+    say("")
 
     # 2) MODELS -- each one reads the RAW TEXT, not the parse, so this is the
     #    one place the two tokenisations cannot disagree.
@@ -551,16 +746,24 @@ def resolve_all_abstract_terms(text,
     resolutions = {}
     recent = []   # (char_pos, name, number) of everything resolved so far
 
-    for n, (start, end, surface, token) in enumerate(targets, 1):
+    for n, (start, end, surface, token, target_kind) in enumerate(targets, 1):
+        is_np = target_kind == "np"
         say(f"\n{'-' * 70}")
-        say(f"abstract word/phrase #{n}) {surface!r} at index {start}:")
+        say(f"abstract word/phrase #{n}) {surface!r} at index {start}"
+            f"{' [definite noun phrase]' if is_np else ''}:")
         say("models sorted most to least accurate\n")
 
         # every row starts as "we could not tell", and a step below fills it
         row = {"surface": surface, "resolved": None, "confidence": 0.0,
                "source": "none", "possessive": is_possessive(token),
                "number": number_of(token)}
-        resolutions[(start, end)] = row
+        # A NOUN PHRASE ONLY EARNS A ROW IF THE ANSWER IS BETTER THAN IT IS.
+        # A pronoun always gets one, because "nobody could tell" is itself an
+        # answer there (hold the picture); a phrase that resolves to nothing,
+        # or to something no more specific than itself, is just an ordinary
+        # noun phrase and must be left exactly as it was.
+        if not is_np:
+            resolutions[(start, end)] = row
 
         # 3) VOTE
         votes, display, answered = defaultdict(float), {}, 0
@@ -592,9 +795,38 @@ def resolve_all_abstract_terms(text,
                 say(f"  * {shown:<50} : {score / total_weight:.2f}")
             say(f"  ({answered}/{len(active)} models gave an answer)")
             score, name = ranked[0][1]
+            if is_np:
+                # THE ACCEPTANCE TEST. Two ways a definite phrase qualifies,
+                # and the phrase is left alone unless one of them fires:
+                #   UNFILMABLE  its head is not a picture at all -- WordNet's
+                #               supersense, or Brysbaert under the extractor's
+                #               own MIN_CONCRETENESS
+                #   GENERIC     the thing the models point at is a KIND OF it
+                #               ("bee" is a kind of "insect"), which is the
+                #               hypernym re-mention the measurement above says
+                #               is the case that actually works
+                head = head_word(surface)
+                answer = head_word(name)
+                why = ("unfilmable" if is_unfilmable_head(head)
+                       else "generic" if is_kind_of(answer, head) else None)
+                if why is None:
+                    say(f"  ({surface!r} keeps its own words -- {answer!r} is "
+                        f"no more specific than {head!r})")
+                    continue
+                row.update(resolved=name, confidence=score / total_weight,
+                           source=GENERIC_NP_SOURCE)
+                resolutions[(start, end)] = row
+                say(f"  ({surface!r} -> {name!r}, {why})")
+                continue
             row.update(resolved=name, confidence=score / total_weight,
                        source="models")
             recent.append((start, name, None))
+            continue
+
+        if is_np:
+            # No cluster at all. A noun phrase with no antecedent is simply a
+            # noun phrase; there is nothing to hold and nothing to swap in.
+            say("  (no cluster -- left as written)")
             continue
 
         # 4) DEICTIC -- nothing from the models -------------------------------

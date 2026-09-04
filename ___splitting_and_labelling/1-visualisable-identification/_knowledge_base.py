@@ -124,7 +124,8 @@ def _wn_supersenses(word: str, n_senses: int, pos=None) -> list:
         return []
 
 
-def _wn_attribute_roots(word: str, pos=None) -> set:
+def _wn_attribute_roots(word: str, pos=None,
+                       follow_similar: bool = False) -> set:
     """The taxonomy nodes above every ATTRIBUTE this adjective measures.
     e.g. "old"       -> age.n.01     -> {..., attribute.n.02, property.n.02}
          "important" -> importance.n.01 -> {..., quality.n.01}
@@ -134,6 +135,16 @@ def _wn_attribute_roots(word: str, pos=None) -> set:
     (size, width, colour, integrity) from one you cannot (importance,
     individuality, fear). Empty means WordNet has no attribute pointer for
     it, which is not the same as "not visual" — the caller decides.
+
+    follow_similar ALSO reads the head of a SATELLITE adjective's cluster.
+    WordNet files "huge" as a satellite of "large" and gives the attribute
+    pointer (size.n.01) only to the head, so without this "huge" and "tiny"
+    both answer "no opinion" while "large" answers "a size".
+        off  huge -> set()            tiny -> set()
+        on   huge -> {..., property.n.02}   tiny -> {..., property.n.02}
+    OFF BY DEFAULT, because the cluster head drags its other senses along
+    with it ("afraid" picks up state.n.02) — loose enough to ORDER two
+    details against each other, too loose to decide what is visual at all.
     """
     wn = _wn()
     if not wn:
@@ -141,9 +152,13 @@ def _wn_attribute_roots(word: str, pos=None) -> set:
     names = set()
     try:
         for synset in wn.synsets(word, pos=pos or wn.ADJ):
-            for attribute in synset.attributes():
-                for path in attribute.hypernym_paths():
-                    names |= {h.name() for h in path}
+            heads = [synset]
+            if follow_similar:
+                heads += list(synset.similar_tos())
+            for head in heads:
+                for attribute in head.attributes():
+                    for path in attribute.hypernym_paths():
+                        names |= {h.name() for h in path}
     except Exception:                              # pragma: no cover
         pass
     return names
