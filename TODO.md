@@ -4,15 +4,6 @@
 
 
 
-Check over ___search_term_finding/;
-- check, does any of the files in that mention any logic / steps that have not been done by 
- ___splitting_and_labelling/1-visualisable-identification/ ???
- if so, create a TASK_VISUALISABLES_IMPROVEMENTS.txt file, with a plan of different steps
-  of how we can optimise our 1-visualisable-identification, in order to 
-  give absolute best results for visualisable search terms.
-
-
-
 
 ---------------------
 
@@ -23,8 +14,17 @@ cleanup this codebase.
 - make functionality put all cache things in .CACHE/
 e.g. .CACHE/stickman-CACHE/...
     (and move all existing ones to there)
+- move any test things (including tests, and test scripts / jsons into /TESTING-RESOURCES
 - TODO (other stuff...)
         (e.g. wikiepdia nad pexels search under the same subfolder...)
+- things like media/ put in like .resources/ (and anything else like refrence images or backgrounds etc. in there)
+- bassically, try and sensibly cleanup the main folder to minimise the amount of stuff in there...
+- remove ___search_term_finding/
+- for __visuals;
+    - make everything lowercase
+    - move all ai / fal relate stuff into an ai/ folder....
+
+- 
 
 
 

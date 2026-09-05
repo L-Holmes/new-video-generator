@@ -29,6 +29,17 @@ dependencies = [
     "click>=8.4.1",
     "manim>=0.20.1",
     "maverick-coref>=1.0.7",
+
+    # 1-visualisable-identification/_theme_engine.py — what a script is
+    # ABOUT. Both MIT/BSD-3, both numpy-only.
+    "model2vec>=0.9",        # the static embedding KeyBERT scores with
+    "scikit-learn>=1.9",     # KeyBERT's vectoriser
+    # ...and KeyBERT itself, which is NOT listed here on purpose: it hard-
+    # requires sentence-transformers, which drags in a second torch stack we
+    # do not want and never call. Install it without its dependencies:
+    #     uv pip install keybert --no-deps
+    # Missing entirely is fine — _theme_engine degrades to "no theme on any
+    # line" and every search term is unchanged.
 ]
 
 [dependency-groups]
