@@ -15,13 +15,14 @@ a cache makes a stage fast, it never makes it get skipped.
     stage_3_manual_tagging  3-manual-tagging/
 
 WHERE THINGS GO
-    Run directly, everything lands under TEST_RESULTS/ — shot list and
-    visualisables json at the top, caches in TEST_RESULTS/CACHE/. Nothing
+    Run directly, everything lands under
+    TESTING-RESOURCES/splitting_and_labelling/TEST_RESULTS/ — shot list and
+    visualisables json at the top, caches in its CACHE/ subfolder. Nothing
     is written next to the code.
 
-    Imported as a library (the repo's own main.py does this), the defaults
-    are the working directory instead, which is where CONFIG expects the
-    shot list and the "<prefix>-CACHE" folder.
+    Imported as a library (the repo's own main.py does this), the shot list
+    goes to SCRIPTS/ and the "<prefix>-CACHE" folder under .CACHE/, which is
+    where CONFIG looks for them.
 
 The output format is documented field-by-field in documentation/FORMAT.md.
 """
@@ -46,12 +47,14 @@ import PATHS  # noqa: F401,E402  — every folder of this package on sys.path
 # =============================================================================
 
 # Where the shot list and the visualisables json are written, and where the
-# "<prefix>-CACHE" folders are made. "." — the working directory — is what
-# CONFIG expects of a library caller; a direct run points both at
-# TEST_RESULTS/ instead (see _run_directly).
-OUTPUT_DIR = Path(".")
-CACHE_ROOT = Path(".")
-TEST_RESULTS_DIR = Path("TEST_RESULTS")
+# "<prefix>-CACHE" folders are made. These mirror CONFIG.SCRIPTS_DIR /
+# CONFIG.CACHE_ROOT — the shot list lands next to the script it came from,
+# the caches under the one hidden .CACHE/ folder — which is what a library
+# caller (the repo's own main.py) expects. A direct run points all of it at
+# TESTING-RESOURCES/ instead (see _run_directly).
+OUTPUT_DIR = Path("SCRIPTS")
+CACHE_ROOT = Path(".CACHE")
+TEST_RESULTS_DIR = PATHS.TESTING_RESULTS_DIR
 
 # When True, every file this module WRITES is prefixed with "TESTING_".
 TESTING_SCRIPT_SEARCH_TERM_GENERATION = True
@@ -477,6 +480,10 @@ def _resolve_script_path(script_name: str) -> Path:
     p = Path(script_name)
     if p.exists():
         return p
+    # Bare name ("script-whales.txt")? The narration scripts live in SCRIPTS/.
+    in_scripts = PATHS.REPO_ROOT / "SCRIPTS" / p.name
+    if in_scripts.exists():
+        return in_scripts
     alt = p.with_suffix(".txt")
     return alt if alt.exists() else p
 

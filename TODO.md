@@ -10,21 +10,6 @@
 
 
 
-cleanup this codebase.
-- make functionality put all cache things in .CACHE/
-e.g. .CACHE/stickman-CACHE/...
-    (and move all existing ones to there)
-- move any test things (including tests, and test scripts / jsons into /TESTING-RESOURCES
-- TODO (other stuff...)
-        (e.g. wikiepdia nad pexels search under the same subfolder...)
-- things like media/ put in like .resources/ (and anything else like refrence images or backgrounds etc. in there)
-- bassically, try and sensibly cleanup the main folder to minimise the amount of stuff in there...
-- remove ___search_term_finding/
-- for __visuals;
-    - make everything lowercase
-    - move all ai / fal relate stuff into an ai/ folder....
-
-- 
 
 
 
@@ -110,9 +95,9 @@ or almost like 'rearrange and add more elements to a joint image!?!?'
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------
 
-find stickman-CACHE -type f -name "*.json" -delete && rm -rf stickman-OUTPUT/output.mp4
+find .CACHE/stickman-CACHE -type f -name "*.json" -delete && rm -rf OUTPUT/stickman-OUTPUT/output.mp4
 
-rm -rf TESTER-OUTPUT/output.mp4 TESTER-CACHE/output_video_final.mp4 TESTER-CACHE/{joint,blank,map,collage,decorate}_scenes
+rm -rf OUTPUT/TESTER-OUTPUT/output.mp4 .CACHE/TESTER-CACHE/output_video_final.mp4 .CACHE/TESTER-CACHE/{joint,blank,map,collage,decorate}_scenes
 
 ------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------

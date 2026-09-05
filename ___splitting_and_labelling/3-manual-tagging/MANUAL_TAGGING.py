@@ -191,7 +191,9 @@ HERE = Path(__file__).resolve().parent
 # every EXPLAINED change (split, join, media type, extras, search term, data
 # form, stamp) lands here, whichever json is being tagged — one shared,
 # append-only, human-readable report. No reason given, nothing written.
-REPORT_PATH = PATHS.REPO_ROOT / "manual_tagging_changes_report.txt"
+# The log of every reasoned tagging change, kept next to the tool that
+# writes it rather than loose in the repo root.
+REPORT_PATH = PATHS.HERE / "manual_tagging_changes_report.txt"
 # how many un-explained changes keep their "why?" offer alive at once. The
 # overlay works through them newest-first; beyond this the oldest are dropped
 # (never written), because an offer from 40 changes ago is noise, not a prompt.
@@ -682,13 +684,18 @@ class _State:
                      json_path.stem)
         prefix = m.group(1) if m else json_path.stem
         triples = None
-        # cwd, not HERE: standalone use runs from ___splitting_and_labelling
-        # per documentation/MASTER_README (this file is a stage folder
-        # down from there);
-        # embedded use (main.py) runs from the repo root, where
-        # CONFIG._CACHE_DIR ("<prefix>-CACHE") actually lives.
-        hits = sorted(Path.cwd().glob(
-            f"{prefix}-CACHE/split-and-lable/*SPLITMETA*-{prefix}.json"))
+        # The split meta is written by main.py, and main.py writes it to a
+        # different place depending on how it was started: .CACHE/ at the
+        # repo root when it is driven as a library, TEST_RESULTS/CACHE/ on a
+        # direct run. Look in both — plus the cwd, for anyone who put a
+        # "<prefix>-CACHE" somewhere by hand — newest match wins.
+        _roots = [PATHS.REPO_ROOT / ".CACHE",
+                  PATHS.TESTING_RESULTS_DIR / "CACHE",
+                  Path.cwd()]
+        hits = sorted(
+            (h for root in _roots for h in root.glob(
+                f"{prefix}-CACHE/split-and-lable/*SPLITMETA*-{prefix}.json")),
+            key=lambda h: h.stat().st_mtime)
         if hits:
             triples = json.loads(hits[-1].read_text(encoding="utf-8"))
         by_text = {t[0]: t[2] for t in (triples or [])}
@@ -1219,10 +1226,13 @@ def make_server(json_path: Path, port: int = 0) -> ThreadingHTTPServer:
 def _pick_json(arg: Optional[str]) -> Path:
     if arg:
         return Path(arg)
-    # Wherever main.py was run from: the package root when it was
-    # run by hand, the repo root when main.py drove it. HERE is this stage
-    # folder and never holds a shot list, so it is not in the list.
-    hits = sorted({p for d in (Path.cwd(), PATHS.HERE, PATHS.REPO_ROOT)
+    # Wherever main.py wrote it: SCRIPTS/ when main.py drove it,
+    # TEST_RESULTS/ on a direct run, and the cwd / package root for anyone
+    # who put one somewhere by hand. HERE is this stage folder and never
+    # holds a shot list, so it is not in the list.
+    hits = sorted({p for d in (PATHS.REPO_ROOT / "SCRIPTS",
+                               PATHS.TESTING_RESULTS_DIR,
+                               Path.cwd(), PATHS.HERE, PATHS.REPO_ROOT)
                    for p in d.glob("*-script_to_search_term.json")},
                   key=lambda p: p.stat().st_mtime, reverse=True)
     if not hits:

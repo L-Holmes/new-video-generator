@@ -18,7 +18,7 @@ The window IS the draw canvas; the sidebar swaps with the tab you're on:
 
 FINISH saves; closing the window abandons (the caller keeps the original).
 Captions are NOT here — they're the automatic `caption` modifier
-(DECORATE_STAGE). Hand-placed text is the canvas's own Add text.
+(decorate_stage). Hand-placed text is the canvas's own Add text.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from ___visuals.PREVIOUS_ENTRY_PREVIEW import PreviousEntryPreview
+from ___visuals.previous_entry_preview import PreviousEntryPreview
 
 VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".m4v"}
 
@@ -108,7 +108,7 @@ def run_overlay_decorator(
         [("layer", [deco items...]) | ("zoom", (wpct, cx, cy)), ...]
     for the caller to re-apply to the moving video: layers as transparent
     PNGs (draw.render_overlay_layer / draw.render_highlight_mask), zooms as
-    real crops of the footage (VIDEO_CHAINS.burn_ops_onto_segment).
+    real crops of the footage (video_chains.burn_ops_onto_segment).
 
     Returns the ops list, or None if the window was closed or nothing was
     placed."""

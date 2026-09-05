@@ -1,3 +1,24 @@
+# where everything lives
+
+```
+main.py                     stage 2: the shot list -> the finished video
+CONFIG.py                   the ONE place paths + knobs are set
+___splitting_and_labelling/ stage 1: a script -> a tagged shot list
+___visuals/                 every render stage (all lowercase module names)
+    ai/                     model-generated pictures (fal)
+    sources/                where footage comes from: pexels, wikipedia
+    decorator/              the hand-editing window
+    maths/                  manim charts + timelines
+SCRIPTS/                    script-<name>.txt / .wav + <name>_script_to_search_term.json
+.CACHE/<name>-CACHE/        everything a run generates and can throw away
+OUTPUT/<name>-OUTPUT/       the finished videos
+.resources/                 static inputs: backgrounds, sound-effects,
+                            reusable-images, ai-reference-images, map-data, models
+TESTING-RESOURCES/          every test + its fixtures
+tools/                      one-off scripts that are not part of a run
+docs/                       the notes and rules
+```
+
 
 
 
@@ -20,15 +41,15 @@ running:
 uv run main.py --name spices
 
 ## Side things:
-uv run WORDS_ON_SCREEN.py
-uv run ai_generate_stickman_images.py
-uv run edit.py output/012.png "add a small parrot on his shoulder" -o output/012_parrot.png
-uv run slentence_tester.py
+uv run ___visuals/words_on_screen.py
+uv run ___visuals/ai/generate_stickman_images.py
+uv run ___visuals/ai/edit.py OUTPUT/spices-OUTPUT/012.png "add a small parrot on his shoulder" -o /tmp/012_parrot.png
+uv run TESTING-RESOURCES/splitting_and_labelling/sentence-splitter/slentence_tester.py
 
 
 
 In order to reset:
-rm -rf CACHE-spices/ && rm -rf 
+rm -rf .CACHE/spices-CACHE/ OUTPUT/spices-OUTPUT/
 
 
 
@@ -121,7 +142,9 @@ arecord -f cd -t wav output.wav
 
 # Usage:  
 python main.py --name myproject
-#         → reads script-myproject.txt, caches to CACHE-myproject/, outputs to myproject-OUTPUT/
+#   reads   SCRIPTS/script-myproject.txt (+ SCRIPTS/script-myproject.wav)
+#   caches  .CACHE/myproject-CACHE/
+#   outputs OUTPUT/myproject-OUTPUT/output.mp4
 
 
 
@@ -169,9 +192,15 @@ animation story time| odd1stout  | x |  y
 
 # running tests
 
+Everything test-shaped lives under `TESTING-RESOURCES/`.
 
-
-uv run python -m pytest test_sentence_splitter.py -v
+```
+uv run TESTING-RESOURCES/test_integration.py                     the whole tag model
+uv run ___splitting_and_labelling/2-auto-tagging/Auto_add_mediatypes.py --selftest
+uv run TESTING-RESOURCES/splitting_and_labelling/auto-tagging/TEST_AUTO_TAGGER.py --list
+uv run TESTING-RESOURCES/splitting_and_labelling/sentence-splitter/test_v18_rules.py
+uv run TESTING-RESOURCES/splitting_and_labelling/visualisable-identification/TEST_MANUAL_INTERPRETATION.py
+```
 
 
 -------------

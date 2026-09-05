@@ -63,6 +63,7 @@ if __package__ in (None, ""):
     _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import os
+import pathlib
 import sys
 import threading
 
@@ -80,7 +81,11 @@ except Exception as exc:  # pragma: no cover
 import numpy as np
 from PIL import Image, ImageTk
 
-MODEL_NAME = "mobile_sam.pt"  # or "sam2_t.pt", "sam2_b.pt", "sam_b.pt"
+# Weights live in .resources/models/ so ultralytics neither re-downloads
+# them nor drops a .pt in whatever cwd the editor happened to start in.
+MODEL_NAME = str(pathlib.Path(__file__).resolve().parents[2]
+                 / ".resources" / "models" / "mobile_sam.pt")
+#             or "sam2_t.pt", "sam2_b.pt", "sam_b.pt"
 SIDEBAR_WIDTH = 300
 WINDOW_SIZE = "1320x900"
 UNDO_LIMIT = 20

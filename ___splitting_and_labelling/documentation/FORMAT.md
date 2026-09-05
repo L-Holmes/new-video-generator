@@ -12,10 +12,10 @@ shot. Plain english, field by field:
 * rule_ids - the sentence splitter's tags: which rules cut this line. useful context for you and the ai prompts. meanings live in RULE_DESCRIPTIONS inside
   0-sentence-splitter/sentence_splitter.py.
 
-There is no search_type column any more - the old derived string is gone,
-and old files convert once with: uv run UPGRADE_OLD_JSON.py <file>
+There is no search_type column any more - the old derived string is gone.
 
 The media type names, colours and info all come from ONE shared catalog:
-___visuals/MEDIA_CATALOG.py - the same file the video builder reads.
+the MEDIA_CATALOG block in CONFIG.py at the repo root - the same file the
+video builder reads.
 
 That's the whole format.

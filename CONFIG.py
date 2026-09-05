@@ -30,7 +30,7 @@ from typing import TypedDict
 
 import requests
 
-from ___visuals import COLOUR_GRADE_ETC
+from ___visuals import colour_grade_etc
 
 # ===========================================================================
 # GLOBAL FLAGS
@@ -43,8 +43,9 @@ DEBUG: bool = True
 # ===========================================================================
 # NAME-BASED PATH CONFIGURATION
 # Usage:  python main.py --name myproject
-#         → reads script-myproject.txt, caches to CACHE-myproject/, outputs to myproject-OUTPUT/
-# No --name → original behaviour: script.txt, CACHE/, OUTPUT/
+#         → reads SCRIPTS/script-myproject.txt, caches to
+#           .CACHE/myproject-CACHE/, outputs to OUTPUT/myproject-OUTPUT/
+# No --name → SCRIPTS/script.txt, .CACHE/unnamed-CACHE/, OUTPUT/unnamed-OUTPUT/
 # ===========================================================================
 
 _arg_parser = argparse.ArgumentParser(add_help=False)
@@ -52,15 +53,46 @@ _arg_parser.add_argument("--name", default="")
 _known_args, _ = _arg_parser.parse_known_args()
 _NAME = _known_args.name.strip()
 
-_CACHE_DIR = f"{_NAME}-CACHE" if _NAME else "CACHE"
-_OUTPUT_DIR = f"{_NAME}-OUTPUT" if _NAME else "OUTPUT"
+# Every run's scratch space lives under ONE hidden folder, one subfolder per
+# --name, so the repo root never grows a "<name>-CACHE" per project:
+#     .CACHE/stickman-CACHE/...      (--name stickman)
+#     .CACHE/unnamed-CACHE/...       (no --name)
+# Finished videos mirror that under OUTPUT/, which stays visible because it
+# is the thing you actually go looking for.
+CACHE_ROOT = ".CACHE"
+OUTPUT_ROOT = "OUTPUT"
+SCRIPTS_DIR = "SCRIPTS"
+
+# ---------------------------------------------------------------------------
+# STATIC INPUTS — .resources/
+# ---------------------------------------------------------------------------
+# Everything the pipeline READS but never writes: backgrounds, sound effects,
+# the stickman reference photos, the board images, the world-borders geojson,
+# the SAM weights. One folder so the repo root does not carry six of them,
+# and absolute (anchored at this file) so a module run directly from any cwd
+# still finds them.
+RESOURCES_DIR: Path = Path(__file__).resolve().parent / ".resources"
+
+BACKGROUNDS_DIR: Path = RESOURCES_DIR / "backgrounds"
+SOUND_EFFECTS_DIR: Path = RESOURCES_DIR / "sound-effects"
+AI_REFERENCE_IMAGES_DIR: Path = RESOURCES_DIR / "ai-reference-images"
+REUSABLE_IMAGES_DIR: Path = RESOURCES_DIR / "reusable-images"
+MAP_DATA_DIR: Path = RESOURCES_DIR / "map-data"
+MODELS_DIR: Path = RESOURCES_DIR / "models"
+
+_RUN = _NAME or "unnamed"
+_CACHE_DIR = f"{CACHE_ROOT}/{_RUN}-CACHE"
+_OUTPUT_DIR = f"{OUTPUT_ROOT}/{_RUN}-OUTPUT"
+# The bare stem ("script-stickman"), NOT a path — it is also used to name
+# files written into the cache. SCRIPTS_DIR is prepended only where the file
+# genuinely lives in SCRIPTS/.
 _SCRIPT_STEM = f"script-{_NAME}" if _NAME else "script"
 
 # ===========================================================================
 # GLOBAL FILE / DIRECTORY PATHS
 # ===========================================================================
 
-SCRIPT_FILE: str = f"{_SCRIPT_STEM}.txt"
+SCRIPT_FILE: str = f"{SCRIPTS_DIR}/{_SCRIPT_STEM}.txt"
 
 FINAL_VIDEO_FILE: str = f"{_CACHE_DIR}/output_video_final.mp4"
 
@@ -126,19 +158,19 @@ def line_too_short_for_new_footage(text: str) -> bool:
 # Master switch: give STOCK footage one cohesive film grade so the whole video
 # reads as a single graded collection. Applied late (just before Ken Burns) to
 # the CHOSEN footage only — see apply_colour_grading_to_final_data + the
-# COLOUR_GRADE_STAGE module for the full machinery.
+# colour_grade_stage module for the full machinery.
 #
-# Preview / pick a look first:   uv run COLOUR_GRADE_ETC.py
+# Preview / pick a look first:   uv run colour_grade_etc.py
 TOGGLE_STOCK_COLOUR_GRADING_ETC: bool = False
-# When True, grade EVERY scene (stickman / ai_edit / read-out / maps included),
+# When True, grade EVERY scene (stickman / edit / read-out / maps included),
 # not just real-world stock. Ignored unless TOGGLE_STOCK_COLOUR_GRADING_ETC.
 APPLY_COLOUR_GRADING_TO_ALL: bool = False
 # When True, only VIDEO footage (mp4 etc.) gets colour graded — still images are
 # left untouched entirely. Ignored unless TOGGLE_STOCK_COLOUR_GRADING_ETC.
 APPLY_COLOUR_GRADING_TO_VIDEOS_ONLY: bool = True
-# COLOUR_GRADE_ETC now has ONE unified cinematic look (no variations); this just
-# selects it. Run `uv run COLOUR_GRADE_ETC.py` to preview before/after stills.
-STOCK_COLOUR_GRADE_PRESET: str = COLOUR_GRADE_ETC.DEFAULT_PRESET
+# colour_grade_etc now has ONE unified cinematic look (no variations); this just
+# selects it. Run `uv run colour_grade_etc.py` to preview before/after stills.
+STOCK_COLOUR_GRADE_PRESET: str = colour_grade_etc.DEFAULT_PRESET
 
 PEXELS_API_KEY: str = "PewOP3u4JK8nTBe0kkazrBgXPSwfeh0tWS1kE9y4eS26TzTEG0wmuGK8"
 
@@ -150,12 +182,12 @@ TEMP_DIR = Path("tmp_stitch/")
 
 # --- Narration audio -------------------------------------------------
 # The ORIGINAL recording (what you record / TTS-generate).
-RAW_SCRIPT_AUDIO_FILE = f"{_SCRIPT_STEM}.wav"  # e.g. script-stickman.wav
+RAW_SCRIPT_AUDIO_FILE = f"{SCRIPTS_DIR}/{_SCRIPT_STEM}.wav"  # SCRIPTS/script-stickman.wav
 
-# Tightened narration produced by SCRIPT_AUDIO_CUTDOWN_AND_PROCESS.run(),
+# Tightened narration produced by script_audio_cutdown_and_process.run(),
 # written under the cache dir, e.g.
-#   stickman-CACHE/AUDIO/script-stickman.processed.wav   (--name stickman)
-#   CACHE/AUDIO/script.processed.wav                     (no --name)
+#   .CACHE/stickman-CACHE/AUDIO/script-stickman.processed.wav  (--name stickman)
+#   .CACHE/unnamed-CACHE/AUDIO/script.processed.wav            (no --name)
 PROCESSED_AUDIO_DIR = f"{_CACHE_DIR}/AUDIO"
 
 # SCRIPT_AUDIO_FILE now points at the PROCESSED file, so every existing use
@@ -165,7 +197,7 @@ SCRIPT_AUDIO_FILE = f"{PROCESSED_AUDIO_DIR}/{_SCRIPT_STEM}.processed.wav"
 # Whisper model the cutdown uses (keep in step with the synchroniser's).
 AUDIO_CUTDOWN_WHISPER_MODEL = "small.en"
 # Re-run the cutdown even if the processed WAV already exists — flip to True
-# after you change the EASY KNOBS in SCRIPT_AUDIO_CUTDOWN_AND_PROCESS.py,
+# after you change the EASY KNOBS in script_audio_cutdown_and_process.py,
 # otherwise the cached processed file is reused.
 FORCE_AUDIO_CUTDOWN = False
 
@@ -185,8 +217,13 @@ FINAL_SCRIPT_AND_CLIPS = f"{_CACHE_DIR}/final_script_to_clips.json"
 # written only AFTER the user has finished picking.
 CANDIDATES_CACHE_FILE = f"{_CACHE_DIR}/footage_candidates.json"
 
+# The tagged shot list — stage 1's output, stage 2's input. It is hand-edited
+# in the manual tagger, so it lives next to the script it belongs to rather
+# than in the throwaway cache.
 LINE_INDEX_TO_SEARCH_TERM_FILE = (
-    f"{_NAME}_script_to_search_term.json" if _NAME else "script_to_search_term.json"
+    f"{SCRIPTS_DIR}/{_NAME}_script_to_search_term.json"
+    if _NAME
+    else f"{SCRIPTS_DIR}/script_to_search_term.json"
 )
 TIMESTAMPS_ABSOLUTE_FILE = (
     f"{_CACHE_DIR}/{_NAME}_timestamps_absolute.json"
@@ -194,7 +231,7 @@ TIMESTAMPS_ABSOLUTE_FILE = (
     else f"{_CACHE_DIR}/timestamps_absolute.json"
 )
 
-# Optional per-word timings produced by AUDIO_SCRIPT_SYNCHRONIZER (Whisper
+# Optional per-word timings produced by audio_script_synchronizer (Whisper
 # word-level). If present, READ_OUT scenes use these for exact sync;
 # otherwise they fall back to syllable-based estimation.
 WORD_TIMINGS_FILE = (
@@ -204,7 +241,7 @@ WORD_TIMINGS_FILE = (
 )
 
 # Generic image-extension set, shared by footage classification helpers
-# (CACHE_IO) and the Ken Burns / colour-grade stages.
+# (cache_io) and the Ken Burns / colour-grade stages.
 IMAGE_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
 
 # ===========================================================================
@@ -225,7 +262,7 @@ def ensure_runtime_dirs() -> None:
 # ===========================================================================
 # JOINT SCENE INTEGRATION
 # ===========================================================================
-# These mirror constants in JOINT_IMAGE_CREATOR.compositor so we can compute
+# These mirror constants in joint_image_creator.compositor so we can compute
 # timing without importing private helpers.
 #
 # TRANSITION_DURATION (0.6) + INTRO_TAIL_PADDING (0.05) — total length of the
@@ -259,7 +296,7 @@ TYPOGRAPHY_ENABLE: bool = True
 # ===========================================================================
 # MAP INTEGRATION
 # ===========================================================================
-# "map" scenes are rendered locally by GET_MAP.py: the scene's search_term is
+# "map" scenes are rendered locally by get_map.py: the scene's search_term is
 # treated as a PLACE NAME (country / region / city), geocoded via OpenStreetMap,
 # and drawn as a clean highlighted map. Like read-out/joint scenes they need NO
 # external candidates and NO review — generate_map_scenes produces them from the
@@ -273,8 +310,8 @@ MAP_ENABLE: bool = True
 # Where rendered map stills + MP4s are written (cache-scoped).
 MAP_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/map_scenes")
 
-# Where GET_MAP caches geocoding results (cache-scoped). The world-borders
-# GeoJSON itself is cached once, globally, next to GET_MAP.py and shared.
+# Where get_map caches geocoding results (cache-scoped). The world-borders
+# GeoJSON itself is cached once, globally, next to get_map.py and shared.
 MAP_GEOCODE_CACHE_DIR: str = f"{_CACHE_DIR}/maps"
 
 
@@ -293,7 +330,7 @@ MAP_GEOCODE_CACHE_DIR: str = f"{_CACHE_DIR}/maps"
 BLANK_SCENE_COLOUR: str = "white"
 
 # Frame size the blank / background MP4s are rendered at. Matches the
-# stitcher's target (STITCH_TOGETHER.TARGET_WIDTH x TARGET_HEIGHT), so the
+# stitcher's target (stitch_together.TARGET_WIDTH x TARGET_HEIGHT), so the
 # scene is never letterboxed or rescaled downstream.
 BLANK_SCENE_RESOLUTION: tuple[int, int] = (1920, 1080)
 
@@ -303,8 +340,8 @@ BLANK_SCENE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/blank_scenes")
 # The folder `random_background` picks from. Stills and videos both work;
 # a video is looped and centre-cropped to fill the frame, a still is baked
 # into a static MP4. This is the same folder the joint compositor pulls its
-# card backgrounds from (JOINT_IMAGE_CREATOR.BACKGROUNDS_DIR).
-RANDOM_BACKGROUND_DIR: str = "_BACKGROUNDS"
+# card backgrounds from (joint_image_creator.BACKGROUNDS_DIR).
+RANDOM_BACKGROUND_DIR: str = str(BACKGROUNDS_DIR)
 
 # The pick is random per scene but DETERMINISTIC: it is seeded from the
 # scene's script text, so re-running the pipeline never reshuffles which
@@ -422,7 +459,7 @@ def chart_look() -> tuple:
 #      layout, and add its layout to JOINT_LAYOUT_POSITIONS.
 #   4. (optional) Write a generator function returning
 #      dict[script_text, list[{path: trim_seconds}]] and register it in
-#      LOCAL_FOOTAGE_GENERATORS (see SCENE_GENERATORS).
+#      LOCAL_FOOTAGE_GENERATORS (see scene_generators).
 # ===========================================================================
 
 
@@ -500,7 +537,8 @@ MEDIA_TYPE_CATALOG: dict[str, dict] = {
     "random_background": {
         "tags": [Tag.NEW],
         "color": "#6c7a89",
-        "info": "a background picked at random from the _BACKGROUNDS/ folder "
+        "info": "a background picked at random from the "
+        ".resources/backgrounds/ folder "
         "(the same textured cards the joint compositor uses). the "
         "search term is unused. like blank, but with texture — stack "
         "decorate or caption on top. the pick is stable across re-runs.",
@@ -1112,7 +1150,7 @@ MEDIA_PROPERTIES: dict[MediaType, MediaProperties] = {
         acts_on_previous=True, is_hold_previous=True
     ),
     MediaType.BACKGROUND: MediaProperties(),  # nothing fetched/generated/reviewed —
-    #   the scene stays footage-less until VIDEO_BACKGROUND_STAGE fills it with
+    #   the scene stays footage-less until video_background_stage fills it with
     #   the bare background segment (stage 2.655, VIDEO_BACKGROUND_MODE only).
     MediaType.AI_EDIT_PREVIOUS: MediaProperties(
         is_ai_base=True, is_ai_edit=True, acts_on_previous=True
@@ -1174,7 +1212,7 @@ def normalise_scene_row(script_text: str, row: dict) -> None:
     """Bring ONE json row up to the schema the renderer runs on, IN PLACE:
     row["media_type"] becomes a MediaType enum; modifiers/group_id/position
     are guaranteed present and validated. Old flat files (search_type-only)
-    are NOT accepted — run UPGRADE_OLD_JSON.py once to convert them."""
+    are NOT accepted — run tools/UPGRADE_OLD_JSON.py once to convert them."""
     for dead in _DEAD_LEGACY_COLUMNS:
         row.pop(dead, None)  # ignored if an upgraded file still carries them
 
@@ -1186,7 +1224,7 @@ def normalise_scene_row(script_text: str, row: dict) -> None:
         raise ValueError(
             f"scene '{script_text[:60]}' has no media_type. Old flat files "
             f"(search_type only) must be converted once with: "
-            f"uv run UPGRADE_OLD_JSON.py <file>"
+            f"uv run tools/UPGRADE_OLD_JSON.py <file>"
         )
     if name not in MEDIA_TYPE_CATALOG:
         raise ValueError(
@@ -1379,7 +1417,7 @@ def group_scene_rows(
 # ONE interactive editor, applied to the scene's OWN finished footage, with
 # clickable tools: draw, text/caption, zoom/crop. It replaces the old
 # decorate_previous, stickman_text_overlay and zoom_prev_img types. The
-# stage lives in DECORATE_STAGE.py.
+# stage lives in decorate_stage.py.
 DECORATE_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/decorate_scenes")
 DECORATE_RENDER_SAFETY_PAD_SEC: float = 0.08
 
@@ -1390,7 +1428,7 @@ DECORATE_RENDER_SAFETY_PAD_SEC: float = 0.08
 # media type those candidates are fetched AS, and the scene then goes
 # through the ORDINARY candidates fetch + stage-1 review like any stock /
 # wikipedia / ai_stock scene (main() swaps its media_type to the source for
-# those two stages — DECORATE_STAGE.swap/restore_stamp_rows_…): you CLICK
+# those two stages — decorate_stage.swap/restore_stamp_rows_…): you CLICK
 # the picture you want in the review, and that pick becomes the stamp
 # waiting (pre-loaded + active) in the decorate editor's stamp tab.
 # row["stamp_decorate"] additionally opens the pick in the decorator FIRST
@@ -1419,8 +1457,8 @@ TERM_OPTIONAL_TYPES: tuple[str, ...] = (
 # draw + stamp tools are offered (zoom/object change the picture's geometry,
 # which can't sit over moving video). Hold runs with no decorate anywhere
 # keep the old freeze behaviour, as does everything when this is False.
-# Machinery: VIDEO_CHAINS.py; wired into STATIC_RENDER (segments) and
-# DECORATE_STAGE (editor + burn).
+# Machinery: video_chains.py; wired into static_render (segments) and
+# decorate_stage (editor + burn).
 DECORATE_VIDEO_LIVE: bool = True
 # Extra tail on each continuing segment so the stitcher's frame budget never
 # runs out of file (the stitcher trims — same idea as the other pads).
@@ -1515,7 +1553,7 @@ STICKMAN_JOINT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/stickman_joint_scenes")
 AI_EDIT_NUM_VARIANTS: int = 1
 AI_EDIT_OUTPUT_DIR: Path = Path(f"{_CACHE_DIR}/ai_edit_scenes")
 
-# How many preceding AI images (stickman / ai_edit) to pass to the generator
+# How many preceding AI images (stickman / edit) to pass to the generator
 # as ADDITIONAL context, on top of the base image being edited. 0 = disable.
 # There may be fewer than this available (or none) — best effort.
 AI_EDIT_CONTEXT_NUM_IMAGES: int = 3
@@ -1547,7 +1585,7 @@ MANUAL_STOCK_PLACEMENT_RENDER_SAFETY_PAD_SEC: float = 0.08
 # ===========================================================================
 # JOINT SCENE LAYOUTS
 # ===========================================================================
-# TODO - consider moving this to the JOINT_IMAGE_CREATOR file
+# TODO - consider moving this to the joint_image_creator file
 
 # Keyed by the BASE type of a group (the `group` modifier decides that a
 # run of lines is a group; the base decides where the tiles come from).
@@ -1592,7 +1630,7 @@ JOINT_GROUP_CELLS: dict[str, int] = {
 # SOUND EFFECTS / MUSIC
 # ===========================================================================
 
-SOUND_EFFECTS_DIR = Path("_SOUND_EFFECTS")
+# (SOUND_EFFECTS_DIR itself is defined up in the .resources block.)
 AUDIO_EVENTS_FILE = f"{_CACHE_DIR}/audio_events.json"
 
 # Hardcoded volumes — applied to all SFX and music respectively.
@@ -1647,7 +1685,7 @@ _wiki_download_semaphore = threading.Semaphore(WIKI_DOWNLOAD_CONCURRENCY)
 
 # Wikimedia's UA policy is enforced with a hard 403 on upload.wikimedia.org for
 # generic / thin User-Agents. Use a DEDICATED session with the descriptive UA
-# set at the SESSION level (mirrors GET_FROM_WIKIPEDIA.py, whose requests work),
+# set at the SESSION level (mirrors wikipedia.py, whose requests work),
 # rather than passing a per-request header through the shared Pexels session.
 WIKI_DOWNLOAD_USER_AGENT: str = (
     "VideoGenerationPipeline/1.0 "

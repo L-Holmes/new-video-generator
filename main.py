@@ -5,17 +5,20 @@ All the heavy lifting now lives in focused modules — main() just wires the
 stages together in order, like a bash script. Comment out a stage to resume
 from a checkpoint.
 
-  CONFIG               constants, paths, MediaType, sessions, ProgressTracker
-  CACHE_IO             cache/JSON I/O, history index, path resolution helpers
-  DOWNLOADS            Pexels/Wikipedia metadata + downloads + load_stock_footage
-  TIMING_MERGE         scene timings, joint timing, footage merge + integrate
-  AI_GENERATION        stickman / stickman-joint / ai_edit generation + review
-  SCENE_GENERATORS     joint / read-out / map / explainer / text-overlay
-  STATIC_RENDER        frame extraction, still→MP4, manual stock placement stage
-  KEN_BURNS            Ken Burns pan/zoom render pass
-  PIXELLATE_STAGE      retro pixellation of AI stills
-  COLOUR_GRADE_STAGE   cinematic colour grade pass
-  AUDIO_EVENTS         per-scene SFX + music map
+  CONFIG                     constants, paths, MediaType, sessions, tracker
+  ___visuals/cache_io        cache/JSON I/O, history index, path resolution
+  ___visuals/sources/        where footage comes from: downloads (Pexels),
+                             wikipedia, stamp_fetch
+  ___visuals/ai/             everything model-generated: generation (the
+                             stages), generate_stickman_images (the fal
+                             call), edit, postprocess
+  ___visuals/timing_merge    scene timings, joint timing, footage integrate
+  ___visuals/scene_generators  joint / read-out / map / explainer / typography
+  ___visuals/static_render   frame extraction, still→MP4, manual placement
+  ___visuals/ken_burns       Ken Burns pan/zoom render pass
+  ___visuals/pixellate_stage retro pixellation of AI stills
+  ___visuals/colour_grade_stage  cinematic colour grade pass
+  ___visuals/audio_events    per-scene SFX + music map
 """
 
 from __future__ import annotations
@@ -30,28 +33,28 @@ from pathlib import Path
 
 import ollama
 
-from ___visuals.ADD_RELEVANT_OVERLAYS import apply_relevant_overlays_to_final_data
-from ___visuals.AI_GENERATION import (
+from ___visuals.add_relevant_overlays import apply_relevant_overlays_to_final_data
+from ___visuals.ai.generation import (
     _regenerate_stickman_joint_scene,
     _regenerate_stickman_scene,
     generate_stickman_candidates,
     generate_stickman_joint_candidates,
     run_ai_edit_stage,
 )
-from ___visuals.AUDIO_EVENTS import build_audio_events_map
+from ___visuals.audio_events import build_audio_events_map
 
 # ===========================================================================
 # IMPORTS - LOCAL (external pipeline stages driven directly by main)
 # ===========================================================================
-from ___visuals.AUDIO_SCRIPT_SYNCHRONIZER import run as run_audio_script_synchronizer
-from ___visuals.CACHE_IO import (
+from ___visuals.audio_script_synchronizer import run as run_audio_script_synchronizer
+from ___visuals.cache_io import (
     add_path_remap_to_history,
     load_from_cache,
     load_json,
     save_to_cache,
 )
-from ___visuals.COLLAGE_STAGE import run_collage_stage
-from ___visuals.COLOUR_GRADE_STAGE import apply_colour_grading_to_final_data
+from ___visuals.collage_stage import run_collage_stage
+from ___visuals.colour_grade_stage import apply_colour_grading_to_final_data
 from CONFIG import (
     _CACHE_DIR,
     AUDIO_CUTDOWN_WHISPER_MODEL,
@@ -80,24 +83,24 @@ from CONFIG import (
     resolve_group_continuations,
     scene_is_grouped,
 )
-from ___visuals.DECORATE_STAGE import (
+from ___visuals.decorate_stage import (
     restore_stamp_rows_after_review,
     run_decorate_stage,
     swap_stamp_rows_for_review,
 )
-from ___visuals.DOWNLOADS import load_stock_footage
-from ___visuals.KEN_BURNS import apply_ken_burns_to_final_data
-from ___visuals.PIXELLATE_STAGE import pixellate_candidate_bundles
-from ___visuals.SCENE_GENERATORS import (
+from ___visuals.sources.downloads import load_stock_footage
+from ___visuals.ken_burns import apply_ken_burns_to_final_data
+from ___visuals.pixellate_stage import pixellate_candidate_bundles
+from ___visuals.scene_generators import (
     generate_stickman_explain_scenes,
     run_all_local_generators,
 )
-from ___visuals.SCRIPT_AUDIO_CUTDOWN_AND_PROCESS import run as run_audio_cutdown
-from ___visuals.STATIC_RENDER import run_manual_image_stage
-from ___visuals.STITCH_TOGETHER import stitch_together_video
-from ___visuals.STOCK_FOOTAGE_REVIEW import run_media_review
-from ___visuals.TIMING_MERGE import integrate_generated_footage
-from ___visuals.VIDEO_BACKGROUND_STAGE import run_video_background_stage
+from ___visuals.script_audio_cutdown_and_process import run as run_audio_cutdown
+from ___visuals.static_render import run_manual_image_stage
+from ___visuals.stitch_together import stitch_together_video
+from ___visuals.stock_footage_review import run_media_review
+from ___visuals.timing_merge import integrate_generated_footage
+from ___visuals.video_background_stage import run_video_background_stage
 
 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 print("running main")
@@ -244,7 +247,7 @@ def main() -> None:
     # Normalise every row: media_type becomes the MediaType enum, and the
     # modifiers / group_id / position columns are validated + guaranteed.
     # There is NO legacy layer: old flat files (search_type-only) must be
-    # converted ONCE with `uv run UPGRADE_OLD_JSON.py <file>` first.
+    # converted ONCE with `uv run tools/UPGRADE_OLD_JSON.py <file>` first.
     for key, value in scriptTextToPexelSearch.items():
         try:
             normalise_scene_row(key, value)
@@ -429,7 +432,7 @@ def main() -> None:
     # In-memory, AFTER the cache load/fetch (so it applies on cache hits too)
     # and BEFORE non_edit_candidates is built. The candidate cache stays raw,
     # so this is cheap to re-apply and never bakes pixels into the cache. Only
-    # stickman / stickman_joint are in candidates_data here; ai_edit gets
+    # stickman / stickman_joint are in candidates_data here; edit gets
     # pixellated later, as each edit is generated (build_ai_edit_candidates…).
     pixellate_candidate_bundles(candidates_data, scriptTextToPexelSearch)
 
@@ -552,14 +555,14 @@ def main() -> None:
     # — those picks were stamp choices, not scene footage).
     restore_stamp_rows_after_review(scriptTextToPexelSearch, final_data)
 
-    # Persist the stage-1 picks NOW so the ai_edit review (next) can load them
+    # Persist the stage-1 picks NOW so the edit review (next) can load them
     # as final_cache_data for its previous-entry preview — e.g. when reviewing
-    # an ai_edit scene, the preview can show the preceding ai_stock scene's
+    # an edit scene, the preview can show the preceding ai_stock scene's
     # just-picked image. Without this save, final_script_to_clips.json is stale
     # (pre-stage-1) and the preview finds no image.
     save_to_cache(final_data, FINAL_SCRIPT_AND_CLIPS)
 
-    # 2.55) ai_edit scenes — generated + reviewed ONE AT A TIME, in script
+    # 2.55) edit scenes — generated + reviewed ONE AT A TIME, in script
     #       order, so chains of consecutive ai_edits work to any depth (each
     #       edit waits for the previous scene's pick before it's generated).
     final_data = run_ai_edit_stage(

@@ -39,6 +39,10 @@ THE FOLDERS
         documentation     every .md
         prompts           the llm prompt templates
 
+    And the one that is not in this folder at all: every TEST of these
+    stages lives under TESTING-RESOURCES/splitting_and_labelling/, mirrored
+    one folder per stage. The TESTING_* constants below point at them.
+
     main.py at the package root runs 0 -> 1 -> 2 -> 3 in order.
 
     A thing two stages both import belongs in shared/, not in the lower-
@@ -62,6 +66,19 @@ STAGE_DIRS = [SENTENCE_SPLITTER_DIR, VISUALISABLES_DIR,
 SHARED_DIR        = HERE / "shared"
 DOCUMENTATION_DIR = HERE / "documentation"
 PROMPTS_DIR       = HERE / "prompts"
+
+# The tests for these stages do NOT live here — every test in the repo is
+# under TESTING-RESOURCES/, one folder per stage. They are named, not put on
+# sys.path: a test folder on the import path for every production run is a
+# shadowing accident waiting to happen. Anything that needs one (only
+# Auto_add_mediatypes --selftest does) adds it for that call and no longer.
+TESTING_DIR                   = REPO_ROOT / "TESTING-RESOURCES"
+_TESTING_STAGES               = TESTING_DIR / "splitting_and_labelling"
+TESTING_SENTENCE_SPLITTER_DIR = _TESTING_STAGES / "sentence-splitter"
+TESTING_VISUALISABLES_DIR     = _TESTING_STAGES / "visualisable-identification"
+TESTING_AUTO_TAGGING_DIR      = _TESTING_STAGES / "auto-tagging"
+# Where a direct `uv run ___splitting_and_labelling/main.py` writes.
+TESTING_RESULTS_DIR           = _TESTING_STAGES / "TEST_RESULTS"
 
 # Last in the list ends up FIRST on sys.path, so this order is deliberate:
 # the repo root goes on furthest back and the package's own folders sit in

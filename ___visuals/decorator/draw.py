@@ -41,7 +41,7 @@ Tools (the side-panel "toolbar" — more can be slotted in later):
   • FINISH EDITS AND MOVE ON
       Bakes every item onto the base and returns the placements.
 
-Text reuses the SAME pixel font as STICKMAN_TEXT_OVERLAY / WORDS_ON_SCREEN;
+Text reuses the SAME pixel font as STICKMAN_TEXT_OVERLAY / words_on_screen;
 arrows + the new shapes are pixelated to match. Everything bakes to a static
 MP4 in the pipeline so the Ken Burns pass leaves the decorated frame untouched.
 
@@ -88,17 +88,17 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageTk
 
 # Reuse the display-fit + frame-extract helpers + Pillow resample shim from the
 # sibling manual stage so the two GUIs behave identically.
-from ___visuals.MANUAL_STOCK_PLACEMENT import _RESAMPLE, _fit_display, extract_frame
-from ___visuals.PREVIOUS_ENTRY_PREVIEW import (
+from ___visuals.manual_stock_placement import _RESAMPLE, _fit_display, extract_frame
+from ___visuals.previous_entry_preview import (
     PreviousEntryPreview,
     PreviousEntryPreviewPopup,
 )
 
 # Reuse the EXACT font discovery + pixelation from the words-on-screen renderer
 # so decorations match STICKMAN_TEXT_OVERLAY. Fallbacks keep this file usable
-# on its own (no circular import: WORDS_ON_SCREEN doesn't import this module).
+# on its own (no circular import: words_on_screen doesn't import this module).
 try:
-    from ___visuals.WORDS_ON_SCREEN import _find_font, _find_pixel_font, _pixelate_image
+    from ___visuals.words_on_screen import _find_font, _find_pixel_font, _pixelate_image
 except Exception:  # pragma: no cover
 
     def _find_pixel_font():
@@ -251,7 +251,7 @@ def _load_stamp_rgba(path: str, remove_bg: bool) -> "Image.Image":
         im = Image.open(path).convert("RGBA")
         if remove_bg:
             try:  # lazy: the white-keyer lives with the placement helpers
-                from ___visuals.MANUAL_STOCK_PLACEMENT import remove_white_background
+                from ___visuals.manual_stock_placement import remove_white_background
 
                 im = remove_white_background(im)
             except Exception as exc:
@@ -3139,7 +3139,7 @@ class _DecorateApp:
                 pass
 
     def _zoom_complete(self):
-        from ___visuals.MANUAL_STOCK_PLACEMENT import CropBox, crop_and_zoom
+        from ___visuals.manual_stock_placement import CropBox, crop_and_zoom
 
         self._zoom_hide()
         self._note_supersede()

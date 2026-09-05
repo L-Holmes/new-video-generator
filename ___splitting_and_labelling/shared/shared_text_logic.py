@@ -1359,7 +1359,7 @@ CAP_STOPWORDS = {
 # Where the map's own country list comes from — a hit here is a country the
 # map can actually DRAW, which is the only kind that matters.
 MAP_COUNTRIES_GEOJSON = (Path(__file__).resolve().parent.parent.parent
-                         / "___visuals" / "_MAP_DATA" / "world_countries.geojson")
+                         / ".resources" / "map-data" / "world_countries.geojson")
 
 # Used only when that geojson is missing.
 FALLBACK_COUNTRIES = {"indonesia", "france", "italy", "china", "india",

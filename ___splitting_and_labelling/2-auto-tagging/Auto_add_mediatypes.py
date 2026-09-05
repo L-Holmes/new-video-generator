@@ -40,7 +40,8 @@ WHERE THE REST OF IT IS
   • auto_tag_engine.py — the machinery: reading the json, printing the table,
     writing a decision onto a row (short-scene gate, search_term auto-fill,
     chart data, group cells, never overwriting a row that is already tagged).
-  • AUTO_TAG_SELFTEST.py — the worked examples behind `--selftest`.
+  • TESTING-RESOURCES/splitting_and_labelling/auto-tagging/
+    AUTO_TAG_SELFTEST.py — the worked examples behind `--selftest`.
 
 HOUSE RULE: **False when in doubt.** A wrong empty costs nothing (manual
 tagging catches it); a wrong tag costs a bad scene.
@@ -537,6 +538,9 @@ def main(argv=None) -> int:
 def run_selftest() -> int:
     """The worked examples — kept in their own file so this one stays a
     readable flowchart."""
+    import sys
+    import PATHS
+    sys.path.insert(0, str(PATHS.TESTING_AUTO_TAGGING_DIR))
     from AUTO_TAG_SELFTEST import run_selftest as _run_selftest
     return _run_selftest()
 

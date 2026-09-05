@@ -88,11 +88,13 @@ never makes it get skipped. Each is callable on its own if you want to run
 one stage by hand. `RUN_STAGE_1_VISUALISABLES` / `RUN_STAGE_2_AUTO_TAGGING`
 at the top of the file turn 1 and 2 off.
 
-Run directly, EVERYTHING it writes goes under `TEST_RESULTS/` — the shot
-lists and the visualisables json at the top, the caches under
-`TEST_RESULTS/CACHE/`. Nothing is written next to the code. (The repo's own
-main.py imports it as a library instead, and then the defaults are the
-working directory, which is where CONFIG expects them.)
+Run directly, EVERYTHING it writes goes under
+`TESTING-RESOURCES/splitting_and_labelling/TEST_RESULTS/` — the shot lists
+and the visualisables json at the top, the caches in its `CACHE/`
+subfolder. Nothing is written next to the code. (The repo's own main.py
+imports it as a library instead, and then the shot list goes to `SCRIPTS/`
+and the caches to `.CACHE/<name>-CACHE/`, which is where CONFIG expects
+them.)
 
 Stage 0 needs the spaCy model — install it once with
 `uv run python -m spacy download en_core_web_sm`. Stage 2 only ever fills
@@ -103,7 +105,8 @@ this file.
 Stage 3 can also be opened on its own against a shot list you already have:
 
 ```
-uv run 3-manual-tagging/MANUAL_TAGGING.py TEST_RESULTS/TESTING_whales-script_to_search_term.json
+uv run ___splitting_and_labelling/3-manual-tagging/MANUAL_TAGGING.py \
+    TESTING-RESOURCES/splitting_and_labelling/TEST_RESULTS/TESTING_whales-script_to_search_term.json
 ```
 
 Opens a localhost page: pick one media type per line (grouped NEW / EDIT
@@ -135,13 +138,18 @@ regenerable (see RESET_AFTER_TEST.md, next to this file).
 
 ## trying the auto tagger on the ten fixture scripts
 
+All of it lives in TESTING-RESOURCES/splitting_and_labelling/auto-tagging/.
+`TAGGER` below is short for that folder's TEST_AUTO_TAGGER.py:
+
 ```
-uv run 2-auto-tagging/TEST_AUTO_TAGGER.py --list     the ten fixtures
-uv run 2-auto-tagging/TEST_AUTO_TAGGER.py --test 1   fixture 1: auto-tag
-                                                     it, then open it
+TAGGER=TESTING-RESOURCES/splitting_and_labelling/auto-tagging/TEST_AUTO_TAGGER.py
+
+uv run $TAGGER --list      the ten fixtures
+uv run $TAGGER --test 1    fixture 1: auto-tag it, then open it
 ```
 
-One fixture at a time. `--test <n>` resets test_jsons/test_json_<n>.json to
+One fixture at a time. `--test <n>` resets
+`.../auto-tagging/test_jsons/test_json_<n>.json` to
 its pristine untagged copy, runs Auto_add_mediatypes.py over it (the full
 detection table and flowchart printout), prints a line-by-line review of what
 it decided, then opens MANUAL_TAGGING.py on that same file so you can see the
@@ -156,15 +164,14 @@ arrive with real rule_ids, list runs and reveals, exactly like step 1's
 output.
 
 ```
-cd 2-auto-tagging
-uv run TEST_AUTO_TAGGER.py --test 4 --no-manual   printout only, no browser
-uv run TEST_AUTO_TAGGER.py --test 4 --keep        carry on, don't reset
-uv run TEST_AUTO_TAGGER.py --all                  all ten + a scoreboard,
-                                                  no browser — what you watch
-                                                  while changing STEP 2 rules
-uv run TEST_AUTO_TAGGER.py --build --force        re-split the scripts (only
-                                                  after a splitter change)
+uv run $TAGGER --test 4 --no-manual   printout only, no browser
+uv run $TAGGER --test 4 --keep        carry on, don't reset
+uv run $TAGGER --all                  all ten + a scoreboard, no browser —
+                                      what you watch while changing STEP 2
+uv run $TAGGER --build --force        re-split the scripts (only after a
+                                      splitter change)
 ```
 
 Judge it by the house rule: a row left empty is fine, a row tagged WRONG is
-the expensive one. Fixtures, sources and what's regenerable: test_jsons/README.md.
+the expensive one. Fixtures, sources and what's regenerable:
+`.../auto-tagging/test_jsons/README.md`.

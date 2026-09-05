@@ -13,7 +13,7 @@ something, everything past which is a trailing settle beat safe to trim.
 
 That pair is the house pattern for every fixed-length animation in a
 variable-length scene — see AI_READ_THIS.txt at the repo root. The generator in
-SCENE_GENERATORS, not the renderer, decides what a given scene gets: too short
+scene_generators, not the renderer, decides what a given scene gets: too short
 for even min_playable and it shows the finished still; long enough for the
 animation but not its settle and it plays the animation trimmed; longer still
 and it plays the animation, then holds the still for the remainder.
@@ -27,7 +27,7 @@ Adding a type (a pie chart, a bar race, …):
   1. CONFIG: a MEDIA_TYPE_CATALOG entry tagged Tag.MATHS, and its inputs in
      MEDIA_TYPE_DATA_FIELDS.
   2. Here: a module with a render function following the contract above.
-  3. SCENE_GENERATORS.generate_maths_scenes: one line in _MATHS_RENDERERS.
+  3. scene_generators.generate_maths_scenes: one line in _MATHS_RENDERERS.
 The tagger picks the new type up on its own — the maths tab is built from the
 catalog.
 """
